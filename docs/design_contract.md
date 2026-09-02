@@ -239,31 +239,77 @@ $$
 
 ## 7. 空间关系
 
-有效粒子的候选关系空间为：
+每一帧首先定义一个仅包含有效粒子观测的候选关系集合 $\mathcal C_t$，随后模型在该候选集合上学习软空间依赖。软依赖的学习是冻结的方法原则，但候选集合的具体构造策略尚未冻结。
 
 $$
-(i,j),\qquad m_{i,t}=m_{j,t}=1
+\mathcal C_t
+\subseteq
+\left\{(i,j)\mid m^{obs}_{i,t}=m^{obs}_{j,t}=1\right\}.
 $$
 
 基本关系输入为：
 
 $$
-\Delta X_{ij,t}=X_{j,t}-X_{i,t}
+\Delta X_{ij,t}=X_{j,t}-X_{i,t},
+\qquad (i,j)\in\mathcal C_t.
 $$
 
-模型学习：
+模型在候选粒子对上学习关系：
 
 $$
 \Delta X_{ij,t}\rightarrow A_{ij,t}\rightarrow h^S_{i,t}
 $$
 
-- $A_{ij,t}$ 是学习得到的软空间依赖。
-- 它不代表物理连接、因果关系、永久结构或 Part。
-- 当前不通过 radius、kNN 或语义标签定义物理部位。
-- 全连接只是候选关系空间，不表示所有粒子属于同一结构。
+- 空间结构由粒子之间学习得到的软依赖 $A_{ij,t}$ 表示。
+- 候选边不代表物理连接；attention 不代表因果关系、永久结构或已发现的物理部位。
+- 不生成 Block、Part、Region 或 Surface。
+- 候选关系只在有效观测之间构造，基本几何关系输入仍是相对三维位置。
+- 不加入速度、加速度、jerk、刚性 residual 或运动类别。
 - 当前空间关系主要描述单帧几何依赖。
 - 不声称 $A_{ij,t}$ 已根据历史运动发现“相似物理态粒子”。
 - 空间关系的时间演化由后续空间状态历史编码体现。
+- 时间编码仍沿同一粒子身份处理空间状态历史；未来三维位移预测及粒子、帧、视频三级异常证据主链保持不变。
+
+### 7.1 Candidate topology 与 learned soft dependency
+
+Candidate topology 回答“哪些粒子对有资格进入关系学习计算？”它属于计算图、局部性归纳偏置、复杂度控制以及待实验验证的模型选择。
+
+Learned soft dependency 回答“在候选粒子对中，模型应当多大程度参考另一个粒子？”它属于当前冻结的方法核心。
+
+kNN 或 radius 候选关系本身不等于人工 Part，也不属于人工伪造规则；但它们会引入局部性偏置，因此必须作为模型选择或消融因素，不能被描述为真实物理结构。
+
+全连接也不天然比稀疏候选更少人工假设。它取消局部性限制，但带来 $O(N^2)$ 计算、噪声关系和粒子数量受限风险。
+
+复杂度权衡为：
+
+$$
+\text{dense candidate}=O(N^2),
+$$
+
+$$
+\text{kNN candidate}=O(Nk).
+$$
+
+这些复杂度只用于解释设计权衡，不据此冻结候选方案。
+
+### 7.2 候选拓扑不得成为异常规则
+
+无论后续采用何种候选策略，都必须：
+
+- 对 real/fake 使用相同构造策略；
+- 对 train/validation/test 使用相同构造策略；
+- 不使用真假标签或生成器身份；
+- 不依据 anomaly score 选择边；
+- 不根据 test AUC 调整候选图；
+- 不用速度、加速度、刚性或 residual 筛边；
+- 将候选策略及参数写入配置和 provenance；
+- 排除所有无效粒子观测。
+
+### 7.3 后续实验原则
+
+候选策略应在相同粒子输入、相同时间编码器、相同预测目标、相同训练数据和相同 evidence 计算下比较，并使用相同参数预算或明确报告参数差异。
+
+至少保留 temporal-only、dense soft relation 与 sparse geometric candidate + soft relation 的概念性比较可能。具体是否全部实施，等待粒子数量、显存和初步实验后决定；本阶段不冻结实验配置。
 
 ## 8. 时间编码
 
@@ -359,7 +405,19 @@ $$
 - 相机补偿具体算法；
 - 坐标归一化具体公式和尺度估计；
 - `ParticleSequence` 物理存储格式；
+- full connection；
+- 3D kNN；
+- kNN 的 $k$；
+- radius graph；
+- kNN + radius cap；
+- approximate sparse attention；
+- learned top-k；
+- directed 或 undirected candidate edges；
+- self-edge 策略；
+- 多层消息传递深度；
 - 粒子数量和采样策略；
+- candidate graph 是否逐帧重建；
+- 具体计算和显存优化；
 - attention 具体网络；
 - hidden dimension；
 - temporal encoder 架构；
