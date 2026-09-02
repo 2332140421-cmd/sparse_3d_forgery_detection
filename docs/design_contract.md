@@ -93,7 +93,60 @@ Mask 仅用于：
 
 Mask 不与三维坐标拼接成普通连续特征。缺失状态不得成为伪造标签捷径；不允许通过隐式填零掩盖无效观测。
 
-### 6.1 `ParticleSequence` 逻辑数据契约
+### 6.1 Mask validity boundary
+
+#### 6.1.1 性质
+
+`visibility` 和 `geometry_validity` 是人工定义的数据有效性门控，但不是人工异常特征。它们只判断观测是否具备最低可计算条件，不判断运动是否正常，也不判断视频是否伪造。
+
+$$
+\boxed{\text{mask 只判断观测能否计算，不判断运动是否合理}}
+$$
+
+#### 6.1.2 Visibility
+
+`visibility` 允许依据 tracker 的 visibility/confidence、帧是否成功解码、`uv` 是否有限、`uv` 是否位于对应图像有效范围，以及 tracker 是否报告遮挡、出界或跟踪失败。
+
+若将连续置信度二值化：
+
+$$
+m^{vis}_{i,t}=\mathbf 1\!\left[c^{vis}_{i,t}\ge\tau_{vis}\right].
+$$
+
+阈值策略必须对 real/fake 相同，对 train/validation/test 相同，并在下游检测评估前固定；不得依据 fake AUC、test 或个别视频调整。provider、阈值和版本必须记录在 lineage/provenance。连续 confidence 默认仅用于上游审计，不进入几何主模型。具体 tracker 和阈值仍未冻结。
+
+#### 6.1.3 Geometry validity
+
+$$
+m^{geo}_{i,t}=m^{vis}_{i,t}\land m^{depth}_{i,t}\land m^{camera}_{t}\land m^{transform}_{i,t}.
+$$
+
+`geometry_validity` 只允许包含可信二维观测、存在且有限并满足三维提升基本定义域的深度、可用于反投影的内参、有效的相机运动补偿所需信息、成功的坐标变换、全部有限的三维坐标，以及已声明的坐标系和单位。
+
+相机补偿失败时，不得静默使用未补偿坐标并继续标记为有效。未来若设计正式降级路径，必须新增 ADR。
+
+#### 6.1.4 禁止条件
+
+以下内容不得决定 mask：
+
+- 速度、加速度或 jerk；
+- 方向或曲率是否合理；
+- 刚性、邻居协同运动或局部形变是否异常；
+- 运动类别或人工物理 residual；
+- 为伪造检测设计的 reprojection threshold；
+- real/fake label、split、数据集类别或生成器身份；
+- anomaly score；
+- 根据测试效果调整的阈值。
+
+#### 6.1.5 模型用途与捷径风险
+
+Mask 只用于空间交互门控、时间缺失处理、prediction loss masking、evidence validity、localization validity 和 padding 区分。
+
+禁止将 mask 与 `xyz` 拼接为普通连续特征，禁止建立用于学习数据源或真假差异的 mask embedding，也禁止直接把缺失率解释为伪造证据。
+
+即使 mask 不作为连续输入，缺失模式仍可能通过有效节点数量、有效时间长度和 loss/evidence 选择影响模型。后续必须审计 real/fake 之间的 visibility rate、geometry validity rate 和有效轨迹长度分布，防止 provider failure 成为检测捷径。当前只记录该风险，不据此设计新的检测规则。
+
+### 6.2 `ParticleSequence` 逻辑数据契约
 
 `ParticleSequence` 是三维前端与学习模型之间唯一规范数据边界，表示一个视频片段内具有稳定轨迹槽位的稀疏三维观测序列。它不是 provider 原始输出、完整视频世界表示、对象或部位集合、固定长度训练 batch、带标签的训练样本或人工运动特征集合。
 
@@ -124,7 +177,7 @@ $$
 
 时间轴不假设固定 FPS；时间跨度应依据 `timestamps_s` 解释，不能只依赖原始帧号。
 
-#### 6.1.1 轨迹槽位与缺失语义
+#### 6.2.1 轨迹槽位与缺失语义
 
 - `track_ids` 在当前序列内唯一，第二维槽位在整个序列中保持身份一致，但不宣称跨视频全局一致。
 - 粒子不必在首帧出现，可以中途出生和消失；只有上游能够可靠保持身份时才允许重现。
@@ -135,7 +188,7 @@ $$
 - 遮挡期间由 tracker 外推的位置不保存为有效观测；零向量不表示 missing；missing 坐标不得静默插值。
 - 若以后引入插值或轨迹修复，必须生成记录 lineage 的独立派生数据，不得覆盖原始规范观测。
 
-#### 6.1.2 坐标语义
+#### 6.2.2 坐标语义
 
 `coordinate_system` 至少记录：
 
@@ -154,14 +207,14 @@ normalization
 - 未声明坐标系的数据不得进入模型；不同坐标系或单位不得在没有显式转换时混合。
 - 原始 depth、pose、intrinsics 和 provider 私有张量不属于核心粒子数组，应由 lineage 指向其上游来源。
 
-#### 6.1.3 Lineage 与 provenance
+#### 6.2.3 Lineage 与 provenance
 
 - lineage 记录源视频身份、帧选择、上游 tracking/depth/pose artifact 引用和转换链。
 - provenance 记录生成软件版本、配置摘要、运行标识和数据契约版本。
 - 二者均不作为模型数值输入，也不要求保存密钥、令牌或机器敏感信息。
 - provider 置信度和诊断信息如需保留，应属于上游审计信息，不自动成为模型特征。
 
-### 6.2 模型输入边界
+### 6.3 模型输入边界
 
 默认几何主模型的连续输入只有规范三维坐标：
 
@@ -173,14 +226,14 @@ $$
 
 `ParticleSequence` 明确不包含 real/fake label、split 名称、数据集类别、生成器身份、velocity、acceleration、jerk、direction、curvature、physical residual、motion class、Part/Block/Region/Surface label、RGB embedding、classification target 或 anomaly score。标签、split 和评估真值由独立 manifest 管理。
 
-### 6.3 序列与训练窗口边界
+### 6.4 序列与训练窗口边界
 
 - `ParticleSequence` 是可变长规范观测；context/target 窗口从序列中派生，多个窗口可以引用同一规范序列。
 - padding 只在 batch collate 时产生，不写入规范 artifact；padding mask 与观测缺失 mask 必须区分。
 - 预测目标帧必须真实存在，且对应 `geometry_validity=True`。
 - 具体历史长度、未来跨度和窗口步长仍未冻结。
 
-### 6.4 物理存储边界
+### 6.5 物理存储边界
 
 当前只冻结逻辑字段、shape、dtype 和语义，不冻结多 `.npy`、单 `.npz`、HDF5、Zarr、LMDB、WebDataset、shard 大小、压缩算法或 cache 策略。后续物理格式必须忠实保存本逻辑契约，不得反向改变方法语义。
 
