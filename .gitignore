@@ -1,0 +1,42 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Python caches and environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Runtime products
+*.log
+logs/
+outputs/
+checkpoints/
+datasets/
+weights/
+downloaded_weights/
+
+# Temporary files and secrets
+tmp/
+temp/
+*.tmp
+.env
+.env.*
+*.pem
+*.key
+secrets/
