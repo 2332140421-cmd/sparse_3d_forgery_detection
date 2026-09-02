@@ -18,6 +18,6 @@ Video
 → Particle/frame/video anomaly evidence
 ```
 
-当前状态：仅建立设计基线，尚未实现代码，也没有可声明的实验结果。
+当前状态：独立仓库和方法基线已建立，当前正在冻结 `ParticleSequence` 逻辑契约；尚无源码、模型、训练或实验结果。
 
 权威方法契约见 [`docs/design_contract.md`](docs/design_contract.md)。旧仓库不是本项目的依赖或代码基线。
