@@ -1,5 +1,40 @@
 # Repository Instructions
 
+## Academic research code boundary
+
+This repository serves an academic thesis and scientific hypothesis
+evaluation. It is not intended to become a general-purpose or
+production software platform.
+
+All implementation decisions must use the smallest design that can:
+
+1. implement the frozen research method;
+2. support the current experiment or ablation;
+3. preserve correctness and reproducibility;
+4. prevent invalid data from corrupting experimental conclusions.
+
+Do not introduce generalized frameworks, plugin systems, registries,
+services, databases, production observability, distributed
+orchestration, broad provider factories, or speculative abstractions
+unless the user has explicitly approved them for a concrete current
+experiment.
+
+Tests should protect research-critical contracts and regressions.
+They should not attempt to cover production-scale adversarial input
+spaces without a demonstrated experimental need.
+
+Before adding a new module or abstraction, state:
+
+- the thesis question or experiment it supports;
+- its immediate caller and output;
+- why a simpler implementation is insufficient.
+
+If these cannot be identified, do not add the complexity.
+
+Research reproducibility remains mandatory. This boundary does not
+permit silent data repair, uncontrolled randomness, unverifiable
+results, or inconsistency between the paper and implementation.
+
 ## Authority and scope
 
 - Before every task, read `docs/design_contract.md` completely.

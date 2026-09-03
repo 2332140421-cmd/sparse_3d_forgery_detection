@@ -15,3 +15,4 @@
 - [ADR 0003: Mask validity boundary](0003-mask-validity-boundary.md)
 - [ADR 0004: Spatial candidate topology remains unfrozen](0004-spatial-candidate-topology.md)
 - [ADR 0005: ParticleSequence v1 representation conventions](0005-particle-sequence-v1-representation-conventions.md)
+- [ADR 0006: Video input and sampling contract](0006-video-input-and-sampling-contract.md)
