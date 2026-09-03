@@ -175,6 +175,8 @@ $$
 | 可追溯信息 | `lineage` | JSON-compatible mapping | 数据来源、帧选择、上游 artifact 引用和转换链 |
 | 可追溯信息 | `provenance` | JSON-compatible mapping | 软件版本、配置摘要、运行标识和契约版本 |
 
+`PARTICLE_SEQUENCE_SCHEMA_VERSION = "1.0.0"` 是 `ParticleSequence` Python 内存契约的初始正式 schema 版本。该版本只标识逻辑内存契约，不决定任何物理存储格式。
+
 时间轴不假设固定 FPS；时间跨度应依据 `timestamps_s` 解释，不能只依赖原始帧号。
 
 #### 6.2.1 轨迹槽位与缺失语义
@@ -201,6 +203,8 @@ camera_motion_compensated
 normalization
 ```
 
+- `handedness` 严格且仅允许 `left` 或 `right`，不接受自定义手性字符串。
+- `axis_directions` 在 Python 内存契约中必须是长度严格为 3 的 tuple，三个元素均为非空字符串，并依次描述 x、y、z 轴方向；本阶段不冻结轴方向字符串词表。
 - 模型就绪的 `ParticleSequence` 必须满足 `camera_motion_compensated=true`。
 - `length_unit` 至少区分 `meter` 与 `arbitrary_scale`。
 - `normalization` 只记录是否执行及其参数；本阶段不冻结归一化算法。
