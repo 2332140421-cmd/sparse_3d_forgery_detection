@@ -75,13 +75,15 @@ def validate_particle_sequence(sequence: ParticleSequence) -> None:
         _add(issues, "source_video_id", "must be a non-empty string")
 
     arrays: dict[str, np.ndarray] = {}
+    dtype_valid: dict[str, bool] = {}
     for name, expected_dtype in _ARRAY_SPECS:
         value = getattr(sequence, name)
         if not isinstance(value, np.ndarray):
             _add(issues, name, "must be a numpy.ndarray")
             continue
         arrays[name] = value
-        if value.dtype != expected_dtype:
+        dtype_valid[name] = value.dtype == expected_dtype
+        if not dtype_valid[name]:
             _add(issues, name, f"dtype must be {expected_dtype.name}")
 
     frame_indices = arrays.get("frame_indices")
@@ -98,51 +100,58 @@ def validate_particle_sequence(sequence: ParticleSequence) -> None:
         ("visibility", (time_size, track_size)),
         ("geometry_validity", (time_size, track_size)),
     )
+    shape_valid: dict[str, bool] = {}
     for name, expected in expected_shapes:
         value = arrays.get(name)
         if value is None:
             continue
         if value.ndim != len(expected):
             _add(issues, name, f"must have rank {len(expected)}")
+            shape_valid[name] = False
         elif any(size is not None and value.shape[i] != size for i, size in enumerate(expected)):
             _add(issues, name, f"shape must match {expected}")
+            shape_valid[name] = False
+        else:
+            shape_valid[name] = True
+
+    def is_safe(name: str) -> bool:
+        return dtype_valid.get(name, False) and shape_valid.get(name, False)
 
     if time_size == 0:
         _add(issues, "frame_indices", "T must be greater than zero")
     if track_size == 0:
         _add(issues, "track_ids", "N must be greater than zero")
 
-    if frame_indices is not None and frame_indices.ndim == 1:
+    if is_safe("frame_indices"):
         if frame_indices.size > 1 and not np.all(np.diff(frame_indices) > 0):
             _add(issues, "frame_indices", "must be strictly increasing")
     timestamps = arrays.get("timestamps_s")
-    if timestamps is not None and timestamps.ndim == 1:
+    if is_safe("timestamps_s"):
         if not np.all(np.isfinite(timestamps)):
             _add(issues, "timestamps_s", "all values must be finite")
         if timestamps.size > 1 and not np.all(np.diff(timestamps) > 0):
             _add(issues, "timestamps_s", "must be strictly increasing")
     frame_sizes = arrays.get("frame_sizes_hw")
-    if frame_sizes is not None and frame_sizes.ndim == 2 and frame_sizes.shape[1:] == (2,):
+    if is_safe("frame_sizes_hw"):
         if not np.all(frame_sizes > 0):
             _add(issues, "frame_sizes_hw", "height and width must be positive")
-    if track_ids is not None and track_ids.ndim == 1:
+    if is_safe("track_ids"):
         if np.unique(track_ids).size != track_ids.size:
             _add(issues, "track_ids", "values must be unique")
 
     uv = arrays.get("uv")
     visibility = arrays.get("visibility")
     uv_ok = (
-        uv is not None and visibility is not None and uv.ndim == 3
-        and visibility.ndim == 2 and uv.shape[:2] == visibility.shape
-        and uv.shape[2:] == (2,)
+        is_safe("uv") and is_safe("visibility")
+        and uv.shape[:2] == visibility.shape
     )
     if uv_ok:
-        visible = visibility.astype(bool, copy=False)
+        visible = visibility
         if np.any(visible & ~np.all(np.isfinite(uv), axis=-1)):
             _add(issues, "uv", "visible observations must be finite")
         if np.any(~visible & ~np.all(np.isnan(uv), axis=-1)):
             _add(issues, "uv", "invisible observations must be all NaN")
-        if frame_sizes is not None and frame_sizes.shape == (uv.shape[0], 2):
+        if is_safe("frame_sizes_hw") and frame_sizes.shape == (uv.shape[0], 2):
             heights = frame_sizes[:, 0, None]
             widths = frame_sizes[:, 1, None]
             u, v = uv[:, :, 0], uv[:, :, 1]
@@ -152,16 +161,15 @@ def validate_particle_sequence(sequence: ParticleSequence) -> None:
 
     xyz = arrays.get("xyz")
     geometry = arrays.get("geometry_validity")
-    if geometry is not None and visibility is not None and geometry.shape == visibility.shape:
-        if np.any(geometry.astype(bool, copy=False) & ~visibility.astype(bool, copy=False)):
+    if is_safe("geometry_validity") and is_safe("visibility") and geometry.shape == visibility.shape:
+        if np.any(geometry & ~visibility):
             _add(issues, "geometry_validity", "true values require visibility to be true")
     xyz_ok = (
-        xyz is not None and geometry is not None and xyz.ndim == 3
-        and geometry.ndim == 2 and xyz.shape[:2] == geometry.shape
-        and xyz.shape[2:] == (3,)
+        is_safe("xyz") and is_safe("geometry_validity")
+        and xyz.shape[:2] == geometry.shape
     )
     if xyz_ok:
-        valid = geometry.astype(bool, copy=False)
+        valid = geometry
         if np.any(valid & ~np.all(np.isfinite(xyz), axis=-1)):
             _add(issues, "xyz", "geometry-valid observations must be finite")
         if np.any(~valid & ~np.all(np.isnan(xyz), axis=-1)):

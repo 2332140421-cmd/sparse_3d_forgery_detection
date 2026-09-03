@@ -61,6 +61,35 @@ def test_rejects_every_wrong_dtype(valid_sequence, changed, field, dtype):
 
 
 @pytest.mark.parametrize(
+    "field",
+    ["frame_indices", "timestamps_s", "frame_sizes_hw", "uv", "xyz"],
+)
+@pytest.mark.parametrize("dtype", [str, object])
+def test_non_numeric_dtype_is_reported_without_mutation(
+    valid_sequence, changed, field, dtype
+):
+    value = getattr(valid_sequence, field).astype(dtype)
+    before = value.copy()
+
+    assert field in issue_paths(changed(**{field: value}))
+    assert value.dtype == before.dtype
+    assert value.shape == before.shape
+    np.testing.assert_array_equal(value.astype(str), before.astype(str))
+
+
+@pytest.mark.parametrize("field", ["visibility", "geometry_validity"])
+@pytest.mark.parametrize("dtype", [str, object])
+def test_mask_dtype_is_reported_without_mutation(valid_sequence, changed, field, dtype):
+    value = getattr(valid_sequence, field).astype(dtype)
+    before = value.copy()
+
+    assert field in issue_paths(changed(**{field: value}))
+    assert value.dtype == before.dtype
+    assert value.shape == before.shape
+    np.testing.assert_array_equal(value.astype(str), before.astype(str))
+
+
+@pytest.mark.parametrize(
     ("field", "shape"),
     [
         ("frame_indices", (3, 1)),
@@ -197,6 +226,34 @@ def test_collects_multiple_issues(changed):
         validate_particle_sequence(sequence)
     assert [issue.path for issue in caught.value.issues[:3]] == [
         "schema_version", "sample_id", "source_video_id",
+    ]
+
+
+def test_compound_dtype_shape_and_metadata_issues_are_aggregated(
+    valid_sequence, changed
+):
+    sequence = changed(
+        timestamps_s=valid_sequence.timestamps_s.astype(str),
+        frame_sizes_hw=valid_sequence.frame_sizes_hw[:, :1],
+        lineage={"bad": np.nan},
+    )
+
+    assert issue_paths(sequence) == ["timestamps_s", "frame_sizes_hw", "lineage"]
+
+
+def test_array_dtype_error_does_not_stop_independent_checks(valid_sequence, changed):
+    sequence = changed(
+        sample_id="",
+        timestamps_s=valid_sequence.timestamps_s.astype(object),
+        coordinate_system=object(),
+        provenance={"bad": np.nan},
+    )
+
+    assert issue_paths(sequence) == [
+        "sample_id",
+        "timestamps_s",
+        "coordinate_system",
+        "provenance",
     ]
 
 

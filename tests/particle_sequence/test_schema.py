@@ -1,9 +1,12 @@
-from dataclasses import FrozenInstanceError, fields
+from dataclasses import FrozenInstanceError, fields, replace
 
 import numpy as np
 import pytest
 
-from sparse3d_forgery.particle_sequence import ParticleSequence
+from sparse3d_forgery.particle_sequence import (
+    ParticleSequence,
+    validate_particle_sequence,
+)
 
 
 def test_fields_and_derived_properties(valid_sequence):
@@ -23,9 +26,26 @@ def test_mid_sequence_birth_is_representable(valid_sequence):
 
 def test_disappearance_and_reappearance_keep_slot(valid_sequence):
     visibility = valid_sequence.visibility.copy()
+    geometry = valid_sequence.geometry_validity.copy()
+    uv = valid_sequence.uv.copy()
+    xyz = valid_sequence.xyz.copy()
     visibility[:, 0] = [True, False, True]
-    assert visibility[:, 0].tolist() == [True, False, True]
-    assert valid_sequence.track_ids[0] == 7
+    geometry[:, 0] = [True, False, True]
+    uv[1, 0] = np.nan
+    xyz[1, 0] = np.nan
+    uv[2, 0] = [12.0, 22.0]
+    xyz[2, 0] = [2.0, 0.0, 4.0]
+    sequence = replace(
+        valid_sequence,
+        visibility=visibility,
+        geometry_validity=geometry,
+        uv=uv,
+        xyz=xyz,
+    )
+
+    assert validate_particle_sequence(sequence) is None
+    assert sequence.visibility[:, 0].tolist() == [True, False, True]
+    assert sequence.track_ids[0] == 7
 
 
 def test_frozen_dataclass_prevents_field_rebinding(valid_sequence):
