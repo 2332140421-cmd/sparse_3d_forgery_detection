@@ -12,6 +12,8 @@ from .validation import (
     ValidationIssue,
     validate_particle_sequence,
 )
+from .builder import build_particle_sequence
+from .serialization import load_particle_sequence, save_particle_sequence
 
 __all__ = [
     "PARTICLE_SEQUENCE_SCHEMA_VERSION",
@@ -22,4 +24,7 @@ __all__ = [
     "ValidationIssue",
     "ParticleSequenceValidationError",
     "validate_particle_sequence",
+    "build_particle_sequence",
+    "load_particle_sequence",
+    "save_particle_sequence",
 ]

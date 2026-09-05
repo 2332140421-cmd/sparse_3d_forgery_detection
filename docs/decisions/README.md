@@ -17,3 +17,4 @@
 - [ADR 0005: ParticleSequence v1 representation conventions](0005-particle-sequence-v1-representation-conventions.md)
 - [ADR 0006: Video input and sampling contract](0006-video-input-and-sampling-contract.md)
 - [ADR 0007: PyAV local video decoding](0007-pyav-local-video-decoding.md)
+- [ADR 0008: VGGT feasibility frontend](0008-vggt-feasibility-frontend.md)

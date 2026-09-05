@@ -78,7 +78,7 @@ Particle/frame/video anomaly evidence
 - 坐标系和单位元数据；
 - 相机运动补偿结果及其有效性信息。
 
-depth、tracker、pose 的具体 provider 尚未冻结，相机运动补偿算法也尚未冻结。前端 provider 不得成为学习模型的隐式依赖。任何 provider 输出必须先转换为规范 `ParticleSequence`，模型不得直接读取 provider 私有格式。
+当前可行性前端使用固定 revision 的官方 VGGT，同时获得相机内外参、z-depth 和点轨迹。该选择是可替换的实验实现，不是论文创新或永久 provider 架构。VGGT 会联合聚合输入序列，因此整段输出不得标记为因果预测训练就绪；正式训练前必须建立不会由未来帧改写历史输入的前缀或窗口处理与坐标对齐路径。前端 provider 不得成为学习模型的隐式依赖。任何 provider 输出必须先转换为规范 `ParticleSequence`，模型不得直接读取 provider 私有格式。
 
 ## 6. Mask 边界
 
@@ -239,9 +239,13 @@ $$
 - 预测目标帧必须真实存在，且对应 `geometry_validity=True`。
 - 具体历史长度、未来跨度和窗口步长仍未冻结。
 
-### 6.5 物理存储边界
+### 6.5 当前研究 artifact
 
-当前只冻结逻辑字段、shape、dtype 和语义，不冻结多 `.npy`、单 `.npz`、HDF5、Zarr、LMDB、WebDataset、shard 大小、压缩算法或 cache 策略。后续物理格式必须忠实保存本逻辑契约，不得反向改变方法语义。
+昂贵前端输出当前使用数值数组 NPZ 与 JSON metadata 成对保存。NPZ 不包含 object array，读取必须使用 `allow_pickle=False`；JSON 保存身份、坐标声明、lineage 和 provenance。保存与加载后都必须通过 `ParticleSequence` validator，并保持 dtype、shape、NaN 和 mask 语义。该格式仅是当前研究的最小持久化选择，不建立多格式、shard 或通用缓存框架。
+
+### 6.6 物理存储边界
+
+当前 NPZ+JSON 是首个研究实现，不冻结长期存储架构、多 `.npy`、HDF5、Zarr、LMDB、WebDataset、shard 或通用 cache 策略。后续物理格式必须忠实保存本逻辑契约，不得反向改变方法语义。
 
 ## 7. 空间关系
 
@@ -410,7 +414,6 @@ $$
 - pose provider；
 - 相机补偿具体算法；
 - 坐标归一化具体公式和尺度估计；
-- `ParticleSequence` 物理存储格式；
 - full connection；
 - 3D kNN；
 - kNN 的 $k$；

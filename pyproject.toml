@@ -6,7 +6,18 @@ build-backend = "setuptools.build_meta"
 name = "sparse3d-forgery"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["numpy", "av==18.1.0"]
+dependencies = [
+    "av==18.1.0",
+    "einops==0.8.2",
+    "huggingface-hub==1.30.0",
+    "numpy==1.26.1",
+    "opencv-python==4.11.0.86",
+    "Pillow==12.3.0",
+    "safetensors==0.8.0",
+    "torch==2.3.1",
+    "torchvision==0.18.1",
+    "vggt @ git+https://github.com/facebookresearch/vggt.git@a288dd0f14786c93483e45524328726ab7b1b4ce",
+]
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
