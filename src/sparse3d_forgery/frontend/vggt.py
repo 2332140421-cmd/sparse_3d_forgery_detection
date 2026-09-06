@@ -13,9 +13,11 @@ from sparse3d_forgery.particle_sequence import (
     LengthUnit,
     ParticleSequence,
     build_particle_sequence,
+    validate_particle_sequence,
 )
 from sparse3d_forgery.video_input import DecodedVideoSample
 
+from .alignment import SimilarityAlignmentError, fit_similarity_transform
 from .geometry import resize_pad_transform, unproject_z_depth_to_world
 
 
@@ -215,3 +217,134 @@ class VggtFrontend:
         if self.config.device.startswith("cuda"):
             torch.cuda.empty_cache()
         return sequence
+
+    def extract_causal_window(
+        self, decoded: DecodedVideoSample, history_count: int
+    ) -> ParticleSequence:
+        """Anchor extension-only future rows to a history-only VGGT gauge."""
+
+        if isinstance(history_count, bool) or not isinstance(history_count, int):
+            raise ValueError("history_count must be an integer")
+        if history_count <= 0 or history_count >= len(decoded.frames):
+            raise ValueError("history_count must leave non-empty history and future rows")
+        history_decoded = DecodedVideoSample(
+            sample_id=decoded.sample_id,
+            source_video_id=decoded.source_video_id,
+            frames=decoded.frames[:history_count],
+        )
+        history = self.extract(history_decoded)
+        extension = self.extract(decoded)
+        return _construct_history_anchored_window(history, extension, history_count)
+
+
+def _construct_history_anchored_window(
+    history: ParticleSequence,
+    extension: ParticleSequence,
+    history_count: int,
+) -> ParticleSequence:
+    """Combine Pass A history and Pass B future using history-only Sim(3)."""
+
+    validate_particle_sequence(history)
+    validate_particle_sequence(extension)
+    if history_count != history.num_frames or history_count <= 0:
+        raise ValueError("history_count must equal the Pass A frame count")
+    if history_count >= extension.num_frames:
+        raise ValueError("extension must contain at least one future frame")
+    if history.source_video_id != extension.source_video_id:
+        raise ValueError("Pass A and Pass B source_video_id must match")
+    if not np.array_equal(history.frame_indices, extension.frame_indices[:history_count]):
+        raise ValueError("Pass A and Pass B history frame indices must match")
+    if not np.array_equal(history.timestamps_s, extension.timestamps_s[:history_count]):
+        raise ValueError("Pass A and Pass B history timestamps must match")
+    if not np.array_equal(history.track_ids, extension.track_ids):
+        raise ValueError("Pass A and Pass B track slots must match")
+
+    common = history.geometry_validity & extension.geometry_validity[:history_count]
+    source = extension.xyz[:history_count][common]
+    destination = history.xyz[common]
+    transform = None
+    alignment_error = None
+    try:
+        transform = fit_similarity_transform(source, destination)
+    except SimilarityAlignmentError as exc:
+        alignment_error = str(exc)
+
+    xyz = np.full(extension.xyz.shape, np.nan, dtype=np.float32)
+    xyz[:history_count] = history.xyz
+    uv = np.concatenate((history.uv, extension.uv[history_count:]), axis=0).copy()
+    visibility = np.concatenate(
+        (history.visibility, extension.visibility[history_count:]), axis=0
+    ).copy()
+    geometry = np.zeros(extension.geometry_validity.shape, dtype=np.bool_)
+    geometry[:history_count] = history.geometry_validity
+    eligible = transform is not None
+    if transform is not None:
+        future_valid = extension.geometry_validity[history_count:]
+        transformed = transform.apply(extension.xyz[history_count:])
+        transformed_finite = np.isfinite(transformed).all(axis=-1)
+        geometry[history_count:] = future_valid & transformed_finite
+        xyz[history_count:][geometry[history_count:]] = transformed[geometry[history_count:]]
+
+    diagnostics = None
+    scale = None
+    determinant = None
+    rotation = None
+    translation = None
+    if transform is not None:
+        diagnostics = {
+            name: getattr(transform.diagnostics, name)
+            for name in transform.diagnostics.__dataclass_fields__
+        }
+        scale = transform.scale
+        determinant = float(np.linalg.det(transform.rotation))
+        rotation = transform.rotation.tolist()
+        translation = transform.translation.tolist()
+    lineage = {
+        "construction": "history-anchored causal VGGT window",
+        "history_count": history_count,
+        "history_frame_indices": history.frame_indices.tolist(),
+        "future_frame_indices": extension.frame_indices[history_count:].tolist(),
+        "pass_a_history_only": history.lineage,
+        "pass_b_extension": extension.lineage,
+        "alignment_method": "history-only global Sim(3), extension gauge to history gauge",
+        "future_points_used_for_alignment": False,
+    }
+    provenance = {
+        "causal_training_eligible": eligible,
+        "causal_scope": "only the recorded history cutoff and future frame set",
+        "history_count": history_count,
+        "causal_cutoff_frame_index": int(history.frame_indices[-1]),
+        "causal_cutoff_timestamp_s": float(history.timestamps_s[-1]),
+        "common_historical_correspondence_count": int(common.sum()),
+        "estimated_scale": scale,
+        "rotation_determinant": determinant,
+        "rotation": rotation,
+        "translation": translation,
+        "alignment_diagnostics": diagnostics,
+        "alignment_failure": alignment_error,
+        "pass_a_runtime_s": history.provenance.get("elapsed_s"),
+        "pass_b_runtime_s": extension.provenance.get("elapsed_s"),
+        "peak_gpu_memory_bytes": max(
+            int(history.provenance.get("peak_gpu_memory_bytes", 0)),
+            int(extension.provenance.get("peak_gpu_memory_bytes", 0)),
+        ),
+        "eligibility_scope": "information flow and gauge construction, not 3D accuracy",
+    }
+    result = ParticleSequence(
+        schema_version=history.schema_version,
+        sample_id=f"{extension.sample_id}:history-{history_count}",
+        source_video_id=extension.source_video_id,
+        frame_indices=extension.frame_indices.copy(),
+        timestamps_s=extension.timestamps_s.copy(),
+        frame_sizes_hw=extension.frame_sizes_hw.copy(),
+        track_ids=history.track_ids.copy(),
+        xyz=xyz,
+        uv=uv,
+        visibility=visibility,
+        geometry_validity=geometry,
+        coordinate_system=history.coordinate_system,
+        lineage=lineage,
+        provenance=provenance,
+    )
+    validate_particle_sequence(result)
+    return result

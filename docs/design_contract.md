@@ -78,7 +78,7 @@ Particle/frame/video anomaly evidence
 - 坐标系和单位元数据；
 - 相机运动补偿结果及其有效性信息。
 
-当前可行性前端使用固定 revision 的官方 VGGT，同时获得相机内外参、z-depth 和点轨迹。该选择是可替换的实验实现，不是论文创新或永久 provider 架构。VGGT 会联合聚合输入序列，因此整段输出不得标记为因果预测训练就绪；正式训练前必须建立不会由未来帧改写历史输入的前缀或窗口处理与坐标对齐路径。前端 provider 不得成为学习模型的隐式依赖。任何 provider 输出必须先转换为规范 `ParticleSequence`，模型不得直接读取 provider 私有格式。
+当前可行性前端使用固定 revision 的官方 VGGT，同时获得相机内外参、z-depth 和点轨迹。该选择是可替换的实验实现，不是论文创新或永久 provider 架构。VGGT 会联合聚合输入序列，因此整段 joint-sequence 输出不得标记为因果预测训练就绪。正式因果窗口必须以只看历史帧的 Pass A 作为全部历史数组，以包含目标未来帧的 Pass B 仅提供未来数组，并只使用两次运行中同帧同 track 的共同有效历史观测拟合一个从 Pass B gauge 到 Pass A gauge 的全局 proper Sim(3)。拟合禁止使用未来点、标签、异常分数、provider confidence 或运动大小筛选；禁止逐帧、逐粒子对齐和 identity fallback。只有拟合非退化、尺度为正、旋转 proper 且未来有效三维点成功映射时，该特定 cutoff artifact 才可标记为因果构造合格。对齐残差仅是前端几何诊断，不是异常特征。前端 provider 不得成为学习模型的隐式依赖。任何 provider 输出必须先转换为规范 `ParticleSequence`，模型不得直接读取 provider 私有格式。
 
 ## 6. Mask 边界
 

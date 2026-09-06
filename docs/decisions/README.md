@@ -18,3 +18,4 @@
 - [ADR 0006: Video input and sampling contract](0006-video-input-and-sampling-contract.md)
 - [ADR 0007: PyAV local video decoding](0007-pyav-local-video-decoding.md)
 - [ADR 0008: VGGT feasibility frontend](0008-vggt-feasibility-frontend.md)
+- [ADR 0009: History-anchored causal VGGT window](0009-history-anchored-causal-vggt-window.md)

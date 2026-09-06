@@ -17,6 +17,7 @@ def main() -> None:
     parser.add_argument("--frames", type=int, nargs="+", required=True)
     parser.add_argument("--tracks", type=int, default=128)
     parser.add_argument("--target-size", type=int, default=518)
+    parser.add_argument("--history-count", type=int)
     parser.add_argument("--weights", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -34,7 +35,11 @@ def main() -> None:
         args.weights,
         VggtFrontendConfig(num_tracks=args.tracks, target_size=args.target_size),
     )
-    sequence = frontend.extract(decoded)
+    sequence = (
+        frontend.extract_causal_window(decoded, args.history_count)
+        if args.history_count is not None
+        else frontend.extract(decoded)
+    )
     arrays_path, metadata_path = save_particle_sequence(sequence, args.output)
     print(arrays_path)
     print(metadata_path)
