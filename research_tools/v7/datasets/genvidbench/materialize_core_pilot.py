@@ -28,6 +28,13 @@ def _timeline(path: Path) -> tuple[int, list[float]]:
         raise RuntimeError("video has no decodable frames")
     return len(timestamps), timestamps
 
+def uniform_frame_indices(frame_count: int, count: int = 20) -> list[int]:
+    if frame_count <= 0:
+        raise ValueError("frame_count must be positive")
+    if frame_count == 1:
+        return [0]
+    return list(dict.fromkeys(int(round(i * (frame_count - 1) / (count - 1))) for i in range(count)))
+
 def _contact_sheet(sample, path: Path) -> None:
     cell_w, cell_h = 320, 220
     sheet = Image.new("RGB", (cell_w * 4, cell_h * 5), "white")
@@ -43,23 +50,25 @@ def _contact_sheet(sample, path: Path) -> None:
     sheet.save(path, format="PNG", optimize=False)
 
 def run(media_root: Path, output_root: Path) -> dict[str, object]:
-    review_path = output_root / "real_review" / "review_core.csv"
-    rows = list(csv.DictReader(review_path.open(encoding="utf-8", newline="")))
+    source_review_path = output_root / "real_review" / "review_core.csv"
+    review_path = output_root / "real_review" / "review_core_materialized.csv"
+    rows = list(csv.DictReader(source_review_path.open(encoding="utf-8", newline="")))
     success = 0
     failures: list[dict[str, str]] = []
     measurements: list[dict[str, object]] = []
     for row in rows:
+        row["notes"] = ""
         path = media_root / row["video_path"]
         if not path.is_file():
             failures.append({"source_id": row["source_id"], "reason": "VIDEO_NOT_FOUND", "path": str(path)})
             continue
         try:
             frame_count, timestamps = _timeline(path)
-            positions = [round(i * (frame_count - 1) / 19) for i in range(20)] if frame_count > 1 else [0]
-            positions = list(dict.fromkeys(int(i) for i in positions))
+            positions = uniform_frame_indices(frame_count)
             sample = decode_video(VideoSource(row["source_id"], row["source_id"], path), positions)
             sheet = output_root / "real_review" / "contact_sheets" / f"{row['source_id'].replace(':', '_')}.png"
             _contact_sheet(sample, sheet)
+            row["video_path"] = str(path)
             row["duration_s"] = f"{timestamps[-1] - timestamps[0]:.9f}"
             row["fps_or_timestamp_info"] = f"decoded PTS; frame_count={frame_count}"
             row["notes"] = f"contact_sheet={sheet.name}"

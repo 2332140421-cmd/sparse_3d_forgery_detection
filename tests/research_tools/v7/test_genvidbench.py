@@ -8,6 +8,10 @@ import pytest
 
 from research_tools.v7.datasets.genvidbench.audit_core_pilot import REVIEW_FIELDS, _review_rows
 from research_tools.v7.datasets.genvidbench.finalize_core_pilot import run as finalize
+from research_tools.v7.datasets.genvidbench.materialize_core_pilot import run as materialize, uniform_frame_indices
+from research_tools.v7.datasets.genvidbench.resolve_real_pilot_archives import (
+    build_plan, extract_requested_members, resolve_targets,
+)
 from research_tools.v7.datasets.genvidbench.metadata import (
     LabeledVideo, SemanticRecord, build_pilot_selection, parse_label_file,
     parse_semantic_file, select_real_candidates,
@@ -109,3 +113,94 @@ def test_fake_pair_manifest_contains_required_lineage_fields() -> None:
     fake = selected["test_fake_paired"][0]
     assert {"source_id", "real_video_path", "source_identity", "generator", "fake_path", "pair_lineage"} <= set(fake)
     assert fake["generator"] == "svd"
+
+
+def _archive_fixture(tmp_path: Path, *, duplicate: bool = False) -> tuple[Path, Path, dict[str, object]]:
+    metadata = tmp_path / "metadata"; metadata.mkdir()
+    output = tmp_path / "output"; (output / "manifests").mkdir(parents=True)
+    (metadata / "Pair1_verify.txt").write_text("GenVidBench/vript/a/a.mp4 0\n" + ("GenVidBench/vript/b/a.mp4 0\n" if duplicate else ""))
+    (metadata / "HD_VG_130M_verify.txt").write_text("GenVidBench/hd_vg_130m/00001___hd 0\n")
+    (output / "manifests" / "train_real_pilot.json").write_text(json.dumps([{"source_id": "Vript:1:a", "role": "train_real", "real_source": "Vript", "relative_path": "Pair1/vript/a.mp4", "source_identity": "a"}]))
+    (output / "manifests" / "test_real_source_pilot.json").write_text(json.dumps([{"source_id": "HD:1:hd", "role": "test_real_source", "real_source": "HD-VG-130M", "relative_path": "Pair2/hd_vg_130m/00001___hd.1_0.mp4", "source_identity": "hd"}]))
+    inventory = {"files": [
+        {"path": "GenVidBench/Pair1/vript.rar", "size": 49_190_751_379, "oid": "vript"},
+        *[{"path": f"GenVidBench/Pair2/hd_vg_130m.7z.00{i}", "size": 21_474_836_480, "oid": str(i)} for i in range(1, 4)],
+        {"path": "GenVidBench/Pair2/hd_vg_130m.7z.004", "size": 15_594_648_596, "oid": "4"},
+    ]}
+    return metadata, output, inventory
+
+def test_resolver_preserves_frozen_target_identity_and_is_deterministic(tmp_path: Path) -> None:
+    metadata, output, inventory = _archive_fixture(tmp_path)
+    first = resolve_targets(metadata, output, inventory)
+    second = resolve_targets(metadata, output, inventory)
+    assert first == second
+    assert [row["source_id"] for row in first] == ["Vript:1:a", "HD:1:hd"]
+    assert first[0]["archive_member"] == "vript/a/a.mp4"
+
+def test_ambiguous_official_member_mapping_is_rejected(tmp_path: Path) -> None:
+    metadata, output, inventory = _archive_fixture(tmp_path, duplicate=True)
+    rows = resolve_targets(metadata, output, inventory)
+    assert rows[0]["status"] == "AMBIGUOUS"
+    assert rows[0]["archive_member"] is None
+
+def test_unresolved_7z_member_is_not_fuzzy_selected(tmp_path: Path) -> None:
+    metadata, output, inventory = _archive_fixture(tmp_path)
+    rows = resolve_targets(metadata, output, inventory)
+    assert rows[1]["status"] == "UNRESOLVED"
+    assert rows[1]["archive_member"] is None
+
+def test_size_gate_blocks_minimum_tranche(tmp_path: Path) -> None:
+    metadata, output, inventory = _archive_fixture(tmp_path)
+    rows = resolve_targets(metadata, output, inventory)
+    plan = build_plan(inventory, rows, metadata_root=metadata, output_root=output)
+    assert plan["minimum_tranche"]["train_real"] == 1
+    assert plan["decision"] == "SELECTIVE_MATERIALIZATION_TOO_EXPENSIVE"
+    assert plan["actual_archive_download_bytes"] == 0
+
+def test_resolver_targets_contain_no_fake_rows(tmp_path: Path) -> None:
+    metadata, output, inventory = _archive_fixture(tmp_path)
+    rows = resolve_targets(metadata, output, inventory)
+    assert all(row["role"] in {"train_real", "test_real_source"} for row in rows)
+    assert all(row["real_source"] in {"Vript", "HD-VG-130M"} for row in rows)
+
+def test_resolution_sha_lineage_starts_unmaterialized(tmp_path: Path) -> None:
+    metadata, output, inventory = _archive_fixture(tmp_path)
+    rows = resolve_targets(metadata, output, inventory)
+    assert all(row["video_sha256"] is None for row in rows)
+
+
+def test_archive_extraction_writes_only_requested_members(tmp_path: Path) -> None:
+    import tarfile
+    archive = tmp_path / "sample.tar"
+    with tarfile.open(archive, "w") as handle:
+        for name, content in (("keep.mp4", b"keep"), ("do_not_extract.mp4", b"secret")):
+            source = tmp_path / name; source.write_bytes(content); handle.add(source, arcname=name)
+    out = tmp_path / "out"
+    extracted = extract_requested_members(archive, ["keep.mp4"], out)
+    assert [path.name for path in extracted] == ["keep.mp4"]
+    assert (out / "keep.mp4").read_bytes() == b"keep"
+    assert not (out / "do_not_extract.mp4").exists()
+
+def test_archive_extraction_rejects_path_traversal(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="unsafe"):
+        extract_requested_members(tmp_path / "missing.tar", ["../escape.mp4"], tmp_path / "out")
+
+
+def test_contact_sheet_sampling_spans_full_timeline() -> None:
+    positions = uniform_frame_indices(101)
+    assert positions[0] == 0 and positions[-1] == 100
+    assert positions == sorted(set(positions))
+
+def test_materializer_distinguishes_access_failure_and_keeps_review_blank(tmp_path: Path) -> None:
+    review = tmp_path / "real_review"; review.mkdir()
+    (tmp_path / "manifests").mkdir()
+    (tmp_path / "paired_test").mkdir()
+    with (review / "review_core.csv").open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=REVIEW_FIELDS); writer.writeheader()
+        writer.writerow({field: "id" if field == "source_id" else "train_real" if field == "role" else "" for field in REVIEW_FIELDS})
+    original = (review / "review_core.csv").read_text()
+    result = materialize(tmp_path / "missing-media", tmp_path)
+    assert result["decode_success"] == 0 and result["decode_failure"] == 1
+    output = list(csv.DictReader((review / "review_core_materialized.csv").open()))
+    assert output[0]["video_decision"] == output[0]["video_reason_code"] == output[0]["notes"] == ""
+    assert (review / "review_core.csv").read_text() == original
