@@ -19,3 +19,5 @@
 - [ADR 0007: PyAV local video decoding](0007-pyav-local-video-decoding.md)
 - [ADR 0008: VGGT feasibility frontend](0008-vggt-feasibility-frontend.md)
 - [ADR 0009: History-anchored causal VGGT window](0009-history-anchored-causal-vggt-window.md)
+- [ADR 0010: V7 dynamic structure evolution normality](0010-v7-dynamic-structure-normality.md)
+- [ADR 0011: V7 real-only structural normality pilot](0011-v7-real-only-structural-normality-pilot.md)
