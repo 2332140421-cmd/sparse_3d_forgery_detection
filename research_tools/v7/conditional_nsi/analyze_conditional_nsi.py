@@ -442,7 +442,7 @@ def analyze(output: Path = OUTPUT_ROOT) -> dict[str, Any]:
         status = "CONDITIONAL_SUPPORT_INSUFFICIENT"
     elif real_calibration_gate and activity_gate and fake_gate:
         status = "MINIMAL_CONDITIONAL_NSI_SUPPORTED"
-    elif real_calibration_gate and activity_gate and not fake_gate:
+    elif real_calibration_gate and not fake_gate:
         status = "REAL_CALIBRATION_IMPROVED_BUT_NSI_NONDISCRIMINATIVE"
     elif not real_calibration_gate and not activity_gate and not fake_gate and not lagged_dependence:
         status = "LAGGED_ACTIVITY_CONDITION_NOT_SUPPORTED"

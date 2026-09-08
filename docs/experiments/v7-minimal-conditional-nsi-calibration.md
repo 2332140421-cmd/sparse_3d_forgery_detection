@@ -61,7 +61,7 @@ U1 与 U0 完全复用 NSI、半秩平滑、two-sided transform、component-Q90 
 
 ## 12. Conditionalization Effect
 
-U1 对 real KS 和 source-score dispersion 有描述性改善，但 residual activity 的改善 fraction 未达到预声明的 `0.70`，`J_U1` positive fraction 也未达到 `0.70`，且 `Delta_J` median 非正。因此没有同时满足“real calibration、activity dependence、fake information retained”三项门槛。
+U1 对 real KS 和 source-score dispersion 有描述性改善，但 residual activity 的改善 fraction 未达到预声明的 `0.70`，`J_U1` positive fraction 也未达到 `0.70`，且 `Delta_J` median 非正。因此没有同时满足“real calibration、activity dependence、fake information retained”三项门槛；按预声明状态规则，归入 `REAL_CALIBRATION_IMPROVED_BUT_NSI_NONDISCRIMINATIVE`。
 
 ## 13. Limitations
 
@@ -69,7 +69,7 @@ U1 对 real KS 和 source-score dispersion 有描述性改善，但 residual act
 
 ## 14. Scientific Conclusion
 
-冻结 NSI 被精确重建。lagged activity 对 NSI baseline 存在弱的 source-level 关联，且最小条件化确实改善部分 real calibration；但这种改善没有稳定转化为 fake discrimination。综合当前有限开发样本，证据更接近 **NSI INFORMATION LIMITATION**，而不是已被充分证明的 BASELINE CONFOUND；由于有效 source/窗口缺失和预声明门槛未同时满足，主状态保守记为 `PILOT_INCONCLUSIVE`，不把它宣称为正式结论。
+冻结 NSI 被精确重建。lagged activity 对 NSI baseline 存在弱的 source-level 关联，且最小条件化确实改善部分 real calibration；但这种改善没有稳定转化为 fake discrimination。综合当前有限开发样本，证据更接近 **NSI INFORMATION LIMITATION**，而不是已被充分证明的 BASELINE CONFOUND。按预声明状态，主状态为 `REAL_CALIBRATION_IMPROVED_BUT_NSI_NONDISCRIMINATIVE`；这仍不是正式 full-video 结论。
 
 ## 15. Next-stage Authorization
 
