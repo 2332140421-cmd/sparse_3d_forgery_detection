@@ -203,6 +203,14 @@ def aggregate_quality(rows: Sequence[Mapping[str, object]], *, role: str) -> lis
     return sorted(result, key=lambda row: str(row["video_id"]))
 
 
+def _select_real_val_frontend(rows: Sequence[Mapping[str, object]]) -> list[Mapping[str, object]]:
+    selected = [row for row in rows if str(row.get("window", {}).get("role")) == "real_val"]
+    source_ids = {str(row.get("window", {}).get("source_id")) for row in selected}
+    if len(selected) != 24 or len(source_ids) != 8:
+        raise ValueError("frozen real_val frontend artifact must contain 24 windows from 8 sources")
+    return selected
+
+
 def spearman(x: Sequence[float], y: Sequence[float]) -> float | None:
     if len(x) != len(y) or len(x) < 2:
         return None
@@ -485,6 +493,7 @@ def evaluate(output: Path = OUTPUT_ROOT) -> dict[str, object]:
     real_frontend = read_json(REAL_FRONTEND_PATH)
     if not isinstance(fake_raw, list) or not isinstance(real_frontend, list):
         raise ValueError("frontend artifacts must be lists")
+    real_val_frontend = _select_real_val_frontend(real_frontend)
     fake_scored = score_frontend_results(fake_raw, models)
     write_json(output / "scores" / "unpaired_window_scores.json", fake_scored["window_scores"])
     write_json(output / "scores" / "unpaired_video_scores.json", fake_scored["video_scores"])
@@ -494,7 +503,7 @@ def evaluate(output: Path = OUTPUT_ROOT) -> dict[str, object]:
         row["pair2_ordinal"] = fake_pair_by_window.get(str(row["window_id"]))
     real_score_windows = real_window_score_rows()
     scores = aggregate_window_scores(real_score_windows + fake_score_windows)
-    real_quality = aggregate_quality([row for row in real_frontend if str(row.get("window", {}).get("role")) == "real_val"], role="real")
+    real_quality = aggregate_quality(real_val_frontend, role="real")
     fake_quality = aggregate_quality(fake_raw, role="fake")
     rows = _merge_rows(scores, real_quality + fake_quality)
     model_metrics = {model: _model_metrics(rows, model) for model in MODEL_NAMES}
@@ -511,7 +520,7 @@ def evaluate(output: Path = OUTPUT_ROOT) -> dict[str, object]:
         "quality_summary": _quality_summary(rows),
         "quality_correlations": quality_correlations,
         "representation": {
-            "real": {"video_count": 8, "window_count": len(real_frontend), "complete_windows": sum(row.get("status") == "COMPLETE" for row in real_frontend), "geometry_coverage": _p10_p90_min_max(row["geometry_coverage"] for row in real_quality), "tracking_persistence": _p10_p90_min_max(row["tracking_persistence"] for row in real_quality), "pose_success": _p10_p90_min_max(row["pose_success"] for row in real_quality), "component_success_fraction": _p10_p90_min_max(row["component_success_fraction"] for row in real_quality), "s_valid_fraction": _p10_p90_min_max(row["s_valid_fraction"] for row in real_quality), "delta_s_valid_count": sum(int(row["delta_s_valid_count"]) for row in real_quality), "delta2_s_valid_count": sum(int(row["delta2_s_valid_count"]) for row in real_quality)},
+            "real": {"video_count": 8, "window_count": len(real_val_frontend), "complete_windows": sum(row.get("status") == "COMPLETE" for row in real_val_frontend), "geometry_coverage": _p10_p90_min_max(row["geometry_coverage"] for row in real_quality), "tracking_persistence": _p10_p90_min_max(row["tracking_persistence"] for row in real_quality), "pose_success": _p10_p90_min_max(row["pose_success"] for row in real_quality), "component_success_fraction": _p10_p90_min_max(row["component_success_fraction"] for row in real_quality), "s_valid_fraction": _p10_p90_min_max(row["s_valid_fraction"] for row in real_quality), "delta_s_valid_count": sum(int(row["delta_s_valid_count"]) for row in real_quality), "delta2_s_valid_count": sum(int(row["delta2_s_valid_count"]) for row in real_quality)},
             "fake": {"video_count": 10, "window_count": len(fake_raw), "complete_windows": sum(row.get("status") == "COMPLETE" for row in fake_raw), "geometry_coverage": _p10_p90_min_max(row["geometry_coverage"] for row in fake_quality), "tracking_persistence": _p10_p90_max(row["tracking_persistence"] for row in fake_quality), "pose_success": _p10_p90_max(row["pose_success"] for row in fake_quality), "component_success_fraction": _p10_p90_max(row["component_success_fraction"] for row in fake_quality), "s_valid_fraction": _p10_p90_max(row["s_valid_fraction"] for row in fake_quality), "delta_s_valid_count": sum(int(row["delta_s_valid_count"]) for row in fake_quality), "delta2_s_valid_count": sum(int(row["delta2_s_valid_count"]) for row in fake_quality)},
         },
         "per_video_rows": rows,

@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from research_tools.v7.detection.evaluate_unpaired_fake_response import (
+    _select_real_val_frontend,
     _tail_metrics,
     aggregate_window_scores,
     cluster_bootstrap,
@@ -96,6 +97,20 @@ def test_source_primary_aggregation_is_median_of_window_p95():
     assert len(result) == 1
     assert result[0]["M1_delta_s"]["video_p95"] == 3.0
     assert result[0]["M1_delta_s"]["video_median"] == 1.5
+
+
+def test_real_val_quality_excludes_train_windows():
+    rows = [
+        {"window": {"role": "real_train", "source_id": "train"}},
+        *[
+            {"window": {"role": "real_val", "source_id": f"val-{index}"}}
+            for index in range(8)
+            for _ in range(3)
+        ],
+    ]
+    selected = _select_real_val_frontend(rows)
+    assert len(selected) == 24
+    assert {row["window"]["role"] for row in selected} == {"real_val"}
 
 
 def test_real_only_tail_and_unscored_video_are_not_dropped():
