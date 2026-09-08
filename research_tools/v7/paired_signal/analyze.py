@@ -124,6 +124,7 @@ def _quality_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
             "valid_delta_s": finite_summary(row.get("quality", {}).get("valid_delta_s", 0) for row in rows),
             "valid_delta2_s": finite_summary(row.get("quality", {}).get("valid_delta2_s", 0) for row in rows),
             "component_count": finite_summary(row.get("quality", {}).get("component_count", 0) for row in rows),
+            "component_success_fraction": finite_summary(float(bool(row.get("quality", {}).get("component_success", False))) for row in rows),
         }
     return output
 
@@ -241,6 +242,46 @@ def _pair_rows(selected: list[dict[str, Any]], results: list[dict[str, Any]]) ->
     return output, scales
 
 
+def _pairwise_rows(selected: list[dict[str, Any]], results: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    metrics = ("temporal_mad", "temporal_iqr", "first_difference_magnitude", "second_difference_magnitude")
+    by_key: dict[tuple[str, str, str, float], dict[str, dict[str, Any]]] = defaultdict(dict)
+    for result in results:
+        if result.get("status") != "COMPLETE":
+            continue
+        window = result["window"]
+        by_key[(window["pair_id"], window["kind"], window["label"], float(window["anchor_fraction"]))][window["role"]] = result
+    values: dict[str, dict[str, Any]] = {pair["pair_id"]: {"pair_id": pair["pair_id"], "source_id": pair["source_id"], "generator": pair["generator"], "manipulation_operation": pair["manipulation_operation"], "D": {metric: {"MANIP": [], "CTRL": []} for metric in metrics}} for pair in selected}
+    for (pair_id, kind, label, anchor), sides in by_key.items():
+        if pair_id not in values or "real" not in sides or "fake" not in sides:
+            continue
+        for metric in metrics:
+            def metric_value(result: dict[str, Any]) -> float | None:
+                pairwise = result.get("features", {}).get("pairwise", {})
+                value = pairwise.get(metric) if metric in ("temporal_mad", "temporal_iqr") else pairwise.get(metric, {}).get("median")
+                try:
+                    value = float(value)
+                except (TypeError, ValueError):
+                    return None
+                return value if np.isfinite(value) else None
+            real, fake = metric_value(sides["real"]), metric_value(sides["fake"])
+            if real is not None and fake is not None:
+                values[pair_id]["D"][metric][kind].append(abs(fake - real))
+    rows: list[dict[str, Any]] = []
+    summaries: dict[str, Any] = {}
+    for value in values.values():
+        row = {key: item for key, item in value.items() if key != "D"}
+        for metric in metrics:
+            dm, dc = _finite(value["D"][metric]["MANIP"]), _finite(value["D"][metric]["CTRL"])
+            row[f"Dmanip_{metric}"] = float(np.median(dm)) if dm.size else None
+            row[f"Dctrl_{metric}"] = float(np.median(dc)) if dc.size else None
+            row[f"G_{metric}"] = float(np.median(dm) - np.median(dc)) if dm.size and dc.size else None
+        rows.append(row)
+    for metric in metrics:
+        gaps = [row[f"G_{metric}"] for row in rows]
+        summaries[metric] = {"D_manip": finite_summary(row[f"Dmanip_{metric}"] for row in rows), "D_ctrl": finite_summary(row[f"Dctrl_{metric}"] for row in rows), "G": {**finite_summary(gaps), "positive_fraction": _positive_fraction(gaps), "bootstrap_median": _bootstrap_median(gaps), "sign_test": _sign_test(gaps)}}
+    return rows, summaries
+
+
 def _summary_for(pair_rows: list[dict[str, Any]], key: str) -> dict[str, Any]:
     manip = [row[f"Dmanip_{key}"] for row in pair_rows]
     control = [row[f"Dctrl_{key}"] for row in pair_rows]
@@ -275,7 +316,17 @@ def analyze(output: Path) -> dict[str, Any]:
     order_summary = {"bootstrap_seed": BOOTSTRAP_SEED, "bootstrap_replicates": BOOTSTRAP_REPLICATES, "fake_count_in_fitting": 0, "normality_model": "NONE", "scales": scales, "orders": summaries, "A21": {**finite_summary(a21), "bootstrap_median": _bootstrap_median(a21), "positive_fraction": _positive_fraction(a21), "sign_test": _sign_test(a21)}, "A20": {**finite_summary(a20), "bootstrap_median": _bootstrap_median(a20), "positive_fraction": _positive_fraction(a20), "sign_test": _sign_test(a20)}}
     _write_json(output / "metrics/structural_order_summary.json", order_summary)
     pairwise = [row for row in window_rows if row.get("pairwise_distance_count", 0)]
-    _write_json(output / "metrics/pairwise_diagnostic.json", {"N_windows": len(pairwise), "temporal_mad": finite_summary(row.get("pairwise_temporal_mad") for row in pairwise), "temporal_iqr": finite_summary(row.get("pairwise_temporal_iqr") for row in pairwise)})
+    pairwise_rows, pairwise_summary = _pairwise_rows(selected, results)
+    _write_json(output / "metrics/pairwise_diagnostic.json", {"N_windows": len(pairwise), "temporal_mad": finite_summary(row.get("pairwise_temporal_mad") for row in pairwise), "temporal_iqr": finite_summary(row.get("pairwise_temporal_iqr") for row in pairwise), "paired": pairwise_summary, "per_pair": pairwise_rows})
+    raw_pairwise_signal = any(
+        item["G"]["N"] >= 12
+        and item["G"]["median"] is not None
+        and item["G"]["median"] > 0
+        and item["G"]["positive_fraction"] is not None
+        and item["G"]["positive_fraction"] >= 0.70
+        and item["G"]["bootstrap_median"]["ci95"][0] > 0
+        for item in pairwise_summary.values()
+    )
     confounds = {}
     for metric in ("geometry_coverage", "tracking_persistence", "pose_success", "valid_delta2_s"):
         confounds[metric] = _spearman([row.get("G_K2_delta2_s") for row in pair_rows], [row.get("quality_gap_MANIP_" + metric) for row in pair_rows])
@@ -292,6 +343,8 @@ def analyze(output: Path) -> dict[str, Any]:
         status = "PAIRED_SECOND_ORDER_SIGNAL_PRESENT"
         if a21_summary["N"] >= 12 and a21_summary["bootstrap_median"]["ci95"] and a21_summary["bootstrap_median"]["ci95"][0] > 0:
             status = "PAIRED_SECOND_ORDER_ADVANTAGE_PRESENT"
+    elif raw_pairwise_signal:
+        status = "REPRESENTATION_REVISION_NEEDED_BEFORE_FORMAL_TRAINING"
     elif g2["N"] >= 12:
         status = "PAIRED_SECOND_ORDER_SIGNAL_NOT_SUPPORTED_IN_CURRENT_BASELINE"
     activity: dict[str, Any] = {}
@@ -300,7 +353,7 @@ def analyze(output: Path) -> dict[str, Any]:
         for role in ("real", "fake"):
             for kind in ("MANIP", "CTRL"):
                 activity[key][f"{role}_{kind}"] = finite_summary(row.get(f"{key}_norm") for row in window_rows if row.get("role") == role and row.get("kind") == kind)
-    final = {**prior, "status": status, "analysis_status": status, "complete_window_results": len([row for row in results if row.get("status") == "COMPLETE"]), "failed_window_results": len([row for row in results if row.get("status") != "COMPLETE"]), "metrics": {"per_window": "metrics/per_window_signal.csv", "per_pair": "metrics/per_pair_signal.csv", "structural_orders": "metrics/structural_order_summary.json", "frontend_quality": "metrics/frontend_quality.json", "pairwise": "metrics/pairwise_diagnostic.json"}, "raw_activity": activity, "generator_operation": groups, "quality_gap_spearman_with_G2": confounds, "normality_model_fitting": "NONE", "fake_count_in_fitting": 0, "selection_model_result_independent": True}
+    final = {**prior, "status": status, "analysis_status": status, "complete_window_results": len([row for row in results if row.get("status") == "COMPLETE"]), "failed_window_results": len([row for row in results if row.get("status") != "COMPLETE"]), "metrics": {"per_window": "metrics/per_window_signal.csv", "per_pair": "metrics/per_pair_signal.csv", "structural_orders": "metrics/structural_order_summary.json", "frontend_quality": "metrics/frontend_quality.json", "pairwise": "metrics/pairwise_diagnostic.json"}, "raw_activity": activity, "generator_operation": groups, "quality_gap_spearman_with_G2": confounds, "raw_pairwise_signal": raw_pairwise_signal, "normality_model_fitting": "NONE", "fake_count_in_fitting": 0, "selection_model_result_independent": True}
     _write_json(summary_path, final)
     return final
 
