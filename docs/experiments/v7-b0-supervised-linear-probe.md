@@ -114,8 +114,8 @@ not shared:
 | 0PU21 | 3 | 3 | 0.556 | 0.889 | -0.333 |
 | 0QA8P | 3 | 3 | 0.667 | 0.222 | +0.444 |
 
-The supervised score improves over baseline on 7/15 sources and is worse on
-8/15. The small per-source sample sizes make these values descriptive only.
+The supervised score improves over baseline on 8/15 sources and is worse on
+7/15. The small per-source sample sizes make these values descriptive only.
 The paired bootstrap gain interval crosses zero, so the apparent pooled
 improvement is not stable source-level evidence.
 
