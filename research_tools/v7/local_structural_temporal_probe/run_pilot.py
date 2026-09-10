@@ -318,14 +318,42 @@ def paired_source_bootstrap(source_rows: Sequence[Mapping[str, Any]]) -> dict[st
     rng = np.random.default_rng(BOOTSTRAP_SEED)
     indices = rng.integers(0, len(complete), size=(BOOTSTRAP_REPLICATES, len(complete)))
     means = {arm: np.mean(values[indices], axis=1) for arm, values in arm_values.items()}
-    gains = {name: means["ORDERED_SECOND"] - means[other] for name, other in (("C-A", "UNORDERED_STATE"), ("C-D", "PERMUTED_SECOND"), ("C-B", "ORDERED_FIRST"))}
+    gain_pairs = (("C-A", "UNORDERED_STATE"), ("C-D", "PERMUTED_SECOND"), ("C-B", "ORDERED_FIRST"))
+    raw_gains = {name: arm_values["ORDERED_SECOND"] - arm_values[other] for name, other in gain_pairs}
+    bootstrap_gains = {name: means["ORDERED_SECOND"] - means[other] for name, other in gain_pairs}
     return {
         "N": len(complete),
         "source_ids": [str(row["source_id"]) for row in complete],
         "seed": BOOTSTRAP_SEED,
         "replicates": BOOTSTRAP_REPLICATES,
         "arms": {arm: {"mean": float(np.mean(values)), "ci95": [float(np.percentile(means[arm], 2.5)), float(np.percentile(means[arm], 97.5))]} for arm, values in arm_values.items()},
-        "gains": {name: {"mean": float(np.mean(values)), "ci95": [float(np.percentile(values, 2.5)), float(np.percentile(values, 97.5))]} for name, values in gains.items()},
+        "gains": {name: {"mean": float(np.mean(raw_gains[name])), "ci95": [float(np.percentile(values, 2.5)), float(np.percentile(values, 97.5))]} for name, values in bootstrap_gains.items()},
+    }
+
+
+def _training_weight_audit(examples: Sequence[Mapping[str, Any]], weights: np.ndarray) -> dict[str, Any]:
+    """Summarize the weights actually attached to one training batch."""
+
+    values = np.asarray(weights, dtype=np.float64)
+    if values.shape != (len(examples),):
+        raise ValueError("training window weights must match examples")
+    counts: Counter[str] = Counter()
+    group_sums: defaultdict[str, float] = defaultdict(float)
+    for example, weight in zip(examples, values):
+        label = window_label(example)
+        if label is None:
+            raise ValueError("training weight audit requires labeled MANIP windows")
+        group = f"{example['source_id']}::{'real' if label == 0 else 'fake'}"
+        counts[group] += 1
+        group_sums[group] += float(weight)
+    return {
+        "source_class_window_counts": dict(sorted(counts.items())),
+        "source_class_weight_sums": {key: float(value) for key, value in sorted(group_sums.items())},
+        "window_weight_min": float(np.min(values)),
+        "window_weight_max": float(np.max(values)),
+        "window_weight_mean": float(np.mean(values)),
+        "standardization_weight_source": "training fold raw observation weights",
+        "loss_weight_source": "Batch.window_weights from build_batch(observation_weights=True)",
     }
 
 
@@ -409,14 +437,22 @@ def run(source_root: Path = SOURCE_ARTIFACT_ROOT, output_root: Path = OUTPUT_ROO
             continue
         validate_training_examples(training)
         support_by_arm: dict[str, tuple[Any, Any, Any]] = {}
+        training_weight_audit: dict[str, Any] | None = None
         for arm in ARM_NAMES:
             raw_batch, observation_weights = build_batch(training, arm, observation_weights=True)
             if observation_weights is None:
                 raise RuntimeError("observation weights were not returned")
             standardizer = fit_weighted_standardizer(raw_batch.inputs, observation_weights)
-            train_batch, _ = build_batch(training, arm, standardizer=standardizer)
+            train_batch, _ = build_batch(training, arm, standardizer=standardizer, observation_weights=True)
+            current_audit = _training_weight_audit(training, train_batch.window_weights)
+            if training_weight_audit is None:
+                training_weight_audit = current_audit
+            elif not np.array_equal(train_batch.window_weights, support_by_arm[next(iter(support_by_arm))][1].window_weights):
+                raise RuntimeError("training window weights differ across arms")
             held_batch, _ = build_batch(heldout, arm, standardizer=standardizer)
             support_by_arm[arm] = (standardizer, train_batch, held_batch)
+        if training_weight_audit is None:
+            raise RuntimeError("training weight audit was not produced")
         for arm in ARM_NAMES:
             standardizer, train_batch, held_batch = support_by_arm[arm]
             for seed in SEEDS:
@@ -426,7 +462,7 @@ def run(source_root: Path = SOURCE_ARTIFACT_ROOT, output_root: Path = OUTPUT_ROO
                     oof_by_id[str(example["window_id"])][f"{arm}_score_seed_{seed}"] = float(score)
                 model_records.append({"held_out_source": held_out, "arm": arm, "seed": seed, "training_source_count": len({str(item["source_id"]) for item in training}), "training_real_count": sum(window_label(item) == 0 for item in training), "training_fake_count": sum(window_label(item) == 1 for item in training), "held_out_window_count": len(heldout), "training_triplet_count": train_batch.n_triplets, "held_out_triplet_count": held_batch.n_triplets, "zero_variance_dimensions": list(standardizer.zero_variance_dimensions), "fit": fit_info, "model": serialize_model(model, standardizer)})
                 del model
-        fold_support.append({"held_out_source": held_out, "status": "SCORED", "held_out_window_count": len(heldout), "training_source_count": len({str(item["source_id"]) for item in training}), "training_real_count": sum(window_label(item) == 0 for item in training), "training_fake_count": sum(window_label(item) == 1 for item in training), "held_out_main_windows": sum(window_label(item) is not None for item in heldout)})
+        fold_support.append({"held_out_source": held_out, "status": "SCORED", "held_out_window_count": len(heldout), "training_source_count": len({str(item["source_id"]) for item in training}), "training_real_count": sum(window_label(item) == 0 for item in training), "training_fake_count": sum(window_label(item) == 1 for item in training), "held_out_main_windows": sum(window_label(item) is not None for item in heldout), **training_weight_audit})
 
     oof_rows: list[dict[str, Any]] = []
     for row in oof_by_id.values():
@@ -476,6 +512,7 @@ def run(source_root: Path = SOURCE_ARTIFACT_ROOT, output_root: Path = OUTPUT_ROO
             "seeds": list(SEEDS),
             "model_records": len(model_records),
             "device": "CPU",
+            "loss_weighting": "source/class-balanced Batch.window_weights passed to train_model; see evaluation/fold_support.csv",
         },
         "source_level_metrics": source_rows,
         "source_bootstrap": bootstrap,

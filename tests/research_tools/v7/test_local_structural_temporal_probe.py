@@ -1,14 +1,19 @@
 """Contract tests for the bounded local structural temporal pilot."""
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
+import torch
+from torch import nn
 
+import research_tools.v7.local_structural_temporal_probe.run_pilot as run_pilot
 from research_tools.v7.local_structural_temporal_probe.model import (
     build_batch,
     fit_weighted_standardizer,
     source_class_window_weights,
+    weighted_window_bce,
     window_label,
 )
 from research_tools.v7.local_structural_temporal_probe.representation import (
@@ -159,10 +164,108 @@ def test_training_batch_and_standardizer_can_exclude_held_out_source():
     assert held_batch.inputs.shape[0] == 1
 
 
+def _imbalanced_training_examples():
+    rows = []
+    for source, role, count in (("a", "real", 1), ("a", "fake", 3), ("b", "real", 2), ("b", "fake", 1)):
+        for index in range(count):
+            row = _example(source, role, f"{source}-{role}-{index}")
+            row["pair_id"] = f"pair-{source}"
+            rows.append(row)
+    return rows
+
+
+def test_actual_training_batch_carries_source_class_window_weights():
+    training = _imbalanced_training_examples()
+    raw_batch, observation_weights = build_batch(training, "ORDERED_SECOND", observation_weights=True)
+    standardizer = fit_weighted_standardizer(raw_batch.inputs, observation_weights)
+    train_batch, _ = build_batch(training, "ORDERED_SECOND", standardizer=standardizer, observation_weights=True)
+    expected = {"a-real-0": 7.0 / 4.0, "a-fake-0": 7.0 / 12.0, "a-fake-1": 7.0 / 12.0, "a-fake-2": 7.0 / 12.0, "b-real-0": 7.0 / 8.0, "b-real-1": 7.0 / 8.0, "b-fake-0": 7.0 / 4.0}
+    np.testing.assert_allclose(train_batch.window_weights, [expected[row["window_id"]] for row in training])
+    assert not np.allclose(train_batch.window_weights, 1.0)
+    for source, role in (("a", "real"), ("a", "fake"), ("b", "real"), ("b", "fake")):
+        indices = [index for index, row in enumerate(training) if row["source_id"] == source and row["role"] == role]
+        assert float(np.sum(train_batch.window_weights[indices])) == pytest.approx(7.0 / 4.0)
+
+
+def test_weighted_window_bce_is_not_window_equivalent():
+    logits = torch.tensor([-2.0, -0.5, 0.75, 2.0], dtype=torch.float32)
+    labels = torch.tensor([0.0, 1.0, 0.0, 1.0], dtype=torch.float32)
+    weights = torch.tensor([2.0, 0.5, 0.5, 1.0], dtype=torch.float32)
+    actual = weighted_window_bce(logits, labels, weights)
+    per_window = nn.functional.binary_cross_entropy_with_logits(logits, labels, reduction="none")
+    expected = torch.sum(per_window * weights) / torch.sum(weights)
+    assert actual.item() == pytest.approx(expected.item())
+    assert actual.item() != pytest.approx(float(torch.mean(per_window)))
+
+
+def test_run_passes_weighted_training_batch_to_train_model(monkeypatch, tmp_path: Path):
+    examples = _imbalanced_training_examples()
+    input_rows = [
+        {
+            "window_id": row["window_id"],
+            "pair_id": row["window_id"],
+            "source_id": row["source_id"],
+            "role": row["role"],
+            "kind": row["kind"],
+            "label": window_label(row),
+            "support_status": "VALID",
+            "invalid_reasons": [],
+            "match_error_summary_s": {"max": 0.0},
+            "actual_interval_summary_s": {"median": 0.1},
+        }
+        for row in examples
+    ]
+    details = {
+        "population": {
+            "all_source_ids": ["a", "b"],
+            "invalid_support_sources": [],
+            "selected_pairs": 2,
+            "frozen_windows": len(examples),
+            "completed_frontend_windows": len(examples),
+            "valid_support_windows": len(examples),
+            "support_source_ids": ["a", "b"],
+            "source_artifact_root": "fixture",
+            "frontend_window_results_sha256": "fixture",
+            "selected_pairs_sha256": "fixture",
+            "window_manifest_sha256": "fixture",
+        },
+        "input_rows": input_rows,
+    }
+    captured = []
+
+    def fake_train_model(batch, *, seed, epochs=200):
+        captured.append(np.array(batch.window_weights, copy=True))
+        return object(), {"seed": seed, "epochs": epochs, "initial_loss": 0.0, "final_loss": 0.0, "min_loss": 0.0, "loss_history": [0.0]}
+
+    monkeypatch.setattr(run_pilot, "load_frozen_examples", lambda source_root: (examples, [], details))
+    monkeypatch.setattr(run_pilot, "train_model", fake_train_model)
+    monkeypatch.setattr(run_pilot, "score_model", lambda model, batch: np.zeros(batch.n_windows, dtype=np.float64))
+    monkeypatch.setattr(run_pilot, "serialize_model", lambda model, standardizer: {})
+    monkeypatch.setattr(run_pilot, "SEEDS", (20260909,))
+    run_pilot.run(source_root=tmp_path / "source", output_root=tmp_path / "output")
+    assert captured
+    assert all(not np.allclose(weights, 1.0) for weights in captured)
+    assert any(np.isclose(weights.max(), 2.0) for weights in captured)
+
+
 def test_source_bootstrap_is_reproducible_and_paired():
-    rows = [{"source_id": f"s{i}", "UNORDERED_STATE_auroc": 0.4 + i * 0.01, "ORDERED_FIRST_auroc": 0.45 + i * 0.01, "ORDERED_SECOND_auroc": 0.5 + i * 0.01, "PERMUTED_SECOND_auroc": 0.42 + i * 0.01} for i in range(12)]
+    rows = [
+        {"source_id": "s0", "UNORDERED_STATE_auroc": 0.2, "ORDERED_FIRST_auroc": 0.5, "ORDERED_SECOND_auroc": 0.6, "PERMUTED_SECOND_auroc": 0.3},
+        {"source_id": "s1", "UNORDERED_STATE_auroc": 0.7, "ORDERED_FIRST_auroc": 0.1, "ORDERED_SECOND_auroc": 0.9, "PERMUTED_SECOND_auroc": 0.8},
+        {"source_id": "s2", "UNORDERED_STATE_auroc": 0.4, "ORDERED_FIRST_auroc": 0.9, "ORDERED_SECOND_auroc": 0.2, "PERMUTED_SECOND_auroc": 0.1},
+        {"source_id": "s3", "UNORDERED_STATE_auroc": 0.8, "ORDERED_FIRST_auroc": 0.3, "ORDERED_SECOND_auroc": 0.4, "PERMUTED_SECOND_auroc": 0.9},
+    ]
     left = paired_source_bootstrap(rows)
     right = paired_source_bootstrap(rows)
     assert left == right
-    assert left["N"] == 12
-    assert left["gains"]["C-A"]["mean"] == pytest.approx(0.1)
+    assert left["N"] == 4
+    for name, other in (("C-A", "UNORDERED_STATE"), ("C-D", "PERMUTED_SECOND"), ("C-B", "ORDERED_FIRST")):
+        raw_delta = np.asarray([row["ORDERED_SECOND_auroc"] - row[f"{other}_auroc"] for row in rows], dtype=np.float64)
+        assert left["gains"][name]["mean"] == pytest.approx(float(np.mean(raw_delta)))
+        assert left["gains"][name]["mean"] == pytest.approx(left["arms"]["ORDERED_SECOND"]["mean"] - left["arms"][other]["mean"])
+        rng = np.random.default_rng(20260909)
+        indices = rng.integers(0, len(rows), size=(10000, len(rows)))
+        c = np.asarray([row["ORDERED_SECOND_auroc"] for row in rows], dtype=np.float64)
+        other_values = np.asarray([row[f"{other}_auroc"] for row in rows], dtype=np.float64)
+        expected_ci = np.percentile(np.mean(c[indices] - other_values[indices], axis=1), [2.5, 97.5])
+        np.testing.assert_allclose(left["gains"][name]["ci95"], expected_ci)

@@ -128,6 +128,13 @@ class Batch:
     n_windows: int
 
 
+def weighted_window_bce(logits: torch.Tensor, labels: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
+    """Compute the predeclared mean-normalized weighted window BCE."""
+
+    losses = nn.functional.binary_cross_entropy_with_logits(logits, labels, reduction="none")
+    return torch.sum(losses * weights) / torch.sum(weights)
+
+
 def _triplets(example: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     values = example.get("triplets")
     if values is None:
@@ -271,8 +278,7 @@ def train_model(batch: Batch, *, seed: int, epochs: int = int(MODEL_CONFIG["epoc
     for _ in range(int(epochs)):
         optimizer.zero_grad(set_to_none=True)
         logits = model(batch)
-        losses = nn.functional.binary_cross_entropy_with_logits(logits, labels, reduction="none")
-        loss = torch.sum(losses * weights) / torch.sum(weights)
+        loss = weighted_window_bce(logits, labels, weights)
         loss.backward()
         optimizer.step()
         loss_history.append(float(loss.detach().cpu()))
