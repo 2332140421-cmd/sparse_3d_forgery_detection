@@ -12,7 +12,7 @@
 ## 固定协议与输入
 
 - Part A：复用既有 192 个窗口和 64 点 NPZ，仅重建历史半段 component、直接图边、内部 pair、triplet 共同成员及覆盖状态；不运行模型。
-- Part B：按 `source_id` 排序选取 01KML、04LAX、0AGCS、0BX9N；每个 source 最早 MANIP 和 CTRL，各取 real/fake，共 16 个窗口。没有可映射的空间 ROI，因此样本是固定便利样本，`ROI_PENDING`。
+- Part B：按 `source_id` 排序选取 01KML、04LAX、0AGCS、0BX9N；每个 source 最早 MANIP 和 CTRL，各取 real/fake，共 16 个窗口。当前派生目录仍没有可核验的人工 ROI，因此本次收尾状态为 `ROI_ANNOTATION_READY`，不把便利样本或模型响应当作局部真值。
 - 64 点为现有 `grid_size=8`；289 点为相同 `process_size=256` 下 `grid_size=17`。两者使用 `linspace(0,255,grid_size+2)[1:-1]`，64 点在 289 网格的奇数行/列位置，映射见 `query_mapping.csv`。
 - 两密度在同一窗口中共享一次 depth、首帧固定焦距内参和 Open3D RGB-D pose 结果；tracker 只改变 query grid。provider、checkpoint、query chunk=64、分辨率 256 和 component 阈值均不变。
 - 289 点的嵌套 64 点与本轮匹配 64 点在 16 个窗口均 visibility 一致率 1.0、UV 中位误差 0、XYZ 中位误差 0；历史 64 与本轮匹配 64 的 UV/visibility 也一致，但 01KML CTRL real 的 XYZ 中位差异为 56.68 m，故历史 64→289 不是纯密度比较，主比较使用本轮匹配 64→289。
@@ -38,12 +38,14 @@ Part A 的 192 窗口中，166 个有有效 triplet，26 个为 `NO_VALID_TRIPLE
 - `component_diagnostics.csv`：192 历史窗口及 32 个新密度结果，区分图边和内部 pair。
 - `density_comparison.csv`：两密度有效率、共同成员、component 和匹配误差。
 - `review/index.html`：无外部 CDN 的静态页面，可在派生目录上运行 `python3 -m http.server 8765` 后访问。页面可在同一 source/role/PTS 下切换 64/289、component 和精确帧；黄色点表示未归入 component，紫/青色只表示密度网格，白圈表示 selected triplet common member。页面引用既有短片副本，不复制完整视频。
+- `review/index.html` 现在提供最小的原始像素矩形圈选、JSON 导入/导出和 64/289 同帧切换入口；浏览器输入保存在 `roi_review/annotations.json` 后，离线程序才会重新校验 source、frame、PTS、尺寸和 ROI 边界。
+- `roi_review/`：`roi_validation.csv`、`per_frame_coverage.csv`、`per_component_triplet_coverage.csv` 和 `density_comparison.csv` 只在人工输入通过校验后填充实际计数；当前没有有效人工记录，计数表保持表头并不输出虚构结果。单帧 ROI 不自动传播到其他 triplet 时刻，`TEMPORAL_ROI_PENDING` 只表示仍需人工逐帧确认。
 
 服务器本轮未实际执行浏览器视觉验收，只完成静态 HTTP/JSON 路径检查；因此不能把页面存在等同于已完成浏览器验收。
 
 ## 科学边界与下一步
 
-本轮没有人工空间 ROI，不能支持像素级定位、局部篡改真值或“某 component 就是编辑部位”的主张。64 个初始查询也不等于每帧 64 个有效三维点；geometry-validity 不代表测量精确；component 连边阈值不是伪造判定阈值；MANIP 时间段不表示每个局部都有可见内部形变。
+本轮没有人工空间 ROI，不能支持像素级定位、局部篡改真值或“某 component 就是编辑部位”的主张。64 个初始查询也不等于每帧 64 个有效三维点；geometry-validity 不代表测量精确；component 连边阈值不是伪造判定阈值；MANIP 时间段不表示每个局部都有可见内部形变。未来有效 ROI 的 64/289 差值只能称为局部测量支撑差异，不是准确率、异常分数或检测概率。
 
 唯一优先建议：若后续仍需要局部检测验证，先以本轮 matched 64/289 结果中共同成员与 component 局部性为依据做有限的局部测量组织/追踪输入审查；不要把缺失率直接加入分类器，也不要因本轮支撑增加就跳过匹配检测验证。
 

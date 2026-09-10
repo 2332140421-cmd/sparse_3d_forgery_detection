@@ -14,6 +14,7 @@ from research_tools.v7.observation_density_diagnostic.diagnostics import (
     query_grid_coordinates,
     tracking_validity_rows,
 )
+from research_tools.v7.observation_density_diagnostic.run_diagnostic import _review_html
 from research_tools.v7.local_structural_temporal_probe.representation import build_window_support
 
 
@@ -148,3 +149,13 @@ def test_review_dense_grid_marks_64_subset_at_odd_coordinates():
     for point in review["frames"][0]["points"]:
         row, col = divmod(point[0], 17)
         assert point[7] == (row % 2 == 1 and col % 2 == 1)
+
+
+def test_density_review_has_source_frame_roi_entry_without_blocking_video_controls():
+    html = _review_html()
+    assert "圈选原始像素 ROI" in html
+    assert "导出 JSON" in html and "导入 JSON" in html
+    assert "source_frame_index" in html and "timestamp_s" in html
+    assert "density64" in html and "density289" in html
+    assert "pointer-events:none" in html
+    assert "同一 window、同一源帧" in html

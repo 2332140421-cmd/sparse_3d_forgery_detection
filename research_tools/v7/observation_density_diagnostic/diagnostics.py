@@ -413,4 +413,25 @@ def review_frame_data(
         "graph_edges_total": len(edges),
         "component_internal_pair_count": diagnostic.get("component_internal_pair_count", 0),
         "valid_triplet_count": diagnostic.get("valid_triplet_count", 0),
+        # Keep the actual saved support identity beside the display points.
+        # The ROI diagnostic uses these records to count unique unordered
+        # pairs; it must not infer relationships from the rendered lines.
+        "triplets": [
+            {
+                "triplet_id": int(triplet.get("triplet_id", index)),
+                "component_index": int(triplet.get("component_index", -1)),
+                "source_frame_indices": [int(value) for value in triplet.get("frame_indices", [])],
+                "timestamps_s": [float(value) for value in triplet.get("timestamps_s", [])],
+                "common_member_indices": [int(value) for value in triplet.get("common_member_indices", [])],
+                "pair_indices": [[int(pair[0]), int(pair[1])] for pair in triplet.get("pair_indices", [])],
+            }
+            for index, triplet in enumerate(support.get("triplets", []))
+        ],
+        "components": [
+            {
+                "component_index": int(index),
+                "member_indices": [int(value) for value in members],
+            }
+            for index, members in enumerate(diagnostic.get("component_members", []))
+        ],
     }

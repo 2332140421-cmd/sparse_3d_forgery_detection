@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 import platform
 import time
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 
@@ -43,6 +43,14 @@ from research_tools.v7.observation_density_diagnostic.diagnostics import (
     nested_query_mapping,
     review_frame_data,
     tracking_validity_rows,
+)
+from research_tools.v7.observation_density_diagnostic.roi import (
+    OUTSIDE_DENSITY_POPULATION,
+    ROI_SCHEMA_VERSION,
+    TEMPORAL_ROI_PENDING,
+    VALID,
+    compare_density_details,
+    validate_annotations,
 )
 
 
@@ -158,6 +166,14 @@ def _protocol() -> dict[str, Any]:
             "unknown_causes": "The canonical ParticleSequence masks do not separate true occlusion from tracker failure or depth from pose failure",
             "no_fake_evidence": "TRACK_NOT_VISIBLE and missing geometry are not treated as forgery evidence",
             "roi_status": "ROI_PENDING; local artifact has no mapped spatial ground truth",
+        },
+        "roi_contract": {
+            "coordinates": "original decoded-video pixel coordinates; rectangle boundaries are inclusive",
+            "identity": "source_id, window_id, role, source_frame_index and decoder PTS are required",
+            "comparison": "density64 and density289 use the same window, source frame, PTS, frame size and rectangle",
+            "counts": "unique actual triplet common members and normalized unordered track-ID pairs; not accuracy or anomaly scores",
+            "temporal": "a one-frame annotation is TEMPORAL_ROI_PENDING and is never copied to other triplet frames",
+            "current_status": "ROI_ANNOTATION_READY until a human exports a confirmed annotation",
         },
         "reuse": {
             "historical_64": str(BASE_ROOT / "particles"),
@@ -336,6 +352,149 @@ def _load_front_results(output: Path) -> dict[str, dict[str, Any]]:
     if not path.is_file():
         return {}
     return {str(item["result_key"]): item for item in read_json(path).get("results", [])}
+
+
+def _load_roi_annotations(path: Path) -> list[dict[str, Any]]:
+    """Read human input without replacing or normalizing the original file."""
+
+    if not path.is_file():
+        return []
+    value = read_json(path)
+    if isinstance(value, list):
+        return [dict(item) for item in value if isinstance(item, dict)]
+    if isinstance(value, dict) and isinstance(value.get("annotations"), list):
+        return [dict(item) for item in value["annotations"] if isinstance(item, dict)]
+    raise ValueError(f"ROI annotations must be a JSON list: {path}")
+
+
+def _write_roi_outputs(
+    output: Path,
+    detail_by_density: Mapping[tuple[str, str], Mapping[str, Any]],
+    manifest_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Create the small ROI hand-off and compute only explicitly supplied ROIs."""
+
+    roi_root = output / "roi_review"
+    roi_root.mkdir(parents=True, exist_ok=True)
+    annotation_path = roi_root / "annotations.json"
+    if not annotation_path.exists():
+        write_json(annotation_path, [])
+    template_path = roi_root / "annotation_template.json"
+    if not template_path.exists():
+        write_json(
+            template_path,
+            {
+                "schema_version": ROI_SCHEMA_VERSION,
+                "instructions": "Fill one row per manually confirmed source frame; coordinates are original pixels.",
+                "required": ["source_id", "window_id", "role", "source_frame_index", "timestamp_s", "frame_size_hw", "rect"],
+                "rect": {"x": 0, "y": 0, "w": 1, "h": 1},
+                "observation": "uncertain",
+                "tracking_observation": "uncertain",
+                "notes": "",
+            },
+        )
+    annotations = _load_roi_annotations(annotation_path)
+    manifest_by_window = {str(row["window_id"]): row for row in manifest_rows}
+    density64 = {window_id: detail for (window_id, density), detail in detail_by_density.items() if density == "density64"}
+    validation_rows = validate_annotations(annotations, density64, manifest_by_window)
+    write_csv(
+        roi_root / "roi_validation.csv",
+        validation_rows,
+        ["status", "window_id", "source_id", "role", "source_frame_index", "timestamp_s", "reason", "frame_size_hw", "rect"],
+    )
+    frame_rows: list[dict[str, Any]] = []
+    component_rows: list[dict[str, Any]] = []
+    comparisons: list[dict[str, Any]] = []
+    valid_count = 0
+    for annotation, validation in zip(annotations, validation_rows):
+        if validation.get("status") != VALID:
+            continue
+        valid_count += 1
+        normalized = dict(validation)
+        window_id = str(normalized["window_id"])
+        detail64 = detail_by_density.get((window_id, "density64"))
+        detail289 = detail_by_density.get((window_id, "density289"))
+        if detail64 is None or detail289 is None:
+            validation["status"] = OUTSIDE_DENSITY_POPULATION
+            validation["reason"] = "both density details are required"
+            continue
+        comparison, per_frame, per_component = compare_density_details(detail64, detail289, normalized)
+        comparisons.append(comparison)
+        frame_rows.extend(per_frame)
+        component_rows.extend(per_component)
+    write_csv(
+        roi_root / "per_frame_coverage.csv",
+        frame_rows,
+        [
+            "window_id", "source_id", "role", "source_frame_index", "timestamp_s", "density",
+            "roi_x", "roi_y", "roi_w", "roi_h", "visible_query_points", "geometry_valid_points",
+            "valid_history_component_points", "valid_triplet_common_points", "internal_pairs_both_endpoints",
+            "cross_roi_pairs_one_endpoint", "outside_pairs_both_endpoints", "component_ids", "triplet_ids",
+            "model_sample_status",
+        ],
+    )
+    write_csv(
+        roi_root / "per_component_triplet_coverage.csv",
+        component_rows,
+        [
+            "component_index", "triplet_id", "source_frame_index", "triplet_common_members_total",
+            "roi_common_members", "actual_internal_pairs_total", "roi_internal_pairs", "cross_roi_pairs",
+            "outside_pairs", "roi_internal_pair_fraction",
+        ],
+    )
+    write_csv(
+        roi_root / "density_comparison.csv",
+        comparisons,
+        [
+            "window_id", "source_id", "role", "source_frame_index", "timestamp_s", "same_source_frame",
+            "timestamp_abs_difference_s", "density64_visible_query_points", "density289_visible_query_points",
+            "density64_geometry_valid_points", "density289_geometry_valid_points",
+            "density64_valid_triplet_common_points", "density289_valid_triplet_common_points",
+            "density64_internal_pairs_both_endpoints", "density289_internal_pairs_both_endpoints",
+            "density64_cross_roi_pairs_one_endpoint", "density289_cross_roi_pairs_one_endpoint",
+            "support_status", "interpretation",
+        ],
+    )
+    valid_frames_by_window: dict[str, set[int]] = {}
+    for row in validation_rows:
+        if row.get("status") == VALID:
+            valid_frames_by_window.setdefault(str(row["window_id"]), set()).add(int(row["source_frame_index"]))
+    if not valid_frames_by_window:
+        temporal_status = "NO_ROI"
+    elif any(len(frames) < 3 for frames in valid_frames_by_window.values()):
+        temporal_status = TEMPORAL_ROI_PENDING
+    else:
+        temporal_status = "READY_FOR_THREE_FRAME_REVIEW"
+    if comparisons:
+        status = "ROI_COVERAGE_COMPARISON_COMPLETE"
+    else:
+        status = "ROI_ANNOTATION_READY"
+    summary = {
+        "status": status,
+        "schema_version": ROI_SCHEMA_VERSION,
+        "annotation_count": len(annotations),
+        "valid_annotation_count": valid_count,
+        "comparison_count": len(comparisons),
+        "temporal_status": temporal_status,
+        "population": {"source_count": len({str(row["source_id"]) for row in manifest_rows}), "window_count": len(manifest_rows)},
+        "interpretation": "ROI counts describe measurement support only; they are not spatial ground truth, accuracy, anomaly score, or detection probability.",
+        "input": str(annotation_path),
+        "pending_user_fields": ["source_id", "window_id", "role", "source_frame_index", "timestamp_s", "frame_size_hw", "rect", "observation", "tracking_observation"],
+    }
+    write_json(roi_root / "summary.json", summary)
+    return {
+        "status": status,
+        "schema_version": ROI_SCHEMA_VERSION,
+        "annotation_path": "../roi_review/annotations.json",
+        "template_path": "../roi_review/annotation_template.json",
+        "summary_path": "../roi_review/summary.json",
+        "validation_path": "../roi_review/roi_validation.csv",
+        "comparison_path": "../roi_review/density_comparison.csv",
+        "annotation_count": len(annotations),
+        "valid_annotation_count": valid_count,
+        "comparison_count": len(comparisons),
+        "temporal_status": temporal_status,
+    }
 
 
 def _save_front_results(output: Path, results: dict[str, dict[str, Any]]) -> None:
@@ -541,6 +700,7 @@ def build_review(output: Path) -> dict[str, Any]:
     detail_root = review_root / "details"
     detail_root.mkdir(parents=True, exist_ok=True)
     index_rows: list[dict[str, Any]] = []
+    detail_by_density: dict[tuple[str, str], dict[str, Any]] = {}
     for key, result in sorted(results.items()):
         prefix = Path(result["sequence_prefix"])
         sequence = load_particle_sequence(prefix)
@@ -581,6 +741,7 @@ def build_review(output: Path) -> dict[str, Any]:
             "component_internal_pair_count": result["component_internal_pair_count"],
             "roi_status": "ROI_PENDING",
         })
+        detail_by_density[(str(result["window_id"]), str(result["density"]))] = detail
         detail_path = detail_root / f"{_safe(key)}.json"
         write_json(detail_path, detail)
         index_rows.append({
@@ -594,10 +755,12 @@ def build_review(output: Path) -> dict[str, Any]:
             "video_url": video_url,
             "media_status": media_status,
         })
+    roi_info = _write_roi_outputs(output, detail_by_density, read_json(output / "window_manifest.json"))
     write_json(review_root / "data.json", {
         "protocol": "v7-observation-density-diagnostic-v1",
         "browser_visual_acceptance": "not_run_on_server; static HTTP and JSON checks are provided",
         "windows": index_rows,
+        "roi_review": roi_info,
         "legend": {
             "yellow": "not in a history component",
             "component": "component index only; not a real/fake or semantic label",
@@ -607,7 +770,12 @@ def build_review(output: Path) -> dict[str, Any]:
     })
     html = _review_html()
     (review_root / "index.html").write_text(html, encoding="utf-8")
-    return {"details": len(index_rows), "available_media": sum(row["media_status"] == "AVAILABLE" for row in index_rows)}
+    return {
+        "details": len(index_rows),
+        "available_media": sum(row["media_status"] == "AVAILABLE" for row in index_rows),
+        "roi_status": roi_info["status"],
+        "roi_annotation_count": roi_info["annotation_count"],
+    }
 
 
 def _review_html() -> str:
@@ -615,21 +783,39 @@ def _review_html() -> str:
 <meta charset="utf-8">
 <title>V7 observation density diagnostic</title>
 <style>
-body{font-family:system-ui,sans-serif;background:#101827;color:#e8edf5;margin:20px} select,button{font-size:1rem;margin:4px;padding:5px} .note{background:#202d40;padding:10px;border-radius:8px} .stage{position:relative;max-width:960px} video{max-width:960px;width:100%;background:#000} canvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none} #stats{white-space:pre-wrap;background:#202d40;padding:10px;border-radius:8px} table{border-collapse:collapse}td,th{border:1px solid #46566c;padding:4px}
+body{font-family:system-ui,sans-serif;background:#101827;color:#e8edf5;margin:20px}
+select,button,input{font-size:1rem;margin:4px;padding:5px} .note{background:#202d40;padding:10px;border-radius:8px}
+.stage{position:relative;max-width:960px;background:#000} video{max-width:960px;width:100%;display:block;background:#000}
+canvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none} #stats,#roiStats{white-space:pre-wrap;background:#202d40;padding:10px;border-radius:8px}
+table{border-collapse:collapse}td,th{border:1px solid #46566c;padding:4px}.pending{color:#fbbf24}
 </style>
 <h1>V7 观测密度与局部分组诊断</h1>
-<div class="note">这是固定前端、无训练的观测支撑诊断。点消失不等于伪造；component 编号不是语义部位或真假标签。ROI 状态：ROI_PENDING。视频若显示 AVAILABLE，来自既有短片副本；若显示 NOT_MATERIALIZED，只记录源文件而未复制媒体。源帧与 PTS 列表是精确核对依据，播放器 seek 只是浏览便利。</div>
-<p><label>窗口 <select id="window"></select></label><label>密度 <select id="density"><option value="density64">64</option><option value="density289">289</option></select></label><label>component <select id="component"><option value="-1">全部</option></select></label> <button id="prev">上一帧</button><button id="next">下一帧</button></p>
+<div class="note">这是固定前端、无训练的观测支撑诊断。点消失不等于伪造；component 编号不是语义部位或真假标签。<span class="pending">ROI 仅在人工确认后计算，当前没有预填空间真值。</span>源帧与 PTS 列表是精确核对依据，播放器 seek 只是浏览便利。</div>
+<p><label>source <select id="source"></select></label><label>kind <select id="kind"><option value="ALL">ALL</option><option value="MANIP">MANIP</option><option value="CTRL">CTRL</option></select></label><label>role <select id="role"><option value="ALL">ALL</option><option value="real">real</option><option value="fake">fake</option></select></label></p>
+<p><label>window <select id="window"></select></label><label>density <select id="density"><option value="density64">64</option><option value="density289">289</option></select></label><label>component <select id="component"><option value="-1">全部</option></select></label> <button id="prev">上一帧</button><button id="next">下一帧</button></p>
 <div class="stage"><video id="video" controls></video><canvas id="canvas"></canvas></div>
-<div id="stats"></div><h2>精确模型帧 / PTS</h2><table><thead><tr><th>序号</th><th>源帧</th><th>PTS(s)</th></tr></thead><tbody id="frames"></tbody></table>
+<p><label><input id="roiMode" type="checkbox"> 圈选原始像素 ROI</label><button id="clearRoi">清除 ROI</button><button id="saveRoi">保存当前人工观察</button><button id="exportRoi">导出 JSON</button><label>导入 JSON <input id="importRoi" type="file" accept="application/json"></label></p>
+<p><label>观察<select id="observation"><option>uncertain</option><option>internal_deformation</option><option>overall_motion</option><option>appearance_change</option><option>no_obvious_distortion</option></select></label><label>跟踪<select id="tracking"><option>uncertain</option><option>stable_visible_surface</option><option>sliding</option><option>surface_visible_point_missing</option><option>occluded</option></select></label><input id="notes" placeholder="人工备注"></p>
+<div id="roiStats"></div><div id="stats"></div><h2>精确源帧 / PTS</h2><table><thead><tr><th>序号</th><th>源帧</th><th>PTS(s)</th><th>模型实际使用</th></tr></thead><tbody id="frames"></tbody></table>
 <script>
-const state={windows:[],details:null,frame:0}; const $=id=>document.getElementById(id);
-async function init(){let d=await (await fetch('data.json')).json();state.windows=d.windows; for(let w of state.windows){let o=document.createElement('option');o.value=w.result_key;o.textContent=w.result_key; $('window').append(o)} $('window').onchange=load; $('density').onchange=load; $('component').onchange=draw; $('prev').onclick=()=>move(-1); $('next').onclick=()=>move(1); await load();}
-function chosen(){let w=state.windows.find(x=>x.result_key==$('window').value); if(!w){return null} let same=state.windows.filter(x=>x.window_id==w.window_id); let den=$('density').value; return same.find(x=>x.density==den)||same[0];}
-async function load(){let w=chosen(); if(!w)return; $('density').value=w.density; state.details=await (await fetch(w.detail_path)).json();state.frame=0; let c=$('component'); c.innerHTML='<option value="-1">全部</option>'; for(let x of state.details.component_summaries){let o=document.createElement('option');o.value=x.component_index;o.textContent='component '+x.component_index+' ('+x.member_count+' 点)';c.append(o)} $('video').src=state.details.video_url||''; $('video').load(); let tb=$('frames');tb.innerHTML='';state.details.frames.forEach((f,i)=>{let tr=document.createElement('tr');tr.innerHTML='<td>'+i+'</td><td>'+f.source_frame_index+'</td><td>'+f.timestamp_s.toFixed(6)+'</td>';tb.append(tr)}); draw();}
-function move(delta){if(!state.details)return;state.frame=Math.max(0,Math.min(state.details.frames.length-1,state.frame+delta)); let f=state.details.frames[state.frame]; $('video').currentTime=f.timestamp_s;draw();}
-function draw(){let d=state.details;if(!d)return;let f=d.frames[state.frame];let v=$('video'), c=$('canvas');c.width=f.width;c.height=f.height;let x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);let selected=+$('component').value;for(let p of f.points){let [slot,u,vv,vis,geo,comp,common,base]=p;if(selected>=0&&comp!==selected)continue;x.beginPath();x.arc(u,vv,common?8:base?5:3,0,Math.PI*2);x.fillStyle=comp<0?'#ffd400':(base?'#55d6ff':'#b084ff');x.fill();if(common){x.lineWidth=2;x.strokeStyle='#fff';x.stroke()}} $('stats').textContent='window='+d.window_id+' density='+d.density+' frame='+f.source_frame_index+' PTS='+f.timestamp_s.toFixed(6)+'\nvisible/geometry points='+f.points.filter(p=>p[3]&&p[4]).length+'/'+f.points.length+'\ncomponent direct graph edges shown='+Math.min(d.graph_edges_total,200)+' / actual='+d.graph_edges_total+'; internal measured pairs='+d.component_internal_pair_count+'; common triplet members='+d.common_member_slots.length+'\nmedia='+d.media_status+'; source-frame contract='+d.source_frame_contract;}
-init().catch(e=>{$('stats').textContent='页面初始化错误: '+e});
+const state={windows:[],details:null,frame:0,sourceFrame:null,roi:null,annotations:[],roiStatus:'ROI_ANNOTATION_READY'};const $=id=>document.getElementById(id);let dragStart=null;
+function unique(values){return [...new Set(values)].sort()}
+function filtered(){const source=$('source').value,kind=$('kind').value,role=$('role').value;return state.windows.filter(w=>(source==='ALL'||w.source_id===source)&&(kind==='ALL'||w.kind===kind)&&(role==='ALL'||w.role===role))}
+function rebuildWindows(){const rows=filtered(),seen=new Set(),select=$('window'),old=select.value;select.innerHTML='';for(const w of rows){if(seen.has(w.window_id))continue;seen.add(w.window_id);const o=document.createElement('option');o.value=w.window_id;o.textContent=w.source_id+' '+w.kind+' '+w.role+' '+w.window_id;select.append(o)}if([...select.options].some(o=>o.value===old))select.value=old}
+function chosen(){const id=$('window').value,den=$('density').value;return state.windows.find(w=>w.window_id===id&&w.density===den)||state.windows.find(w=>w.window_id===id)}
+function selectedWindow(){return state.windows.find(w=>w.window_id===$('window').value)||null}
+async function init(){const data=await (await fetch('data.json')).json();state.windows=data.windows||[];state.roiStatus=data.roi_review?.status||'ROI_ANNOTATION_READY';const sources=unique(state.windows.map(w=>w.source_id));$('source').innerHTML='<option value="ALL">ALL</option>'+sources.map(x=>'<option>'+x+'</option>').join('');rebuildWindows();for(const id of ['source','kind','role'])$(id).onchange=()=>{rebuildWindows();load()};$('window').onchange=load;$('density').onchange=load;$('component').onchange=draw;$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);$('roiMode').onchange=()=>{$('canvas').style.pointerEvents=$('roiMode').checked?'auto':'none';if(!$('roiMode').checked)dragStart=null};$('clearRoi').onclick=()=>{state.roi=null;draw();updateRoiStats()};$('saveRoi').onclick=saveAnnotation;$('exportRoi').onclick=exportAnnotations;$('importRoi').onchange=importAnnotations;await load();try{const r=await fetch(data.roi_review?.annotation_path||'../roi_review/annotations.json');const x=await r.json();state.annotations=Array.isArray(x)?x:(x.annotations||[])}catch(_){state.annotations=[]}updateRoiStats()}
+async function load(){const w=chosen();if(!w)return;const oldFrame=state.details?.frames?.[state.frame]?.source_frame_index;state.details=await (await fetch(w.detail_path)).json();let index=state.details.frames.findIndex(f=>f.source_frame_index===oldFrame);state.frame=index>=0?index:0;let c=$('component');c.innerHTML='<option value="-1">全部</option>';for(const x of state.details.component_summaries){const o=document.createElement('option');o.value=x.component_index;o.textContent='component '+x.component_index+' ('+x.member_count+' 点)';c.append(o)}$('video').src=state.details.video_url||'';$('video').load();$('video').onloadedmetadata=()=>seekFrame();let tb=$('frames');tb.innerHTML='';state.details.frames.forEach((f,i)=>{const tr=document.createElement('tr');const model=(state.details.triplets||[]).some(t=>t.source_frame_indices.includes(f.source_frame_index));tr.innerHTML='<td>'+i+'</td><td>'+f.source_frame_index+'</td><td>'+f.timestamp_s.toFixed(6)+'</td><td>'+ (model?'yes':'—') +'</td>';tb.append(tr)});draw();updateRoiStats()}
+function seekFrame(){if(!state.details)return;const f=state.details.frames[state.frame],first=state.details.frames[0];if(f&&first&&Number.isFinite($('video').duration))$('video').currentTime=Math.max(0,f.timestamp_s-first.timestamp_s)}
+function move(delta){if(!state.details)return;state.frame=Math.max(0,Math.min(state.details.frames.length-1,state.frame+delta));seekFrame();draw();updateRoiStats()}
+function canvasPoint(event){const f=state.details.frames[state.frame],r=$('canvas').getBoundingClientRect();return{x:(event.clientX-r.left)*f.width/r.width,y:(event.clientY-r.top)*f.height/r.height}}
+function draw(){const d=state.details;if(!d)return;const f=d.frames[state.frame],c=$('canvas');c.width=f.width;c.height=f.height;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);const selected=+$('component').value;for(const p of f.points){const [slot,u,v,vis,geo,comp,common,base]=p;if(selected>=0&&comp!==selected)continue;x.beginPath();x.arc(u,v,common?8:base?5:3,0,Math.PI*2);x.fillStyle=comp<0?'#ffd400':(base?'#55d6ff':'#b084ff');x.fill();if(common){x.lineWidth=2;x.strokeStyle='#fff';x.stroke()}}if(state.roi){x.strokeStyle='#facc15';x.lineWidth=3;x.setLineDash([8,5]);x.strokeRect(state.roi.x,state.roi.y,state.roi.w,state.roi.h);x.setLineDash([])}$('stats').textContent='window='+d.window_id+' density='+d.density+' frame='+f.source_frame_index+' PTS='+f.timestamp_s.toFixed(6)+'\nvisible/geometry points='+f.points.filter(p=>p[3]&&p[4]).length+'/'+f.points.length+'\ncomponent direct graph edges shown='+Math.min(d.graph_edges_total,200)+' / actual='+d.graph_edges_total+'; internal measured pairs='+d.component_internal_pair_count+'; common triplet members='+d.common_member_slots.length+'\nmedia='+d.media_status+'; source-frame contract='+d.source_frame_contract}
+function updateRoiStats(){const f=state.details?.frames?.[state.frame];$('roiStats').textContent='ROI status='+state.roiStatus+'; current source frame='+(f?.source_frame_index??'—')+' PTS='+(f?.timestamp_s?.toFixed(6)??'—')+'; ROI='+ (state.roi?JSON.stringify(state.roi):'未圈选') +'\n64/289 必须在同一 window、同一源帧、同一原始像素矩形上比较；程序计数结果写入 roi_review/。单帧标注不会自动成为三帧持续 ROI。'}
+function saveAnnotation(){const w=selectedWindow(),f=state.details?.frames?.[state.frame];if(!w||!f||!state.roi){$('roiStats').textContent='请先选择窗口、准确源帧并圈选 ROI';return}state.annotations.push({schema_version:'v1',source_id:w.source_id,window_id:w.window_id,role:w.role,source_frame_index:f.source_frame_index,timestamp_s:f.timestamp_s,frame_size_hw:[f.height,f.width],rect:{...state.roi},density_reference:'both',observation:$('observation').value,tracking_observation:$('tracking').value,notes:$('notes').value||''});$('roiStats').textContent='已保存浏览器内标注 '+state.annotations.length+' 条；请导出 JSON 后交给离线计数程序。'}
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function exportAnnotations(){download('v7_density_roi_annotations.json',JSON.stringify(state.annotations,null,2),'application/json')}
+async function importAnnotations(event){const file=event.target.files[0];if(!file)return;try{const x=JSON.parse(await file.text());state.annotations=Array.isArray(x)?x:(x.annotations||[]);const a=state.annotations.find(x=>x.window_id===$('window').value);if(a){state.frame=state.details.frames.findIndex(f=>f.source_frame_index===Number(a.source_frame_index));state.frame=Math.max(0,state.frame);state.roi=a.rect||a.region;seekFrame();draw()}$('roiStats').textContent='已导入 '+state.annotations.length+' 条；程序仍会重新校验源帧、PTS、尺寸和边界。'}catch(error){$('roiStats').textContent='导入失败：'+error.message}}
+$('canvas').addEventListener('pointerdown',e=>{if(!$('roiMode').checked||!state.details)return;dragStart=canvasPoint(e);$('canvas').setPointerCapture(e.pointerId)});$('canvas').addEventListener('pointermove',e=>{if(!dragStart)return;const p=canvasPoint(e);state.roi={x:Math.min(dragStart.x,p.x),y:Math.min(dragStart.y,p.y),w:Math.abs(p.x-dragStart.x),h:Math.abs(p.y-dragStart.y)};draw();updateRoiStats()});$('canvas').addEventListener('pointerup',e=>{if(!dragStart)return;const p=canvasPoint(e);state.roi={x:Math.min(dragStart.x,p.x),y:Math.min(dragStart.y,p.y),w:Math.abs(dragStart.x-p.x),h:Math.abs(dragStart.y-p.y)};dragStart=null;draw();updateRoiStats()});$('video').addEventListener('timeupdate',()=>{if(!state.details)return;const first=state.details.frames[0];const target=first.timestamp_s+$('video').currentTime;const i=state.details.frames.reduce((best,f,index)=>Math.abs(f.timestamp_s-target)<Math.abs(state.details.frames[best].timestamp_s-target)?index:best,0);if(i!==state.frame){state.frame=i;draw();updateRoiStats()}});init().catch(e=>{$('stats').textContent='页面初始化错误: '+e});
 </script>'''
 
 
@@ -703,7 +889,7 @@ def finalize(output: Path) -> dict[str, Any]:
             "max_arm_elapsed_s": float(max((float(item["elapsed_s"]) for item in results.values()), default=0.0)),
             "review": review_summary,
         },
-        "roi_status": "ROI_PENDING",
+        "roi_status": review_summary.get("roi_status", "ROI_ANNOTATION_READY"),
         "supported": {
             "nested_query_mapping": True,
             "same_depth_pose_per_density_window": all(item.get("depth_pose_computed_once_for_window") for item in results.values()),
@@ -745,7 +931,9 @@ Part A 重建全部 {summary['part_a']['windows']} 个历史64点窗口；冻结
 
 ## 限制
 
-本轮不训练检测器、不使用真假标签做分组、不改变 component 阈值、不修改正式检测链。空间 ROI 为 `ROI_PENDING`，因此不能报告像素级或局部伪造覆盖率。输出不是训练就绪的正式数据集。
+本轮不训练检测器、不使用真假标签做分组、不改变 component 阈值、不修改正式检测链。当前空间 ROI 状态为 `{summary['roi_status']}`；没有人工确认矩形时只交付 `roi_review/` 的标注入口与离线计数协议，不能报告像素级或局部伪造覆盖率。输出不是训练就绪的正式数据集。
+
+ROI 收尾产物位于 `roi_review/`：`annotations.json` 保留人工输入，`roi_validation.csv` 校验 source/frame/PTS/原图坐标，`per_frame_coverage.csv` 和 `per_component_triplet_coverage.csv` 只统计实际保存的共同成员与无序 pair，`density_comparison.csv` 仅在有效 ROI 存在时产生对照。单帧 ROI 不自动传播到其他 triplet 时刻；统计不是准确率或检测概率。
 
 审查页面：`review/index.html`。可在数据派生目录启动 `python3 -m http.server 8765`，访问 `/v7_activityforensics_observation_density_diagnostic_v1/review/`；页面依赖既有短片副本，不使用外部 CDN。服务器未执行浏览器视觉验收，仅做静态 HTTP/JSON 检查。
 
