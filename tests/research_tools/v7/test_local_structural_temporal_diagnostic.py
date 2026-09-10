@@ -41,6 +41,8 @@ def test_review_page_is_inline_and_has_annotation_and_layer_contracts():
     assert "common_member_indices" in html
     assert "clamp=(x,lo,hi)" in html
     assert "regionSelection.role!==$('annRole').value" in html
+    assert "loadGroupDetails" in html and "DATA.detail_paths" in html
+    assert "不要直接打开 file:// 文件" in html
 
 
 def test_index_distinguishes_unmaterialized_from_missing_source(tmp_path):

@@ -215,6 +215,19 @@ def _write_measurement_contract(output_root: Path, coverage: Mapping[str, Mappin
     return path
 
 
+def _write_review_detail_files(output_root: Path, details: Mapping[str, Mapping[str, Any]]) -> dict[str, str]:
+    """Persist per-window review details so the browser does not parse a huge HTML blob."""
+
+    detail_root = output_root / "review/details"
+    detail_root.mkdir(parents=True, exist_ok=True)
+    paths: dict[str, str] = {}
+    for window_id, value in details.items():
+        path = detail_root / f"{_safe_slug(str(window_id))}.json"
+        _write_json(path, value)
+        paths[str(window_id)] = str(path.relative_to(output_root / "review"))
+    return paths
+
+
 def _git_head() -> str:
     return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
 
@@ -1312,6 +1325,8 @@ for(const id of ['layerTracks','layerGeometry','layerTriplet','layerPair'])$(id)
 function draw(role){const v=$(role+'Video'),canvas=$(role+'Canvas'),wid=v.dataset.windowId,d=details[wid];if(!d||!v.videoWidth||!v.clientWidth)return;const fr=nearest(d.coverage.frame_records,v.currentTime);if(!fr)return;canvas.width=Math.max(1,v.clientWidth*devicePixelRatio);canvas.height=Math.max(1,v.clientHeight*devicePixelRatio);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const sx=canvas.width/v.videoWidth,sy=canvas.height/v.videoHeight,colors=['#22c55e','#38bdf8','#f59e0b','#e879f9','#f43f5e','#a3e635','#fb7185','#2dd4bf'],tr=selectedTriplet(role,d),s=selection[role],slots=new Set((tr?.common_member_indices||[]).map(Number));if(s.pair&&tr)for(const p of tr.pair_records||[])if(p.pair_id.join('-')===s.pair)for(const slot of p.member_indices||[])slots.add(Number(slot));for(const p of fr.uv_points||[]){const [slot,track,u,vv,vis,geo,comp]=p;if(!vis||!Number.isFinite(u)||!Number.isFinite(vv))continue;const selected=slots.has(Number(slot)),componentSelected=s.component!==null&&Number(comp)===Number(s.component),showPoint=$('layerTracks').checked||(geo&&$('layerGeometry').checked);if(!showPoint)continue;ctx.fillStyle=comp==null?'#facc15':colors[Number(comp)%colors.length];ctx.globalAlpha=geo?.95:.7;ctx.beginPath();ctx.arc(u*sx,vv*sy,selected?5:geo?3.5:2.5,0,Math.PI*2);ctx.fill();if(selected&&$('layerTriplet').checked){ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()}else if(componentSelected){ctx.globalAlpha=1;ctx.strokeStyle='#fbbf24';ctx.lineWidth=1.5;ctx.stroke()}if($('showIds').checked){ctx.globalAlpha=.85;ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(track),u*sx+4,vv*sy-3)}}ctx.globalAlpha=1;if($('layerPair').checked&&tr&&s.pair){const points=Object.fromEntries((fr.uv_points||[]).filter(p=>p[4]&&Number.isFinite(p[2])&&Number.isFinite(p[3])).map(p=>[p[0],[p[2],p[3]]]));const pos=tr.source_frame_indices.indexOf(fr.source_frame_index);if(pos>=0)for(const p of tr.pair_records||[]){if(p.pair_id.join('-')!==s.pair)continue;const a=points[p.member_indices[0]],b=points[p.member_indices[1]];if(!a||!b)continue;const delta=p.normalized_distance[pos]-p.normalized_distance[0];ctx.strokeStyle=delta>0?'#ef4444':'#2563eb';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a[0]*sx,a[1]*sy);ctx.lineTo(b[0]*sx,b[1]*sy);ctx.stroke()}}if(regionSelection&&regionSelection.role===role){ctx.strokeStyle='#facc15';ctx.lineWidth=2;ctx.setLineDash([6,4]);if(regionSelection.kind==='rect')ctx.strokeRect(regionSelection.x*sx,regionSelection.y*sy,regionSelection.w*sx,regionSelection.h*sy);else{ctx.beginPath();ctx.arc(regionSelection.x*sx,regionSelection.y*sy,5*sx,0,Math.PI*2);ctx.stroke()}ctx.setLineDash([])}}
 function canvasPoint(role,event){const canvas=$(role+'Canvas'),v=$(role+'Video'),rect=canvas.getBoundingClientRect(),clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));return {x:clamp((event.clientX-rect.left)*v.videoWidth/rect.width,0,v.videoWidth),y:clamp((event.clientY-rect.top)*v.videoHeight/rect.height,0,v.videoHeight)}}
 const previousAnnotationRoleChange=$('annRole').onchange;$('annRole').onchange=()=>{if(regionSelection&&regionSelection.role!==$('annRole').value)regionSelection=null;if(typeof previousAnnotationRoleChange==='function')previousAnnotationRoleChange();updateRegionInputs();render()};
+async function loadGroupDetails(group){const ids=[group?.real,group?.fake].filter(Boolean);await Promise.all(ids.map(async wid=>{if(details[wid])return;const path=DATA.detail_paths?.[wid];if(!path)throw new Error('缺少窗口详情路径：'+wid);const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error('窗口详情加载失败：'+wid+' ('+response.status+')');details[wid]=await response.json()}))}
+async function setGroup(){const list=groupList();if(!list.length)return;currentGroup=groups[$('window').value]||list[0];$('window').value=currentGroup.group_id;for(const role of ['real','fake'])selection[role]={component:null,triplet:null,pair:null};regionSelection=null;dragStart=null;try{await loadGroupDetails(currentGroup);render()}catch(error){$('timeline').textContent='无法加载窗口详情：'+error.message+'；请通过本地 HTTP 服务访问页面，不要直接打开 file:// 文件'}}
 populate();initCases();
 </script></main></body></html>"""
 
@@ -1409,6 +1424,7 @@ def run(
     for row in index_rows:
         wid = row["window_id"]
         details_payload[wid] = {"coverage": coverage[wid], "structure": structure[wid], "model_response": model_response.get(wid)}
+    detail_paths = _write_review_detail_files(output_root, details_payload)
     sample_cases: dict[str, str] = {}
     valid_manip = [group for group in ordered_groups if group["kind"] == "MANIP" and group.get("real") and group.get("fake") and coverage[group["real"]]["support_status"] == "VALID" and coverage[group["fake"]]["support_status"] == "VALID"]
     valid_ctrl = [group for group in ordered_groups if group["kind"] == "CTRL" and group.get("real") and group.get("fake") and coverage[group["real"]]["support_status"] == "VALID" and coverage[group["fake"]]["support_status"] == "VALID"]
@@ -1439,7 +1455,8 @@ def run(
         "protocol": protocol,
         "windows": index_rows,
         "groups": groups,
-        "details": details_payload,
+        "details": {},
+        "detail_paths": detail_paths,
         "sample_cases": sample_cases,
         "annotation_schema": {"status": "development-only; not training or population selection", "fields": ["source_id", "window_id", "role", "source_frame_index", "timestamp_s", "visible_distortion", "distortion_type", "time_interval_s", "region", "point", "coverage_counts", "model_sample_range", "notes"]},
         "annotation_inventory_path": "../annotation_inventory.csv",
@@ -1514,12 +1531,14 @@ def attach_media(
     screenshot_rows = [screenshot_by_window[key] for key in sorted(screenshot_by_window)]
     index_rows = _build_index(input_rows, coverage, response, window_manifest, merged_media)
     details_payload = {row["window_id"]: {"coverage": coverage[row["window_id"]], "structure": structure[row["window_id"]], "model_response": response.get(row["window_id"])} for row in index_rows}
+    detail_paths = _write_review_detail_files(output_root, details_payload)
     protocol = json.loads((output_root / "protocol.json").read_text(encoding="utf-8"))
     page_payload = {
         "protocol": protocol,
         "windows": index_rows,
         "groups": groups,
-        "details": details_payload,
+        "details": {},
+        "detail_paths": detail_paths,
         "sample_cases": sample_cases,
         "annotation_schema": {"status": "development-only; not training or population selection", "fields": ["source_id", "window_id", "role", "source_frame_index", "timestamp_s", "visible_distortion", "distortion_type", "time_interval_s", "region", "point", "coverage_counts", "model_sample_range", "notes"]},
         "annotation_inventory_path": "../annotation_inventory.csv",

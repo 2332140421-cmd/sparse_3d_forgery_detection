@@ -150,7 +150,8 @@ component、所有点或所有像素的正标签。fake 时间区间也不等于
 
 ## 7. 人工审查页面交付
 
-页面仍是单文件、无外部 CDN 的离线审查页：
+页面仍是无外部 CDN 的本地审查页；索引内嵌在 HTML，窗口详情按选中的 real/fake 窗口
+从同目录 `review/details/*.json` 懒加载，避免浏览器一次解析数百 MB 的结构数据：
 
 ```text
 /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/
