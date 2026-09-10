@@ -673,6 +673,11 @@ def run_frontend(output: Path, *, only_window: str | None = None, resume: bool =
         del uv, visibility, xyz, geometry_valid, sequence, support, diag
         gc.collect()
         torch.cuda.empty_cache()
+        # A full 192-window run keeps both densities in one process.  Once the
+        # second density for a window is emitted, release that window's shared
+        # RGB/depth/pose arrays so memory usage does not grow with population.
+        if density == "density289":
+            geometry_cache.pop(frame_key, None)
     peak = int(torch.cuda.max_memory_allocated()) if torch.cuda.is_available() else 0
     write_json(output / "frontend_resource_metrics.json", {
         "completed_results": len(results),
