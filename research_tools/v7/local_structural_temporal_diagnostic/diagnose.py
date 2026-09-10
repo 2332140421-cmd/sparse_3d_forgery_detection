@@ -46,6 +46,9 @@ from research_tools.v7.local_structural_temporal_probe.model import (
     window_label,
 )
 from research_tools.v7.local_structural_temporal_probe.representation import (
+    COMPONENT_CONFIG,
+    MAX_TARGET_ERROR_S,
+    TARGET_OFFSETS_S,
     arm_inputs_for_triplet,
     compute_local_derivatives,
 )
@@ -95,6 +98,121 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _annotation_inventory_rows() -> list[dict[str, Any]]:
+    """Build a small, source-grounded inventory of annotation evidence.
+
+    This deliberately inventories only the files already used by the V7
+    materialisation.  It does not claim that a local absence proves a dataset
+    wide absence of spatial annotations.
+    """
+
+    dataset_root = DATA_ROOT / "datasets/v7_core_candidates/activityforensics_charades_v1"
+    mapping_path = dataset_root / "paired/manifests/activityforensics_source_mapping.json"
+    rows: list[dict[str, Any]] = []
+
+    def add(
+        path: Path,
+        source_version: str,
+        identity: str,
+        level: str,
+        field: str,
+        time_convention: str,
+        used: str,
+        evaluable: str,
+        questions: str,
+        *,
+        evidence_status: str = "LOCAL_FILE",
+        notes: str = "",
+    ) -> None:
+        rows.append(
+            {
+                "annotation_file_path": str(path),
+                "sha256": _sha256(path) if path.is_file() else "",
+                "data_source_version": source_version,
+                "source_video_identity": identity,
+                "annotation_level": level,
+                "field_name": field,
+                "time_unit_or_frame_convention": time_convention,
+                "pipeline_used": used,
+                "usable_for_evaluation": evaluable,
+                "evidence_status": evidence_status,
+                "unverified_questions": questions,
+                "notes": notes,
+            }
+        )
+
+    train_csv = dataset_root / "source/activityforensics/metadata/train.csv"
+    test_csv = dataset_root / "source/activityforensics/metadata/test.csv"
+    annot_zip = dataset_root / "source/activityforensics/raw/annot.zip"
+    add(train_csv, "ActivityForensics HF revision a34d4b7b04b0f3f3e26ba900adc367218667c581", "all train video/file_name rows", "video", "file_name", "filename encodes decimal seconds; exact frame convention not encoded", "yes (lineage/mapping)", "yes for split/file lineage; not spatial GT", "whether an external release contains additional spatial annotations", notes="local metadata snapshot")
+    add(test_csv, "ActivityForensics HF revision a34d4b7b04b0f3f3e26ba900adc367218667c581", "all test video/file_name rows", "video", "file_name", "filename encodes decimal seconds; exact frame convention not encoded", "yes (lineage/mapping)", "yes for split/file lineage; not spatial GT", "whether an external release contains additional spatial annotations", notes="local metadata snapshot")
+    add(annot_zip, "ActivityForensics official annotation archive (local snapshot)", "train/test videos grouped by generator", "time", "duration, manipulation segments", "seconds; lines contain duration and start=end segments", "yes (mapping and MANIP windows)", "yes for temporal-window evaluation", "whether segment boundaries are inclusive/exclusive at decoded-frame level; no bbox/mask field in these files", notes="zip central directory read; not extracted")
+    add(mapping_path, "local paired mapping derived from the ActivityForensics snapshot", "16 selected source IDs and paired real/fake videos", "video+time", "source_id, generator, operation, manipulation_intervals, manipulation_segments", "intervals in seconds; selected windows carry source frame indices and PTS", "yes", "yes for window labels and source-disjoint grouping", "real/fake same-source physical correspondence is an engineering pairing, not pixel identity", notes="selected-pair lineage")
+
+    for relative, identity, level, field, convention, used, evaluable, questions, notes in (
+        (
+            "review/review_manifest.json",
+            "30 manually selected development review pairs",
+            "spatial-review template",
+            "human review fields (currently blank)",
+            "frame/PTS fields are to be filled by reviewer",
+            "no (template only)",
+            "no until human entries are made and audited",
+            "which local human observations will be accepted as development evidence",
+            "not official spatial ground truth",
+        ),
+        ):
+        path = dataset_root / relative
+        add(path, "V7 local derived artifact", identity, level, field, convention, used, evaluable, questions, evidence_status="LOCAL_FILE" if path.is_file() else "LOCAL_NOT_FOUND", notes=notes)
+
+    window_manifest_path = DATA_ROOT / "derived/v7_activityforensics_paired_second_order_pilot_v1/manifests/window_manifest.json"
+    add(window_manifest_path, "V7 local derived artifact", "16 selected source pairs", "time", "kind, label, interval_start_s, interval_end_s, frame_indices, timestamps_s", "source frame indices plus decoder PTS seconds", "yes (MANIP/CTRL windows)", "yes for time-window evaluation; not spatial GT", "whether a human temporal segment should use a different boundary convention", evidence_status="LOCAL_FILE" if window_manifest_path.is_file() else "LOCAL_NOT_FOUND", notes="selected-window manifest")
+
+    add(
+        dataset_root / "source/activityforensics/raw/annot.zip::spatial_search",
+        "ActivityForensics local snapshot",
+        "all locally materialized ActivityForensics videos",
+        "spatial",
+        "bbox, mask, polygon, edit-region files",
+        "not found locally; no frame convention to record",
+        "no",
+        "no",
+        "an official spatial annotation release may exist outside this snapshot; local absence is not dataset-wide proof",
+        evidence_status="LOCAL_NOT_FOUND",
+        notes="bounded search of the current dataset material; annot.zip is temporal-only",
+    )
+    add(
+        dataset_root / "source/activityforensics/source_info/dataset_card_README.md",
+        "ActivityForensics documentation snapshot",
+        "ActivityForensics dataset",
+        "documentation",
+        "annotation/repository/license description",
+        "not applicable",
+        "yes (provenance only)",
+        "no (not a ground-truth file)",
+        "documentation does not establish a per-frame spatial GT mapping for this snapshot",
+        evidence_status="OFFICIAL_DOCUMENTATION",
+        notes="official links and research-use statement preserved locally",
+    )
+    return rows
+
+
+def _write_annotation_inventory(output_root: Path) -> Path:
+    path = output_root / "annotation_inventory.csv"
+    rows = _annotation_inventory_rows()
+    _write_csv(path, rows)
+    _write_csv(output_root / "review/annotation_inventory.csv", rows)
+    return path
+
+
+def _write_measurement_contract(output_root: Path, coverage: Mapping[str, Mapping[str, Any]], structure: Mapping[str, Mapping[str, Any]]) -> Path:
+    path = output_root / "measurement_contract.json"
+    value = _measurement_contract(coverage, structure)
+    _write_json(path, value)
+    _write_json(output_root / "review/measurement_contract.json", value)
+    return path
 
 
 def _git_head() -> str:
@@ -793,20 +911,33 @@ def _png_bytes(rgb: np.ndarray) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 6)) + chunk(b"IEND", b"")
 
 
-def _decode_frame(video_path: Path, frame_index: int) -> np.ndarray:
+def _decode_frames(video_path: Path, frame_indices: Sequence[int]) -> dict[int, np.ndarray]:
     try:
         import av
     except ImportError as exc:  # pragma: no cover - environment check is in the command
         raise RuntimeError("PyAV is required for review media") from exc
+    wanted = {int(item) for item in frame_indices}
+    if not wanted:
+        return {}
+    decoded: dict[int, np.ndarray] = {}
     container = av.open(str(video_path))
     try:
         stream = container.streams.video[0]
         for index, frame in enumerate(container.decode(stream)):
-            if index == int(frame_index):
-                return frame.to_ndarray(format="rgb24")
+            if index in wanted:
+                decoded[index] = frame.to_ndarray(format="rgb24")
+                if len(decoded) == len(wanted):
+                    break
     finally:
         container.close()
-    raise ValueError(f"frame {frame_index} not found in {video_path}")
+    missing = sorted(wanted.difference(decoded))
+    if missing:
+        raise ValueError(f"frame(s) {missing} not found in {video_path}")
+    return decoded
+
+
+def _decode_frame(video_path: Path, frame_index: int) -> np.ndarray:
+    return _decode_frames(video_path, [frame_index])[int(frame_index)]
 
 
 def _encode_clip(video_path: Path, frame_indices: Sequence[int], timestamps_s: Sequence[float], output_path: Path) -> None:
@@ -892,39 +1023,127 @@ def _svg_overlay(rgb: np.ndarray, points: Sequence[Sequence[Any]], pair_lines: S
     output_path.write_text(svg, encoding="utf-8")
 
 
+def _default_review_cases(
+    groups: Mapping[str, Mapping[str, Any]],
+    coverage: Mapping[str, Mapping[str, Any]],
+) -> dict[str, str]:
+    """Select earliest MANIP and CTRL group for every source, score-blind."""
+
+    ordered = sorted(groups.values(), key=lambda row: int(row.get("default_order_index", 0)))
+    cases: dict[str, str] = {}
+    for source_id in sorted({str(group.get("source_id")) for group in ordered}):
+        for kind in ("MANIP", "CTRL"):
+            candidates = [
+                group
+                for group in ordered
+                if str(group.get("source_id")) == source_id
+                and str(group.get("kind")) == kind
+                and all(group.get(role) in coverage for role in ("real", "fake"))
+            ]
+            if candidates:
+                cases[f"source_{_safe_slug(source_id)}_{kind}"] = str(candidates[0]["group_id"])
+    return cases
+
+
+def _measurement_contract(
+    coverage: Mapping[str, Mapping[str, Any]],
+    structure: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Describe what the persisted frontend and model actually measured."""
+
+    frame_counts = [len(row.get("frame_records", [])) for row in coverage.values()]
+    dimensions = sorted({(int(row["frame_records"][0]["height"]), int(row["frame_records"][0]["width"])) for row in coverage.values() if row.get("frame_records")})
+    model_frame_counts = [len(row.get("model_frame_indices", [])) for row in coverage.values()]
+    history_counts = sorted({len(row.get("history_frame_indices", [])) for row in coverage.values()})
+    triplets = [triplet for record in structure.values() for triplet in record.get("triplets", [])]
+    first = triplets[0] if triplets else None
+    actual_frames = sorted({int(frame) for row in coverage.values() for frame in row.get("model_frame_indices", [])})
+    processed_frames = sorted({int(frame) for row in coverage.values() for frame in row.get("frame_records", []) for frame in [frame["source_frame_index"]]})
+    return {
+        "contract_version": "v1",
+        "query": {
+            "requested_tracks": sorted({int(row["initial_query"].get("requested_tracks")) for row in coverage.values() if row["initial_query"].get("requested_tracks") is not None}),
+            "initialized_track_slots": sorted({int(row["initial_query"]["initialized_track_slots"]) for row in coverage.values()}),
+            "initialization": "query is made at the persisted window start; track_ids are then carried through the window",
+            "new_points_join_mid_window": False,
+            "evidence": "initial_query.track_ids_persisted and constant initialized_track_slots in coverage_windows.json",
+        },
+        "frame_layers": {
+            "video_window_frame_indices": "window manifest frame_indices are the requested source decode sequence",
+            "frontend_processed": {"count_range": [min(frame_counts, default=0), max(frame_counts, default=0)], "unique_source_frame_count": len(processed_frames), "source": "coverage.frame_records"},
+            "model_actual_frames": {"count_range": [min(model_frame_counts, default=0), max(model_frame_counts, default=0)], "unique_source_frame_count": len(actual_frames), "source": "coverage.model_frame_indices and actual_model_time_records"},
+            "distinction": "a decoded/frontend frame is not asserted to be a classifier input unless it appears in model_frame_indices or a triplet's actual_model_time_records",
+        },
+        "geometry": {
+            "source_dimensions_hw": dimensions,
+            "tracking_coordinate_system": "persisted ParticleSequence UV in original decoded-video pixel coordinates",
+            "display_coordinate_system": "browser canvas scales original UV to the video element; no coordinate rewrite",
+            "visibility": "visibility and finite UV in the persisted ParticleSequence coverage records",
+            "geometry_validity": "ParticleSequence.geometry_validity with finite XYZ; invalid observations remain absent from current coverage",
+        },
+        "component_formation": {
+            "history_boundary": "timestamps_s < window_start_s + 0.5 s",
+            "history_frame_count_range": [history_counts[0], history_counts[-1]] if history_counts else [0, 0],
+            "component_rule": "motion_coherent_components on history XYZ/geometry_validity using the frozen ComponentConfig",
+            "component_config": {"max_initial_distance": COMPONENT_CONFIG.max_initial_distance, "max_relative_change": COMPONENT_CONFIG.max_relative_change, "minimum_size": COMPONENT_CONFIG.minimum_size, "minimum_overlap": COMPONENT_CONFIG.minimum_overlap},
+            "validity": "a triplet retains only members geometry-valid and finite at all three matched target frames; no interpolation or last-visible fill",
+        },
+        "target_slots": {
+            "target_offsets_s": list(TARGET_OFFSETS_S),
+            "selection": "evaluation timestamps at or after the 0.5 s boundary, one unused nearest frame per target",
+            "max_match_error_s": MAX_TARGET_ERROR_S,
+            "matched_records_source": "coverage.actual_model_time_records and target_matches",
+            "example": first.get("timestamps_s") if first else [],
+        },
+        "triplet_and_pair": {
+            "common_members": "same track slot must be geometry-valid with finite XYZ at all three matched frames",
+            "minimum_common_members": 3,
+            "pair_rule": "all unordered combinations of the common members",
+            "history_scale": "median of finite pair distances across the history frames and component members; one scale per component/triplet",
+        },
+        "representation": {
+            "normalized_pair": "d_ij(t) = ||X_j(t)-X_i(t)|| / history_scale",
+            "S": "S(t) = [mean(d_ij), std(d_ij), percentile25(d_ij), percentile75(d_ij)] over the triplet common-member pairs",
+            "v_minus": "(S(t1)-S(t0))/(t1-t0)",
+            "v_plus": "(S(t2)-S(t1))/(t2-t1)",
+            "a": "2*(v_plus-v_minus)/((t1-t0)+(t2-t1)); signed timestamp-aware finite difference, not physical acceleration",
+            "missing": "no pair/triplet line is joined across a missing target or invalid observation",
+        },
+        "aggregation": {
+            "triplet": "model arm rows are evaluated per triplet",
+            "component": "mean over valid triplets in the component",
+            "window": "mean over valid components",
+            "local_contribution": "component and triplet q/weight/contribution are the saved decomposition of the existing window logit",
+        },
+    }
+
+
 def _materialize_review_media(
     output_root: Path,
     groups: Mapping[str, Mapping[str, Any]],
     coverage: Mapping[str, Mapping[str, Any]],
     structure: Mapping[str, Mapping[str, Any]],
     requested_cases: Mapping[str, str] | None = None,
+    requested_window_ids: set[str] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
     """Create only short review clips and frame overlays; never save payloads."""
 
     media_by_window: dict[str, dict[str, Any]] = {}
     screenshot_rows: list[dict[str, Any]] = []
     case_groups: dict[str, str] = dict(requested_cases or {})
-    if not case_groups:
-        valid_groups = [gid for gid, group in groups.items() if all(coverage.get(group.get(role, ""), {}).get("support_status") == "VALID" for role in ("real", "fake"))]
-        if valid_groups:
-            case_groups["valid_MANIP"] = next((gid for gid in valid_groups if groups[gid].get("kind") == "MANIP"), valid_groups[0])
-        ctrl_groups = [gid for gid, group in groups.items() if group.get("kind") == "CTRL"]
-        if ctrl_groups:
-            case_groups["CTRL"] = next((gid for gid in ctrl_groups if all(coverage.get(groups[gid].get(role, ""), {}).get("support_status") == "VALID" for role in ("real", "fake"))), ctrl_groups[0])
-        invalid_windows = [wid for wid, row in sorted(coverage.items()) if row.get("support_status") != "VALID"]
-        if invalid_windows:
-            case_groups["no_support"] = next((gid for gid, group in groups.items() if group.get("real") in invalid_windows or group.get("fake") in invalid_windows), "")
-        partial_windows = [wid for wid, row in sorted(coverage.items()) if row.get("support_status") == "VALID" and any(component.get("invalid_triplets") for component in row.get("components", []))]
-        if partial_windows:
-            case_groups["partial_missing"] = next((gid for gid, group in groups.items() if group.get("real") in partial_windows or group.get("fake") in partial_windows), "")
+    seen_windows: set[str] = set()
     for case, group_id in case_groups.items():
         if not group_id or group_id not in groups:
             continue
         group = groups[group_id]
-        for role in ("real", "fake"):
+        roles = ("real", "fake")
+        if requested_window_ids is not None:
+            roles = tuple(role for role in roles if str(group.get(role, "")) in requested_window_ids)
+        for role in roles:
             window_id = str(group.get(role, ""))
-            if not window_id or window_id not in coverage:
+            if not window_id or window_id not in coverage or window_id in seen_windows:
                 continue
+            seen_windows.add(window_id)
             window = coverage[window_id]
             manifest = group["manifest"][role]
             source_path = Path(str(manifest["video_path"]))
@@ -934,10 +1153,16 @@ def _materialize_review_media(
             clip_path = output_root / "review/media" / f"{slug}.mp4"
             screenshot_path = output_root / "review/screenshots" / f"{slug}.png"
             overlay_path = output_root / "review/screenshots" / f"{slug}__coverage.svg"
+            model_frame_indices = [int(item) for item in window.get("model_frame_indices", [])]
             try:
+                if not source_path.is_file():
+                    media_by_window[window_id] = {"status": "SOURCE_MISSING", "source_video_path": str(source_path), "case": case}
+                    screenshot_rows.append({"case": case, "window_id": window_id, "role": role, **media_by_window[window_id]})
+                    continue
                 _encode_clip(source_path, frame_indices, timestamps_s, clip_path)
                 target_source_frame = frame_indices[len(frame_indices) // 2]
-                rgb = _decode_frame(source_path, target_source_frame)
+                decoded = _decode_frames(source_path, sorted(set(frame_indices + model_frame_indices)))
+                rgb = decoded[target_source_frame]
                 scale_step = max(1, int(math.ceil(rgb.shape[1] / 960.0)))
                 rgb_small = rgb[::scale_step, ::scale_step]
                 screenshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -954,10 +1179,28 @@ def _materialize_review_media(
                             delta = float(pair["normalized_distance"][position] - pair["normalized_distance"][0])
                             lines.append({"uv": uv_pair, "delta": delta})
                 _svg_overlay(rgb, target_record.get("uv_points", []), lines[:256], overlay_path)
-                media_by_window[window_id] = {"status": "AVAILABLE", "clip_path": str(clip_path.relative_to(output_root / "review")), "screenshot_path": str(screenshot_path.relative_to(output_root / "review")), "overlay_path": str(overlay_path.relative_to(output_root / "review")), "source_video_path": str(source_path), "display_source_frame_index": target_source_frame}
+                exact_screenshots: list[dict[str, Any]] = []
+                for source_frame in model_frame_indices:
+                    frame_rgb = decoded[source_frame]
+                    frame_record = next((item for item in window["frame_records"] if int(item["source_frame_index"]) == source_frame), None)
+                    if frame_record is None:
+                        continue
+                    exact_path = output_root / "review/screenshots" / f"{slug}__model_frame_{source_frame}.png"
+                    exact_step = max(1, int(math.ceil(frame_rgb.shape[1] / 960.0)))
+                    exact_path.write_bytes(_png_bytes(frame_rgb[::exact_step, ::exact_step]))
+                    exact_screenshots.append(
+                        {
+                            "path": str(exact_path.relative_to(output_root / "review")),
+                            "source_frame_index": source_frame,
+                            "array_index": int(frame_record["array_index"]),
+                            "timestamp_s": float(frame_record["timestamp_s"]),
+                        }
+                    )
+                media_by_window[window_id] = {"status": "AVAILABLE", "clip_path": str(clip_path.relative_to(output_root / "review")), "screenshot_path": str(screenshot_path.relative_to(output_root / "review")), "overlay_path": str(overlay_path.relative_to(output_root / "review")), "source_video_path": str(source_path), "display_source_frame_index": target_source_frame, "display_timestamp_s": float(target_record["timestamp_s"]), "model_frame_screenshots": exact_screenshots, "case": case}
                 screenshot_rows.append({"case": case, "window_id": window_id, "role": role, **media_by_window[window_id]})
             except Exception as exc:  # media is optional; retain a truthful unavailable marker
-                media_by_window[window_id] = {"status": "MEDIA_UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}", "source_video_path": str(source_path)}
+                media_by_window[window_id] = {"status": "DECODE_FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_video_path": str(source_path), "case": case}
+                screenshot_rows.append({"case": case, "window_id": window_id, "role": role, **media_by_window[window_id]})
     return media_by_window, screenshot_rows
 
 
@@ -1011,41 +1254,64 @@ def build_review_html(payload: Mapping[str, Any]) -> str:
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>V7 local structural-temporal joint diagnostic</title>
 <style>
-body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#111827;color:#e5e7eb}main{max-width:1500px;margin:auto;padding:18px}h1,h2{margin:.3em 0}.controls,.notice,.panel{background:#1f2937;border:1px solid #374151;border-radius:8px;padding:12px;margin:10px 0}label{margin-right:12px}select,button,input,textarea{background:#111827;color:#e5e7eb;border:1px solid #4b5563;border-radius:4px;padding:5px}button{cursor:pointer}.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px}.side{background:#0f172a;border:1px solid #334155;padding:8px;border-radius:8px}.video-wrap{position:relative;background:#000;min-height:180px}.video-wrap video{width:100%;display:block}.video-wrap canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.muted{color:#9ca3af}.bad{color:#fca5a5}.good{color:#86efac}.table-wrap{overflow:auto;max-height:330px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #374151;padding:4px;text-align:left;vertical-align:top}.bar{height:8px;background:#374151}.bar span{display:block;height:100%;background:#f59e0b}.hidden-info .identity,.hidden-info .label,.hidden-info .score{display:none}.layers{display:flex;gap:10px;flex-wrap:wrap}.small{font-size:12px}.annotation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.annotation-grid textarea{grid-column:span 4;min-height:45px}.source-path{word-break:break-all}.case-links a{margin-right:10px;color:#93c5fd}
+body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#111827;color:#e5e7eb}main{max-width:1500px;margin:auto;padding:18px}h1,h2{margin:.3em 0}.controls,.notice,.panel{background:#1f2937;border:1px solid #374151;border-radius:8px;padding:12px;margin:10px 0}label{margin-right:12px}select,button,input,textarea{background:#111827;color:#e5e7eb;border:1px solid #4b5563;border-radius:4px;padding:5px}button{cursor:pointer}.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px}.side{background:#0f172a;border:1px solid #334155;padding:8px;border-radius:8px}.video-wrap{position:relative;background:#000;min-height:180px}.video-wrap video{width:100%;display:block}.video-wrap canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:auto}.muted{color:#9ca3af}.bad{color:#fca5a5}.good{color:#86efac}.table-wrap{overflow:auto;max-height:330px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #374151;padding:4px;text-align:left;vertical-align:top}.bar{height:8px;background:#374151}.bar span{display:block;height:100%;background:#f59e0b}.hidden-info .identity,.hidden-info .label,.hidden-info .score{display:none}.layers{display:flex;gap:10px;flex-wrap:wrap}.small{font-size:12px}.annotation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.annotation-grid textarea{grid-column:span 4;min-height:45px}.source-path{word-break:break-all}.case-links a{margin-right:10px;color:#93c5fd}
 @media(max-width:900px){.sides{grid-template-columns:1fr}.annotation-grid{grid-template-columns:repeat(2,1fr)}.annotation-grid textarea{grid-column:span 2}}
 </style></head><body><main>
 <h1>V7 联合诊断审查页</h1>
 <div class="notice">这是冻结 pilot 的离线人工审查工具，不是新的 detector。默认顺序按 source、MANIP/CTRL 和 anchor 固定，不按分数排序。real/fake 两侧同编号 component 只是在各自视频内的局部编号，不代表物理对应。</div>
 <div class="controls"><label>source <select id="source"></select></label><label>kind <select id="kind"><option>MANIP</option><option>CTRL</option></select></label><label>window <select id="window"></select></label><button id="prev">上一窗口</button><button id="next">下一窗口</button><label><input id="showIds" type="checkbox" checked> IDs</label><label><input id="showLabels" type="checkbox" checked> labels</label><label><input id="showScores" type="checkbox" checked> scores</label></div>
-<div class="controls layers"><strong>图层：</strong><label><input id="layerCoverage" type="checkbox" checked> 观测覆盖</label><label><input id="layerStructure" type="checkbox" checked> 结构变化</label><label><input id="layerModel" type="checkbox" checked> 模型响应</label><span class="small">结构变化只画实际三时刻/原生背景点；没有测量覆盖的区域保持未测量。</span></div>
+<div class="controls layers"><strong>图层：</strong><label><input id="layerTracks" type="checkbox" checked> 当前可定位跟踪点</label><label><input id="layerGeometry" type="checkbox" checked> geometry-valid 点</label><label><input id="layerTriplet" type="checkbox" checked> 所选 triplet 共同成员</label><label><input id="layerPair" type="checkbox" checked> 所选 pair</label><label><input id="layerModel" type="checkbox" checked> component 局部模型响应</label><input id="layerCoverage" type="checkbox" checked hidden><input id="layerStructure" type="checkbox" checked hidden><span class="small">无效/不可见点不作为当前有效观测；没有测量覆盖的区域保持未测量。</span></div>
 <div class="controls"><button id="play">两侧播放</button><button id="pause">暂停</button><button id="step">下一源帧</button><button id="seekTarget">定位首个模型目标</button><span id="timeline" class="small"></span></div>
 <div class="sides"><section class="side"><h2 id="realTitle">real</h2><div class="video-wrap"><video id="realVideo" controls preload="metadata"></video><canvas id="realCanvas"></canvas></div><p id="realMedia" class="small source-path"></p></section><section class="side"><h2 id="fakeTitle">fake</h2><div class="video-wrap"><video id="fakeVideo" controls preload="metadata"></video><canvas id="fakeCanvas"></canvas></div><p id="fakeMedia" class="small source-path"></p></section></div>
-<section class="panel"><h2>覆盖与时间事实</h2><div id="coverageSummary"></div><div class="table-wrap"><table id="framesTable"></table></div></section>
-<section class="panel"><h2>结构变化</h2><p class="small">红色表示相对该 pair 的历史归一化距离增长，蓝色表示缩短。三时刻外的 native 曲线只是背景，不进入模型输入；这不是真假概率。</p><label>component <select id="component"></select></label><label>triplet <select id="triplet"></select></label><label>pair <select id="pair"></select></label><div class="table-wrap"><table id="relationTable"></table></div></section>
+<section class="panel"><h2>覆盖与时间事实</h2><div id="coverageSummary"></div><div id="timeFacts" class="small"></div><div class="table-wrap"><table id="framesTable"></table></div><p class="small">源 frame index、array index 和 PTS 是精确核对依据；播放器 seek 仅作浏览。</p></section>
+<section class="panel"><h2>结构变化（real/fake 独立选择）</h2><p class="small">显示定义：相对当前 triplet 首时刻的归一化距离变化；红色表示增长，蓝色表示缩短。这里不是“相对历史”，也不是真假概率。两侧同编号仅为各自视频内编号，不代表物理对应。</p><div class="sides"><div class="side"><h3>real 局部选择</h3><label>component <select id="realComponent"></select></label><label>triplet <select id="realTriplet"></select></label><label>pair <select id="realPair"></select></label><div class="table-wrap"><table id="realRelationTable"></table></div><div class="table-wrap"><table id="realCurveTable"></table></div></div><div class="side"><h3>fake 局部选择</h3><label>component <select id="fakeComponent"></select></label><label>triplet <select id="fakeTriplet"></select></label><label>pair <select id="fakePair"></select></label><div class="table-wrap"><table id="fakeRelationTable"></table></div><div class="table-wrap"><table id="fakeCurveTable"></table></div></div></div></section>
 <section class="panel"><h2>模型响应与平均聚合</h2><p class="small">q 是局部 logit 响应，不是局部概率；贡献严格按当前 component/window 平均规则计算。不同 held-out fold 的 logit 尺度不作为统一异常刻度。</p><div class="table-wrap"><table id="modelTable"></table></div></section>
-<section class="panel"><h2>开发人工标记（不进入训练或筛选）</h2><div class="annotation-grid"><label>可见失真 <select id="annVisible"><option>uncertain</option><option>yes</option><option>no</option></select></label><label>开始秒 <input id="annStart" type="number" step=".001"></label><label>结束秒 <input id="annEnd" type="number" step=".001"></label><label>区域 x,y,w,h <input id="annRect" placeholder="x,y,w,h"></label><label>点 x,y <input id="annPoint" placeholder="x,y"></label><label>覆盖 <select id="annCoverage"><option>uncertain</option><option>yes</option><option>no</option></select></label><label>raw relation <select id="annRaw"><option>uncertain</option><option>yes</option><option>no</option></select></label><label>S response <select id="annState"><option>uncertain</option><option>yes</option><option>no</option></select></label><label>model response <select id="annModel"><option>uncertain</option><option>yes</option><option>no</option></select></label><textarea id="annNotes" placeholder="notes"></textarea></div><button id="saveAnn">保存标记</button><button id="exportJson">导出 JSON</button><button id="exportCsv">导出 CSV</button><label>导入 <input id="importAnn" type="file" accept="application/json"></label><div id="annStatus" class="small"></div></section>
+<section class="panel"><h2>开发人工标记（不进入训练或筛选）</h2><p class="small">先选择 real/fake，再在对应画面拖框或点选；坐标记录为原始图像坐标。统计是“选定时刻/区间内每帧的最大值”，不是检测准确率。没有区域时不输出覆盖率。</p><div class="controls"><label><input type="radio" name="regionMode" id="modeRect" checked> 鼠标框选</label><label><input type="radio" name="regionMode" id="modePoint"> 鼠标点选</label><label>标记侧 <select id="annRole"><option>real</option><option>fake</option></select></label><button id="clearRegion">清除区域</button></div><div class="annotation-grid"><label>可见失真 <select id="annVisible"><option>uncertain</option><option>yes</option><option>no</option></select></label><label>类型 <select id="annType"><option>uncertain</option><option>internal_deformation</option><option>overall_motion</option><option>other</option></select></label><label>开始秒 <input id="annStart" type="number" step=".001"></label><label>结束秒 <input id="annEnd" type="number" step=".001"></label><label>区域 x,y,w,h <input id="annRect" placeholder="鼠标拖框后自动填充"></label><label>点 x,y <input id="annPoint" placeholder="鼠标点选后自动填充"></label><textarea id="annNotes" placeholder="notes"></textarea></div><div id="annContext" class="small"></div><pre id="annCoverageStats" class="small"></pre><button id="saveAnn">保存标记</button><button id="exportJson">导出 JSON</button><button id="exportCsv">导出 CSV</button><label>导入 JSON/CSV <input id="importAnn" type="file" accept="application/json,text/csv,.csv"></label><div id="annStatus" class="small">标记只保存在当前浏览器，导出后再长期保存。</div></section>
 <section class="panel"><h2>默认人工检查样本</h2><div id="caseLinks" class="case-links"></div><p class="small">播放器 seek 不是源帧级证据；请以页面表格中的源 frame index、array index 和真实 PTS 为准。</p></section>
 <script id="payload" type="application/json">""" + encoded + """</script>
 <script>
-const DATA=JSON.parse(document.getElementById('payload').textContent);const windows=DATA.windows||[];const details=DATA.details||{};const groups=DATA.groups||{};const byId=Object.fromEntries(windows.map(x=>[x.window_id,x]));let currentGroup=null,annotations=[];let selectedComponent=null,selectedTriplet=null,selectedPair=null;
-const $=id=>document.getElementById(id);function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+const DATA=JSON.parse(document.getElementById('payload').textContent);const windows=DATA.windows||[];const details=DATA.details||{};const groups=DATA.groups||{};const byId=Object.fromEntries(windows.map(x=>[x.window_id,x]));let currentGroup=null,annotations=[];const selection={real:{component:null,triplet:null,pair:null},fake:{component:null,triplet:null,pair:null}};let regionMode='rect',regionSelection=null,dragStart=null;
+const $=id=>document.getElementById(id);const esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');const fmt=x=>Number.isFinite(Number(x))?Number(x).toFixed(6):'—';const numberOrNull=x=>{if(x===null||x===undefined||String(x).trim()==='')return null;const n=Number(x);return Number.isFinite(n)?n:null};function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function groupList(){return Object.values(groups).filter(g=>g.source_id===$('source').value&&g.kind===$('kind').value).sort((a,b)=>a.default_order_index-b.default_order_index)}
-function populate(){const sources=[...new Set(Object.values(groups).map(g=>g.source_id))].sort();$('source').innerHTML=sources.map(x=>`<option>${x}</option>`).join('');if(!sources.length)return;let list=groupList();if(!list.length){$('kind').value=$('kind').value==='MANIP'?'CTRL':'MANIP';list=groupList()}$('window').innerHTML=list.map(g=>`<option value="${g.group_id}">${g.label} (${g.group_id})</option>`).join('');render()}
-function setGroup(){const list=groupList();if(!list.length)return;currentGroup=groups[$('window').value]||list[0];$('window').value=currentGroup.group_id;render()}
-function mediaFor(wid){return (byId[wid]||{}).media||{status:'MEDIA_UNAVAILABLE'} }
-function setVideo(role,wid){const v=$(role+'Video'),c=$(role+'Canvas'),m=$(role+'Media'),media=mediaFor(wid);v.pause();v.removeAttribute('src');v.load();if(media.status==='AVAILABLE'){v.src=media.clip_path;m.textContent='展示短片：'+media.clip_path+'；源：'+media.source_video_path}else{m.textContent='MEDIA_UNAVAILABLE；源：'+(media.source_video_path||'未记录')+(media.reason?'；'+media.reason:'')}v.dataset.windowId=wid;v.onloadedmetadata=()=>draw(role);v.ontimeupdate=()=>{draw(role);sync(role)};c.width=1;c.height=1}
+function populate(){const sources=[...new Set(Object.values(groups).map(x=>x.source_id))].sort();$('source').innerHTML=sources.map(x=>`<option>${esc(x)}</option>`).join('');if(!sources.length)return;let list=groupList();if(!list.length){$('kind').value=$('kind').value==='MANIP'?'CTRL':'MANIP';list=groupList()}$('window').innerHTML=list.map(g=>`<option value="${esc(g.group_id)}">${esc(g.label)} (${esc(g.group_id)})</option>`).join('');render()}
+function setGroup(){const list=groupList();if(!list.length)return;currentGroup=groups[$('window').value]||list[0];$('window').value=currentGroup.group_id;for(const role of ['real','fake'])selection[role]={component:null,triplet:null,pair:null};regionSelection=null;dragStart=null;render()}
+function mediaFor(wid){return (byId[wid]||{}).media||{status:'NOT_MATERIALIZED'} }
+function setVideo(role,wid){const v=$(role+'Video'),c=$(role+'Canvas'),m=$(role+'Media'),media=mediaFor(wid),same=v.dataset.windowId===wid;v.onloadedmetadata=()=>draw(role);v.ontimeupdate=()=>{draw(role);sync(role)};if(!same){v.pause();v.removeAttribute('src');v.load();if(media.status==='AVAILABLE'){v.src=media.clip_path;const links=(media.model_frame_screenshots||[]).map(x=>`<a href="${x.path}" target="_blank">精确帧 ${x.source_frame_index} / PTS ${fmt(x.timestamp_s)}</a>`).join(' ');m.innerHTML=`展示短片：${esc(media.clip_path)}；源：${esc(media.source_video_path)}；${links?'模型实际采样截图：'+links:'暂无模型采样截图'}`}else if(media.status==='NOT_MATERIALIZED'||media.status==='SOURCE_MISSING'||media.status==='DECODE_FAILED'){m.textContent=`${media.status}；源：${media.source_video_path||'未记录'}${media.reason?'；'+media.reason:''}`}v.dataset.windowId=wid;c.width=1;c.height=1}else if(media.status==='AVAILABLE'){const links=(media.model_frame_screenshots||[]).map(x=>`<a href="${x.path}" target="_blank">精确帧 ${x.source_frame_index} / PTS ${fmt(x.timestamp_s)}</a>`).join(' ');m.innerHTML=`展示短片：${esc(media.clip_path)}；源：${esc(media.source_video_path)}；${links?'模型实际采样截图：'+links:'暂无模型采样截图'}`}}
 function sync(role){const other=role==='real'?'fake':'real',a=$(role+'Video'),b=$(other+'Video');if(a.seeking||b.seeking||!a.duration||!b.duration)return;const t=Math.min(a.currentTime,b.duration);if(Math.abs(b.currentTime-t)>.08)b.currentTime=t}
-function nearest(frames,t){if(!frames.length)return null;return frames.reduce((a,b)=>Math.abs(b.relative_time_s-t)<Math.abs(a.relative_time_s-t)?b:a)}
-function draw(role){const v=$(role+'Video'),canvas=$(role+'Canvas'),wid=v.dataset.windowId,d=details[wid];if(!d||!v.videoWidth)return;const fr=nearest(d.coverage.frame_records,v.currentTime);if(!fr)return;canvas.width=v.clientWidth*devicePixelRatio;canvas.height=v.clientHeight*devicePixelRatio;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const sx=canvas.width/v.videoWidth,sy=canvas.height/v.videoHeight;const colors=['#22c55e','#38bdf8','#f59e0b','#e879f9','#f43f5e','#a3e635','#fb7185','#2dd4bf'];if($('layerCoverage').checked){for(const p of fr.uv_points){const [slot,track,u,vv,vis,geo,comp]=p;ctx.fillStyle=comp==null?'#facc15':colors[comp%colors.length];ctx.globalAlpha=geo?(vis?.95:.35):.55;ctx.beginPath();ctx.arc(u*sx,vv*sy,geo?3.5:2.5,0,Math.PI*2);ctx.fill();if($('showIds').checked){ctx.globalAlpha=.8;ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(track),u*sx+4,vv*sy-3)}}}ctx.globalAlpha=1;if($('layerStructure').checked&&selectedPair&&d.structure){const points=Object.fromEntries(fr.uv_points.map(p=>[p[0],[p[2],p[3]]]));for(const tr of d.structure.triplets.filter(t=>selectedTriplet==null||t.triplet_id==selectedTriplet)){const pos=tr.source_frame_indices.indexOf(fr.source_frame_index);if(pos<0)continue;for(const p of tr.pair_records.filter(x=>selectedPair==null||x.pair_id.join('-')===selectedPair)){const left=p.member_indices[0],right=p.member_indices[1],uv=points[left]&&points[right]?[points[left],points[right]]:null;if(!uv)continue;const delta=p.normalized_distance[pos]-p.normalized_distance[0];ctx.strokeStyle=delta>0?'#ef4444':'#2563eb';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(uv[0][0]*sx,uv[0][1]*sy);ctx.lineTo(uv[1][0]*sx,uv[1][1]*sy);ctx.stroke()}}}}
-function render(){if(!currentGroup){setGroup();return}const real=currentGroup.real,fake=currentGroup.fake;const rw=byId[real],fw=byId[fake];$('realTitle').textContent=($('showLabels').checked?'real '+(rw?.label||''):'real');$('fakeTitle').textContent=($('showLabels').checked?'fake '+(fw?.label||''):'fake');setVideo('real',real);setVideo('fake',fake);const rd=details[real],fd=details[fake];const rtime=rd?.coverage?.frame_records?.[0]?.timestamp_s,fTime=fd?.coverage?.frame_records?.[0]?.timestamp_s;$('timeline').textContent=`source=${currentGroup.source_id}; interval=${rw?.interval_start_s}–${rw?.interval_end_s}s; H boundary and actual model times are in tables`;renderCoverage(rd,fd);renderStructure(rd||{});renderModels(rd,fd)}
-function renderCoverage(rd,fd){const cov=[['real',rd],['fake',fd]];$('coverageSummary').innerHTML=cov.map(([role,d])=>{if(!d)return'';const c=d.coverage;return `<b>${role}</b>: support=${c.support_status}, initialized=${c.initial_query.initialized_track_slots}, frames=${c.frame_records.length}, model frames=${c.model_frame_indices.length}, components=${c.components.length}, triplets=${c.triplet_count}, invalid=${(c.invalid_reasons||[]).map(x=>x.reason).join(',')||'none'}`}).join('　');const d=rd||fd;if(!d)return;$('framesTable').innerHTML='<tr><th>array</th><th>source frame</th><th>PTS(s)</th><th>visible</th><th>geometry</th><th>model used</th></tr>'+d.coverage.frame_records.map(f=>`<tr><td>${f.array_index}</td><td>${f.source_frame_index}</td><td>${f.timestamp_s.toFixed(6)}</td><td>${f.visible_count}/${f.uv_finite_count}</td><td>${f.geometry_valid_count}/${f.xyz_finite_count}</td><td>${f.model_used?'yes':'—'}</td></tr>`).join('')}
-function renderStructure(d){selectedComponent=selectedComponent??null;const ts=d.structure?.triplets||[];const cs=[...new Set(ts.map(t=>t.component_index))];if(selectedComponent==null||!cs.includes(+selectedComponent))selectedComponent=cs[0]??null;$('component').innerHTML=cs.map(c=>`<option ${c==selectedComponent?'selected':''}>${c}</option>`).join('');const ct=ts.filter(t=>t.component_index==selectedComponent);const ids=ct.map(t=>t.triplet_id);if(selectedTriplet==null||!ids.includes(+selectedTriplet))selectedTriplet=ids[0]??null;$('triplet').innerHTML=ct.map(t=>`<option ${t.triplet_id==selectedTriplet?'selected':''}>${t.triplet_id} slots=${t.target_slots.join(',')}</option>`).join('');const tr=ct.find(t=>t.triplet_id==selectedTriplet);const pairs=tr?.pair_records||[];const pids=pairs.map(p=>p.pair_id.join('-'));if(selectedPair==null||!pids.includes(selectedPair))selectedPair=pids[0]??null;$('pair').innerHTML=pids.map(p=>`<option ${p===selectedPair?'selected':''}>${p}</option>`).join('');$('relationTable').innerHTML=tr?'<tr><th>pair</th><th>source frames</th><th>raw distance</th><th>normalized</th><th>background curve</th></tr>'+pairs.filter(p=>selectedPair==null||p.pair_id.join('-')===selectedPair).map(p=>`<tr><td>${p.pair_id.join('-')}</td><td>${p.source_frame_indices.join(', ')}</td><td>${p.raw_distance.map(x=>x.toFixed(6)).join(', ')}</td><td>${p.normalized_distance.map(x=>x.toFixed(6)).join(', ')}</td><td>native_curve_id=${p.native_curve_id}; full native curve in coverage/native_pair_curves.npz</td></tr>`).join(''):'<tr><td>无实际 triplet 支撑，结构未测量。</td></tr>'}
-function renderModels(rd,fd){const table=$('modelTable');if(!$('layerModel').checked){table.style.display='none';table.innerHTML='';return}table.style.display='table';const rows=[];for(const [role,d] of [['real',rd],['fake',fd]]){if(!d)continue;const response=d.model_response||{};for(const arm of Object.keys(response)){if(!$('showScores').checked)continue;const r=response[arm];rows.push(`<tr><td>${role}</td><td>${arm}</td><td class="score">${r.mean_score.toFixed(6)}</td><td>${r.seed_scores.map(x=>x.toFixed(5)).join(', ')}</td><td>${r.components.map(c=>`c${c.component_index}: q=${c.component_q.toFixed(5)}, contribution=${c.component_contribution.toFixed(5)}; `+c.triplets.map(t=>`t${t.triplet_id} q=${t.q_mean.toFixed(5)} w=${t.triplet_weight.toFixed(3)} contrib=${t.weighted_contribution.toFixed(5)}`).join(' ')).join('<br>')}</td></tr>`)}}table.innerHTML='<tr><th>side</th><th>arm</th><th>window logit</th><th>3 seeds</th><th>component/triplet decomposition</th></tr>'+rows.join('')||'<tr><td>未评分</td></tr>'}
-function currentDetails(){return details[currentGroup?.real]||details[currentGroup?.fake]||{}}
-$('source').onchange=()=>{const list=groupList();$('window').innerHTML=list.map(g=>`<option value="${g.group_id}">${g.label} (${g.group_id})</option>`).join('');setGroup()};$('kind').onchange=()=>{$('source').onchange()};$('window').onchange=setGroup;$('component').onchange=e=>{selectedComponent=e.target.value;selectedTriplet=null;selectedPair=null;render()};$('triplet').onchange=e=>{selectedTriplet=e.target.value;selectedPair=null;render()};$('pair').onchange=e=>{selectedPair=e.target.value;render()};$('showIds').onchange=render;$('showLabels').onchange=render;$('showScores').onchange=render;for(const id of ['layerCoverage','layerStructure','layerModel'])$(id).onchange=()=>{render();draw('real');draw('fake')};$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);function move(delta){const list=groupList(),i=Math.max(0,Math.min(list.length-1,list.findIndex(g=>g.group_id===currentGroup.group_id)+delta));$('window').value=list[i]?.group_id||'';setGroup()}
-$('play').onclick=()=>{$('realVideo').play();$('fakeVideo').play()};$('pause').onclick=()=>{$('realVideo').pause();$('fakeVideo').pause()};$('step').onclick=()=>{for(const role of ['real','fake']){const v=$(role+'Video'),d=details[v.dataset.windowId];if(!d||!v.duration)continue;const fr=nearest(d.coverage.frame_records,v.currentTime+.034);v.currentTime=fr?fr.relative_time_s:v.currentTime+.034}};$('seekTarget').onclick=()=>{for(const role of ['real','fake']){const v=$(role+'Video'),d=details[v.dataset.windowId],tr=d?.structure?.triplets?.[0];if(tr&&v.duration){const t=tr.timestamps_s[1]-d.coverage.frame_records[0].timestamp_s;v.currentTime=Math.max(0,Math.min(v.duration,t))}}};
-$('saveAnn').onclick=()=>{const d=currentDetails();annotations.push({window_id:currentGroup?.group_id,real_window_id:currentGroup?.real,fake_window_id:currentGroup?.fake,visible_distortion:$('annVisible').value,time_interval_s:[Number($('annStart').value)||null,Number($('annEnd').value)||null],rectangle:$('annRect').value||null,point:$('annPoint').value||null,coverage:$('annCoverage').value,raw_relation:$('annRaw').value,state_response:$('annState').value,model_response:$('annModel').value,notes:$('annNotes').value||'',created_at:new Date().toISOString()});$('annStatus').textContent=`已保存 ${annotations.length} 条（仅本地浏览器内存）`};$('exportJson').onclick=()=>dl('v7_annotations.json',JSON.stringify(annotations,null,2),'application/json');$('exportCsv').onclick=()=>{const keys=['window_id','visible_distortion','time_interval_s','rectangle','point','coverage','raw_relation','state_response','model_response','notes'];const esc=x=>'"'+String(x??'').replaceAll('"','""')+'"';dl('v7_annotations.csv',[keys.join(','),...annotations.map(a=>keys.map(k=>esc(Array.isArray(a[k])?a[k].join(';'):a[k])).join(','))].join('\n'),'text/csv')};$('importAnn').onchange=async e=>{const text=await e.target.files[0].text();try{const x=JSON.parse(text);if(!Array.isArray(x))throw Error('JSON must be array');annotations=x;$('annStatus').textContent=`已导入 ${annotations.length} 条`}catch(err){$('annStatus').textContent='导入失败：'+err}};
-function initCases(){const cases=DATA.sample_cases||{};$('caseLinks').innerHTML=Object.entries(cases).map(([name,gid])=>`<a href="#" data-g="${gid}">${name} → ${gid}</a>`).join('');document.querySelectorAll('#caseLinks a').forEach(a=>a.onclick=e=>{e.preventDefault();const g=groups[a.dataset.g];$('source').value=g.source_id;$('kind').value=g.kind;$('source').onchange();$('window').value=g.group_id;setGroup()})}
+function nearest(frames,t){if(!frames?.length)return null;return frames.reduce((a,b)=>Math.abs(b.relative_time_s-t)<Math.abs(a.relative_time_s-t)?b:a)}
+function selectedTriplet(role,d){const s=selection[role],ts=d?.structure?.triplets||[];return ts.find(t=>String(t.triplet_id)===String(s.triplet))||null}
+function draw(role){const v=$(role+'Video'),canvas=$(role+'Canvas'),wid=v.dataset.windowId,d=details[wid];if(!d||!v.videoWidth||!v.clientWidth)return;const fr=nearest(d.coverage.frame_records,v.currentTime);if(!fr)return;canvas.width=Math.max(1,v.clientWidth*devicePixelRatio);canvas.height=Math.max(1,v.clientHeight*devicePixelRatio);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const sx=canvas.width/v.videoWidth,sy=canvas.height/v.videoHeight;const colors=['#22c55e','#38bdf8','#f59e0b','#e879f9','#f43f5e','#a3e635','#fb7185','#2dd4bf'];const tr=selectedTriplet(role,d),s=selection[role],slots=new Set((tr?.target_slots||[]).map(Number));if(s.pair&&tr)for(const p of tr.pair_records||[]){if(p.pair_id.join('-')===s.pair)for(const slot of p.member_indices||[])slots.add(Number(slot))}if($('layerCoverage').checked){for(const p of fr.uv_points||[]){const [slot,track,u,vv,vis,geo,comp]=p;ctx.fillStyle=comp==null?'#facc15':colors[comp%colors.length];ctx.globalAlpha=geo?(vis?.95:.35):.55;ctx.beginPath();ctx.arc(u*sx,vv*sy,geo?3.5:2.5,0,Math.PI*2);ctx.fill();if(slots.has(Number(slot))){ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()}if($('showIds').checked){ctx.globalAlpha=.8;ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(track),u*sx+4,vv*sy-3)}}}ctx.globalAlpha=1;if($('layerStructure').checked&&tr&&s.pair){const points=Object.fromEntries((fr.uv_points||[]).map(p=>[p[0],[p[2],p[3]]]));const pos=tr.source_frame_indices.indexOf(fr.source_frame_index);if(pos>=0)for(const p of tr.pair_records||[]){if(p.pair_id.join('-')!==s.pair)continue;const left=p.member_indices[0],right=p.member_indices[1],uv=points[left]&&points[right]?[points[left],points[right]]:null;if(!uv)continue;const delta=p.normalized_distance[pos]-p.normalized_distance[0];ctx.strokeStyle=delta>0?'#ef4444':'#2563eb';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(uv[0][0]*sx,uv[0][1]*sy);ctx.lineTo(uv[1][0]*sx,uv[1][1]*sy);ctx.stroke()}}if(regionSelection&&regionSelection.role===role){ctx.strokeStyle='#facc15';ctx.lineWidth=2;ctx.setLineDash([6,4]);if(regionSelection.kind==='rect')ctx.strokeRect(regionSelection.x*sx,regionSelection.y*sy,regionSelection.w*sx,regionSelection.h*sy);else{ctx.beginPath();ctx.arc(regionSelection.x*sx,regionSelection.y*sy,5*sx,0,Math.PI*2);ctx.stroke()}ctx.setLineDash([])} }
+function draw(role){const v=$(role+'Video'),canvas=$(role+'Canvas'),wid=v.dataset.windowId,d=details[wid];if(!d||!v.videoWidth||!v.clientWidth)return;const fr=nearest(d.coverage.frame_records,v.currentTime);if(!fr)return;canvas.width=Math.max(1,v.clientWidth*devicePixelRatio);canvas.height=Math.max(1,v.clientHeight*devicePixelRatio);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const sx=canvas.width/v.videoWidth,sy=canvas.height/v.videoHeight;const colors=['#22c55e','#38bdf8','#f59e0b','#e879f9','#f43f5e','#a3e635','#fb7185','#2dd4bf'];const tr=selectedTriplet(role,d),s=selection[role],slots=new Set((tr?.target_slots||[]).map(Number));if(s.pair&&tr)for(const p of tr.pair_records||[])if(p.pair_id.join('-')===s.pair)for(const slot of p.member_indices||[])slots.add(Number(slot));for(const p of fr.uv_points||[]){const [slot,track,u,vv,vis,geo,comp]=p;if(!vis)continue;const selected=slots.has(Number(slot));if((geo&&$('layerGeometry').checked)||(!geo&&$('layerTracks').checked)){ctx.fillStyle=comp==null?'#facc15':colors[comp%colors.length];ctx.globalAlpha=geo?.95:.7;ctx.beginPath();ctx.arc(u*sx,vv*sy,selected?5:geo?3.5:2.5,0,Math.PI*2);ctx.fill();if(selected&&$('layerTriplet').checked){ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()}if($('showIds').checked){ctx.globalAlpha=.85;ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(track),u*sx+4,vv*sy-3)}}}ctx.globalAlpha=1;if($('layerPair').checked&&$('layerStructure').checked&&tr&&s.pair){const points=Object.fromEntries((fr.uv_points||[]).map(p=>[p[0],[p[2],p[3]]]));const pos=tr.source_frame_indices.indexOf(fr.source_frame_index);if(pos>=0)for(const p of tr.pair_records||[]){if(p.pair_id.join('-')!==s.pair)continue;const a=points[p.member_indices[0]],b=points[p.member_indices[1]];if(!a||!b)continue;const delta=p.normalized_distance[pos]-p.normalized_distance[0];ctx.strokeStyle=delta>0?'#ef4444':'#2563eb';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a[0]*sx,a[1]*sy);ctx.lineTo(b[0]*sx,b[1]*sy);ctx.stroke()}}if(regionSelection&&regionSelection.role===role){ctx.strokeStyle='#facc15';ctx.lineWidth=2;ctx.setLineDash([6,4]);if(regionSelection.kind==='rect')ctx.strokeRect(regionSelection.x*sx,regionSelection.y*sy,regionSelection.w*sx,regionSelection.h*sy);else{ctx.beginPath();ctx.arc(regionSelection.x*sx,regionSelection.y*sy,5*sx,0,Math.PI*2);ctx.stroke()}ctx.setLineDash([])}}
+function render(){if(!currentGroup){setGroup();return}const real=currentGroup.real,fake=currentGroup.fake,rw=byId[real],fw=byId[fake];$('realTitle').textContent=$('showLabels').checked?'real '+(rw?.label||''):'real';$('fakeTitle').textContent=$('showLabels').checked?'fake '+(fw?.label||''):'fake';setVideo('real',real);setVideo('fake',fake);$('timeline').textContent=`source=${currentGroup.source_id}; interval=${rw?.interval_start_s}–${rw?.interval_end_s}s；双方选择独立；时间以各自 PTS 表为准`;const rd=details[real],fd=details[fake];renderCoverage(rd,fd);renderStructure('real',rd||{});renderStructure('fake',fd||{});renderModels(rd,fd);updateAnnotationContext();draw('real');draw('fake')}
+function renderCoverage(rd,fd){const cov=[['real',rd],['fake',fd]];$('coverageSummary').innerHTML=cov.map(([role,d])=>{if(!d)return'';const c=d.coverage;return `<b>${role}</b>: status=${c.support_status}, query=${c.initial_query.initialized_track_slots}, frames=${c.frame_records.length}, model frames=${c.model_frame_indices.length}, components=${c.components.length}, triplets=${c.triplet_count}, invalid=${(c.invalid_reasons||[]).map(x=>esc(x.reason)).join(',')||'none'}`}).join('　');const rows=[];for(const [role,d] of cov){if(!d)continue;for(const f of d.coverage.frame_records||[])rows.push(`<tr><td>${role}</td><td>${f.array_index}</td><td>${f.source_frame_index}</td><td>${fmt(f.timestamp_s)}</td><td>${f.visible_count}/${f.uv_finite_count}</td><td>${f.geometry_valid_count}/${f.xyz_finite_count}</td><td>${f.model_used?'yes':'—'}</td></tr>`)}$('framesTable').innerHTML='<tr><th>side</th><th>array</th><th>source frame</th><th>PTS(s)</th><th>visible</th><th>geometry</th><th>model used</th></tr>'+rows.join('')}
+function renderCoverage(rd,fd){const cov=[['real',rd],['fake',fd]];$('coverageSummary').innerHTML=cov.map(([role,d])=>{if(!d)return'';const c=d.coverage;return `<b>${role}</b>: status=${c.support_status}, query=${c.initial_query.initialized_track_slots}, frames=${c.frame_records.length}, history=${c.history_frame_indices.length}, evaluation=${c.evaluation_frame_indices.length}, model slots=${c.model_frame_indices.length}, components=${c.components.length}, triplets=${c.triplet_count}, invalid=${(c.invalid_reasons||[]).map(x=>esc(x.reason)).join(',')||'none'}`}).join('　');$('timeFacts').innerHTML=cov.map(([role,d])=>{if(!d)return'';const c=d.coverage,matches=(c.target_matches||[]).map(x=>`${x.status==='MATCHED'?x.frame_index:'缺失'}@${x.target_time_s.toFixed(3)}s`).join(', ');return `<div><b>${role}</b> 历史=${c.history_frame_indices[0]??'—'}…${c.history_frame_indices.at(-1)??'—'}；评估=${c.evaluation_frame_indices[0]??'—'}…${c.evaluation_frame_indices.at(-1)??'—'}；目标槽=${matches}；有效 triplet=${c.triplet_count}</div>`}).join('');const rows=[];for(const [role,d] of cov){if(!d)continue;const records=d.coverage.frame_records||[],modelTimes=[].concat(...(d.coverage.actual_model_time_records||[]).map(t=>t.timestamps_s||[]));for(const f of records){const near=modelTimes.length?modelTimes.reduce((a,b)=>Math.abs(b-f.timestamp_s)<Math.abs(a-f.timestamp_s)?b:a):null;rows.push(`<tr><td>${role}</td><td>${f.array_index}</td><td>${f.source_frame_index}</td><td>${fmt(f.timestamp_s)}</td><td>${fmt(f.relative_time_s)}</td><td>${near===null?'—':fmt(near)}</td><td>${f.visible_count}/${f.uv_finite_count}</td><td>${f.geometry_valid_count}/${f.xyz_finite_count}</td><td>${f.model_used?'yes':'—'}</td></tr>`)}}$('framesTable').innerHTML='<tr><th>side</th><th>array</th><th>source frame</th><th>PTS(s)</th><th>window relative(s)</th><th>nearest model PTS(s)</th><th>visible</th><th>geometry</th><th>model used</th></tr>'+rows.join('')}
+function renderStructure(role,d){const s=selection[role],ts=d.structure?.triplets||[],cs=[...new Set(ts.map(t=>Number(t.component_index)))].sort((a,b)=>a-b);if(s.component===null||!cs.includes(Number(s.component)))s.component=cs[0]??null;const csel=$(role+'Component'),tsel=$(role+'Triplet'),psel=$(role+'Pair');csel.innerHTML=cs.map(c=>`<option value="${c}" ${Number(s.component)===c?'selected':''}>${c}</option>`).join('');const ct=ts.filter(t=>Number(t.component_index)===Number(s.component));const tids=ct.map(t=>String(t.triplet_id));if(s.triplet===null||!tids.includes(String(s.triplet)))s.triplet=tids[0]??null;tsel.innerHTML=ct.map(t=>`<option value="${t.triplet_id}" ${String(s.triplet)===String(t.triplet_id)?'selected':''}>t${t.triplet_id} slots=${t.target_slots.join(',')}</option>`).join('');const tr=ct.find(t=>String(t.triplet_id)===String(s.triplet)),pairs=tr?.pair_records||[],pids=pairs.map(p=>p.pair_id.join('-'));if(s.pair===null||!pids.includes(String(s.pair)))s.pair=pids[0]??null;psel.innerHTML=pids.map(p=>`<option value="${p}" ${String(s.pair)===String(p)?'selected':''}>${p}</option>`).join('');const rel=$(role+'RelationTable'),curve=$(role+'CurveTable');if(!tr){rel.innerHTML='<tr><td>无实际 triplet 支撑，结构未测量。</td></tr>';curve.innerHTML='';return}rel.innerHTML='<tr><th>pair</th><th>triplet source frames / PTS</th><th>raw distance</th><th>fixed-scale normalized</th></tr>'+pairs.filter(p=>!s.pair||p.pair_id.join('-')===s.pair).map(p=>`<tr><td>${p.pair_id.join('-')}</td><td>${tr.source_frame_indices.join(', ')}<br>${tr.timestamps_s.map(fmt).join(', ')}</td><td>${p.raw_distance.map(fmt).join(', ')}</td><td>${p.normalized_distance.map(fmt).join(', ')}</td></tr>`).join('');const state=tr.saved_states||[],first=tr.signed_first_difference||[],second=tr.signed_second_difference||[];curve.innerHTML='<tr><th colspan="5">St=[mean,std,p25,p75] and timestamp-aware signed differences</th></tr><tr><th>t</th><th>PTS(s)</th><th>mean</th><th>std</th><th>p25 / p75</th></tr>'+state.map((row,i)=>`<tr><td>${i}</td><td>${fmt(tr.timestamps_s[i])}</td><td>${fmt(row[0])}</td><td>${fmt(row[1])}</td><td>${fmt(row[2])} / ${fmt(row[3])}</td></tr>`).join('')+`<tr><td colspan="5">signed first: [${first.map(fmt).join(', ')}]; signed second: [${second.map(fmt).join(', ')}]</td></tr>`}
+function renderModels(rd,fd){const table=$('modelTable');if(!$('layerModel').checked){table.style.display='none';table.innerHTML='';return}table.style.display='table';const rows=[];for(const [role,d] of [['real',rd],['fake',fd]]){if(!d||!$('showScores').checked)continue;const response=d.model_response||{},s=selection[role];for(const arm of Object.keys(response)){const r=response[arm],parts=(r.components||[]).filter(c=>s.component===null||Number(c.component_index)===Number(s.component));const detail=parts.map(c=>`c${c.component_index}: q=${fmt(c.component_q)}, component contribution=${fmt(c.component_contribution)}; `+(c.triplets||[]).filter(t=>s.triplet===null||String(t.triplet_id)===String(s.triplet)).map(t=>`t${t.triplet_id}: q=${fmt(t.q_mean)}, weight=${fmt(t.triplet_weight)}, weighted contribution=${fmt(t.weighted_contribution)}`).join(' ')).join('<br>');rows.push(`<tr><td>${role}</td><td>${arm}</td><td>${fmt(r.mean_score)}</td><td>${(r.seed_scores||[]).map(fmt).join(', ')}</td><td>${detail||'未找到所选局部响应'}</td></tr>`)}}table.innerHTML='<tr><th>side</th><th>arm</th><th>window logit</th><th>seed logits</th><th>selected component/triplet q, weight, contribution</th></tr>'+rows.join('')||'<tr><td>未评分</td></tr>'}
+function currentFrame(role){const v=$(role+'Video'),d=details[v.dataset.windowId];return d?nearest(d.coverage.frame_records,v.currentTime)||d.coverage.frame_records[0]:null}
+function inside(point){if(!regionSelection)return false;const x=Number(point[2]),y=Number(point[3]);if(regionSelection.kind==='point')return Math.hypot(x-regionSelection.x,y-regionSelection.y)<=5;return x>=regionSelection.x&&x<=regionSelection.x+regionSelection.w&&y>=regionSelection.y&&y<=regionSelection.y+regionSelection.h}
+function computeCoverage(role){const v=$(role+'Video'),d=details[v.dataset.windowId];if(!d||!regionSelection||regionSelection.role!==role)return {status:'未选择区域'};const t0=numberOrNull($('annStart').value),t1=numberOrNull($('annEnd').value);if(t0!==null&&t1!==null&&t1<t0)return {status:'时间区间无效：结束早于开始'};const frames=(d.coverage.frame_records||[]).filter(f=>(t0===null||f.timestamp_s>=t0)&&(t1===null||f.timestamp_s<=t1));if(!frames.length)return {status:'选定时间内没有采样帧'};const per=[];for(const f of frames){const points=f.uv_points||[],visible=points.filter(p=>p[4]&&inside(p)),geo=points.filter(p=>p[5]&&inside(p));let common=0,both=0,one=0;for(const tr of d.structure?.triplets||[]){const pos=tr.source_frame_indices.indexOf(f.source_frame_index);if(pos<0)continue;const memberSet=new Set((tr.common_member_indices||[]).map(Number));common=Math.max(common,[...memberSet].filter(slot=>{const p=points.find(q=>Number(q[0])===slot);return p&&inside(p)}).length);for(const p of tr.pair_records||[]){const a=points.find(q=>Number(q[0])===Number(p.member_indices[0])),b=points.find(q=>Number(q[0])===Number(p.member_indices[1]));const ia=!!a&&inside(a),ib=!!b&&inside(b);if(ia&&ib)both++;else if(ia||ib)one++}}per.push({source_frame_index:f.source_frame_index,timestamp_s:f.timestamp_s,visible:visible.length,geometry:geo.length,common,both,one,model_used:!!f.model_used})}const max=k=>Math.max(...per.map(x=>x[k]),0);return {status:'ok; selected-frame maximums',frames_considered:per.length,max_visible_query_points:max('visible'),max_geometry_valid_points:max('geometry'),max_triplet_common_members:max('common'),max_pairs_both_endpoints:max('both'),max_pairs_one_endpoint:max('one'),model_frame_count:per.filter(x=>x.model_used).length,model_sample_range:(d.coverage.model_frame_indices||[]).map(Number),per_frame:per}}
+function computeCoverage(role){const v=$(role+'Video'),d=details[v.dataset.windowId];if(!d||!regionSelection||regionSelection.role!==role)return {status:'未选择区域'};const t0=numberOrNull($('annStart').value),t1=numberOrNull($('annEnd').value);if(t0!==null&&t1!==null&&t1<t0)return {status:'时间区间无效：结束早于开始'};const frames=(d.coverage.frame_records||[]).filter(f=>(t0===null||f.timestamp_s>=t0)&&(t1===null||f.timestamp_s<=t1));if(!frames.length)return {status:'选定时间内没有采样帧'};const s=selection[role],tr=selectedTriplet(role,d),component=(d.coverage.components||[]).find(c=>Number(c.component_index)===Number(s.component));const per=[];for(const f of frames){const points=f.uv_points||[],visible=points.filter(p=>p[4]&&inside(p)),geo=points.filter(p=>p[5]&&inside(p));let common=0,both=0,one=0,tripletIds=[];if(tr){const pos=tr.source_frame_indices.indexOf(f.source_frame_index);if(pos>=0){tripletIds=[tr.triplet_id];const memberSet=new Set((tr.common_member_indices||[]).map(Number));common=[...memberSet].filter(slot=>{const p=points.find(q=>Number(q[0])===slot);return p&&inside(p)}).length;for(const p of tr.pair_records||[]){const a=points.find(q=>Number(q[0])===Number(p.member_indices[0])),b=points.find(q=>Number(q[0])===Number(p.member_indices[1]));const ia=!!a&&inside(a),ib=!!b&&inside(b);if(ia&&ib)both++;else if(ia||ib)one++}}}per.push({source_frame_index:f.source_frame_index,timestamp_s:f.timestamp_s,visible:visible.length,geometry:geo.length,common,both,one,tripletIds,model_used:!!f.model_used})}const max=k=>Math.max(...per.map(x=>x[k]),0),modelFrames=per.filter(x=>x.model_used);return {status:'ok; selected-frame maximums',aggregation:'maximum across selected frames; counts are not accuracy',frames_considered:per.length,max_visible_query_points:max('visible'),max_geometry_valid_points:max('geometry'),max_selected_triplet_common_members:max('common'),max_pairs_both_endpoints:max('both'),max_pairs_one_endpoint:max('one'),component_index:s.component,component_total_members:component?.member_indices?.length??0,component_total_pairs:component?Math.floor(component.member_indices.length*(component.member_indices.length-1)/2):0,model_frame_count:modelFrames.length,model_sample_frame_indices:modelFrames.map(x=>x.source_frame_index),model_sample_timestamps_s:modelFrames.map(x=>x.timestamp_s),effective_triplet_ids:[...new Set(per.flatMap(x=>x.tripletIds))],per_frame:per}}
+function updateAnnotationContext(){const role=$('annRole').value,fr=currentFrame(role),d=fr?details[$(role+'Video').dataset.windowId]:null;if(fr){if($('annStart').value==='')$('annStart').value=String(fr.timestamp_s);if($('annEnd').value==='')$('annEnd').value=String(fr.timestamp_s);$('annContext').textContent=`${role} | window=${d.coverage.window_id} | source frame=${fr.source_frame_index} | PTS=${fmt(fr.timestamp_s)} | array=${fr.array_index}`}else $('annContext').textContent='尚无可用视频帧';$('annCoverageStats').textContent=JSON.stringify(computeCoverage(role),null,2)}
+function canvasPoint(role,event){const canvas=$(role+'Canvas'),v=$(role+'Video'),rect=canvas.getBoundingClientRect();return {x:(event.clientX-rect.left)*v.videoWidth/rect.width,y:(event.clientY-rect.top)*v.videoHeight/rect.height}}
+function updateRegionInputs(){if(!regionSelection)return;if(regionSelection.kind==='rect'){$('annRect').value=[regionSelection.x,regionSelection.y,regionSelection.w,regionSelection.h].map(x=>Number(x.toFixed(3))).join(',');$('annPoint').value=''}else{$('annPoint').value=[regionSelection.x,regionSelection.y].map(x=>Number(x.toFixed(3))).join(',');$('annRect').value=''}$('annRole').value=regionSelection.role;updateAnnotationContext();draw('real');draw('fake')}
+function attachCanvas(role){const c=$(role+'Canvas');c.addEventListener('pointerdown',e=>{if(!$(role+'Video').videoWidth)return;const p=canvasPoint(role,e);if(regionMode==='point'){regionSelection={role,kind:'point',x:p.x,y:p.y};updateRegionInputs();return}dragStart=p;c.setPointerCapture(e.pointerId)});c.addEventListener('pointermove',e=>{if(!dragStart||regionMode!=='rect')return;const p=canvasPoint(role,e);regionSelection={role,kind:'rect',x:Math.min(dragStart.x,p.x),y:Math.min(dragStart.y,p.y),w:Math.abs(p.x-dragStart.x),h:Math.abs(p.y-dragStart.y)};updateRegionInputs()});c.addEventListener('pointerup',e=>{if(!dragStart||regionMode!=='rect')return;const p=canvasPoint(role,e);regionSelection={role,kind:'rect',x:Math.min(dragStart.x,p.x),y:Math.min(dragStart.y,p.y),w:Math.abs(p.x-dragStart.x),h:Math.abs(p.y-dragStart.y)};dragStart=null;updateRegionInputs()})}
+function parseCsv(text){const rows=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++}else quoted=!quoted}else if(ch===','&&!quoted){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}const keys=rows.shift()||[];return rows.map(r=>Object.fromEntries(keys.map((k,i)=>[k,r[i]??''])))}
+function decodeAnnotationRow(a){for(const k of ['time_interval_s','region','point','coverage_counts','model_sample_range'])if(typeof a[k]==='string'&&a[k]){try{a[k]=JSON.parse(a[k])}catch(_){}}return a}
+function currentAnnotation(){const role=$('annRole').value,v=$(role+'Video'),d=details[v.dataset.windowId],fr=currentFrame(role),region=regionSelection&&regionSelection.role===role?(regionSelection.kind==='rect'?{x:regionSelection.x,y:regionSelection.y,w:regionSelection.w,h:regionSelection.h}:null):null,point=regionSelection&&regionSelection.role===role&&regionSelection.kind==='point'?{x:regionSelection.x,y:regionSelection.y}:null;return {source_id:currentGroup?.source_id,window_id:currentGroup?.group_id,role,real_window_id:currentGroup?.real,fake_window_id:currentGroup?.fake,source_frame_index:fr?.source_frame_index??null,array_index:fr?.array_index??null,timestamp_s:fr?.timestamp_s??null,visible_distortion:$('annVisible').value,distortion_type:$('annType').value,time_interval_s:[numberOrNull($('annStart').value),numberOrNull($('annEnd').value)],region:region,point:point,selected_component:selection[role].component,selected_triplet:selection[role].triplet,selected_pair:selection[role].pair,coverage_counts:computeCoverage(role),model_sample_range:d?.coverage?.model_frame_indices||[],notes:$('annNotes').value||'',created_at:new Date().toISOString()}}
+function currentAnnotation(){const role=$('annRole').value,v=$(role+'Video'),d=details[v.dataset.windowId],fr=currentFrame(role),region=regionSelection&&regionSelection.role===role?(regionSelection.kind==='rect'?{x:regionSelection.x,y:regionSelection.y,w:regionSelection.w,h:regionSelection.h}:null):null,point=regionSelection&&regionSelection.role===role&&regionSelection.kind==='point'?{x:regionSelection.x,y:regionSelection.y}:null;return {source_id:currentGroup?.source_id,window_id:currentGroup?.group_id,video_identity:d?.coverage?.source_id?`${role}:${d.coverage.source_id}:${d.coverage.window_id}`:null,role,real_window_id:currentGroup?.real,fake_window_id:currentGroup?.fake,source_frame_index:fr?.source_frame_index??null,array_index:fr?.array_index??null,timestamp_s:fr?.timestamp_s??null,frame_size_hw:fr?[fr.height,fr.width]:null,visible_distortion:$('annVisible').value,distortion_type:$('annType').value,time_interval_s:[numberOrNull($('annStart').value),numberOrNull($('annEnd').value)],region:region,point:point,selected_component:selection[role].component,selected_triplet:selection[role].triplet,selected_pair:selection[role].pair,coverage_counts:computeCoverage(role),model_sample_range:d?.coverage?.model_frame_indices||[],notes:$('annNotes').value||'',created_at:new Date().toISOString()}}
+function csvEscape(x){return '"'+String(x??'').replaceAll('"','""')+'"'}
+$('source').onchange=()=>{const list=groupList();$('window').innerHTML=list.map(g=>`<option value="${esc(g.group_id)}">${esc(g.label)} (${esc(g.group_id)})</option>`).join('');setGroup()};$('kind').onchange=()=>$('source').onchange();$('window').onchange=setGroup;for(const role of ['real','fake']){for(const field of ['Component','Triplet','Pair'])$(role+field).onchange=e=>{selection[role][field.toLowerCase()]=e.target.value;if(field!=='Pair'&&field!=='Triplet')selection[role].triplet=null;if(field==='Component'){selection[role].triplet=null;selection[role].pair=null}if(field==='Triplet')selection[role].pair=null;render()};attachCanvas(role)}$('showIds').onchange=render;$('showLabels').onchange=render;$('showScores').onchange=render;for(const id of ['layerCoverage','layerStructure','layerModel'])$(id).onchange=()=>{render();draw('real');draw('fake')};$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);function move(delta){const list=groupList(),i=Math.max(0,Math.min(list.length-1,list.findIndex(g=>g.group_id===currentGroup.group_id)+delta));$('window').value=list[i]?.group_id||'';setGroup()}
+$('play').onclick=()=>{$('realVideo').play();$('fakeVideo').play()};$('pause').onclick=()=>{$('realVideo').pause();$('fakeVideo').pause()};$('step').onclick=()=>{for(const role of ['real','fake']){const v=$(role+'Video'),d=details[v.dataset.windowId];if(!d||!v.duration)continue;const fr=nearest(d.coverage.frame_records,v.currentTime+.034);if(fr)v.currentTime=fr.relative_time_s}};$('seekTarget').onclick=()=>{for(const role of ['real','fake']){const v=$(role+'Video'),d=details[v.dataset.windowId],tr=selectedTriplet(role,d);if(tr&&v.duration){const t=tr.timestamps_s[1]-d.coverage.frame_records[0].timestamp_s;v.currentTime=Math.max(0,Math.min(v.duration,t))}}};$('modeRect').onchange=()=>{regionMode='rect'};$('modePoint').onchange=()=>{regionMode='point'};$('annRole').onchange=()=>{if(regionSelection)regionSelection.role=$('annRole').value;updateRegionInputs();render()};$('clearRegion').onclick=()=>{regionSelection=null;dragStart=null;$('annRect').value='';$('annPoint').value='';updateAnnotationContext();draw('real');draw('fake')};for(const id of ['annStart','annEnd'])$(id).oninput=updateAnnotationContext;
+$('saveAnn').onclick=()=>{if(!currentGroup){$('annStatus').textContent='没有选定窗口';return}const a=currentAnnotation();annotations.push(a);$('annStatus').textContent=`已保存 ${annotations.length} 条（开发解释用途；请导出后长期保存）`};$('exportJson').onclick=()=>dl('v7_annotations.json',JSON.stringify(annotations,null,2),'application/json');$('exportCsv').onclick=()=>{const keys=['source_id','window_id','role','real_window_id','fake_window_id','source_frame_index','array_index','timestamp_s','visible_distortion','distortion_type','time_interval_s','region','point','selected_component','selected_triplet','selected_pair','coverage_counts','model_sample_range','notes','created_at'];const lines=[keys.join(','),...annotations.map(a=>keys.map(k=>csvEscape(typeof a[k]==='object'?JSON.stringify(a[k]):a[k])).join(','))];dl('v7_annotations.csv',lines.join('\n'),'text/csv')};$('importAnn').onchange=async e=>{const file=e.target.files[0];if(!file)return;const text=await file.text();try{const x=file.name.toLowerCase().endsWith('.csv')?parseCsv(text):JSON.parse(text);if(!Array.isArray(x))throw Error('文件必须是数组');annotations=x.map(decodeAnnotationRow);$('annStatus').textContent=`已导入 ${annotations.length} 条`}catch(err){$('annStatus').textContent='导入失败：'+err.message}};
+function initCases(){const cases=DATA.sample_cases||{};$('caseLinks').innerHTML=Object.entries(cases).map(([name,gid])=>`<a href="#" data-g="${esc(gid)}">${esc(name)} → ${esc(gid)}</a>`).join('');document.querySelectorAll('#caseLinks a').forEach(a=>a.onclick=e=>{e.preventDefault();const g=groups[a.dataset.g];if(!g)return;$('source').value=g.source_id;$('kind').value=g.kind;$('source').onchange();$('window').value=g.group_id;setGroup()})}
+function stepToAdjacentSourceFrame(role){const v=$(role+'Video'),d=details[v.dataset.windowId],fr=currentFrame(role);if(!d||!fr)return;const records=d.coverage.frame_records||[],i=records.findIndex(x=>x.array_index===fr.array_index),next=records[Math.max(0,Math.min(records.length-1,i+1))];if(next)v.currentTime=next.relative_time_s}
+$('step').onclick=()=>{for(const role of ['real','fake'])stepToAdjacentSourceFrame(role)};
+for(const id of ['layerTracks','layerGeometry','layerTriplet','layerPair'])$(id).onchange=()=>{draw('real');draw('fake')};
+/* Final drawing override: target_slots are temporal target slots; particle
+   highlighting must use common_member_indices instead. */
+function draw(role){const v=$(role+'Video'),canvas=$(role+'Canvas'),wid=v.dataset.windowId,d=details[wid];if(!d||!v.videoWidth||!v.clientWidth)return;const fr=nearest(d.coverage.frame_records,v.currentTime);if(!fr)return;canvas.width=Math.max(1,v.clientWidth*devicePixelRatio);canvas.height=Math.max(1,v.clientHeight*devicePixelRatio);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const sx=canvas.width/v.videoWidth,sy=canvas.height/v.videoHeight,colors=['#22c55e','#38bdf8','#f59e0b','#e879f9','#f43f5e','#a3e635','#fb7185','#2dd4bf'],tr=selectedTriplet(role,d),s=selection[role],slots=new Set((tr?.common_member_indices||[]).map(Number));if(s.pair&&tr)for(const p of tr.pair_records||[])if(p.pair_id.join('-')===s.pair)for(const slot of p.member_indices||[])slots.add(Number(slot));for(const p of fr.uv_points||[]){const [slot,track,u,vv,vis,geo,comp]=p;if(!vis||!Number.isFinite(u)||!Number.isFinite(vv))continue;const selected=slots.has(Number(slot)),componentSelected=s.component!==null&&Number(comp)===Number(s.component),showPoint=$('layerTracks').checked||(geo&&$('layerGeometry').checked);if(!showPoint)continue;ctx.fillStyle=comp==null?'#facc15':colors[Number(comp)%colors.length];ctx.globalAlpha=geo?.95:.7;ctx.beginPath();ctx.arc(u*sx,vv*sy,selected?5:geo?3.5:2.5,0,Math.PI*2);ctx.fill();if(selected&&$('layerTriplet').checked){ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()}else if(componentSelected){ctx.globalAlpha=1;ctx.strokeStyle='#fbbf24';ctx.lineWidth=1.5;ctx.stroke()}if($('showIds').checked){ctx.globalAlpha=.85;ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(track),u*sx+4,vv*sy-3)}}ctx.globalAlpha=1;if($('layerPair').checked&&tr&&s.pair){const points=Object.fromEntries((fr.uv_points||[]).filter(p=>p[4]&&Number.isFinite(p[2])&&Number.isFinite(p[3])).map(p=>[p[0],[p[2],p[3]]]));const pos=tr.source_frame_indices.indexOf(fr.source_frame_index);if(pos>=0)for(const p of tr.pair_records||[]){if(p.pair_id.join('-')!==s.pair)continue;const a=points[p.member_indices[0]],b=points[p.member_indices[1]];if(!a||!b)continue;const delta=p.normalized_distance[pos]-p.normalized_distance[0];ctx.strokeStyle=delta>0?'#ef4444':'#2563eb';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a[0]*sx,a[1]*sy);ctx.lineTo(b[0]*sx,b[1]*sy);ctx.stroke()}}if(regionSelection&&regionSelection.role===role){ctx.strokeStyle='#facc15';ctx.lineWidth=2;ctx.setLineDash([6,4]);if(regionSelection.kind==='rect')ctx.strokeRect(regionSelection.x*sx,regionSelection.y*sy,regionSelection.w*sx,regionSelection.h*sy);else{ctx.beginPath();ctx.arc(regionSelection.x*sx,regionSelection.y*sy,5*sx,0,Math.PI*2);ctx.stroke()}ctx.setLineDash([])}}
+function canvasPoint(role,event){const canvas=$(role+'Canvas'),v=$(role+'Video'),rect=canvas.getBoundingClientRect(),clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));return {x:clamp((event.clientX-rect.left)*v.videoWidth/rect.width,0,v.videoWidth),y:clamp((event.clientY-rect.top)*v.videoHeight/rect.height,0,v.videoHeight)}}
+const previousAnnotationRoleChange=$('annRole').onchange;$('annRole').onchange=()=>{if(regionSelection&&regionSelection.role!==$('annRole').value)regionSelection=null;if(typeof previousAnnotationRoleChange==='function')previousAnnotationRoleChange();updateRegionInputs();render()};
 populate();initCases();
 </script></main></body></html>"""
 
@@ -1062,6 +1328,11 @@ def _build_index(
         wid = str(row["window_id"])
         manifest = window_manifest[wid]
         cov = coverage[wid]
+        source_path = Path(str(manifest["video_path"]))
+        fallback_media = {
+            "status": "NOT_MATERIALIZED" if source_path.is_file() else "SOURCE_MISSING",
+            "source_video_path": str(source_path),
+        }
         rows.append(
             {
                 "window_id": wid,
@@ -1077,7 +1348,7 @@ def _build_index(
                 "support_status": str(cov["support_status"]),
                 "invalid_reasons": cov["invalid_reasons"],
                 "model_available": wid in model_response,
-                "media": dict(media_by_window.get(wid, {"status": "MEDIA_UNAVAILABLE", "source_video_path": str(manifest["video_path"])})),
+                "media": dict(media_by_window.get(wid, fallback_media)),
                 "source_video_path": str(manifest["video_path"]),
                 "default_order_key": [str(row["source_id"]), 0 if row["kind"] == "MANIP" else 1, float(row["anchor_fraction"]), str(row["role"])],
             }
@@ -1127,7 +1398,7 @@ def run(
     media_by_window: dict[str, dict[str, Any]] = {}
     screenshot_rows: list[dict[str, Any]] = []
     if make_media:
-        media_by_window, screenshot_rows = _materialize_review_media(output_root, groups, coverage, structure)
+        media_by_window, screenshot_rows = _materialize_review_media(output_root, groups, coverage, structure, _default_review_cases(groups, coverage))
     for window_id, media in media_by_window.items():
         if window_id in coverage:
             coverage[window_id]["media"] = media
@@ -1161,6 +1432,8 @@ def run(
     if partial:
         sample_cases["partial_missing"] = partial[0]["group_id"]
     _write_json(output_root / "review/screenshot_index.json", screenshot_rows)
+    _write_annotation_inventory(output_root)
+    _write_measurement_contract(output_root, coverage, structure)
     _write_json(output_root / "review/index_data.json", {"windows": index_rows, "groups": groups, "sample_cases": sample_cases})
     page_payload = {
         "protocol": protocol,
@@ -1168,7 +1441,8 @@ def run(
         "groups": groups,
         "details": details_payload,
         "sample_cases": sample_cases,
-        "annotation_schema": {"status": "development-only; not training or population selection", "fields": ["visible_distortion", "time_interval_s", "rectangle", "point", "coverage", "raw_relation", "state_response", "model_response", "notes"]},
+        "annotation_schema": {"status": "development-only; not training or population selection", "fields": ["source_id", "window_id", "role", "source_frame_index", "timestamp_s", "visible_distortion", "distortion_type", "time_interval_s", "region", "point", "coverage_counts", "model_sample_range", "notes"]},
+        "annotation_inventory_path": "../annotation_inventory.csv",
         "selected_pairs_count": len(selected_pairs),
     }
     _write_json(output_root / "review/data.json", page_payload)
@@ -1188,16 +1462,19 @@ def run(
             "invalid_support_windows": sum(row["support_status"] != "VALID" for row in coverage.values()),
             "invalid_reason_counts": {reason: sum(1 for row in coverage.values() for item in row.get("invalid_reasons", []) if item.get("reason") == reason) for reason in sorted({item.get("reason") for row in coverage.values() for item in row.get("invalid_reasons", [])})},
         },
-        "review": {"html": str(review_path), "index_entries": len(index_rows), "media_entries": len(media_by_window), "screenshots": len(screenshot_rows), "browser_visual_verification": False},
+        "review": {"html": str(review_path), "index_entries": len(index_rows), "media_entries": len(media_by_window), "screenshots": len(screenshot_rows), "browser_visual_verification": False, "annotation_inventory": str(output_root / "annotation_inventory.csv")},
         "elapsed_s": time.perf_counter() - started,
         "boundaries": ["read-only frozen model forward passes", "no optimizer.step", "no frontend/provider rerun", "no GPU", "not a formal detector result", "180 fold/seed models are not independent samples"],
     }
     _write_json(output_root / "evaluation/summary.json", summary)
-    _write_json(output_root / "run_summary.json", {"status": summary["status"], "artifact_root": str(output_root), "summary": "evaluation/summary.json", "review_html": str(review_path), "window_count": len(coverage), "model_record_count": len(diagnostics), "media_entry_count": len(media_by_window)})
+    _write_json(output_root / "run_summary.json", {"status": summary["status"], "artifact_root": str(output_root), "summary": "evaluation/summary.json", "review_html": str(review_path), "annotation_inventory": str(output_root / "annotation_inventory.csv"), "measurement_contract": str(output_root / "measurement_contract.json"), "window_count": len(coverage), "model_record_count": len(diagnostics), "media_entry_count": len(media_by_window)})
     return summary
 
 
-def attach_media(output_root: Path = DIAGNOSTIC_OUTPUT_ROOT) -> dict[str, Any]:
+def attach_media(
+    output_root: Path = DIAGNOSTIC_OUTPUT_ROOT,
+    window_ids: Sequence[str] | None = None,
+) -> dict[str, Any]:
     """Attach deterministic short review clips to an existing numeric audit."""
 
     if not output_root.exists():
@@ -1210,23 +1487,32 @@ def attach_media(output_root: Path = DIAGNOSTIC_OUTPUT_ROOT) -> dict[str, Any]:
     window_manifest = _load_window_manifest()
     groups = index_data["groups"]
     ordered_groups = sorted(groups.values(), key=lambda row: int(row.get("default_order_index", 0)))
-    partial_groups = [
-        group
-        for group in ordered_groups
-        if any(
-            wid
-            and coverage[wid]["support_status"] == "VALID"
-            and any(component.get("invalid_triplets") for component in coverage[wid].get("components", []))
-            for wid in (group.get("real"), group.get("fake"))
-        )
-    ]
     sample_cases = dict(index_data.get("sample_cases", {}))
-    if partial_groups:
-        sample_cases["partial_missing"] = partial_groups[0]["group_id"]
-    media_by_window, screenshot_rows = _materialize_review_media(output_root, groups, coverage, structure, sample_cases)
-    for window_id, media in media_by_window.items():
+    requested_window_ids = None if window_ids is None else {str(item) for item in window_ids}
+    if window_ids is None:
+        requested_cases = _default_review_cases(groups, coverage)
+        requested_cases.update({name: gid for name, gid in sample_cases.items() if gid in groups})
+        media_by_window, screenshot_rows = _materialize_review_media(output_root, groups, coverage, structure, requested_cases)
+    else:
+        requested_cases = {}
+        for value in requested_window_ids:
+            group_id = value.split("::", 1)[0]
+            if group_id in groups:
+                requested_cases[f"on_demand_{_safe_slug(value)}"] = group_id
+        media_by_window, screenshot_rows = _materialize_review_media(output_root, groups, coverage, structure, requested_cases, requested_window_ids=requested_window_ids)
+    old_media = {
+        str(row["window_id"]): dict(row.get("media", {}))
+        for row in index_data.get("windows", [])
+        if row.get("media", {}).get("status") in {"AVAILABLE", "SOURCE_MISSING", "DECODE_FAILED"}
+    }
+    merged_media = old_media | media_by_window
+    for window_id, media in merged_media.items():
         coverage[window_id]["media"] = media
-    index_rows = _build_index(input_rows, coverage, response, window_manifest, media_by_window)
+    old_screenshot_rows = json.loads((output_root / "review/screenshot_index.json").read_text(encoding="utf-8")) if (output_root / "review/screenshot_index.json").is_file() else []
+    screenshot_by_window = {str(row["window_id"]): row for row in old_screenshot_rows}
+    screenshot_by_window.update({str(row["window_id"]): row for row in screenshot_rows})
+    screenshot_rows = [screenshot_by_window[key] for key in sorted(screenshot_by_window)]
+    index_rows = _build_index(input_rows, coverage, response, window_manifest, merged_media)
     details_payload = {row["window_id"]: {"coverage": coverage[row["window_id"]], "structure": structure[row["window_id"]], "model_response": response.get(row["window_id"])} for row in index_rows}
     protocol = json.loads((output_root / "protocol.json").read_text(encoding="utf-8"))
     page_payload = {
@@ -1235,19 +1521,22 @@ def attach_media(output_root: Path = DIAGNOSTIC_OUTPUT_ROOT) -> dict[str, Any]:
         "groups": groups,
         "details": details_payload,
         "sample_cases": sample_cases,
-        "annotation_schema": {"status": "development-only; not training or population selection", "fields": ["visible_distortion", "time_interval_s", "rectangle", "point", "coverage", "raw_relation", "state_response", "model_response", "notes"]},
+        "annotation_schema": {"status": "development-only; not training or population selection", "fields": ["source_id", "window_id", "role", "source_frame_index", "timestamp_s", "visible_distortion", "distortion_type", "time_interval_s", "region", "point", "coverage_counts", "model_sample_range", "notes"]},
+        "annotation_inventory_path": "../annotation_inventory.csv",
         "selected_pairs_count": 16,
     }
     _write_json(output_root / "coverage/coverage_windows.json", coverage)
+    _write_annotation_inventory(output_root)
+    _write_measurement_contract(output_root, coverage, structure)
     _write_json(output_root / "review/screenshot_index.json", screenshot_rows)
     _write_json(output_root / "review/index_data.json", {"windows": index_rows, "groups": groups, "sample_cases": sample_cases})
     _write_json(output_root / "review/data.json", page_payload)
     (output_root / "review/index.html").write_text(build_review_html(page_payload), encoding="utf-8")
     summary_path = output_root / "evaluation/summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    summary["review"] = {"html": str(output_root / "review/index.html"), "index_entries": len(index_rows), "media_entries": len(media_by_window), "screenshots": len(screenshot_rows), "browser_visual_verification": False}
+    summary["review"] = {"html": str(output_root / "review/index.html"), "index_entries": len(index_rows), "media_entries": len(merged_media), "screenshots": len(screenshot_rows), "browser_visual_verification": False, "annotation_inventory": str(output_root / "annotation_inventory.csv")}
     _write_json(summary_path, summary)
-    _write_json(output_root / "run_summary.json", {"status": summary["status"], "artifact_root": str(output_root), "summary": "evaluation/summary.json", "review_html": str(output_root / "review/index.html"), "window_count": len(coverage), "model_record_count": summary.get("population", {}).get("model_records"), "media_entry_count": len(media_by_window)})
+    _write_json(output_root / "run_summary.json", {"status": summary["status"], "artifact_root": str(output_root), "summary": "evaluation/summary.json", "review_html": str(output_root / "review/index.html"), "annotation_inventory": str(output_root / "annotation_inventory.csv"), "measurement_contract": str(output_root / "measurement_contract.json"), "window_count": len(coverage), "model_record_count": summary.get("population", {}).get("model_records"), "media_entry_count": len(merged_media)})
     return summary
 
 
@@ -1256,8 +1545,11 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=DIAGNOSTIC_OUTPUT_ROOT)
     parser.add_argument("--no-media", action="store_true", help="skip optional short clips and screenshots")
     parser.add_argument("--attach-media", action="store_true", help="attach review media to an existing numeric diagnostic")
+    parser.add_argument("--window-id", action="append", default=None, help="materialise one existing group/window (repeatable); only used with --attach-media")
     args = parser.parse_args()
-    result = attach_media(args.output_root) if args.attach_media else run(output_root=args.output_root, make_media=not args.no_media)
+    if args.window_id and not args.attach_media:
+        parser.error("--window-id requires --attach-media")
+    result = attach_media(args.output_root, args.window_id) if args.attach_media else run(output_root=args.output_root, make_media=not args.no_media)
     print(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True))
 
 
