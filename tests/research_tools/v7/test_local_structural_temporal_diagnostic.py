@@ -46,6 +46,12 @@ def test_review_page_is_inline_and_has_annotation_and_layer_contracts():
     fallback = build_review_html({"windows": [], "groups": {"g": {"source_id": "S01"}}, "details": {}, "sample_cases": {}})
     assert '<option value="S01">S01</option>' in fallback
     assert 'id="initError"' in fallback
+    # Python's outer template must preserve JavaScript escape sequences.  A
+    # literal newline inside the single-quoted CSV parser strings makes the
+    # browser reject the whole page before the videos can be initialised.
+    assert "ch==='\\n'" in fallback
+    assert "lines.join('\\n')" in fallback
+    assert "ch==='\n'" not in fallback
 
 
 def test_index_distinguishes_unmaterialized_from_missing_source(tmp_path):
