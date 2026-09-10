@@ -38,7 +38,7 @@ Part A 的 192 窗口中，166 个有有效 triplet，26 个为 `NO_VALID_TRIPLE
 - `component_diagnostics.csv`：192 历史窗口及 32 个新密度结果，区分图边和内部 pair。
 - `density_comparison.csv`：两密度有效率、共同成员、component 和匹配误差。
 - `review/index.html`：无外部 CDN 的静态页面，可在派生目录上运行 `python3 -m http.server 8765` 后访问。页面可在同一 source/role/PTS 下切换 64/289、component 和精确帧；黄色点表示未归入 component，紫/青色只表示密度网格，白圈表示 selected triplet common member。页面引用既有短片副本，不复制完整视频。
-- `review/index.html` 现在提供最小的原始像素矩形圈选、JSON 导入/导出和 64/289 同帧切换入口；浏览器输入保存在 `roi_review/annotations.json` 后，离线程序才会重新校验 source、frame、PTS、尺寸和 ROI 边界。
+- `review/index.html` 现在提供最小的原始像素矩形圈选、JSON 导入/导出和 64/289 同帧切换入口；人工导出 JSON 并放入 `roi_review/annotations.json` 后，离线程序才会重新校验 source、frame、PTS、尺寸和 ROI 边界。
 - `roi_review/`：`roi_validation.csv`、`per_frame_coverage.csv`、`per_component_triplet_coverage.csv` 和 `density_comparison.csv` 只在人工输入通过校验后填充实际计数；当前没有有效人工记录，计数表保持表头并不输出虚构结果。单帧 ROI 不自动传播到其他 triplet 时刻，`TEMPORAL_ROI_PENDING` 只表示仍需人工逐帧确认。
 
 服务器本轮未实际执行浏览器视觉验收，只完成静态 HTTP/JSON 路径检查；因此不能把页面存在等同于已完成浏览器验收。
