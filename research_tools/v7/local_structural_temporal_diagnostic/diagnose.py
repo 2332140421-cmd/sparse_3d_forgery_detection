@@ -16,6 +16,7 @@ import base64
 import csv
 from fractions import Fraction
 import hashlib
+import html
 import io
 import json
 import math
@@ -1263,7 +1264,9 @@ def build_review_html(payload: Mapping[str, Any]) -> str:
 
     encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
     encoded = encoded.replace("<", "\\u003c").replace("&", "\\u0026")
-    return """<!doctype html>
+    source_ids = sorted({str(group.get("source_id", "")) for group in payload.get("groups", {}).values() if group.get("source_id") is not None})
+    source_options = "".join(f'<option value="{html.escape(source)}">{html.escape(source)}</option>' for source in source_ids)
+    page = """<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>V7 local structural-temporal joint diagnostic</title>
 <style>
@@ -1329,6 +1332,16 @@ async function loadGroupDetails(group){const ids=[group?.real,group?.fake].filte
 async function setGroup(){const list=groupList();if(!list.length)return;currentGroup=groups[$('window').value]||list[0];$('window').value=currentGroup.group_id;for(const role of ['real','fake'])selection[role]={component:null,triplet:null,pair:null};regionSelection=null;dragStart=null;try{await loadGroupDetails(currentGroup);render()}catch(error){$('timeline').textContent='无法加载窗口详情：'+error.message+'；请通过本地 HTTP 服务访问页面，不要直接打开 file:// 文件'}}
 populate();initCases();
 </script></main></body></html>"""
+    return page.replace(
+        '<select id="source"></select>',
+        '<select id="source">' + source_options + '</select>',
+    ).replace(
+        '<h1>V7 联合诊断审查页</h1>',
+        '<h1>V7 联合诊断审查页</h1><p id="initError" class="bad" role="alert"></p>',
+    ).replace(
+        '<script id="payload"',
+        '<script>window.addEventListener("error",function(event){var node=document.getElementById("initError");if(node)node.textContent="页面初始化错误："+(event.message||"未知错误")+"；请使用本地 HTTP 服务并刷新"});</script><script id="payload"',
+    )
 
 
 def _build_index(

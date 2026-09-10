@@ -43,6 +43,9 @@ def test_review_page_is_inline_and_has_annotation_and_layer_contracts():
     assert "regionSelection.role!==$('annRole').value" in html
     assert "loadGroupDetails" in html and "DATA.detail_paths" in html
     assert "不要直接打开 file:// 文件" in html
+    fallback = build_review_html({"windows": [], "groups": {"g": {"source_id": "S01"}}, "details": {}, "sample_cases": {}})
+    assert '<option value="S01">S01</option>' in fallback
+    assert 'id="initError"' in fallback
 
 
 def test_index_distinguishes_unmaterialized_from_missing_source(tmp_path):
