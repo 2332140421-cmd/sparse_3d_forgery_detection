@@ -130,7 +130,13 @@ def _bootstrap(source_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
-def train_and_evaluate(examples: Sequence[Mapping[str, Any]], output_root: Path) -> dict[str, Any]:
+def train_and_evaluate(
+    examples: Sequence[Mapping[str, Any]],
+    output_root: Path,
+    *,
+    device: str = "cuda",
+    time_limit_s: float | None = None,
+) -> dict[str, Any]:
     started = time.perf_counter()
     examples = list(examples)
     sources = sorted({str(example["source_id"]) for example in examples})
@@ -142,6 +148,9 @@ def train_and_evaluate(examples: Sequence[Mapping[str, Any]], output_root: Path)
     fold_rows: list[dict[str, Any]] = []
     model_rows: list[dict[str, Any]] = []
     for held_out in sources:
+        if time_limit_s is not None and time.perf_counter() - started >= float(time_limit_s):
+            fold_rows.append({"held_out_source": held_out, "status": "TRAINING_BUDGET_EXHAUSTED"})
+            break
         heldout = [example for example in examples if str(example["source_id"]) == held_out]
         training = [example for example in labeled if str(example["source_id"]) != held_out]
         if not heldout:
@@ -161,7 +170,7 @@ def train_and_evaluate(examples: Sequence[Mapping[str, Any]], output_root: Path)
             train_batch, _ = build_batch(training, arm, standardizer=standardizer, observation_weights=True)
             held_batch, _ = build_batch(heldout, arm, standardizer=standardizer)
             for seed in SEEDS:
-                model, fit = train_model(train_batch, seed=seed)
+                model, fit = train_model(train_batch, seed=seed, device=device)
                 scores = score_model(model, held_batch)
                 for example, score in zip(heldout, scores):
                     oof[str(example["window_id"])][f"{arm}_score_seed_{seed}"] = float(score)
@@ -193,6 +202,6 @@ def train_and_evaluate(examples: Sequence[Mapping[str, Any]], output_root: Path)
     _write_csv(output_root / "per_source_metrics.csv", source_rows)
     _write_csv(output_root / "fold_support.csv", fold_rows)
     _write_json(output_root / "model_records.json", {"model_config": MODEL_CONFIG, "seeds": list(SEEDS), "folds": model_rows})
-    summary = {"status": status, "arms": list(ARMS), "sources": sources, "oof_window_count": len(oof_rows), "source_metrics": source_rows, "bootstrap": bootstrap, "fold_support": fold_rows, "training_elapsed_s": time.perf_counter() - started, "ctrl_excluded_from_training": True, "formal_src_modified": False}
+    summary = {"status": status, "arms": list(ARMS), "sources": sources, "oof_window_count": len(oof_rows), "source_metrics": source_rows, "bootstrap": bootstrap, "fold_support": fold_rows, "training_elapsed_s": time.perf_counter() - started, "training_budget_s": time_limit_s, "ctrl_excluded_from_training": True, "formal_src_modified": False, "training_device": device}
     _write_json(output_root / "training_summary.json", summary)
     return summary

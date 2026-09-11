@@ -1,4 +1,4 @@
-"""Small CPU MLP and source-disjoint evaluation helpers for the V7 pilot."""
+"""Small MLP and source-disjoint evaluation helpers for the V7 pilot."""
 
 from __future__ import annotations
 
@@ -128,6 +128,36 @@ class Batch:
     n_windows: int
 
 
+@dataclass(frozen=True)
+class PreparedBatch:
+    """GPU-resident tensors prepared once outside the optimization loop."""
+
+    inputs: torch.Tensor
+    row_triplet_ids: torch.Tensor
+    row_component_ids: torch.Tensor
+    triplet_component_ids: torch.Tensor
+    row_window_ids: torch.Tensor
+    component_window_ids: torch.Tensor
+
+
+def prepare_batch_tensors(batch: Batch, device: str | torch.device) -> PreparedBatch:
+    """Move the fixed aggregation index and input tensors to one device once."""
+
+    device = torch.device(device)
+    component_windows = [
+        int(batch.row_window_ids[np.flatnonzero(batch.row_component_ids == component_id)[0]])
+        for component_id in range(batch.n_components)
+    ]
+    return PreparedBatch(
+        inputs=torch.as_tensor(batch.inputs, dtype=torch.float32, device=device),
+        row_triplet_ids=torch.as_tensor(batch.row_triplet_ids, dtype=torch.long, device=device),
+        row_component_ids=torch.as_tensor(batch.row_component_ids, dtype=torch.long, device=device),
+        triplet_component_ids=torch.as_tensor(batch.triplet_component_ids, dtype=torch.long, device=device),
+        row_window_ids=torch.as_tensor(batch.row_window_ids, dtype=torch.long, device=device),
+        component_window_ids=torch.as_tensor(component_windows, dtype=torch.long, device=device),
+    )
+
+
 def weighted_window_bce(logits: torch.Tensor, labels: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
     """Compute the predeclared mean-normalized weighted window BCE."""
 
@@ -231,19 +261,16 @@ class WindowMLP(nn.Module):
         )
         self.head = nn.Linear(MODEL_CONFIG["representation_dim"], 1)
 
-    def forward(self, batch: Batch) -> torch.Tensor:
-        device = next(self.parameters()).device
-        values = torch.as_tensor(batch.inputs, dtype=torch.float32, device=device)
-        hidden = self.encoder(values)
-        triplet_ids = torch.as_tensor(batch.row_triplet_ids, dtype=torch.long, device=device)
-        component_ids = torch.as_tensor(batch.row_component_ids, dtype=torch.long, device=device)
-        window_ids = torch.as_tensor(batch.row_window_ids, dtype=torch.long, device=device)
+    def _forward_prepared(self, batch: Batch, prepared: PreparedBatch) -> torch.Tensor:
+        device = prepared.inputs.device
+        hidden = self.encoder(prepared.inputs)
+        triplet_ids = prepared.row_triplet_ids
         triplet_sum = torch.zeros((batch.n_triplets, hidden.shape[1]), dtype=hidden.dtype, device=device)
         triplet_count = torch.zeros(batch.n_triplets, dtype=hidden.dtype, device=device)
         triplet_sum.index_add_(0, triplet_ids, hidden)
         triplet_count.index_add_(0, triplet_ids, torch.ones_like(triplet_ids, dtype=hidden.dtype))
         triplet_values = triplet_sum / triplet_count[:, None]
-        component_for_triplet = torch.as_tensor(batch.triplet_component_ids, dtype=torch.long, device=device)
+        component_for_triplet = prepared.triplet_component_ids
         component_sum = torch.zeros((batch.n_components, hidden.shape[1]), dtype=hidden.dtype, device=device)
         component_count = torch.zeros(batch.n_components, dtype=hidden.dtype, device=device)
         component_sum.index_add_(0, component_for_triplet, triplet_values)
@@ -251,33 +278,43 @@ class WindowMLP(nn.Module):
         component_values = component_sum / component_count[:, None]
         window_sum = torch.zeros((batch.n_windows, hidden.shape[1]), dtype=hidden.dtype, device=device)
         window_count = torch.zeros(batch.n_windows, dtype=hidden.dtype, device=device)
-        component_for_window = torch.as_tensor(
-            [int(batch.row_window_ids[np.flatnonzero(batch.row_component_ids == component_id)[0]]) for component_id in range(batch.n_components)],
-            dtype=torch.long,
-            device=device,
-        )
+        component_for_window = prepared.component_window_ids
         window_sum.index_add_(0, component_for_window, component_values)
         window_count.index_add_(0, component_for_window, torch.ones_like(component_for_window, dtype=hidden.dtype))
         window_values = window_sum / window_count[:, None]
         return self.head(window_values).squeeze(-1)
 
+    def forward(self, batch: Batch) -> torch.Tensor:
+        device = next(self.parameters()).device
+        return self._forward_prepared(batch, prepare_batch_tensors(batch, device))
 
-def train_model(batch: Batch, *, seed: int, epochs: int = int(MODEL_CONFIG["epochs"])) -> tuple[WindowMLP, dict[str, Any]]:
-    """Train exactly one full-batch CPU model with the predeclared budget."""
+
+def train_model(
+    batch: Batch,
+    *,
+    seed: int,
+    epochs: int = int(MODEL_CONFIG["epochs"]),
+    device: str | torch.device = "cpu",
+) -> tuple[WindowMLP, dict[str, Any]]:
+    """Train exactly one full-batch model with fixed tensors on ``device``."""
 
     if np.any(batch.labels < 0):
         raise ValueError("training labels must be present")
     if batch.n_windows < 2 or len(np.unique(batch.labels)) != 2:
         raise ValueError("training batch must contain both classes")
     torch.manual_seed(int(seed))
-    model = WindowMLP()
+    device = torch.device(device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("requested CUDA training but CUDA is unavailable")
+    model = WindowMLP().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=MODEL_CONFIG["learning_rate"], weight_decay=MODEL_CONFIG["weight_decay"])
-    labels = torch.as_tensor(batch.labels, dtype=torch.float32)
-    weights = torch.as_tensor(batch.window_weights, dtype=torch.float32)
+    prepared = prepare_batch_tensors(batch, device)
+    labels = torch.as_tensor(batch.labels, dtype=torch.float32, device=device)
+    weights = torch.as_tensor(batch.window_weights, dtype=torch.float32, device=device)
     loss_history: list[float] = []
     for _ in range(int(epochs)):
         optimizer.zero_grad(set_to_none=True)
-        logits = model(batch)
+        logits = model._forward_prepared(batch, prepared)
         loss = weighted_window_bce(logits, labels, weights)
         loss.backward()
         optimizer.step()
@@ -289,13 +326,20 @@ def train_model(batch: Batch, *, seed: int, epochs: int = int(MODEL_CONFIG["epoc
         "final_loss": loss_history[-1],
         "min_loss": float(np.min(loss_history)),
         "loss_history": loss_history,
+        "device": str(device),
+        "parameter_device": str(next(model.parameters()).device),
+        "input_device": str(prepared.inputs.device),
+        "input_dtype": str(prepared.inputs.dtype),
+        "output_device": str(device),
     }
 
 
 def score_model(model: WindowMLP, batch: Batch) -> np.ndarray:
     model.eval()
+    device = next(model.parameters()).device
+    prepared = prepare_batch_tensors(batch, device)
     with torch.no_grad():
-        return model(batch).detach().cpu().numpy().astype(np.float64)
+        return model._forward_prepared(batch, prepared).detach().cpu().numpy().astype(np.float64)
 
 
 def serialize_model(model: WindowMLP, standardizer: WeightedStandardizer) -> dict[str, Any]:

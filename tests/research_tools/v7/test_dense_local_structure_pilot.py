@@ -2,6 +2,7 @@ import numpy as np
 
 from research_tools.v7.dense_local_structure_pilot.grouping import analysis_grid, assign_groups, fixed_local_edges
 from research_tools.v7.dense_local_structure_pilot.representation import fixed_edge_triplet
+from research_tools.v7.dense_local_structure_pilot.run_pipeline import _validate_frontend_arrays
 
 
 def test_analysis_grid_is_fixed_three_pixel_centres():
@@ -71,3 +72,22 @@ def test_each_frame_with_three_edges_is_not_enough_without_common_edges():
         {"edge_id": 5, "left_query_id": 0, "right_query_id": 3},
     ]
     assert fixed_edge_triplet(xyz, np.arange(5, dtype=np.float64), edges, [0, 1], [2, 3, 4]) is None
+
+
+def test_reuse_audit_rejects_frontend_shape_that_would_hide_missing_queries(tmp_path):
+    row = {"frame_indices": [10, 11], "timestamps_s": [0.0, 0.1]}
+    path = tmp_path / "bad.npz"
+    np.savez(
+        path,
+        raw_uv=np.zeros((2, 3, 2), dtype=np.float32),
+        visibility=np.ones((2, 3), dtype=bool),
+        xyz=np.zeros((2, 3, 3), dtype=np.float32),
+        geometry_validity=np.ones((2, 3), dtype=bool),
+        frame_indices=np.asarray([10, 11], dtype=np.int64),
+        timestamps_s=np.asarray([0.0, 0.1], dtype=np.float64),
+        query_start_uv_analysis=np.zeros((3, 2), dtype=np.float32),
+        group_ids=np.asarray(["g"] * 3),
+        edges=np.asarray([[0, 1]], dtype=np.int32),
+        edge_groups=np.asarray(["g"]),
+    )
+    assert _validate_frontend_arrays(path, row, query_count=4)["ok"] is False

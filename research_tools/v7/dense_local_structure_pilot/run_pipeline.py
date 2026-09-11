@@ -22,7 +22,14 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
-from .frontend import build_geometry, infer_depth_and_masks, sha256, track_dense_window
+from .frontend import (
+    SUPPORTED_BATCH_SIZES,
+    benchmark_tracking_batches,
+    build_geometry,
+    infer_depth_and_masks,
+    sha256,
+    track_dense_window,
+)
 from .grouping import assign_groups, fixed_local_edges
 from .representation import fixed_edge_triplet
 from .train_probe import load_feature_examples, train_and_evaluate
@@ -31,20 +38,29 @@ from .train_probe import load_feature_examples, train_and_evaluate
 DATA_ROOT = Path("/root/autodl-tmp/data/sparse_3d_forgery_detection")
 FIXED_SOURCE_ROOT = DATA_ROOT / "derived/v7_activityforensics_observation_density_diagnostic_v1"
 FULL_SOURCE_ROOT = DATA_ROOT / "derived/v7_activityforensics_density_matched_frontend_v1"
-OUTPUT_ROOT = DATA_ROOT / "derived/v7_activityforensics_dense_local_structure_pilot_chunkfix_v1"
+OUTPUT_ROOT = DATA_ROOT / "derived/v7_activityforensics_dense_local_structure_pilot_gpu_resume_v1"
+OLD_OUTPUT_ROOTS = (
+    DATA_ROOT / "derived/v7_activityforensics_dense_local_structure_pilot_chunkfix_v1",
+    DATA_ROOT / "derived/v7_activityforensics_dense_local_structure_pilot_v1",
+)
 TAPNET_SOURCE = DATA_ROOT / "external/v7_explicit_geometry/tapnet-c2cbab81cc06092b5f05bfe2da7bfec54e2079c9"
 TAPNET_CHECKPOINT = DATA_ROOT / "external/v7_explicit_geometry/checkpoints/causal_bootstapir_checkpoint.pt"
 DEPTH_WEIGHT = DATA_ROOT / "external/yolo26_depth/yolo26m-depth.pt"
 SEG_WEIGHT = DATA_ROOT / "external/yolo26_depth/yolo26m-seg.pt"
-IMPLEMENTATION_REVISION = "dense-chunkfix-v1"
+IMPLEMENTATION_REVISION = "dense-gpu-resume-v1"
 BATCH_SIZE = 128
+PERFORMANCE_LIMIT_S = 15 * 60
+FRONTEND_LIMIT_S = 8 * 3600
+TRAINING_LIMIT_S = 2 * 3600
 BOOTSTRAP_SEED = 20260909
 BOOTSTRAP_REPLICATES = 10_000
 
 
 def _write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
+    temporary.replace(path)
 
 
 def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
@@ -85,7 +101,7 @@ def _manifests() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     return fixed, full
 
 
-def _protocol() -> dict[str, Any]:
+def _protocol(*, batch_size: int = BATCH_SIZE) -> dict[str, Any]:
     try:
         ultralytics_version = importlib.metadata.version("ultralytics")
     except importlib.metadata.PackageNotFoundError:
@@ -113,19 +129,17 @@ def _protocol() -> dict[str, Any]:
             "grid_spacing_px": 3,
             "grid_centers": "1.5,4.5,...",
             "query_count": 16384,
-            "external_query_batch_size": BATCH_SIZE,
+            "external_query_batch_size": int(batch_size),
+            "internal_query_chunk_size": int(batch_size),
             "no_query_reduction_or_fallback": True,
             "feature_grids_reused_per_window": True,
         },
         "performance_check": {
-            "status": "RETAINED_VERIFIED_CONFIGURATION",
-            "selected_external_query_batch_size": BATCH_SIZE,
-            "comparison_scope": "128 queries as one batch versus two 64-query batches on the same fixed 128-query window subset",
-            "max_raw_uv_abs_diff_px": 0.013427734375,
-            "raw_uv_p99_abs_diff_px": 0.003074,
-            "visibility_equal": True,
-            "query_and_frame_identity_equal": True,
-            "reason_not_expanded": "additional 256/512/1024 comparison would extend the limited execution check; 128 is retained",
+            "status": "PENDING",
+            "selected_external_query_batch_size": int(batch_size),
+            "comparison_batch_sizes": list(SUPPORTED_BATCH_SIZES),
+            "query_count": 1024,
+            "time_limit_s": PERFORMANCE_LIMIT_S,
         },
         "depth": {
             "provider": "official Ultralytics YOLO26m-depth",
@@ -204,37 +218,109 @@ def _identity(row: Mapping[str, Any], protocol: Mapping[str, Any]) -> dict[str, 
 
 
 def _load_protocol(output: Path, *, resume: bool) -> dict[str, Any]:
-    protocol = _protocol()
     path = output / "protocol.json"
     if path.exists():
         if not resume:
             raise FileExistsError(f"existing pilot output requires --resume: {output}")
         previous = json.loads(path.read_text(encoding="utf-8"))
-        # The first chunkfix run predates the recorded finite performance
-        # check.  It used the same implementation revision and batch size, so
-        # adding this audit-only field does not invalidate its arrays.
-        if "performance_check" not in previous and previous.get("implementation_revision") == IMPLEMENTATION_REVISION:
-            previous["performance_check"] = protocol["performance_check"]
-            _write_json(path, previous)
+        selected_batch = int(previous.get("tracking", {}).get("external_query_batch_size", BATCH_SIZE))
+        protocol = _protocol(batch_size=selected_batch)
         previous_identity = dict(previous)
         current_identity = dict(protocol)
         previous_identity.pop("git_head", None)
         current_identity.pop("git_head", None)
+        previous_identity.pop("performance_check", None)
+        current_identity.pop("performance_check", None)
         if previous_identity != current_identity:
             raise RuntimeError("existing pilot protocol identity does not match current protocol")
         return previous
+    protocol = _protocol()
     _write_json(path, protocol)
     return protocol
 
 
 def phase_prepare(output: Path, *, resume: bool = False) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
-    _load_protocol(output, resume=resume)
+    protocol = _load_protocol(output, resume=resume)
     fixed, full = _manifests()
     _write_json(output / "manifests/population.json", {"fixed": fixed, "full": full})
-    result = {"stage": "prepare", "status": "PREPARED", "fixed_windows": len(fixed), "full_windows": len(full), "updated_unix": time.time()}
+    reuse = _audit_reuse(output, protocol, full, resume=resume)
+    result = {
+        "stage": "prepare",
+        "status": "PREPARED",
+        "fixed_windows": len(fixed),
+        "full_windows": len(full),
+        "reuse_counts": reuse["counts"],
+        "updated_unix": time.time(),
+    }
     _write_json(output / "progress.json", result)
     _write_json(output / "run_summary.json", {"status": "PREPARED", "protocol": "protocol.json", **result})
+    return result
+
+
+def phase_benchmark(output: Path, *, resume: bool) -> dict[str, Any]:
+    """Run the finite CUDA batch comparison before any new frontend work."""
+
+    benchmark_path = output / "performance_benchmark.json"
+    protocol = _load_protocol(output, resume=resume)
+    if resume and benchmark_path.is_file():
+        benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))
+    else:
+        fixed, _ = _manifests()
+        try:
+            benchmark = benchmark_tracking_batches(
+                fixed[0],
+                tapnet_source=TAPNET_SOURCE,
+                checkpoint=TAPNET_CHECKPOINT,
+                batch_sizes=SUPPORTED_BATCH_SIZES,
+                query_count=1024,
+                time_limit_s=PERFORMANCE_LIMIT_S,
+            )
+        except Exception as exc:
+            benchmark = {
+                "status": "PERFORMANCE_CHECK_FAILED",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+                "traceback": traceback.format_exc(limit=30),
+                "selected_external_query_batch_size": None,
+            }
+        _write_json(benchmark_path, benchmark)
+    selected = benchmark.get("selected_external_query_batch_size")
+    if benchmark.get("status") in {"PERFORMANCE_IMPROVED", "PERFORMANCE_NOT_IMPROVED"} and selected in SUPPORTED_BATCH_SIZES:
+        protocol = dict(protocol)
+        tracking = dict(protocol["tracking"])
+        tracking["external_query_batch_size"] = int(selected)
+        tracking["internal_query_chunk_size"] = int(selected)
+        protocol["tracking"] = tracking
+        protocol["performance_check"] = benchmark
+        _write_json(output / "protocol.json", protocol)
+        reuse_path = output / "reuse_manifest.json"
+        reuse = json.loads(reuse_path.read_text(encoding="utf-8")) if reuse_path.is_file() else {"records": [], "counts": {}}
+        baseline = next((row for row in benchmark.get("records", []) if row.get("batch_size") == 128 and row.get("status") == "SUCCESS"), None)
+        reuse["compatibility_gate"] = "PASS" if baseline and baseline.get("numeric_compatible", False) else "FAIL"
+        reuse["compatibility_basis"] = {
+            "benchmark_path": str(benchmark_path),
+            "selected_batch_size": int(selected),
+            "baseline_128_numeric_compatible": bool(baseline and baseline.get("numeric_compatible", False)),
+            "old_arrays_not_copied": True,
+        }
+        _write_json(reuse_path, reuse)
+    else:
+        reuse_path = output / "reuse_manifest.json"
+        if reuse_path.is_file():
+            reuse = json.loads(reuse_path.read_text(encoding="utf-8"))
+            reuse["compatibility_gate"] = "FAIL"
+            reuse["compatibility_basis"] = {"benchmark_path": str(benchmark_path), "reason": "no verified batch configuration"}
+            _write_json(reuse_path, reuse)
+    result = {
+        "stage": "benchmark",
+        "status": benchmark.get("status", "PERFORMANCE_CHECK_FAILED"),
+        "selected_external_query_batch_size": selected,
+        "records": benchmark.get("records", []),
+        "time_limit_s": PERFORMANCE_LIMIT_S,
+        "updated_unix": time.time(),
+    }
+    _write_json(output / "progress.json", result)
     return result
 
 
@@ -264,6 +350,185 @@ def _frontend_complete(meta_path: Path, expected: Mapping[str, Any]) -> bool:
         return False
 
 
+_REQUIRED_FRONTEND_ARRAYS = {
+    "raw_uv",
+    "visibility",
+    "xyz",
+    "geometry_validity",
+    "frame_indices",
+    "timestamps_s",
+    "query_start_uv_analysis",
+    "group_ids",
+    "edges",
+    "edge_groups",
+}
+
+
+def _source_frontend_paths(window_id: str) -> list[tuple[Path, Path]]:
+    safe = _safe_window(window_id)
+    return [
+        (root / "frontend/windows" / f"{safe}.json", root / "frontend/windows" / f"{safe}.npz")
+        for root in OLD_OUTPUT_ROOTS
+    ]
+
+
+def _row_identity_matches(meta: Mapping[str, Any], row: Mapping[str, Any]) -> bool:
+    identity = meta.get("identity")
+    if not isinstance(identity, Mapping):
+        return False
+    for key in ("window_id", "source_id", "role", "kind", "video_path"):
+        if str(identity.get(key)) != str(row.get(key)):
+            return False
+    for key in ("frame_indices",):
+        if [int(value) for value in identity.get(key, [])] != [int(value) for value in row.get(key, [])]:
+            return False
+    observed_times = np.asarray(identity.get("timestamps_s", []), dtype=np.float64)
+    expected_times = np.asarray(row.get("timestamps_s", []), dtype=np.float64)
+    return observed_times.shape == expected_times.shape and bool(np.allclose(observed_times, expected_times, rtol=0.0, atol=1e-6))
+
+
+def _validate_frontend_arrays(npz_path: Path, row: Mapping[str, Any], query_count: int) -> dict[str, Any]:
+    with np.load(npz_path, allow_pickle=False) as arrays:
+        names = set(arrays.files)
+        if not _REQUIRED_FRONTEND_ARRAYS <= names:
+            return {"ok": False, "reason": f"missing_arrays:{sorted(_REQUIRED_FRONTEND_ARRAYS - names)}"}
+        frames = len(row["frame_indices"])
+        checks = {
+            "raw_uv": (frames, query_count, 2),
+            "visibility": (frames, query_count),
+            "xyz": (frames, query_count, 3),
+            "geometry_validity": (frames, query_count),
+            "frame_indices": (frames,),
+            "timestamps_s": (frames,),
+            "query_start_uv_analysis": (query_count, 2),
+            "group_ids": (query_count,),
+            "edges": (None, 2),
+            "edge_groups": (None,),
+        }
+        for name, shape in checks.items():
+            observed = tuple(arrays[name].shape)
+            if shape[0] is None:
+                if len(observed) != len(shape) or observed[1:] != shape[1:]:
+                    return {"ok": False, "reason": f"shape:{name}:{observed}"}
+            elif observed != shape:
+                return {"ok": False, "reason": f"shape:{name}:{observed}:expected:{shape}"}
+        if not np.array_equal(np.asarray(arrays["frame_indices"], dtype=np.int64), np.asarray(row["frame_indices"], dtype=np.int64)):
+            return {"ok": False, "reason": "frame_indices_mismatch"}
+    return {"ok": True}
+
+
+def _audit_reuse(output: Path, protocol: Mapping[str, Any], rows: Sequence[Mapping[str, Any]], *, resume: bool) -> dict[str, Any]:
+    """Audit old artifacts without copying or modifying them."""
+
+    path = output / "reuse_manifest.json"
+    if resume and path.is_file():
+        return json.loads(path.read_text(encoding="utf-8"))
+    records: list[dict[str, Any]] = []
+    query_count = int(protocol["tracking"]["query_count"])
+    for row in rows:
+        window_id = str(row["window_id"])
+        record: dict[str, Any] = {
+            "window_id": window_id,
+            "source_id": str(row["source_id"]),
+            "role": str(row["role"]),
+            "kind": str(row["kind"]),
+            "status": "MISSING",
+            "reason": "no prior dense pilot artifact",
+        }
+        for meta_path, npz_path in _source_frontend_paths(window_id):
+            if not meta_path.exists() and not npz_path.exists():
+                continue
+            if not meta_path.exists() or not npz_path.exists():
+                record.update({"status": "INCOMPLETE", "reason": "metadata_or_npz_missing", "source_root": str(meta_path.parent.parent.parent)})
+                continue
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                if meta.get("status") != "COMPLETE":
+                    record.update({"status": "INCOMPATIBLE", "reason": f"source_status:{meta.get('status')}", "source_meta": str(meta_path), "source_npz": str(npz_path)})
+                    continue
+                if not _row_identity_matches(meta, row):
+                    record.update({"status": "INCOMPATIBLE", "reason": "window_identity_mismatch", "source_meta": str(meta_path), "source_npz": str(npz_path)})
+                    continue
+                array_check = _validate_frontend_arrays(npz_path, row, query_count)
+                if not array_check["ok"]:
+                    record.update({"status": "INCOMPATIBLE", "reason": array_check["reason"], "source_meta": str(meta_path), "source_npz": str(npz_path)})
+                    continue
+                old_identity = dict(meta.get("identity", {}))
+                structural_ok = (
+                    old_identity.get("checkpoint_sha256") == protocol["tracking"]["checkpoint_sha256"]
+                    and old_identity.get("depth_weight_sha256") == protocol["depth"]["weight_sha256"]
+                    and old_identity.get("seg_weight_sha256") == protocol["segmentation"]["weight_sha256"]
+                    and old_identity.get("analysis_hw") == protocol["tracking"]["analysis_size"]
+                    and int(old_identity.get("query_count", -1)) == query_count
+                )
+                old_batch = int(old_identity.get("external_query_batch_size", -1))
+                same_revision = old_identity.get("implementation_revision") == IMPLEMENTATION_REVISION
+                status = "REUSABLE" if structural_ok and same_revision and old_batch == int(protocol["tracking"]["external_query_batch_size"]) else "PARTIAL_REUSABLE" if structural_ok else "INCOMPATIBLE"
+                reason = "matching execution identity" if status == "REUSABLE" else "arrays and geometry identity match; old execution batch/revision requires benchmark gate" if status == "PARTIAL_REUSABLE" else "provider or analysis identity mismatch"
+                if status == "INCOMPATIBLE":
+                    record.update({"status": status, "reason": reason, "source_meta": str(meta_path), "source_npz": str(npz_path)})
+                    continue
+                record.update({
+                    "status": status,
+                    "reason": reason,
+                    "source_meta": str(meta_path),
+                    "source_npz": str(npz_path),
+                    "source_meta_sha256": sha256(meta_path),
+                    "source_npz_sha256": sha256(npz_path),
+                    "old_implementation_revision": old_identity.get("implementation_revision"),
+                    "old_external_query_batch_size": old_batch,
+                    "frame_count": len(row["frame_indices"]),
+                    "query_count": query_count,
+                })
+                break
+            except Exception as exc:
+                record.update({"status": "INCOMPATIBLE", "reason": f"audit_error:{type(exc).__name__}:{exc}", "source_meta": str(meta_path), "source_npz": str(npz_path)})
+        records.append(record)
+    summary = {
+        "implementation_revision": IMPLEMENTATION_REVISION,
+        "status": "AUDITED",
+        "compatibility_gate": "PENDING_BENCHMARK",
+        "old_roots": [str(root) for root in OLD_OUTPUT_ROOTS],
+        "records": records,
+        "counts": {status: sum(record["status"] == status for record in records) for status in ("REUSABLE", "PARTIAL_REUSABLE", "INCOMPATIBLE", "INCOMPLETE", "MISSING")},
+        "updated_unix": time.time(),
+    }
+    _write_json(path, summary)
+    _write_csv(output / "reuse_audit.csv", records)
+    return summary
+
+
+def _reusable_records(output: Path) -> dict[str, dict[str, Any]]:
+    path = output / "reuse_manifest.json"
+    if not path.is_file():
+        return {}
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("compatibility_gate") != "PASS":
+        return {}
+    return {
+        str(record["window_id"]): record
+        for record in manifest.get("records", [])
+        if record.get("status") in {"REUSABLE", "PARTIAL_REUSABLE"}
+    }
+
+
+def _frontend_meta_paths(output: Path, protocol: Mapping[str, Any]) -> list[Path]:
+    """Return one validated new or reused metadata path per manifest window."""
+
+    _, full = _manifests()
+    reused = _reusable_records(output)
+    paths: list[Path] = []
+    for row in full:
+        new_path = output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json"
+        if _frontend_complete(new_path, _identity(row, protocol)):
+            paths.append(new_path)
+        elif str(row["window_id"]) in reused:
+            source = Path(str(reused[str(row["window_id"])] ["source_meta"]))
+            if source.is_file():
+                paths.append(source)
+    return paths
+
+
 def _run_one_frontend(row: Mapping[str, Any], protocol: Mapping[str, Any], output: Path) -> dict[str, Any]:
     started = time.perf_counter()
     identity = _identity(row, protocol)
@@ -272,7 +537,13 @@ def _run_one_frontend(row: Mapping[str, Any], protocol: Mapping[str, Any], outpu
     meta_path = window_dir / f"{safe}.json"
     npz_path = window_dir / f"{safe}.npz"
     try:
-        track = track_dense_window(row, tapnet_source=TAPNET_SOURCE, checkpoint=TAPNET_CHECKPOINT, batch_size=BATCH_SIZE, progress_prefix="dense")
+        track = track_dense_window(
+            row,
+            tapnet_source=TAPNET_SOURCE,
+            checkpoint=TAPNET_CHECKPOINT,
+            batch_size=int(protocol["tracking"]["external_query_batch_size"]),
+            progress_prefix="dense",
+        )
         depths, masks, measurement = infer_depth_and_masks(track["frames_rgb"], depth_weight=DEPTH_WEIGHT, seg_weight=SEG_WEIGHT)
         focal, focal_path = _focal_for_window(row)
         xyz, geometry_validity, geometry_meta = build_geometry(track["raw_uv"], depths, focal_px=focal)
@@ -295,71 +566,72 @@ def _run_one_frontend(row: Mapping[str, Any], protocol: Mapping[str, Any], outpu
 def phase_frontend(output: Path, *, resume: bool, limit: int | None = None, expand_full: bool = False) -> dict[str, Any]:
     protocol = _load_protocol(output, resume=resume)
     fixed, full = _manifests()
-    if expand_full and limit is None and resume and (output / "frontend_summary.json").is_file():
-        previous = json.loads((output / "frontend_summary.json").read_text(encoding="utf-8"))
-        projected = previous.get("projected_full_s")
-        if previous.get("complete_fixed_windows") == len(fixed) and projected is not None and float(projected) > 8 * 3600:
-            limited = {**previous, "status": "DENSE_RUNTIME_LIMITED", "expansion_skipped": "fixed-window throughput projects beyond the declared 8-hour budget"}
-            _write_json(output / "frontend_summary.json", limited)
-            _write_json(output / "progress.json", {**limited, "updated_unix": time.time()})
-            return limited
+    reused = _reusable_records(output)
     fixed_ids = {str(row["window_id"]) for row in fixed}
     ordered = fixed + [row for row in full if str(row["window_id"]) not in fixed_ids]
-    complete_fixed_ids = {
-        str(row["window_id"])
-        for row in fixed
-        if _frontend_complete(output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json", _identity(row, protocol))
-    }
-    complete_full_ids = {
-        str(row["window_id"])
-        for row in full
-        if _frontend_complete(output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json", _identity(row, protocol))
-    }
+    def is_new_complete(row: Mapping[str, Any]) -> bool:
+        return _frontend_complete(output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json", _identity(row, protocol))
+
+    def is_complete(row: Mapping[str, Any]) -> bool:
+        return is_new_complete(row) or str(row["window_id"]) in reused
+
+    complete_fixed_ids = {str(row["window_id"]) for row in fixed if is_complete(row)}
+    complete_full_ids = {str(row["window_id"]) for row in full if is_complete(row)}
+    projected_full_s = None
     if limit is not None:
-        selected = ordered[:limit]
+        selected = [row for row in ordered[:limit] if not is_complete(row)]
     elif expand_full and len(complete_fixed_ids) < len(fixed):
-        selected = [row for row in fixed if str(row["window_id"]) not in complete_fixed_ids]
+        selected = [row for row in fixed if not is_complete(row)]
     elif expand_full:
-        complete_elapsed = []
+        complete_elapsed: list[float] = []
         for row in full:
             meta_path = output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json"
-            if str(row["window_id"]) in complete_full_ids:
+            source_meta = meta_path if is_new_complete(row) else Path(reused[str(row["window_id"])] ["source_meta"]) if str(row["window_id"]) in reused else None
+            if source_meta is not None:
                 try:
-                    complete_elapsed.append(float(json.loads(meta_path.read_text(encoding="utf-8")).get("elapsed_s", 0.0)))
+                    complete_elapsed.append(float(json.loads(source_meta.read_text(encoding="utf-8")).get("elapsed_s", 0.0)))
                 except (OSError, ValueError, json.JSONDecodeError):
                     pass
         mean_existing = float(np.mean(complete_elapsed)) if complete_elapsed else float("inf")
         projected_full_s = mean_existing * len(full)
-        if projected_full_s > 8 * 3600:
-            result = {"stage": "frontend", "status": "DENSE_RUNTIME_LIMITED", "selected_windows": 0, "complete_fixed_windows": len(complete_fixed_ids), "complete_full_windows": len(complete_full_ids), "fixed_total": len(fixed), "full_total": len(full), "elapsed_s": 0.0, "mean_selected_window_s": mean_existing, "projected_full_s": projected_full_s, "runtime_limit_s": 8 * 3600, "expansion_skipped": "fixed-window throughput projects beyond the declared 8-hour budget", "retry_policy": "FAILED windows are retried; only COMPLETE with matching identity is resumable"}
+        if projected_full_s > FRONTEND_LIMIT_S:
+            result = {"stage": "frontend", "status": "DENSE_RUNTIME_LIMITED", "selected_windows": 0, "complete_fixed_windows": len(complete_fixed_ids), "complete_full_windows": len(complete_full_ids), "fixed_total": len(fixed), "full_total": len(full), "elapsed_s": 0.0, "mean_selected_window_s": mean_existing, "projected_full_s": projected_full_s, "runtime_limit_s": FRONTEND_LIMIT_S, "expansion_skipped": "fixed-window throughput projects beyond the declared 8-hour budget", "retry_policy": "FAILED windows are retried; only COMPLETE with matching identity or benchmark-gated reuse is resumable"}
             _write_json(output / "frontend_summary.json", result)
             _write_json(output / "progress.json", {**result, "updated_unix": time.time()})
             return result
-        selected = [row for row in full if str(row["window_id"]) not in complete_full_ids]
+        selected = [row for row in full if not is_complete(row)]
     else:
-        selected = fixed
+        selected = [row for row in fixed if not is_complete(row)]
     if not selected:
-        raise ValueError("no frontend windows selected")
+        status = "FULL_FRONTEND_COMPLETE" if len(complete_full_ids) == len(full) else "FIXED_FRONTEND_COMPLETE" if len(complete_fixed_ids) == len(fixed) else "DENSE_FRONTEND_PARTIAL"
+        result = {"stage": "frontend", "status": status, "selected_windows": 0, "complete_fixed_windows": len(complete_fixed_ids), "complete_full_windows": len(complete_full_ids), "fixed_total": len(fixed), "full_total": len(full), "elapsed_s": 0.0, "projected_full_s": projected_full_s, "runtime_limit_s": FRONTEND_LIMIT_S, "reuse_count": len(reused), "retry_policy": "FAILED windows are retried; only COMPLETE with matching identity or benchmark-gated reuse is resumable"}
+        _write_json(output / "frontend_summary.json", result)
+        _write_json(output / "progress.json", {**result, "updated_unix": time.time()})
+        return result
     started = time.perf_counter()
     rows: list[dict[str, Any]] = []
+    budget_exhausted = False
     for index, row in enumerate(selected, 1):
+        if expand_full and limit is None and time.perf_counter() - started >= FRONTEND_LIMIT_S:
+            budget_exhausted = True
+            break
         expected = _identity(row, protocol)
         meta_path = output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json"
         result = json.loads(meta_path.read_text(encoding="utf-8")) if resume and _frontend_complete(meta_path, expected) else _run_one_frontend(row, protocol, output)
         rows.append(result)
         _write_json(output / "progress.json", {"stage": "frontend", "status": "RUNNING", "completed": index, "total": len(selected), "last_window": row["window_id"], "updated_unix": time.time()})
         print(f"frontend {index}/{len(selected)} {row['window_id']} {result.get('status')} elapsed={result.get('elapsed_s', 0):.1f}s", flush=True)
-    complete_fixed = sum(_frontend_complete(output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json", _identity(row, protocol)) for row in fixed)
-    complete_full = sum(_frontend_complete(output / "frontend/windows" / f"{_safe_window(str(row['window_id']))}.json", _identity(row, protocol)) for row in full)
+    complete_fixed = sum(is_complete(row) for row in fixed)
+    complete_full = sum(is_complete(row) for row in full)
     elapsed = time.perf_counter() - started
     mean_s = elapsed / len(selected)
     projected_full_s = mean_s * len(full)
     status = "FIXED_FRONTEND_COMPLETE" if complete_fixed == len(fixed) else "DENSE_FRONTEND_PARTIAL"
     if expand_full and complete_full == len(full):
         status = "FULL_FRONTEND_COMPLETE"
-    elif expand_full and projected_full_s > 8 * 3600:
+    elif expand_full and (budget_exhausted or (projected_full_s is not None and projected_full_s > FRONTEND_LIMIT_S)):
         status = "DENSE_RUNTIME_LIMITED"
-    result = {"stage": "frontend", "status": status, "selected_windows": len(selected), "complete_fixed_windows": complete_fixed, "complete_full_windows": complete_full, "fixed_total": len(fixed), "full_total": len(full), "elapsed_s": elapsed, "mean_selected_window_s": mean_s, "projected_full_s": projected_full_s, "runtime_limit_s": 8 * 3600, "last_results": rows[-5:], "retry_policy": "FAILED windows are retried; only COMPLETE with matching identity is resumable"}
+    result = {"stage": "frontend", "status": status, "selected_windows": len(selected), "complete_fixed_windows": complete_fixed, "complete_full_windows": complete_full, "fixed_total": len(fixed), "full_total": len(full), "elapsed_s": elapsed, "mean_selected_window_s": mean_s, "projected_full_s": projected_full_s, "runtime_limit_s": FRONTEND_LIMIT_S, "reuse_count": len(reused), "last_results": rows[-5:], "retry_policy": "FAILED windows are retried; only COMPLETE with matching identity or benchmark-gated reuse is resumable"}
     _write_json(output / "frontend_summary.json", result)
     _write_json(output / "progress.json", {**result, "updated_unix": time.time()})
     return result
@@ -432,10 +704,10 @@ def _feature_one(meta_path: Path, output: Path) -> dict[str, Any]:
 
 
 def phase_features(output: Path) -> dict[str, Any]:
-    window_dir = output / "frontend/windows"
+    protocol = _load_protocol(output, resume=True)
     feature_dir = output / "features"
     feature_dir.mkdir(parents=True, exist_ok=True)
-    results = [_feature_one(meta_path, output) for meta_path in sorted(window_dir.glob("*.json"))]
+    results = [_feature_one(meta_path, output) for meta_path in _frontend_meta_paths(output, protocol)]
     _write_json(feature_dir / "index.json", {"count": len(results), "results": results})
     _write_csv(output / "coverage_by_window.csv", results)
     status = "FEATURES_COMPLETE" if results else "NO_FRONTEND_ARTIFACTS"
@@ -450,7 +722,7 @@ def phase_train(output: Path) -> dict[str, Any]:
         result = {"status": "NOT_RUN_NO_VALID_FEATURES", "coverage_rows": len(coverage)}
         _write_json(output / "training_summary.json", result)
         return result
-    summary = train_and_evaluate(examples, output)
+    summary = train_and_evaluate(examples, output, device="cuda", time_limit_s=TRAINING_LIMIT_S)
     summary["measurement_support_note"] = "Only sources represented by current complete frontend features are measured; fewer than 12 complete sources is not a cross-source population claim."
     _write_json(output / "training_summary.json", summary)
     return summary
@@ -461,7 +733,9 @@ def phase_export(output: Path) -> dict[str, Any]:
     frontend = json.loads((output / "frontend_summary.json").read_text(encoding="utf-8")) if (output / "frontend_summary.json").is_file() else {"status": "NOT_RUN"}
     features = json.loads((output / "features_summary.json").read_text(encoding="utf-8")) if (output / "features_summary.json").is_file() else {"status": "NOT_RUN"}
     training = json.loads((output / "training_summary.json").read_text(encoding="utf-8")) if (output / "training_summary.json").is_file() else {"status": "NOT_RUN"}
-    summary = {"status": training.get("status") if training.get("status") not in {None, "NOT_RUN"} else frontend.get("status", "UNKNOWN"), "experiment": protocol["experiment"], "implementation_revision": IMPLEMENTATION_REVISION, "frontend": frontend, "features": features, "training": training, "causal_training_eligible": False, "causal_training_reason": "This exploratory frontend uses per-frame camera coordinates and identity poses; no causal camera-motion-compensated training claim is made.", "limitations": ["no metric depth ground truth", "no pixel-level spatial ground truth", "no full-video or sealed-test claim", "segmentation is a pretrained grouping prior", "not a formal detector"]}
+    benchmark = json.loads((output / "performance_benchmark.json").read_text(encoding="utf-8")) if (output / "performance_benchmark.json").is_file() else {"status": "NOT_RUN"}
+    reuse = json.loads((output / "reuse_manifest.json").read_text(encoding="utf-8")) if (output / "reuse_manifest.json").is_file() else {"status": "NOT_RUN"}
+    summary = {"status": training.get("status") if training.get("status") not in {None, "NOT_RUN"} else frontend.get("status", "UNKNOWN"), "experiment": protocol["experiment"], "implementation_revision": IMPLEMENTATION_REVISION, "benchmark": benchmark, "reuse": reuse, "frontend": frontend, "features": features, "training": training, "causal_training_eligible": False, "causal_training_reason": "This exploratory frontend uses per-frame camera coordinates and identity poses; no causal camera-motion-compensated training claim is made.", "limitations": ["no metric depth ground truth", "no pixel-level spatial ground truth", "no full-video or sealed-test claim", "segmentation is a pretrained grouping prior", "not a formal detector"]}
     _write_json(output / "summary.json", summary)
     _write_csv(output / "runtime_summary.csv", [{"stage": "frontend", "status": frontend.get("status"), "elapsed_s": frontend.get("elapsed_s", "")}, {"stage": "features", "status": features.get("status"), "elapsed_s": features.get("elapsed_s", "")}, {"stage": "training", "status": training.get("status"), "elapsed_s": training.get("training_elapsed_s", "")}])
     _write_csv(output / "case_manifest.csv", [])
@@ -469,7 +743,8 @@ def phase_export(output: Path) -> dict[str, Any]:
 
 Implementation revision: `{IMPLEMENTATION_REVISION}`. The frontend retains all
 16,384 initialized 384x384/3px query identities while processing causal
-BootsTAPIR state in external batches of 128. Depth is generated by official
+BootsTAPIR state in externally benchmark-selected batches of
+{protocol['tracking'].get('external_query_batch_size', BATCH_SIZE)}. Depth is generated by official
 YOLO26m-depth for every window frame and YOLO26m-seg is used only on the start
 frame for deterministic grouping. Fixed local edges are shared by all three
 target states.
@@ -481,7 +756,7 @@ Reproduce with the project interpreter:
 `/root/autodl-tmp/projects/sparse_3d_forgery_detection/.venv/bin/python -m research_tools.v7.dense_local_structure_pilot.run_pipeline all --resume`
 """
     (output / "README.md").write_text(readme, encoding="utf-8")
-    include = ["README.md", "protocol.json", "summary.json", "frontend_summary.json", "features_summary.json", "training_summary.json", "coverage_by_window.csv", "per_source_metrics.csv", "oof_window_scores.csv", "fold_support.csv", "runtime_summary.csv", "case_manifest.csv", "model_records.json"]
+    include = ["README.md", "protocol.json", "summary.json", "performance_benchmark.json", "reuse_manifest.json", "reuse_audit.csv", "frontend_summary.json", "features_summary.json", "training_summary.json", "coverage_by_window.csv", "per_source_metrics.csv", "oof_window_scores.csv", "fold_support.csv", "runtime_summary.csv", "case_manifest.csv", "model_records.json"]
     with zipfile.ZipFile(output / "review_bundle.zip", "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name in include:
             path = output / name
@@ -495,6 +770,12 @@ def phase_all(output: Path, *, resume: bool) -> dict[str, Any]:
 
     try:
         phase_prepare(output, resume=resume)
+        benchmark = phase_benchmark(output, resume=resume)
+        if benchmark.get("status") == "PERFORMANCE_CHECK_FAILED":
+            raise RuntimeError("PERFORMANCE_CHECK_FAILED: no verified CUDA batch configuration")
+        reuse_manifest = json.loads((output / "reuse_manifest.json").read_text(encoding="utf-8"))
+        if reuse_manifest.get("compatibility_gate") != "PASS":
+            raise RuntimeError("PERFORMANCE_NOT_IMPROVED: old frontend cache did not pass numerical compatibility gate")
         frontend = phase_frontend(output, resume=resume, expand_full=True)
         # A first pass may finish the remaining fixed gate.  Re-enter once so
         # the same process can apply the budget gate before any full expansion.
@@ -524,7 +805,7 @@ def phase_all(output: Path, *, resume: bool) -> dict[str, Any]:
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("phase", choices=["prepare", "frontend", "features", "train", "export", "all"])
+    parser.add_argument("phase", choices=["prepare", "benchmark", "frontend", "features", "train", "export", "all"])
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--limit", type=int, default=None, help="number of ordered windows to process (fixed windows come first)")
@@ -537,6 +818,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if args.phase == "prepare":
         phase_prepare(output, resume=args.resume)
+    if args.phase == "benchmark":
+        phase_benchmark(output, resume=args.resume)
     if args.phase == "frontend":
         phase_frontend(output, resume=args.resume, limit=args.limit, expand_full=args.expand_full)
     if args.phase == "features":
