@@ -1,0 +1,13 @@
+condition,record_count,finite_history_count,converged_final_below_initial_count,initial_loss_mean,final_loss_mean,final_minus_initial_mean,min_loss_mean,epochs_recorded,criterion
+H_MEAN_A,45,45,45,0.7030851191944546,0.6454540173212687,-0.0576311018731859,0.6454540173212687,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+H_MEAN_C,45,45,45,0.699308106634352,0.6239579955736796,-0.07535011106067234,0.6239579955736796,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+H_MEAN_D,45,45,45,0.6988143828180101,0.6352485312355889,-0.0635658515824212,0.6352485312355889,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+H_MAX_A,45,45,45,0.7041909840371874,0.6527209970686171,-0.05146998696857029,0.6527196751700507,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+H_MAX_C,45,45,45,0.7115226255522834,0.6434621546003554,-0.06806047095192803,0.6434621546003554,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+H_MAX_D,45,45,45,0.7060654905107286,0.674766308731503,-0.031299181779225665,0.6747525387340122,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+B_MEAN_A,45,45,45,0.7030804369184706,0.6404576553238763,-0.06262278159459432,0.6404576553238763,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+B_MEAN_C,45,45,45,0.6992944492234124,0.6189200785424974,-0.08037437068091499,0.6189200785424974,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+B_MEAN_D,45,45,45,0.6988611804114447,0.6283347619904412,-0.07052641842100356,0.6283347619904412,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+B_MAX_A,45,45,45,0.7036867751015558,0.6440566182136536,-0.05963015688790215,0.6440446615219116,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+B_MAX_C,45,45,45,0.7116676529248556,0.6478233906957839,-0.06384426222907172,0.6478233906957839,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
+B_MAX_D,45,45,45,0.7061098946465386,0.6724861330456204,-0.03362376160091824,0.672483746210734,200,descriptive only: finite loss and final loss below initial loss; no per-epoch classification metric was saved
