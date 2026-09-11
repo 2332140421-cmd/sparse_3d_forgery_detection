@@ -263,8 +263,9 @@ def phase_benchmark(output: Path, *, resume: bool) -> dict[str, Any]:
 
     benchmark_path = output / "performance_benchmark.json"
     protocol = _load_protocol(output, resume=resume)
-    if resume and benchmark_path.is_file():
-        benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))
+    existing_benchmark = json.loads(benchmark_path.read_text(encoding="utf-8")) if resume and benchmark_path.is_file() else None
+    if existing_benchmark and existing_benchmark.get("status") in {"PERFORMANCE_IMPROVED", "PERFORMANCE_NOT_IMPROVED"}:
+        benchmark = existing_benchmark
     else:
         fixed, _ = _manifests()
         try:

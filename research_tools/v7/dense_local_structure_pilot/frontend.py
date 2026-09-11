@@ -111,8 +111,9 @@ def _load_tapir_model(tapnet_source: Path, checkpoint: Path, device: Any) -> Any
     model.load_state_dict(state)
     model.to(device).eval()
     parameter = next(model.parameters())
-    if parameter.device != device:
-        raise RuntimeError(f"tracker parameters are on {parameter.device}, expected {device}")
+    expected = torch.device(f"cuda:{device.index if device.index is not None else torch.cuda.current_device()}")
+    if parameter.device != expected:
+        raise RuntimeError(f"tracker parameters are on {parameter.device}, expected {expected}")
     return model
 
 
@@ -210,7 +211,7 @@ def track_dense_window(
     import torch
 
     started = time.perf_counter()
-    device = torch.device("cuda")
+    device = torch.device("cuda:0")
     if not torch.cuda.is_available():
         raise RuntimeError("dense pilot requires CUDA; CPU fallback is disabled")
     model, feature_grids, first_frame, query_points, frames_rgb, frame_indices, timestamps_s, feature_elapsed = _prepare_tracking_session(
@@ -278,7 +279,7 @@ def benchmark_tracking_batches(
 
     import torch
 
-    device = torch.device("cuda")
+    device = torch.device("cuda:0")
     if not torch.cuda.is_available():
         raise RuntimeError("dense pilot requires CUDA; performance benchmark cannot use CPU")
     selected = np.arange(int(query_count), dtype=np.int64)
