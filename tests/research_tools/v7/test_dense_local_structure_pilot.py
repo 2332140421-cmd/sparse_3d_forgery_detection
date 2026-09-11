@@ -49,3 +49,25 @@ def test_fixed_triplet_requires_common_edges_and_uses_history_scale():
     assert triplet is not None
     assert triplet["edge_ids"] == [0, 1, 2]
     assert triplet["states"].shape == (3, 4)
+
+
+def test_each_frame_with_three_edges_is_not_enough_without_common_edges():
+    xyz = np.zeros((5, 4, 3), dtype=np.float64)
+    xyz[:, 0] = [0, 0, 1]
+    xyz[:, 1] = [1, 0, 1]
+    xyz[:, 2] = [0, 1, 1]
+    xyz[:, 3] = [1, 1, 1]
+    # Each target frame leaves three edges finite, but the finite edge sets
+    # rotate, so fewer than three identities are common to all targets.
+    xyz[2, 0] = np.nan
+    xyz[3, 1] = np.nan
+    xyz[4, 2] = np.nan
+    edges = [
+        {"edge_id": 0, "left_query_id": 0, "right_query_id": 1},
+        {"edge_id": 1, "left_query_id": 0, "right_query_id": 2},
+        {"edge_id": 2, "left_query_id": 1, "right_query_id": 2},
+        {"edge_id": 3, "left_query_id": 2, "right_query_id": 3},
+        {"edge_id": 4, "left_query_id": 1, "right_query_id": 3},
+        {"edge_id": 5, "left_query_id": 0, "right_query_id": 3},
+    ]
+    assert fixed_edge_triplet(xyz, np.arange(5, dtype=np.float64), edges, [0, 1], [2, 3, 4]) is None
