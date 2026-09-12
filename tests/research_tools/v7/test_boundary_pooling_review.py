@@ -8,9 +8,13 @@ from research_tools.v7.boundary_pooling_probe.review_and_forward import (
     _aggregate_forward_scores,
     _boundary_relation_stats,
     _classification_metrics,
+    _fixed_review_html,
+    _group_owner_ids,
     _html_page,
     materialize_windows,
+    _observation_frame_match,
     _source_frames_for_timestamps,
+    _triplet_display,
 )
 
 
@@ -94,5 +98,72 @@ def test_materialize_windows_is_explicit_and_uses_symlink(tmp_path) -> None:
 def test_review_page_preserves_source_selection_when_refilling_windows() -> None:
     html = _html_page()
 
-    assert "previous=s.value" in html
-    assert "sources.includes(previous)" in html
+    assert "old=s.value" in html
+    assert "list.includes(old)" in html
+
+
+def test_fixed_review_page_keeps_window_selection_and_observation_boundaries() -> None:
+    html = _fixed_review_html()
+
+    assert "function fillSources()" in html
+    assert "loadWindow(role,$(role+'Window').value)" in html
+    assert "OUTSIDE_OBSERVATION" in html
+    assert "NO_VALID_TRIPLET" in html
+    assert "common_member_slots" in html
+    assert "track ID" in html
+    assert "requestVideoFrameCallback" in html
+
+
+def test_observation_match_rejects_outside_range_and_accepts_pts_tolerance() -> None:
+    frames = [
+        {"timestamp_s": 10.0, "source_frame_index": 100},
+        {"timestamp_s": 10.1, "source_frame_index": 101},
+        {"timestamp_s": 10.2, "source_frame_index": 102},
+    ]
+
+    assert _observation_frame_match(frames, 9.9)["status"] == "OUTSIDE_OBSERVATION"
+    matched = _observation_frame_match(frames, 10.04)
+    assert matched["status"] == "MATCHED"
+    assert matched["record"]["source_frame_index"] == 100
+    assert _observation_frame_match(frames, 10.051, tolerance_s=0.01)["status"] == "NO_OBSERVATION"
+
+
+def test_observation_match_does_not_interpolate_across_saved_gap() -> None:
+    frames = [
+        {"timestamp_s": 1.0, "source_frame_index": 1},
+        {"timestamp_s": 1.1, "source_frame_index": 2},
+        {"timestamp_s": 2.0, "source_frame_index": 3},
+    ]
+
+    result = _observation_frame_match(frames, 1.5, tolerance_s=0.2)
+    assert result["status"] == "NO_OBSERVATION"
+    assert result["reason"] == "saved_observation_gap"
+
+
+def test_triplet_mapping_uses_track_ids_not_array_slots() -> None:
+    triplet = {
+        "triplet_id": 2,
+        "component_index": 7,
+        "common_track_ids": [101, 303],
+        "pair_ids": [[101, 303]],
+        "states": [[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]],
+        "timestamps_s": [1.0, 1.1, 1.2],
+        "target_slots": [0, 1, 2],
+    }
+    mapping = {101: 4, 303: 1}
+    display = _triplet_display(triplet, track_to_slot=mapping, owner_group_ids=[9])
+
+    assert display["common_member_slots"] == [4, 1]
+    assert display["pair_member_slots"] == [[4, 1]]
+    assert display["owner_group_ids"] == [9]
+
+
+def test_triplet_is_owned_only_by_group_containing_common_members() -> None:
+    triplet = {"component_index": 3, "members_considered": [0, 1], "common_track_ids": [10, 20]}
+    groups = [
+        {"local_group_id": 1, "parent_component_id": 3, "member_slots": [0, 1]},
+        {"local_group_id": 2, "parent_component_id": 3, "member_slots": [0]},
+        {"local_group_id": 8, "parent_component_id": 4, "member_slots": [2, 3]},
+    ]
+
+    assert _group_owner_ids(triplet, groups, {10: 0, 20: 1}) == [1]
