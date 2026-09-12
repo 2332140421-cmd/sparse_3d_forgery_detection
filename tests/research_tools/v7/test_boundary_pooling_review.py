@@ -8,6 +8,7 @@ from research_tools.v7.boundary_pooling_probe.review_and_forward import (
     _aggregate_forward_scores,
     _boundary_relation_stats,
     _classification_metrics,
+    _html_page,
     materialize_windows,
     _source_frames_for_timestamps,
 )
@@ -88,3 +89,10 @@ def test_materialize_windows_is_explicit_and_uses_symlink(tmp_path) -> None:
     assert link.is_symlink()
     detail = json.loads((root / "review/details/w1__real.json").read_text())
     assert detail["video"]["materialization_status"] == "AVAILABLE"
+
+
+def test_review_page_preserves_source_selection_when_refilling_windows() -> None:
+    html = _html_page()
+
+    assert "previous=s.value" in html
+    assert "sources.includes(previous)" in html
