@@ -18,6 +18,7 @@ import random
 import signal
 import subprocess
 import time
+import traceback
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -74,6 +75,11 @@ STRIDE_S = 0.5
 SEED = 20260909
 CONDITIONS = ("H_MEAN_A", "B_MEAN_A", "B_MEAN_C")
 ARM_BY_CONDITION = {"H_MEAN_A": ("H", "UNORDERED_STATE"), "B_MEAN_A": ("B", "UNORDERED_STATE"), "B_MEAN_C": ("B", "ORDERED_SECOND")}
+EXPECTED_QUERY_COUNT = 289
+MAX_FRONTEND_ATTEMPTS = 3
+PHASE_RESERVE_S = 600.0
+BUDGET_STATE_NAME = "budget_state.json"
+RUN_LOCK_NAME = "run.lock"
 TAPNET_SOURCE = diagnostic.TAPNET_SOURCE
 TAPNET_CHECKPOINT = diagnostic.TAPNET_CHECKPOINT
 DEPTH_SOURCE = diagnostic.DEPTH_SOURCE
@@ -122,6 +128,111 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 
 def _progress(root: Path, phase: str, completed: int, total: int, status: str = "RUNNING", **extra: Any) -> None:
     _atomic_json(root / "progress.json", {"phase": phase, "completed": int(completed), "total": int(total), "status": status, "updated_unix": time.time(), **extra})
+
+
+def _acquire_run_lock(root: Path) -> Path:
+    """Prevent two independent runners from writing the same experiment."""
+
+    path = root / RUN_LOCK_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError:
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+            pid = int(record.get("pid", -1))
+        except Exception:
+            pid = -1
+        if pid > 0:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                stale = path.with_name(f"{path.name}.stale.{int(time.time())}")
+                os.replace(path, stale)
+                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            except PermissionError:
+                raise RuntimeError(f"RUN_LOCK_ACTIVE:{path}:pid={pid}") from None
+            else:
+                raise RuntimeError(f"RUN_LOCK_ACTIVE:{path}:pid={pid}") from None
+        else:
+            raise RuntimeError(f"RUN_LOCK_ACTIVE:{path}") from None
+    os.write(fd, (json.dumps({"pid": os.getpid(), "started_unix": time.time()}) + "\n").encode("utf-8"))
+    os.close(fd)
+    return path
+
+
+def _release_run_lock(path: Path) -> None:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def _load_budget_state(root: Path, budget_s: float, existing_results: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    """Load persistent budget accounting without resetting it on resume.
+
+    The two historical benchmark windows are explicitly outside the formal
+    7200-second run.  If there is no such bounded-benchmark evidence and no
+    persisted state, execution is refused rather than silently resetting an
+    unknown budget.
+    """
+
+    path = root / "manifests" / BUDGET_STATE_NAME
+    if path.is_file():
+        state = json.loads(path.read_text(encoding="utf-8"))
+        if abs(float(state.get("budget_s", budget_s)) - float(budget_s)) > 1e-6:
+            raise RuntimeError("BUDGET_ARGUMENT_MISMATCH: persisted budget differs from requested budget")
+        return state
+    benchmark = root / "evaluation" / "benchmark.json"
+    if benchmark.is_file() and existing_results:
+        elapsed = sum(float(item.get("elapsed_s", 0.0)) for item in existing_results.values() if item.get("sequence_prefix"))
+        state = {
+            "budget_s": float(budget_s),
+            "consumed_s": 0.0,
+            "prior_benchmark_elapsed_s": elapsed,
+            "accounting_status": "FORMAL_RUN_NOT_STARTED_BOUNDED_BENCHMARK",
+            "updated_unix": time.time(),
+        }
+        _atomic_json(path, state)
+        return state
+    raise RuntimeError("BUDGET_ACCOUNTING_UNKNOWN: no persisted runtime state or bounded benchmark evidence")
+
+
+def _update_budget_state(root: Path, state: dict[str, Any], elapsed_s: float, **extra: Any) -> None:
+    state["consumed_s"] = float(state.get("consumed_s", 0.0)) + max(0.0, float(elapsed_s))
+    state["updated_unix"] = time.time()
+    state.update(extra)
+    _atomic_json(root / "manifests" / BUDGET_STATE_NAME, state)
+
+
+def _plan_identity(row: Mapping[str, Any]) -> tuple[Any, ...]:
+    return (
+        str(row.get("window_id")),
+        str(row.get("source_video_id")),
+        str(row.get("source_id")),
+        str(row.get("role")),
+        int(row.get("grid_index")),
+        tuple(int(value) for value in row.get("frame_indices", [])),
+        tuple(float(value) for value in row.get("timestamps_s", [])),
+        float(row.get("interval_start_s", 0.0)),
+        float(row.get("interval_end_s", 0.0)),
+    )
+
+
+def compare_plan_identity(expected: Sequence[Mapping[str, Any]], actual: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Return deterministic differences without replacing a frozen plan."""
+
+    left = {str(row.get("window_id")): _plan_identity(row) for row in expected}
+    right = {str(row.get("window_id")): _plan_identity(row) for row in actual}
+    differences: list[str] = []
+    for window_id in sorted(set(left) | set(right)):
+        if window_id not in left:
+            differences.append(f"unexpected:{window_id}")
+        elif window_id not in right:
+            differences.append(f"missing:{window_id}")
+        elif left[window_id] != right[window_id]:
+            differences.append(f"mismatch:{window_id}")
+    return differences
 
 
 def _git_head() -> str:
@@ -176,7 +287,10 @@ def prepare_plan(root: Path) -> dict[str, Any]:
                 record["status"] = "METADATA_COMPLETE"
             except Exception as exc:
                 record.update({"status": "PTS_OR_DECODE_FAILED", "error": f"{type(exc).__name__}: {exc}"})
-        if record["status"] == "PENDING":
+        # A successful probe transitions the record to METADATA_COMPLETE.
+        # The previous PENDING check silently produced videos without grid
+        # rows on a fresh plan; keep planning tied to the successful state.
+        if record["status"] == "METADATA_COMPLETE":
             rows = generate_grid_windows(record["timestamps_s"], window_length_s=WINDOW_LENGTH_S, stride_s=STRIDE_S)
             if rows and rows[0].get("status") == "SHORT_VIDEO":
                 record["status"] = "SHORT_VIDEO"
@@ -239,8 +353,155 @@ def _save_results(root: Path, results: Mapping[str, Mapping[str, Any]]) -> None:
     _atomic_json(root / "frontend_results.json", {"results": list(sorted(results.values(), key=lambda row: str(row["window_id"])))})
 
 
+def _result_reuse_check(root: Path, row: Mapping[str, Any], result: Mapping[str, Any]) -> tuple[bool, str]:
+    """Validate a cached frontend result before allowing resume to skip it."""
+
+    window_id = str(row["window_id"])
+    if str(result.get("window_id")) != window_id:
+        return False, "WINDOW_ID_MISMATCH"
+    if str(result.get("source_video_id")) != str(row["source_video_id"]):
+        return False, "SOURCE_VIDEO_ID_MISMATCH"
+    prefix_value = result.get("sequence_prefix")
+    if not prefix_value:
+        return False, "NO_SEQUENCE_PREFIX"
+    prefix = Path(str(prefix_value))
+    if not prefix.with_suffix(".npz").is_file() or not prefix.with_suffix(".json").is_file():
+        return False, "SEQUENCE_ARTIFACT_MISSING"
+    try:
+        sequence = load_particle_sequence(prefix)
+    except Exception as exc:
+        return False, f"SEQUENCE_LOAD_FAILED:{type(exc).__name__}"
+    if sequence.source_video_id != str(row["source_video_id"]):
+        return False, "SEQUENCE_SOURCE_VIDEO_ID_MISMATCH"
+    if sequence.num_tracks != EXPECTED_QUERY_COUNT:
+        return False, f"QUERY_COUNT_MISMATCH:{sequence.num_tracks}"
+    provenance = sequence.provenance
+    try:
+        query_count = int(provenance.get("query_count", -1)) if isinstance(provenance, Mapping) else -1
+        query_grid_size = int(provenance.get("query_grid_size", -1)) if isinstance(provenance, Mapping) else -1
+    except (TypeError, ValueError):
+        query_count = query_grid_size = -1
+    if query_count != EXPECTED_QUERY_COUNT or query_grid_size != 17:
+        return False, "QUERY_CONFIGURATION_MISSING_OR_MISMATCH"
+    if not np.array_equal(np.asarray(sequence.frame_indices), np.asarray(row.get("frame_indices", []), dtype=np.int64)):
+        return False, "FRAME_INDICES_MISMATCH"
+    expected_timestamps = np.asarray(row.get("timestamps_s", []), dtype=np.float64)
+    if not np.array_equal(np.asarray(sequence.timestamps_s, dtype=np.float64), expected_timestamps):
+        if not np.allclose(np.asarray(sequence.timestamps_s, dtype=np.float64), expected_timestamps, rtol=0.0, atol=1e-9):
+            return False, "PTS_MISMATCH"
+    lineage = sequence.lineage
+    if not isinstance(lineage, Mapping) or str(lineage.get("grid_window_id")) != window_id:
+        return False, "LINEAGE_WINDOW_ID_MISSING_OR_MISMATCH"
+    return True, "VALID"
+
+
+def _validated_results(root: Path, rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    raw = _load_results(root)
+    valid: dict[str, dict[str, Any]] = {}
+    invalid: dict[str, str] = {}
+    for row in rows:
+        window_id = str(row["window_id"])
+        result = raw.get(window_id)
+        if result is None:
+            continue
+        ok, reason = _result_reuse_check(root, row, result)
+        if ok:
+            valid[window_id] = result
+        else:
+            invalid[window_id] = reason
+    return valid, invalid
+
+
+def _frontend_status_counts(rows: Sequence[Mapping[str, Any]], results: Mapping[str, Mapping[str, Any]], valid_ids: set[str]) -> dict[str, int]:
+    counts: dict[str, int] = defaultdict(int)
+    for row in rows:
+        window_id = str(row["window_id"])
+        if window_id in valid_ids:
+            counts["FRONTEND_COMPLETE"] += 1
+        elif window_id not in results:
+            counts["NOT_RUN"] += 1
+        else:
+            counts[str(results[window_id].get("status", "INVALID_CACHE"))] += 1
+    return dict(counts)
+
+
+def _estimate_window_seconds(results: Mapping[str, Mapping[str, Any]]) -> float:
+    values = [float(item["elapsed_s"]) for item in results.values() if item.get("sequence_prefix") and item.get("elapsed_s") is not None and float(item["elapsed_s"]) > 0]
+    return float(np.median(np.asarray(values, dtype=np.float64))) if values else 180.0
+
+
+def _select_source_prefix(root: Path, rows: Sequence[Mapping[str, Any]], valid: Mapping[str, Mapping[str, Any]], budget_state: dict[str, Any]) -> tuple[list[str], list[dict[str, Any]], str | None]:
+    """Select a complete source prefix once, without label/score selection."""
+
+    execution_path = root / "manifests" / "execution_plan.json"
+    execution = json.loads(execution_path.read_text(encoding="utf-8"))
+    order = [str(value) for value in execution.get("source_order", [])]
+    by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        by_source[str(row["source_id"])].append(dict(row))
+    if len(valid) == len(rows):
+        selected_rows = [dict(row) for row in rows]
+        return order, selected_rows, None
+    old_prefix = [str(value) for value in execution.get("selected_source_prefix", [])]
+    old_prefix_complete = all(
+        all(str(row["window_id"]) in valid for row in by_source.get(source, []))
+        for source in old_prefix
+    )
+    start = order.index(old_prefix[-1]) + 1 if old_prefix and old_prefix_complete and old_prefix[-1] in order else 0
+    prefix = [] if old_prefix_complete else old_prefix
+    estimate_per_window = _estimate_window_seconds(_load_results(root))
+    consumed = float(budget_state.get("consumed_s", 0.0))
+    remaining = float(budget_state.get("budget_s", 0.0)) - consumed
+    if not prefix:
+        estimate = 0.0
+        for source in order[start:]:
+            pending = sum(str(row["window_id"]) not in valid for row in by_source.get(source, []))
+            source_estimate = pending * estimate_per_window
+            if pending and estimate + source_estimate + PHASE_RESERVE_S > remaining:
+                break
+            prefix.append(source)
+            estimate += source_estimate
+        if prefix:
+            execution.update({
+                "selected_source_prefix": prefix,
+                "selected_window_count": sum(len(by_source[source]) for source in prefix),
+                "selection_estimate_frontend_s": estimate,
+                "selection_remaining_budget_s": remaining,
+                "selection_updated_unix": time.time(),
+            })
+            _atomic_json(execution_path, execution)
+    selected_rows = [row for row in rows if str(row["source_id"]) in set(prefix)]
+    selected_rows.sort(key=lambda row: (order.index(str(row["source_id"])) if str(row["source_id"]) in order else 10_000, str(row["role"]), int(row["grid_index"])))
+    if prefix:
+        return prefix, selected_rows, None
+    return [], [], "BUDGET_INSUFFICIENT_FOR_COMPLETE_SOURCE"
+
+
 def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: int | None = None) -> dict[str, Any]:
     """Run the reused 289-point frontend in fixed source/window order."""
+
+    rows = _load_grid(root)
+    stored_results = _load_results(root) if resume else {}
+    valid_results, invalid_cache = _validated_results(root, rows)
+    budget_state = _load_budget_state(root, budget_s, stored_results)
+    source_prefix, selected_rows, selection_error = _select_source_prefix(root, rows, valid_results, budget_state)
+    if selection_error is not None:
+        _progress(root, "frontend", len(valid_results), len(rows), selection_error, planned_windows=len(rows), selected_windows=0, invalid_cache=invalid_cache)
+        return {"status": selection_error, "completed": len(valid_results), "total": len(rows), "selected_windows": 0, "selected_source_prefix": []}
+    if max_windows is not None:
+        selected_rows = selected_rows[: int(max_windows)]
+    pending = [row for row in selected_rows if str(row["window_id"]) not in valid_results]
+    retry_limited = []
+    for row in pending[:]:
+        previous = stored_results.get(str(row["window_id"]), {})
+        if int(previous.get("attempt_count", 0)) >= MAX_FRONTEND_ATTEMPTS:
+            pending.remove(row)
+            retry_limited.append(str(row["window_id"]))
+    if not pending:
+        selected_complete = all(str(row["window_id"]) in valid_results for row in selected_rows)
+        status = "COMPLETE" if len(valid_results) == len(rows) else ("SOURCE_PREFIX_COMPLETE" if selected_complete else "RETRY_LIMIT_REACHED")
+        _progress(root, "frontend", len(valid_results), len(rows), status, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, invalid_cache=invalid_cache, retry_limited=retry_limited)
+        return {"status": status, "completed": len(valid_results), "total": len(rows), "selected_windows": len(selected_rows), "selected_source_prefix": source_prefix, "invalid_cache": invalid_cache, "retry_limited": retry_limited}
 
     import torch
     from scripts.run_v7_explicit_geometry_frontend import (
@@ -254,25 +515,12 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
         world_xyz,
     )
 
-    rows = _load_grid(root)
-    execution = json.loads((root / "manifests/execution_plan.json").read_text(encoding="utf-8"))
-    order = {source: index for index, source in enumerate(execution["source_order"])}
-    rows.sort(key=lambda row: (order.get(str(row["source_id"]), 10_000), str(row["role"]), int(row["grid_index"])))
-    benchmark_sources = sorted({str(row["source_id"]) for row in rows})
-    benchmark_source = benchmark_sources[0] if benchmark_sources else None
-    benchmark_ids = [str(row["window_id"]) for row in rows if str(row["source_id"]) == benchmark_source and int(row["grid_index"]) == 0]
-    rows = [row for row in rows if str(row["window_id"]) in benchmark_ids] + [row for row in rows if str(row["window_id"]) not in benchmark_ids]
-    results = _load_results(root) if resume else {}
-    pending = [row for row in rows if str(row["window_id"]) not in results]
-    if max_windows is not None:
-        pending = pending[: int(max_windows)]
-    if not pending:
-        _progress(root, "frontend", len(results), len(rows), "REUSED")
-        return {"status": "REUSED", "completed": len(results), "total": len(rows)}
+    print(f"frontend device={torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'cpu'} selected_sources={source_prefix} selected_windows={len(selected_rows)}", flush=True)
     tracker = OnlineBootsTapir(TAPNET_SOURCE, TAPNET_CHECKPOINT, process_size=256, grid_size=17)
     depth_runner = DepthProRunner(DEPTH_SOURCE, DEPTH_CHECKPOINT)
     started_all = time.monotonic()
     stop_requested = False
+    results = dict(stored_results)
 
     def stop(_signum: int, _frame: Any) -> None:
         nonlocal stop_requested
@@ -283,10 +531,14 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
     try:
         for number, row in enumerate(pending, 1):
             elapsed = time.monotonic() - started_all
-            if stop_requested or elapsed >= float(budget_s):
-                _progress(root, "frontend", len(results), len(rows), "STOPPED_SAFE" if stop_requested else "BUDGET_EXHAUSTED", elapsed_s=elapsed)
+            consumed = float(budget_state.get("consumed_s", 0.0))
+            if stop_requested or consumed + elapsed >= float(budget_state.get("budget_s", budget_s)):
+                _progress(root, "frontend", len(valid_results), len(rows), "STOPPED_SAFE" if stop_requested else "BUDGET_EXHAUSTED", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, elapsed_s=elapsed, consumed_s=consumed, invalid_cache=invalid_cache)
                 break
             window_started = time.perf_counter()
+            window_id = str(row["window_id"])
+            previous = results.get(window_id, {})
+            attempt_count = int(previous.get("attempt_count", 0)) + 1
             try:
                 decoded = decode_video(VideoSource(sample_id=f"v7-fixed-grid-{row['window_id']}", source_video_id=str(row["source_video_id"]), source_locator=row["video_path"]), row["frame_indices"])
                 depths, focals, frame_depth_valid = depth_runner.infer(decoded)
@@ -305,22 +557,30 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
                     provenance={"tracker": "online_bootstapir", "tracker_source_sha": TRACKER_SHA, "depth": "apple_depth_pro", "depth_source_sha": DEPTH_SHA, "depth_semantics": "optical_axis_z_depth", "pose": "open3d_rgbd_odometry", "pose_convention": "target_camera_from_source_camera_inverted", "process_size": 256, "query_grid_size": 17, "query_count": 289, "window_initialization": "independent", "causal_execution": True, "fixed_focal_px": fixed_focal_px},
                 )
                 prefix = root / "particles" / f"{_safe(str(row['window_id']))}__density289"
-                if not prefix.with_suffix(".npz").is_file():
+                existing_prefix = {prefix.with_suffix(".npz").is_file(), prefix.with_suffix(".json").is_file()}
+                if existing_prefix != {False}:
+                    prefix = root / "particles" / f"{_safe(str(row['window_id']))}__density289__attempt{attempt_count}"
+                if not prefix.with_suffix(".npz").is_file() and not prefix.with_suffix(".json").is_file():
                     save_particle_sequence(sequence, prefix)
                 diag = diagnostic.component_diagnostic(sequence, window_start_s=float(row["interval_start_s"]), label="density289")
-                result = {**row, "sequence_prefix": str(prefix), "result_key": f"{row['window_id']}::density289", "frame_indices": [int(x) for x in sequence.frame_indices], "timestamps_s": [float(x) for x in sequence.timestamps_s], "frame_sizes_hw": np.asarray(sequence.frame_sizes_hw).tolist(), "query_count": int(sequence.num_tracks), "tracking_visible_fraction": float(np.mean(visibility)), "geometry_valid_fraction": float(np.mean(geometry_valid)), "valid_points_per_frame": np.sum(geometry_valid, axis=1).astype(int).tolist(), "pose_pair_valid": np.asarray(pair_valid).tolist(), "pose_valid": np.asarray(pose_valid).tolist(), "support_status": str(diag["support_status"]), "valid_triplet_count": int(diag["valid_triplet_count"]), "component_count": int(diag["component_count"]), "max_component_members": int(diag["max_component_members"]), "selected_triplet_common_members": int(diag["selected_triplet_common_members"]), "causal_training_eligible": False, "causal_training_reason": "frozen frontend window observation; no target construction", "elapsed_s": time.perf_counter() - window_started}
+                result = {**row, "status": "FRONTEND_COMPLETE", "attempt_count": attempt_count, "sequence_prefix": str(prefix), "result_key": f"{row['window_id']}::density289", "frame_indices": [int(x) for x in sequence.frame_indices], "timestamps_s": [float(x) for x in sequence.timestamps_s], "frame_sizes_hw": np.asarray(sequence.frame_sizes_hw).tolist(), "query_count": int(sequence.num_tracks), "tracking_visible_fraction": float(np.mean(visibility)), "geometry_valid_fraction": float(np.mean(geometry_valid)), "valid_points_per_frame": np.sum(geometry_valid, axis=1).astype(int).tolist(), "pose_pair_valid": np.asarray(pair_valid).tolist(), "pose_valid": np.asarray(pose_valid).tolist(), "support_status": str(diag["support_status"]), "valid_triplet_count": int(diag["valid_triplet_count"]), "component_count": int(diag["component_count"]), "max_component_members": int(diag["max_component_members"]), "selected_triplet_common_members": int(diag["selected_triplet_common_members"]), "causal_training_eligible": False, "causal_training_reason": "frozen frontend window observation; no target construction", "elapsed_s": time.perf_counter() - window_started}
                 results[str(row["window_id"])] = result
                 _save_results(root, results)
-                _progress(root, "frontend", len(results), len(rows), "RUNNING", last_window=row["window_id"], elapsed_s=time.monotonic() - started_all)
+                valid_results[str(row["window_id"])] = result
+                window_elapsed = float(result["elapsed_s"])
+                _update_budget_state(root, budget_state, window_elapsed, last_window=window_id, last_window_status="FRONTEND_COMPLETE")
+                _progress(root, "frontend", len(valid_results), len(rows), "RUNNING", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, attempted=number, succeeded=len(valid_results), failed=sum(item.get("status") == "FRONTEND_FAILED" for item in results.values()), last_window=window_id, elapsed_s=time.monotonic() - started_all, consumed_s=budget_state["consumed_s"], invalid_cache=invalid_cache)
                 print(f"frontend {len(results)}/{len(rows)} source={row['source_id']} role={row['role']} grid={row['grid_index']} new {result['elapsed_s']:.1f}s", flush=True)
                 del decoded, depths, uv, visibility, xyz, geometry_valid, sequence
                 gc.collect()
                 torch.cuda.empty_cache()
             except Exception as exc:
-                error = {**row, "result_key": f"{row['window_id']}::density289", "status": "FRONTEND_FAILED", "error": f"{type(exc).__name__}: {exc}"}
+                window_elapsed = time.perf_counter() - window_started
+                error = {**row, "result_key": f"{row['window_id']}::density289", "status": "FRONTEND_FAILED", "attempt_count": attempt_count, "error": f"{type(exc).__name__}: {exc}", "elapsed_s": window_elapsed}
                 results[str(row["window_id"])] = error
                 _save_results(root, results)
-                _progress(root, "frontend", len(results), len(rows), "RUNNING", last_error=error["error"])
+                _update_budget_state(root, budget_state, window_elapsed, last_window=window_id, last_window_status="FRONTEND_FAILED")
+                _progress(root, "frontend", len(valid_results), len(rows), "RUNNING", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, attempted=number, succeeded=len(valid_results), failed=sum(item.get("status") == "FRONTEND_FAILED" for item in results.values()), last_error=error["error"], consumed_s=budget_state["consumed_s"], invalid_cache=invalid_cache)
                 print(f"frontend FAILED {row['window_id']}: {error['error']}", flush=True)
     finally:
         signal.signal(signal.SIGTERM, old_handler)
@@ -329,14 +589,25 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-    complete = sum(bool(item.get("sequence_prefix")) for item in results.values())
-    status = "COMPLETE" if complete == len(rows) else ("BUDGET_EXHAUSTED" if not stop_requested else "STOPPED_SAFE")
-    if max_windows is not None and len(results) < len(rows) and not stop_requested:
+    valid_results, invalid_cache = _validated_results(root, rows)
+    selected_complete = all(str(row["window_id"]) in valid_results for row in selected_rows)
+    if len(valid_results) == len(rows):
+        status = "COMPLETE"
+    elif stop_requested:
+        status = "STOPPED_SAFE"
+    elif float(budget_state.get("consumed_s", 0.0)) >= float(budget_state.get("budget_s", budget_s)):
+        status = "BUDGET_EXHAUSTED"
+    elif selected_complete and max_windows is None:
+        status = "SOURCE_PREFIX_COMPLETE"
+    elif max_windows is not None:
         status = "BENCHMARK_PARTIAL"
-    if benchmark_ids:
-        _atomic_json(root / "evaluation/benchmark.json", {"source_id": benchmark_source, "window_ids": benchmark_ids, "completed": [item for item in benchmark_ids if item in results], "note": "fixed sorted-source real/fake first complete grid windows; no label/score selection"})
-    _progress(root, "frontend", complete, len(rows), status, elapsed_s=time.monotonic() - started_all)
-    return {"status": status, "completed": complete, "total": len(rows)}
+    else:
+        status = "FRONTEND_INCOMPLETE"
+    _progress(root, "frontend", len(valid_results), len(rows), status, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, elapsed_s=time.monotonic() - started_all, consumed_s=budget_state.get("consumed_s", 0.0), invalid_cache=invalid_cache, retry_limited=retry_limited)
+    if max_windows is not None:
+        benchmark_ids = [str(row["window_id"]) for row in selected_rows]
+        _atomic_json(root / "evaluation" / "benchmark.json", {"source_id": source_prefix[0] if source_prefix else None, "window_ids": benchmark_ids, "completed": [window_id for window_id in benchmark_ids if window_id in valid_results], "note": "bounded frontend validation; no label/score selection"})
+    return {"status": status, "completed": len(valid_results), "total": len(rows), "selected_windows": len(selected_rows), "selected_source_prefix": source_prefix, "invalid_cache": invalid_cache, "retry_limited": retry_limited, "budget_state": budget_state}
 
 
 def _feature_path(root: Path, window_id: str) -> Path:
@@ -348,7 +619,8 @@ def build_features(root: Path, resume: bool = True) -> dict[str, Any]:
 
     rows = _load_grid(root)
     results = _load_results(root)
-    usable = [row for row in rows if str(row["window_id"]) in results and results[str(row["window_id"])].get("sequence_prefix")]
+    valid_results, invalid_cache = _validated_results(root, rows)
+    usable = [row for row in rows if str(row["window_id"]) in valid_results]
     mask_dir = root / "masks"
     mask_dir.mkdir(parents=True, exist_ok=True)
     model = None
@@ -359,7 +631,7 @@ def build_features(root: Path, resume: bool = True) -> dict[str, Any]:
         if resume and path.is_file():
             feature = json.loads(path.read_text(encoding="utf-8"))
         else:
-            result = results[str(row["window_id"])]
+            result = valid_results[str(row["window_id"])]
             sequence = load_particle_sequence(Path(str(result["sequence_prefix"])))
             history = np.flatnonzero(np.asarray(sequence.timestamps_s) < float(row["interval_start_s"]) + 0.5).astype(np.int64)
             components = rebuild_components_fast(sequence.xyz, sequence.geometry_validity, history, COMPONENT_CONFIG)
@@ -396,19 +668,29 @@ def build_features(root: Path, resume: bool = True) -> dict[str, Any]:
             feature["b_support"] = _compact_support(b_support)
             feature["boundary_checks"] = checks
             _atomic_json(path, feature)
-        coverage.append({"window_id": row["window_id"], "source_id": row["source_id"], "role": row["role"], "grid_index": row["grid_index"], "h_support": feature.get("h_support", {}).get("support_status"), "b_support": feature.get("b_support", {}).get("support_status"), "h_triplets": feature.get("h_support", {}).get("valid_triplet_count", 0), "b_triplets": feature.get("b_support", {}).get("valid_triplet_count", 0), "segmentation_status": feature.get("segmentation", {}).get("status"), "frontend_status": results[str(row["window_id"])].get("status", "COMPLETE")})
+        coverage.append({"window_id": row["window_id"], "source_id": row["source_id"], "role": row["role"], "grid_index": row["grid_index"], "h_support": feature.get("h_support", {}).get("support_status"), "b_support": feature.get("b_support", {}).get("support_status"), "h_triplets": feature.get("h_support", {}).get("valid_triplet_count", 0), "b_triplets": feature.get("b_support", {}).get("valid_triplet_count", 0), "segmentation_status": feature.get("segmentation", {}).get("status"), "frontend_status": valid_results[str(row["window_id"])].get("status", "FRONTEND_COMPLETE")})
         if number % 10 == 0:
             _progress(root, "features", number, len(usable), "RUNNING")
     _write_csv(root / "coverage/window_support.csv", coverage)
     source_rows: list[dict[str, Any]] = []
     for source in sorted({str(row["source_id"]) for row in rows}):
         source_all = [row for row in rows if str(row["source_id"]) == source]
-        source_done = [row for row in usable if str(row["source_id"]) == source and str(row["window_id"]) in {str(item["window_id"]) for item in usable}]
-        source_rows.append({"source_id": source, "planned_videos": len({str(row["role"]) for row in source_all}), "planned_windows": len(source_all), "frontend_windows": len(source_done), "complete_source": len(source_done) == len(source_all), "partial_reason": "" if len(source_done) == len(source_all) else "budget_or_frontend_failure"})
+        source_done = [row for row in usable if str(row["source_id"]) == source]
+        source_feature_ids = {str(item["window_id"]) for item in source_done}
+        no_support = sum(
+            str(row["window_id"]) in source_feature_ids
+            and json.loads(_feature_path(root, str(row["window_id"])).read_text(encoding="utf-8")).get("h_support", {}).get("support_status") != "VALID"
+            and json.loads(_feature_path(root, str(row["window_id"])).read_text(encoding="utf-8")).get("b_support", {}).get("support_status") != "VALID"
+            for row in source_all
+        )
+        failed = sum(str(row["window_id"]) in results and str(results[str(row["window_id"])].get("status")) == "FRONTEND_FAILED" for row in source_all)
+        invalid = sum(str(row["window_id"]) in invalid_cache for row in source_all)
+        not_run = len(source_all) - len(source_done) - failed - invalid
+        source_rows.append({"source_id": source, "planned_videos": len({str(row["role"]) for row in source_all}), "planned_windows": len(source_all), "frontend_windows": len(source_done), "feature_windows": len(source_done), "no_valid_support_windows": no_support, "failed_windows": failed, "invalid_cache_windows": invalid, "not_run_windows": max(0, not_run), "complete_source": len(source_done) == len(source_all) and failed == 0 and invalid == 0 and not_run == 0, "partial_reason": "" if len(source_done) == len(source_all) and failed == 0 and invalid == 0 and not_run == 0 else "budget_or_frontend_failure"})
     _write_csv(root / "coverage/source_coverage.csv", source_rows)
-    _atomic_json(root / "manifests/feature_summary.json", {"windows": len(coverage), "h_valid": sum(row["h_support"] == "VALID" for row in coverage), "b_valid": sum(row["b_support"] == "VALID" for row in coverage), "segmentation_status": {status: sum(row["segmentation_status"] == status for row in coverage) for status in sorted({str(row["segmentation_status"]) for row in coverage})}})
-    _progress(root, "features", len(coverage), len(usable), "COMPLETE")
-    return {"windows": len(coverage), "usable": len(usable)}
+    _atomic_json(root / "manifests/feature_summary.json", {"windows": len(coverage), "h_valid": sum(row["h_support"] == "VALID" for row in coverage), "b_valid": sum(row["b_support"] == "VALID" for row in coverage), "invalid_cache": invalid_cache, "segmentation_status": {status: sum(row["segmentation_status"] == status for row in coverage) for status in sorted({str(row["segmentation_status"]) for row in coverage})}})
+    _progress(root, "features", len(coverage), len(usable), "COMPLETE", planned_windows=len(rows), usable_windows=len(usable), invalid_cache=invalid_cache)
+    return {"windows": len(coverage), "usable": len(usable), "invalid_cache": invalid_cache, "source_coverage": source_rows}
 
 
 def _load_models() -> tuple[dict[tuple[str, str, int], tuple[Any, Any]], dict[str, Any]]:
@@ -431,16 +713,61 @@ def _load_models() -> tuple[dict[tuple[str, str, int], tuple[Any, Any]], dict[st
     return models, data
 
 
+def _support_timestamps(feature: Mapping[str, Any], condition: str) -> list[float]:
+    organization, _ = ARM_BY_CONDITION[condition]
+    support = feature.get("h_support" if organization == "H" else "b_support", {})
+    values: set[float] = set()
+    for triplet in support.get("triplets", []):
+        for stamp in triplet.get("timestamps_s", []):
+            value = float(stamp)
+            if np.isfinite(value):
+                values.add(value)
+    return sorted(values)
+
+
+def _missing_model_seeds(models: Mapping[tuple[str, str, int], Any], condition: str, source: str, seeds: Sequence[int]) -> list[int]:
+    return [int(seed) for seed in seeds if (condition, str(source), int(seed)) not in models]
+
+
+def _model_used_frame_rows(root: Path, rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Materialize actual triplet-supported source frame/PTS identities."""
+
+    output: list[dict[str, Any]] = []
+    for row in rows:
+        path = _feature_path(root, str(row["window_id"]))
+        if not path.is_file():
+            continue
+        feature = json.loads(path.read_text(encoding="utf-8"))
+        identity = feature.get("identity", {})
+        frame_indices = [int(value) for value in identity.get("frame_indices", [])]
+        timestamps = np.asarray(identity.get("timestamps_s", []), dtype=np.float64)
+        for condition in CONDITIONS:
+            for stamp in _support_timestamps(feature, condition):
+                if timestamps.size == 0:
+                    output.append({"window_id": row["window_id"], "source_id": row["source_id"], "condition": condition, "frame_index": "UNKNOWN", "timestamp_s": stamp, "status": "UNKNOWN_IDENTITY"})
+                    continue
+                index = int(np.argmin(np.abs(timestamps - stamp)))
+                if abs(float(timestamps[index]) - stamp) > 1e-8:
+                    output.append({"window_id": row["window_id"], "source_id": row["source_id"], "condition": condition, "frame_index": "UNKNOWN", "timestamp_s": stamp, "status": "PTS_NOT_IN_SEQUENCE"})
+                else:
+                    output.append({"window_id": row["window_id"], "source_id": row["source_id"], "condition": condition, "frame_index": frame_indices[index], "timestamp_s": float(timestamps[index]), "status": "MODEL_USED"})
+    return output
+
+
 def score_windows(root: Path, resume: bool = True) -> dict[str, Any]:
     rows = _load_grid(root)
-    results = _load_results(root)
+    results, invalid_cache = _validated_results(root, rows)
     models, model_data = _load_models()
     score_rows: list[dict[str, Any]] = []
     for row in rows:
         window_id = str(row["window_id"])
         result = results.get(window_id, {})
         feature_path = _feature_path(root, window_id)
-        base: dict[str, Any] = {"window_id": window_id, "source_id": str(row["source_id"]), "role": str(row["role"]), "grid_index": int(row["grid_index"]), "annotation_category": row.get("annotation_category"), "annotation_overlap_s": row.get("annotation_overlap_s"), "annotation_overlap_fraction": row.get("annotation_overlap_fraction"), "frontend_status": result.get("status", "COMPLETE" if result.get("sequence_prefix") else "MISSING"), "model_used_pts_count": len(row.get("timestamps_s", []))}
+        base: dict[str, Any] = {"window_id": window_id, "source_id": str(row["source_id"]), "role": str(row["role"]), "grid_index": int(row["grid_index"]), "annotation_category": row.get("annotation_category"), "annotation_overlap_s": row.get("annotation_overlap_s"), "annotation_overlap_fraction": row.get("annotation_overlap_fraction"), "frontend_status": result.get("status", "FRONTEND_COMPLETE" if result.get("sequence_prefix") else "MISSING"), "frontend_frame_count": len(result.get("frame_indices", [])), "model_used_pts_count": 0, "model_used_frame_indices": ""}
+        if not result:
+            base["score_status"] = "MISSING_FRONTEND"
+            score_rows.append(base)
+            continue
         if not feature_path.is_file():
             base["score_status"] = "MISSING_FEATURE"
             score_rows.append(base)
@@ -449,6 +776,9 @@ def score_windows(root: Path, resume: bool = True) -> dict[str, Any]:
         for condition, (organization, arm) in ARM_BY_CONDITION.items():
             support = feature.get("h_support" if organization == "H" else "b_support", {})
             triplets = support.get("triplets", [])
+            support_stamps = _support_timestamps(feature, condition)
+            base[f"{condition}_model_used_pts_count"] = len(support_stamps)
+            base[f"{condition}_model_used_timestamps_s"] = json.dumps(support_stamps, separators=(",", ":"))
             if not triplets:
                 base[f"{condition}_status"] = "NO_VALID_TRIPLET"
                 continue
@@ -462,16 +792,25 @@ def score_windows(root: Path, resume: bool = True) -> dict[str, Any]:
                 batch, _ = build_batch([example], arm, standardizer=standardizer)
                 seed_values.append(float(score_pooling_model(model, batch)[0]))
                 base[f"{condition}_seed_{seed}"] = seed_values[-1]
-            if seed_values:
+            expected_seeds = [int(seed) for seed in model_data.get("seeds", [])]
+            missing_seeds = _missing_model_seeds(models, condition, str(row["source_id"]), expected_seeds)
+            base[f"{condition}_expected_seed_count"] = len(expected_seeds)
+            base[f"{condition}_seed_count"] = len(seed_values)
+            base[f"{condition}_missing_seeds"] = json.dumps(missing_seeds, separators=(",", ":"))
+            if seed_values and not missing_seeds and len(seed_values) == len(expected_seeds):
                 base[condition] = float(np.mean(seed_values))
                 base[f"{condition}_status"] = "SCORED"
+            elif missing_seeds:
+                base[f"{condition}_status"] = "MISSING_SEED_MODEL"
             else:
                 base[f"{condition}_status"] = "MISSING_HELDOUT_MODEL"
         base["score_status"] = "SCORED" if any(base.get(f"{condition}_status") == "SCORED" for condition in CONDITIONS) else "NO_MODEL_SCORE"
         score_rows.append(base)
     _write_csv(root / "scores/window_scores.csv", score_rows)
-    _progress(root, "score", len(score_rows), len(rows), "COMPLETE")
-    return {"windows": len(score_rows), "models": len(models)}
+    _write_csv(root / "evaluation/model_used_frames.csv", _model_used_frame_rows(root, rows))
+    scored_by_condition = {condition: sum(_condition_scored(row, condition) for row in score_rows) for condition in CONDITIONS}
+    _progress(root, "score", sum(scored_by_condition.values()), len(rows), "COMPLETE", processed_rows=len(score_rows), scored_by_condition=scored_by_condition, invalid_cache=invalid_cache)
+    return {"processed_windows": len(score_rows), "models": len(models), "scored_by_condition": scored_by_condition, "invalid_cache": invalid_cache}
 
 
 def _auroc(labels: Sequence[int], scores: Sequence[float]) -> float | None:
@@ -493,34 +832,77 @@ def _classification(labels: Sequence[int], scores: Sequence[float]) -> dict[str,
     return {"precision": precision, "recall": recall, "f1": f1, "accuracy": (tn + tp) / len(y) if len(y) else None, "tn": tn, "fp": fp, "fn": fn, "tp": tp}
 
 
+def _condition_scored(row: Mapping[str, Any], condition: str) -> bool:
+    if row.get(f"{condition}_status") != "SCORED" or row.get(condition, "") in (None, ""):
+        return False
+    try:
+        return bool(np.isfinite(float(row[condition])))
+    except (TypeError, ValueError):
+        return False
+
+
 def evaluate(root: Path) -> dict[str, Any]:
     with (root / "scores/window_scores.csv").open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
-    per_source: list[dict[str, Any]] = []; summary: dict[str, Any] = {"conditions": {}, "protocol": {"positive": "fake windows fully inside annotation union", "negative": "all real windows", "boundary_and_outside": "descriptive only"}}
+    coverage_path = root / "coverage" / "source_coverage.csv"
+    coverage = {str(row["source_id"]): row for row in csv.DictReader(coverage_path.open(newline="", encoding="utf-8"))} if coverage_path.is_file() else {}
+    complete_sources = {source for source, row in coverage.items() if str(row.get("complete_source", "")).lower() == "true"}
+    per_source: list[dict[str, Any]] = []
+    summary: dict[str, Any] = {
+        "conditions": {},
+        "protocol": {"positive": "fake windows fully inside annotation union", "negative": "all real windows", "boundary_and_outside": "descriptive only", "main_comparison": "complete sources and common windows across all conditions", "threshold": "logit >= 0", "bootstrap": {"unit": "source", "seed": SEED, "replicates": 10000}},
+        "complete_sources": sorted(complete_sources),
+        "partial_sources": sorted(set(coverage) - complete_sources),
+    }
     source_ids = sorted({str(row["source_id"]) for row in rows})
+    common_rows: list[dict[str, Any]] = []
+    for row in rows:
+        if str(row["source_id"]) not in complete_sources:
+            continue
+        if row.get("role") not in {"real", "fake"}:
+            continue
+        if row.get("role") == "fake" and row.get("annotation_category") != "FAKE_MANIPULATION":
+            continue
+        if all(_condition_scored(row, condition) for condition in CONDITIONS):
+            common_rows.append(row)
+
+    def ci(values: Sequence[float]) -> list[float] | None:
+        if not values:
+            return None
+        array = np.asarray(values, dtype=np.float64)
+        rng = np.random.default_rng(SEED)
+        samples = np.asarray([np.mean(array[rng.integers(0, len(array), len(array))]) for _ in range(10000)], dtype=np.float64)
+        return [float(np.percentile(samples, 2.5)), float(np.percentile(samples, 97.5))]
+
+    source_scores: dict[str, dict[str, float]] = {condition: {} for condition in CONDITIONS}
     for condition in CONDITIONS:
         source_values: dict[str, float] = {}; pooled_labels: list[int] = []; pooled_scores: list[float] = []
         for source in source_ids:
             selected = []
-            for row in rows:
-                if str(row["source_id"]) != source or row.get(condition, "") == "" or row.get(f"{condition}_status") != "SCORED": continue
+            for row in common_rows:
+                if str(row["source_id"]) != source:
+                    continue
                 if row["role"] == "real": label = 0
                 elif row.get("annotation_category") == "FAKE_MANIPULATION": label = 1
                 else: continue
                 selected.append((label, float(row[condition])))
             if selected and {label for label, _ in selected} == {0, 1}:
-                value = _auroc([x[0] for x in selected], [x[1] for x in selected]); source_values[source] = value
+                value = _auroc([x[0] for x in selected], [x[1] for x in selected]); source_values[source] = value; source_scores[condition][source] = float(value)
                 pooled_labels.extend(x[0] for x in selected); pooled_scores.extend(x[1] for x in selected)
-                per_source.append({"condition": condition, "source_id": source, "n_windows": len(selected), "real_count": sum(x[0] == 0 for x in selected), "fake_count": sum(x[0] == 1 for x in selected), "auroc": value})
+            per_source.append({"condition": condition, "source_id": source, "source_complete": source in complete_sources, "common_window_count": len(selected), "real_count": sum(x[0] == 0 for x in selected), "fake_count": sum(x[0] == 1 for x in selected), "auroc": value if selected and {x[0] for x in selected} == {0, 1} else None, "eligibility": "ELIGIBLE" if source in source_values else ("PARTIAL_SOURCE" if source not in complete_sources else "NO_BOTH_CLASSES")})
         values = list(source_values.values()); mean = float(np.mean(values)) if values else None
-        rng = np.random.default_rng(SEED); bootstrap = []
-        if values:
-            array = np.asarray(values, dtype=float)
-            bootstrap = [float(np.mean(array[rng.integers(0, len(array), len(array))])) for _ in range(10000)]
-        summary["conditions"][condition] = {"source_count": len(values), "source_mean_auroc": mean, "bootstrap_ci95": [float(np.percentile(bootstrap, 2.5)), float(np.percentile(bootstrap, 97.5))] if bootstrap else None, "pooled_auroc": _auroc(pooled_labels, pooled_scores), "pooled_ap": _average_precision(pooled_labels, pooled_scores), **(_classification(pooled_labels, pooled_scores) if pooled_labels else {})}
+        classification = _classification(pooled_labels, pooled_scores) if pooled_labels else {"precision": None, "recall": None, "f1": None, "accuracy": None, "tn": None, "fp": None, "fn": None, "tp": None}
+        summary["conditions"][condition] = {"source_count": len(values), "source_mean_auroc": mean, "bootstrap_ci95": ci(values), "pooled_window_count": len(pooled_labels), "pooled_auroc": _auroc(pooled_labels, pooled_scores), "pooled_ap": _average_precision(pooled_labels, pooled_scores), **classification}
+    comparisons: dict[str, Any] = {}
+    for left, right, name in (("B_MEAN_A", "H_MEAN_A", "B_MEAN_A_minus_H_MEAN_A"), ("B_MEAN_C", "B_MEAN_A", "B_MEAN_C_minus_B_MEAN_A")):
+        shared = sorted(set(source_scores[left]) & set(source_scores[right]))
+        differences = [source_scores[left][source] - source_scores[right][source] for source in shared]
+        comparisons[name] = {"source_count": len(differences), "sources": shared, "source_mean_difference": float(np.mean(differences)) if differences else None, "bootstrap_ci95": ci(differences)}
+    summary["paired_comparisons"] = comparisons
+    summary["common_window_count"] = len(common_rows)
     _write_csv(root / "evaluation/per_source_metrics.csv", per_source)
     _atomic_json(root / "evaluation/summary.json", summary)
-    _progress(root, "evaluate", len(per_source), len(CONDITIONS) * len(source_ids), "COMPLETE")
+    _progress(root, "evaluate", sum(int(value["source_count"]) for value in summary["conditions"].values()), len(CONDITIONS) * len(source_ids), "COMPLETE", common_windows=len(common_rows), complete_sources=sorted(complete_sources), partial_sources=sorted(set(source_ids) - complete_sources))
     return summary
 
 
@@ -534,36 +916,30 @@ def build_review(root: Path) -> None:
 def _actual_inventory(root: Path) -> dict[str, Any]:
     rows = _load_grid(root)
     results = _load_results(root)
+    valid_results, invalid_cache = _validated_results(root, rows)
     score_path = root / "scores/window_scores.csv"
     scores = list(csv.DictReader(score_path.open(newline="", encoding="utf-8"))) if score_path.is_file() else []
     source_rows = list(csv.DictReader((root / "coverage/source_coverage.csv").open(newline="", encoding="utf-8"))) if (root / "coverage/source_coverage.csv").is_file() else []
     feature_summary_path = root / "manifests/feature_summary.json"
     feature_windows = int(json.loads(feature_summary_path.read_text(encoding="utf-8")).get("windows", 0)) if feature_summary_path.is_file() else 0
-    success = [item for item in results.values() if item.get("sequence_prefix")]
-    statuses = defaultdict(int)
-    for row in rows:
-        item = results.get(str(row["window_id"]))
-        if item is None:
-            statuses["NOT_RUN"] += 1
-        elif item.get("sequence_prefix"):
-            statuses["FRONTEND_COMPLETE"] += 1
-        else:
-            statuses[str(item.get("status", "FAILED"))] += 1
-    scored = {condition: sum(bool(row.get(condition)) and row.get(f"{condition}_status") == "SCORED" for row in scores) for condition in CONDITIONS}
-    pts_total = sum(len(item.get("timestamps_s", [])) for item in success)
-    unique_pts = sum(len(set(float(stamp) for stamp in item.get("timestamps_s", []))) for item in success)
+    success = list(valid_results.values())
+    statuses = _frontend_status_counts(rows, results, set(valid_results))
+    scored = {condition: sum(_condition_scored(row, condition) for row in scores) for condition in CONDITIONS}
+    frontend_frames = sum(len(item.get("frame_indices", [])) for item in success)
+    model_rows = list(csv.DictReader((root / "evaluation/model_used_frames.csv").open(newline="", encoding="utf-8"))) if (root / "evaluation/model_used_frames.csv").is_file() else []
+    model_counts = {condition: len({(str(item.get("source_id")), str(item.get("window_id")), str(item.get("frame_index")), str(item.get("timestamp_s"))) for item in model_rows if item.get("condition") == condition and item.get("status") == "MODEL_USED"}) for condition in CONDITIONS}
     categories = defaultdict(int)
     for row in rows:
         categories[str(row.get("annotation_category", "UNLABELED"))] += 1
-    return {"planned_windows": len(rows), "planned_videos": len({str(row["source_video_id"]) for row in rows}), "frontend_results": len(success), "feature_windows": feature_windows, "window_statuses": dict(statuses), "scored_windows": scored, "model_used_pts": pts_total, "unique_model_used_pts": unique_pts, "annotation_categories": dict(categories), "complete_sources": [row["source_id"] for row in source_rows if str(row.get("complete_source")).lower() == "true"], "partial_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) > 0 and str(row.get("complete_source")).lower() != "true"], "unrun_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) == 0]}
+    return {"planned_windows": len(rows), "planned_videos": len({str(row["source_video_id"]) for row in rows}), "frontend_results": len(success), "frontend_processed_frames": frontend_frames, "feature_windows": feature_windows, "window_statuses": dict(statuses), "scored_windows": scored, "model_used_frames_by_condition": model_counts, "model_used_frame_rows": len(model_rows), "annotation_categories": dict(categories), "invalid_cache": invalid_cache, "complete_sources": [row["source_id"] for row in source_rows if str(row.get("complete_source")).lower() == "true"], "partial_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) > 0 and str(row.get("complete_source")).lower() != "true"], "unrun_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) == 0]}
 
 
 def write_report(root: Path, frontend: Mapping[str, Any], feature: Mapping[str, Any], summary: Mapping[str, Any]) -> None:
     inventory = _actual_inventory(root)
-    lines = ["# V7 固定时间网格观测与冻结模型评分 pilot", "", f"- Git HEAD: `{_git_head()}`", f"- 计划：{inventory['planned_videos']} 个独立视频、{inventory['planned_windows']} 个固定网格窗口。", f"- 实际前端完成：{inventory['frontend_results']} 个窗口；H/B 特征：{inventory['feature_windows']} 个窗口。运行状态：`{frontend.get('status')}`。", "- `2007` 是固定时间网格窗口总数，不是条件评分项，也不是视频数。评分表会为未运行窗口保留缺失行；缺失不填 0。", f"- 窗口状态：{inventory['window_statuses']}；模型有效评分：{inventory['scored_windows']}；model-used PTS（含每视频窗口内重复计数）={inventory['model_used_pts']}，按视频去重后={inventory['unique_model_used_pts']}。", f"- source 状态：COMPLETE={inventory['complete_sources']}；PARTIAL={inventory['partial_sources']}；未运行={inventory['unrun_sources']}。", "- 时间网格先于标签冻结；每个窗口独立初始化 289 查询点。", "- 真实视频窗口只作负类；fake 仅在一秒窗口完整包含于标注区间并集时作主正类；BOUNDARY_MIXED/OUTSIDE 仅描述。", "- 冻结条件：H_MEAN_A、B_MEAN_A、B_MEAN_C；仅使用 held-out source 的旧 fold 模型与原标准化。", "", "## 条件摘要", ""]
+    lines = ["# V7 固定时间网格观测与冻结模型评分 pilot", "", f"- Git HEAD: `{_git_head()}`", f"- 计划：{inventory['planned_videos']} 个独立视频、{inventory['planned_windows']} 个固定网格窗口；该计数表示固定时间网格窗口总数，不是视频数、模型条件数或评分完成数。", f"- 前端完成：{inventory['frontend_results']} 个窗口；前端处理帧数：{inventory['frontend_processed_frames']}；H/B 特征：{inventory['feature_windows']} 个窗口；运行状态：`{frontend.get('status')}`。", f"- 窗口状态：{inventory['window_statuses']}；各条件有效评分：{inventory['scored_windows']}；评分循环的缺失行不计为评分。", f"- 模型实际使用帧（按 source/video/window/frame/PTS 去重）：{inventory['model_used_frames_by_condition']}；记录行数：{inventory['model_used_frame_rows']}。前端处理时刻不自动等同模型使用时刻。", f"- source 状态：COMPLETE={inventory['complete_sources']}；PARTIAL={inventory['partial_sources']}；未运行={inventory['unrun_sources']}。", f"- 缓存身份问题：{inventory['invalid_cache']}。", "- 时间网格先于标签冻结；每个窗口独立初始化 17×17=289 查询点。", "- real 窗口作负类；fake 仅在一秒窗口完整包含于标注区间并集时作主正类；BOUNDARY_MIXED/OUTSIDE 仅描述。", "- 冻结条件：H_MEAN_A、B_MEAN_A、B_MEAN_C；仅使用 held-out source 的旧 fold 模型与原标准化。", "", "## 条件摘要", ""]
     for condition, value in summary.get("conditions", {}).items():
         lines.append(f"- `{condition}`：source mean AUROC={value.get('source_mean_auroc')}, CI={value.get('bootstrap_ci95')}, pooled AUROC={value.get('pooled_auroc')}, AP={value.get('pooled_ap')}，source 数={value.get('source_count')}。")
-    lines += ["", "## 覆盖与可判定性", "", f"固定网格标签类别计数：{inventory['annotation_categories']}。当前只有基准窗口有观测和分数；没有完整 source，因此 source 等权 AUROC、配对差值和 bootstrap CI 均为 NA，不能据此判断模型是否看到修改过程。标注区间的网格相交与模型支撑需在完整前端结果后再统计。", "", "## 限制", "", "本 pilot 不是 sealed-test、不是新模型训练，也没有空间真值。无分数窗口区分为未运行、无有效 triplet、模型缺失或前端失败，不填零。可评分时间点是离散 model-used PTS，不等同连续像素覆盖；窗口有分数不等于失真部位有观测。"]
+    lines += ["", "## 覆盖与可判定性", "", f"固定网格标签类别计数：{inventory['annotation_categories']}。只有完整处理 source 且三条件共同有有效分数的窗口才进入主评价；部分 source、NO_VALID_TRIPLET、缺少 seed 模型、前端失败和未运行窗口保留为描述，不填 0。", "", "## 限制", "", "本 pilot 不是 sealed-test、不是新模型训练，也没有空间真值。模型实际使用帧从 H/B triplet 支撑恢复；若无法从支撑映射到序列 PTS，记录 UNKNOWN。窗口有分数不等于失真部位有观测；缺失不自动解释为伪造。"]
     (root / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -593,20 +969,31 @@ def reproduce_old_score(root: Path) -> dict[str, Any]:
 
 def run(root: Path, *, resume: bool, budget_s: float, max_frontend_windows: int | None = None) -> dict[str, Any]:
     root.mkdir(parents=True, exist_ok=True)
-    if not (root / "manifests/grid_windows.json").is_file() or not resume:
-        prepare_plan(root)
-        write_protocol(root)
-    frontend = run_frontend(root, budget_s=budget_s, resume=resume, max_windows=max_frontend_windows)
-    if max_frontend_windows is not None:
-        return {"frontend": frontend, "status": frontend.get("status")}
-    feature = build_features(root, resume=resume)
-    scores = score_windows(root, resume=resume)
-    reproduction = reproduce_old_score(root)
-    summary = evaluate(root)
-    build_review(root)
-    write_report(root, frontend, feature, summary)
-    _atomic_json(root / "final_status.json", {"status": "COMPLETE" if frontend.get("status") == "COMPLETE" else frontend.get("status"), "frontend": frontend, "feature": feature, "scores": scores, "updated_unix": time.time()})
-    return {"frontend": frontend, "feature": feature, "scores": scores, "old_score_reproduction": reproduction, "status": frontend.get("status")}
+    lock_path = _acquire_run_lock(root)
+    try:
+        if not (root / "manifests/grid_windows.json").is_file():
+            prepare_plan(root)
+            write_protocol(root)
+        elif not resume:
+            raise RuntimeError("FROZEN_PLAN_EXISTS: use --resume; refusing to replace the existing grid plan")
+        frontend = run_frontend(root, budget_s=budget_s, resume=resume, max_windows=max_frontend_windows)
+        if max_frontend_windows is not None:
+            return {"frontend": frontend, "status": frontend.get("status")}
+        feature = build_features(root, resume=resume)
+        scores = score_windows(root, resume=resume)
+        reproduction = reproduce_old_score(root)
+        summary = evaluate(root)
+        build_review(root)
+        write_report(root, frontend, feature, summary)
+        inventory = _actual_inventory(root)
+        final_status = frontend.get("status")
+        _atomic_json(root / "final_status.json", {"status": final_status, "frontend": frontend, "feature": feature, "scores": scores, "inventory": inventory, "old_score_reproduction": reproduction, "git_head": _git_head(), "planned_windows": inventory["planned_windows"], "frontend_results": inventory["frontend_results"], "updated_unix": time.time()})
+        return {"frontend": frontend, "feature": feature, "scores": scores, "old_score_reproduction": reproduction, "inventory": inventory, "status": final_status}
+    except Exception as exc:
+        _atomic_json(root / "final_status.json", {"status": "FAILED", "error": f"{type(exc).__name__}: {exc}", "traceback": traceback.format_exc(), "git_head": _git_head(), "updated_unix": time.time()})
+        raise
+    finally:
+        _release_run_lock(lock_path)
 
 
 def main() -> None:
@@ -618,7 +1005,10 @@ def main() -> None:
     parser.add_argument("--phase", choices=("plan", "run"), default="run")
     args = parser.parse_args()
     if args.phase == "plan":
-        args.output_root.mkdir(parents=True, exist_ok=True); prepare_plan(args.output_root); write_protocol(args.output_root); print(json.dumps({"status": "PLANNED", "output": str(args.output_root)}, indent=2)); return
+        args.output_root.mkdir(parents=True, exist_ok=True)
+        if (args.output_root / "manifests/grid_windows.json").is_file():
+            raise RuntimeError("FROZEN_PLAN_EXISTS: refusing to overwrite an existing plan")
+        prepare_plan(args.output_root); write_protocol(args.output_root); print(json.dumps({"status": "PLANNED", "output": str(args.output_root)}, indent=2)); return
     print(json.dumps(run(args.output_root, resume=args.resume, budget_s=args.budget_s, max_frontend_windows=args.max_frontend_windows), indent=2, default=_json_default), flush=True)
 
 
