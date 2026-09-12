@@ -77,7 +77,7 @@ CONDITIONS = ("H_MEAN_A", "B_MEAN_A", "B_MEAN_C")
 ARM_BY_CONDITION = {"H_MEAN_A": ("H", "UNORDERED_STATE"), "B_MEAN_A": ("B", "UNORDERED_STATE"), "B_MEAN_C": ("B", "ORDERED_SECOND")}
 EXPECTED_QUERY_COUNT = 289
 MAX_FRONTEND_ATTEMPTS = 3
-PHASE_RESERVE_S = 600.0
+PHASE_RESERVE_S = 1200.0
 BUDGET_STATE_NAME = "budget_state.json"
 RUN_LOCK_NAME = "run.lock"
 TAPNET_SOURCE = diagnostic.TAPNET_SOURCE
@@ -200,6 +200,8 @@ def _load_budget_state(root: Path, budget_s: float, existing_results: Mapping[st
 
 def _update_budget_state(root: Path, state: dict[str, Any], elapsed_s: float, **extra: Any) -> None:
     state["consumed_s"] = float(state.get("consumed_s", 0.0)) + max(0.0, float(elapsed_s))
+    if state.get("accounting_status") == "FORMAL_RUN_NOT_STARTED_BOUNDED_BENCHMARK":
+        state["accounting_status"] = "RUNNING"
     state["updated_unix"] = time.time()
     state.update(extra)
     _atomic_json(root / "manifests" / BUDGET_STATE_NAME, state)
@@ -452,6 +454,10 @@ def _select_source_prefix(root: Path, rows: Sequence[Mapping[str, Any]], valid: 
     estimate_per_window = _estimate_window_seconds(_load_results(root))
     consumed = float(budget_state.get("consumed_s", 0.0))
     remaining = float(budget_state.get("budget_s", 0.0)) - consumed
+    prefix_pending = sum(str(row["window_id"]) not in valid for source in prefix for row in by_source.get(source, []))
+    prefix_estimate = prefix_pending * estimate_per_window
+    if prefix and not old_prefix_complete and prefix_estimate + PHASE_RESERVE_S > remaining:
+        prefix = []
     if not prefix:
         estimate = 0.0
         for source in order[start:]:
