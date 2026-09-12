@@ -158,3 +158,33 @@ def test_partial_source_is_excluded_from_main_evaluation(tmp_path):
     summary = runner.evaluate(tmp_path)
     assert summary["conditions"]["H_MEAN_A"]["source_count"] == 0
     assert summary["conditions"]["H_MEAN_A"]["source_mean_auroc"] is None
+
+
+def test_time_curve_svg_uses_three_shared_panels_and_fixed_start_axis(tmp_path):
+    root = tmp_path
+    (root / "manifests").mkdir()
+    (root / "evaluation").mkdir()
+    (root / "manifests" / "videos.json").write_text(json.dumps([
+        {"source_id": "S", "role": "fake", "annotation_intervals_relative_s": [{"start_s": 0.8, "end_s": 1.6}]},
+    ]))
+    rows = []
+    for role, values in (("real", (-1.0, -0.5)), ("fake", (0.2, 0.8))):
+        for index, value in enumerate(values):
+            row = {
+                "source_id": "S", "role": role, "grid_index": index,
+                "interval_start_s": index * 0.5, "interval_end_s": index * 0.5 + 1.0,
+                "H_MEAN_A": value, "B_MEAN_A": value + 0.1, "B_MEAN_C": value + 0.2,
+                "H_MEAN_A_status": "SCORED", "B_MEAN_A_status": "SCORED", "B_MEAN_C_status": "SCORED",
+            }
+            rows.append(row)
+    runner._write_time_curve_outputs(root, rows, {"S"})
+    svg = (root / "evaluation" / "time_curves" / "source_S.svg").read_text()
+    assert svg.count("<text") >= 15
+    assert all(condition in svg for condition in runner.CONDITIONS)
+    assert 'stroke="#2563eb"' in svg
+    assert 'stroke="#dc2626"' in svg
+    assert 'stroke-dasharray="6,4"' in svg
+    assert "logit=0" in svg
+    assert "window start t_start" in svg
+    assert "fake视频标注修改区间 [0.8, 1.6] s" in svg
+    assert "missing scores are gaps" in svg

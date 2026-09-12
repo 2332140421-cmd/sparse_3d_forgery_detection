@@ -129,7 +129,7 @@ real/fake 只按 source 汇总分布；没有把 real 与 fake 当作逐帧物�
 | `0FO58::real::grid0031` | real | [15.5, 16.5] | REAL_NEGATIVE |
 | `0FO58::real::grid0064` | real | [31.72, 32.72] | REAL_NEGATIVE |
 
-缺失是结构支撑不足，不代表视频时间段没有伪造或没有运动。已有的 `evaluation/time_curves/*.svg` 按真实视频时间排列，缺失处分段断线；黄色背景是数据集标注区间，固定阈值为 `logit = 0`，不是预测出的区间。索引文件还保留了 source、role 和窗口数，未对曲线做平滑或跨缺失插值。
+缺失是结构支撑不足，不代表视频时间段没有伪造或没有运动。已有的 `evaluation/time_curves/*.svg` 按真实视频时间排列，缺失处分段断线；黄色背景是数据集标注区间，固定阈值为 `logit = 0`，不是预测出的区间。每个 source 现在分为 `H_MEAN_A`、`B_MEAN_A`、`B_MEAN_C` 三个上下排列的子图，横轴明确使用窗口起点 `interval_start_s`，每个子图内 real/fake 共用纵轴。索引文件还保留了 source、role 和窗口数，未对曲线做平滑或跨缺失插值。
 
 ## 6. 按分数选择的人工核对案例
 

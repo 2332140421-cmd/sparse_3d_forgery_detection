@@ -1048,106 +1048,163 @@ def _write_source_coverage_summary(
 
 
 def _write_time_curve_outputs(root: Path, rows: Sequence[Mapping[str, Any]], complete_sources: set[str]) -> None:
-    """Write dependency-free SVG curves for complete sources; missing scores break lines."""
+    """Write three-panel dependency-free SVG curves; missing scores break lines.
+
+    The x coordinate intentionally remains ``interval_start_s`` (the fixed
+    window start), matching the previous artifact and the frozen score rows.
+    This function only reads existing score/metadata rows; it does not run any
+    frontend or model stage.
+    """
 
     unique_rows, _ = _unique_window_rows(rows)
     output_dir = root / "evaluation" / "time_curves"
     output_dir.mkdir(parents=True, exist_ok=True)
     index_rows: list[dict[str, Any]] = []
-    colors = {
-        ("real", "H_MEAN_A"): "#2563eb", ("fake", "H_MEAN_A"): "#ef4444",
-        ("real", "B_MEAN_A"): "#16a34a", ("fake", "B_MEAN_A"): "#f97316",
-        ("real", "B_MEAN_C"): "#7c3aed", ("fake", "B_MEAN_C"): "#a16207",
-    }
+    role_colors = {"real": "#2563eb", "fake": "#dc2626"}
+    width, height = 1160.0, 1020.0
+    left, right = 90.0, 1080.0
+    panel_height, panel_gap = 235.0, 45.0
+    plot_top_offset, plot_bottom_offset = 36.0, 200.0
+
+    # The exact dataset intervals are in the existing video manifest rather
+    # than inferred from which grid windows happened to be scored.
+    annotation_by_source: dict[str, list[tuple[float, float]]] = defaultdict(list)
+    videos_manifest = root / "manifests" / "videos.json"
+    if videos_manifest.is_file():
+        try:
+            manifest = json.loads(videos_manifest.read_text(encoding="utf-8"))
+            manifest_rows = manifest.get("videos", manifest) if isinstance(manifest, Mapping) else manifest
+            for video in manifest_rows:
+                if not isinstance(video, Mapping) or video.get("role") != "fake":
+                    continue
+                source = str(video.get("source_id", ""))
+                for interval in video.get("annotation_intervals_relative_s", []):
+                    try:
+                        annotation_by_source[source].append((float(interval["start_s"]), float(interval["end_s"])))
+                    except (KeyError, TypeError, ValueError):
+                        continue
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            annotation_by_source = defaultdict(list)
+
     for source in sorted(complete_sources):
         source_rows = [row for row in unique_rows if str(row.get("source_id")) == source and row.get("role") in {"real", "fake"}]
-        finite_values = [
-            float(row[condition])
-            for row in source_rows
-            for condition in CONDITIONS
-            if _condition_scored(row, condition)
-        ]
-        if finite_values:
-            y_min, y_max = min(finite_values), max(finite_values)
-            if y_max <= y_min:
-                y_min, y_max = y_min - 1.0, y_max + 1.0
-            margin = max(0.1, (y_max - y_min) * 0.08)
-            y_min, y_max = y_min - margin, y_max + margin
-        else:
-            y_min, y_max = -1.0, 1.0
-        x_values = []
+        x_values: list[float] = []
         for row in source_rows:
             try:
                 x_values.append(float(row["interval_start_s"]))
             except (KeyError, TypeError, ValueError):
-                pass
+                continue
         x_min = min(x_values) if x_values else 0.0
         x_max = max(x_values) if x_values else 1.0
+        for start, end in annotation_by_source.get(source, []):
+            x_min = min(x_min, start)
+            x_max = max(x_max, end)
         if x_max <= x_min:
             x_max = x_min + 1.0
-        left, right, top, bottom = 80.0, 1060.0, 55.0, 560.0
 
         def px(value: float) -> float:
             return left + (value - x_min) / (x_max - x_min) * (right - left)
 
-        def py(value: float) -> float:
-            return bottom - (value - y_min) / (y_max - y_min) * (bottom - top)
-
+        x_ticks = [x_min + (x_max - x_min) * index / 6.0 for index in range(7)]
         elements = [
-            '<rect width="1120" height="640" fill="white"/>',
-            f'<text x="80" y="25" font-family="sans-serif" font-size="16">source {escape(source)} frozen model logits (missing scores are gaps)</text>',
-            f'<line x1="{left}" y1="{bottom}" x2="{right}" y2="{bottom}" stroke="#334155"/>',
-            f'<line x1="{left}" y1="{top}" x2="{left}" y2="{bottom}" stroke="#334155"/>',
-            f'<text x="{right - 90}" y="610" font-family="sans-serif" font-size="12">video time (s)</text>',
-            f'<text x="12" y="{top + 20}" transform="rotate(-90 12 {top + 20})" font-family="sans-serif" font-size="12">logit</text>',
+            f'<rect width="{width:.0f}" height="{height:.0f}" fill="white"/>',
+            f'<text x="{left:.2f}" y="25" font-family="sans-serif" font-size="17">source {escape(source)} frozen logits — x = window start t_start (s); missing scores are gaps</text>',
+            f'<text x="{left:.2f}" y="43" font-family="sans-serif" font-size="11" fill="#475569">Three panels share the same time axis; logit=0 is the fixed classification threshold</text>',
         ]
-        # Dataset annotation windows are a separate background layer.
-        annotation_intervals = []
-        for row in source_rows:
-            if row.get("role") != "fake" or row.get("annotation_category") != "FAKE_MANIPULATION":
-                continue
-            try:
-                annotation_intervals.append((float(row["interval_start_s"]), float(row["interval_end_s"])))
-            except (KeyError, TypeError, ValueError):
-                continue
-        for start, end in annotation_intervals:
-            elements.append(f'<rect x="{px(start):.2f}" y="{top}" width="{max(1.0, px(end) - px(start)):.2f}" height="{bottom - top}" fill="#facc15" opacity="0.15"/>')
-        for role in ("real", "fake"):
-            role_rows = sorted((row for row in source_rows if row.get("role") == role), key=lambda item: (float(item.get("interval_start_s", 0.0)), int(item.get("grid_index", 0))))
-            for condition in CONDITIONS:
+        intervals = annotation_by_source.get(source, [])
+        interval_text = ", ".join(f"[{start:.1f}, {end:.1f}] s" for start, end in intervals) or "未读取到区间"
+        for panel_index, condition in enumerate(CONDITIONS):
+            panel_top = 50.0 + panel_index * (panel_height + panel_gap)
+            plot_top = panel_top + plot_top_offset
+            plot_bottom = panel_top + plot_bottom_offset
+            values = [
+                float(row[condition])
+                for row in source_rows
+                if _condition_scored(row, condition)
+            ]
+            if values:
+                y_min = min(min(values), 0.0)
+                y_max = max(max(values), 0.0)
+                if y_max <= y_min:
+                    y_min, y_max = -1.0, 1.0
+                margin = max(0.1, (y_max - y_min) * 0.08)
+                y_min, y_max = y_min - margin, y_max + margin
+            else:
+                y_min, y_max = -1.0, 1.0
+
+            def py(value: float) -> float:
+                return plot_bottom - (value - y_min) / (y_max - y_min) * (plot_bottom - plot_top)
+
+            elements.append(f'<rect x="{left:.2f}" y="{panel_top:.2f}" width="{right - left:.2f}" height="{panel_height:.2f}" fill="#f8fafc" stroke="#cbd5e1"/>')
+            elements.append(f'<text x="{left + 8:.2f}" y="{panel_top + 22:.2f}" font-family="sans-serif" font-size="15" font-weight="bold">{escape(condition)}</text>')
+            elements.append(f'<text x="{left + 150:.2f}" y="{panel_top + 22:.2f}" font-family="sans-serif" font-size="11" fill="#a16207">黄色：fake视频标注修改区间 {escape(interval_text)}（非模型预测）</text>')
+            # Annotation layer is behind both role curves.
+            for start, end in intervals:
+                x_start, x_end = px(start), px(end)
+                elements.append(f'<rect x="{x_start:.2f}" y="{plot_top:.2f}" width="{max(1.0, x_end - x_start):.2f}" height="{plot_bottom - plot_top:.2f}" fill="#facc15" opacity="0.20"><title>fake视频标注修改区间 [{start:.1f}, {end:.1f}] s</title></rect>')
+            # Shared-time vertical grid and bottom labels are drawn once per
+            # panel; labels are shown only on the final panel to avoid clutter.
+            for tick in x_ticks:
+                x = px(tick)
+                elements.append(f'<line x1="{x:.2f}" y1="{plot_top:.2f}" x2="{x:.2f}" y2="{plot_bottom:.2f}" stroke="#e2e8f0"/>')
+            y_ticks = [y_min + (y_max - y_min) * index / 4.0 for index in range(5)]
+            for tick in y_ticks:
+                y = py(tick)
+                elements.append(f'<line x1="{left:.2f}" y1="{y:.2f}" x2="{right:.2f}" y2="{y:.2f}" stroke="#e2e8f0"/>')
+                elements.append(f'<text x="{left - 8:.2f}" y="{y + 4:.2f}" text-anchor="end" font-family="sans-serif" font-size="11">{tick:.2f}</text>')
+            zero_y = py(0.0)
+            elements.append(f'<line x1="{left:.2f}" y1="{zero_y:.2f}" x2="{right:.2f}" y2="{zero_y:.2f}" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6,4"/>')
+            elements.append(f'<text x="{right - 4:.2f}" y="{zero_y - 4:.2f}" text-anchor="end" font-family="sans-serif" font-size="11" fill="#b91c1c">logit=0</text>')
+            elements.append(f'<line x1="{left:.2f}" y1="{plot_bottom:.2f}" x2="{right:.2f}" y2="{plot_bottom:.2f}" stroke="#334155"/>')
+            elements.append(f'<line x1="{left:.2f}" y1="{plot_top:.2f}" x2="{left:.2f}" y2="{plot_bottom:.2f}" stroke="#334155"/>')
+            for role in ("real", "fake"):
+                role_rows = sorted(
+                    (row for row in source_rows if row.get("role") == role),
+                    key=lambda item: (float(item.get("interval_start_s", 0.0)), int(item.get("grid_index", 0))),
+                )
                 segments: list[list[tuple[float, float]]] = []
                 segment: list[tuple[float, float]] = []
                 for row in role_rows:
                     if not _condition_scored(row, condition):
                         if segment:
-                            segments.append(segment); segment = []
+                            segments.append(segment)
+                            segment = []
                         continue
                     try:
                         point = (float(row["interval_start_s"]), float(row[condition]))
                     except (KeyError, TypeError, ValueError):
                         if segment:
-                            segments.append(segment); segment = []
+                            segments.append(segment)
+                            segment = []
                         continue
                     segment.append(point)
                 if segment:
                     segments.append(segment)
-                color = colors[(role, condition)]
+                color = role_colors[role]
                 for points in segments:
                     if len(points) >= 2:
                         path = " ".join(f"{px(x):.2f},{py(y):.2f}" for x, y in points)
                         elements.append(f'<polyline points="{path}" fill="none" stroke="{color}" stroke-width="2"/>')
                     for x, y in points:
                         elements.append(f'<circle cx="{px(x):.2f}" cy="{py(y):.2f}" r="3" fill="{color}"/>')
-        legend_x, legend_y = 80.0, 595.0
-        for index, ((role, condition), color) in enumerate(colors.items()):
-            x = legend_x + (index % 3) * 300
-            y = legend_y + (index // 3) * 18
-            elements.append(f'<line x1="{x:.2f}" y1="{y - 4:.2f}" x2="{x + 18:.2f}" y2="{y - 4:.2f}" stroke="{color}" stroke-width="3"/>')
-            elements.append(f'<text x="{x + 24:.2f}" y="{y:.2f}" font-family="sans-serif" font-size="12">{role} {condition}</text>')
-        elements.append(f'<text x="{left + 8:.2f}" y="{top + 16:.2f}" font-family="sans-serif" font-size="11" fill="#a16207">yellow = dataset annotation window, not prediction</text>')
+            for tick in x_ticks:
+                x = px(tick)
+                elements.append(f'<line x1="{x:.2f}" y1="{plot_bottom:.2f}" x2="{x:.2f}" y2="{plot_bottom + 5:.2f}" stroke="#334155"/>')
+                if panel_index == len(CONDITIONS) - 1:
+                    elements.append(f'<text x="{x:.2f}" y="{plot_bottom + 20:.2f}" text-anchor="middle" font-family="sans-serif" font-size="11">{tick:.1f}</text>')
+        legend_y = height - 45.0
+        elements.extend([
+            f'<line x1="{left:.2f}" y1="{legend_y:.2f}" x2="{left + 20:.2f}" y2="{legend_y:.2f}" stroke="#2563eb" stroke-width="3"/>',
+            f'<text x="{left + 28:.2f}" y="{legend_y + 4:.2f}" font-family="sans-serif" font-size="12">real</text>',
+            f'<line x1="{left + 100:.2f}" y1="{legend_y:.2f}" x2="{left + 120:.2f}" y2="{legend_y:.2f}" stroke="#dc2626" stroke-width="3"/>',
+            f'<text x="{left + 128:.2f}" y="{legend_y + 4:.2f}" font-family="sans-serif" font-size="12">fake</text>',
+            f'<line x1="{left + 210:.2f}" y1="{legend_y:.2f}" x2="{left + 230:.2f}" y2="{legend_y:.2f}" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6,4"/>',
+            f'<text x="{left + 238:.2f}" y="{legend_y + 4:.2f}" font-family="sans-serif" font-size="12">fixed threshold logit=0</text>',
+            f'<text x="{right:.2f}" y="{legend_y + 4:.2f}" text-anchor="end" font-family="sans-serif" font-size="12">shared x: window start t_start (s)</text>',
+        ])
         svg_path = output_dir / f"source_{_safe(source)}.svg"
-        svg_path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="640">' + "".join(elements) + "</svg>\n", encoding="utf-8")
-        index_rows.append({"source_id": source, "path": str(svg_path), "window_count": len(source_rows), "note": "real/fake curves; missing score rows are disconnected"})
+        svg_path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="1020">' + "".join(elements) + "</svg>\n", encoding="utf-8")
+        index_rows.append({"source_id": source, "path": str(svg_path), "window_count": len(source_rows), "note": "three stacked panels; x=interval_start_s/window start; real blue, fake red; missing score rows disconnected"})
     _write_csv(root / "evaluation/time_curve_index.csv", index_rows)
 
 
