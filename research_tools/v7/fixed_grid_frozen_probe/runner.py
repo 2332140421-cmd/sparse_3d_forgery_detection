@@ -531,11 +531,39 @@ def build_review(root: Path) -> None:
     (root / "review/index.html").parent.mkdir(parents=True, exist_ok=True); (root / "review/index.html").write_text(html, encoding="utf-8")
 
 
+def _actual_inventory(root: Path) -> dict[str, Any]:
+    rows = _load_grid(root)
+    results = _load_results(root)
+    score_path = root / "scores/window_scores.csv"
+    scores = list(csv.DictReader(score_path.open(newline="", encoding="utf-8"))) if score_path.is_file() else []
+    source_rows = list(csv.DictReader((root / "coverage/source_coverage.csv").open(newline="", encoding="utf-8"))) if (root / "coverage/source_coverage.csv").is_file() else []
+    feature_summary_path = root / "manifests/feature_summary.json"
+    feature_windows = int(json.loads(feature_summary_path.read_text(encoding="utf-8")).get("windows", 0)) if feature_summary_path.is_file() else 0
+    success = [item for item in results.values() if item.get("sequence_prefix")]
+    statuses = defaultdict(int)
+    for row in rows:
+        item = results.get(str(row["window_id"]))
+        if item is None:
+            statuses["NOT_RUN"] += 1
+        elif item.get("sequence_prefix"):
+            statuses["FRONTEND_COMPLETE"] += 1
+        else:
+            statuses[str(item.get("status", "FAILED"))] += 1
+    scored = {condition: sum(bool(row.get(condition)) and row.get(f"{condition}_status") == "SCORED" for row in scores) for condition in CONDITIONS}
+    pts_total = sum(len(item.get("timestamps_s", [])) for item in success)
+    unique_pts = sum(len(set(float(stamp) for stamp in item.get("timestamps_s", []))) for item in success)
+    categories = defaultdict(int)
+    for row in rows:
+        categories[str(row.get("annotation_category", "UNLABELED"))] += 1
+    return {"planned_windows": len(rows), "planned_videos": len({str(row["source_video_id"]) for row in rows}), "frontend_results": len(success), "feature_windows": feature_windows, "window_statuses": dict(statuses), "scored_windows": scored, "model_used_pts": pts_total, "unique_model_used_pts": unique_pts, "annotation_categories": dict(categories), "complete_sources": [row["source_id"] for row in source_rows if str(row.get("complete_source")).lower() == "true"], "partial_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) > 0 and str(row.get("complete_source")).lower() != "true"], "unrun_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) == 0]}
+
+
 def write_report(root: Path, frontend: Mapping[str, Any], feature: Mapping[str, Any], summary: Mapping[str, Any]) -> None:
-    lines = ["# V7 固定时间网格观测与冻结模型评分 pilot", "", f"- Git HEAD: `{_git_head()}`", f"- 前端窗口结果：{frontend.get('completed', 0)}/{frontend.get('total', 0)}；状态：`{frontend.get('status')}`", f"- H/B 特征窗口：{feature.get('windows', 0)}", "- 时间网格先于标签冻结；每个窗口独立初始化 289 查询点。", "- 真实视频窗口只作负类；fake 仅在一秒窗口完整包含于标注区间并集时作主正类；BOUNDARY_MIXED/OUTSIDE 仅描述。", "- 冻结条件：H_MEAN_A、B_MEAN_A、B_MEAN_C；仅使用 held-out source 的旧 fold 模型与原标准化。", "", "## 条件摘要", ""]
+    inventory = _actual_inventory(root)
+    lines = ["# V7 固定时间网格观测与冻结模型评分 pilot", "", f"- Git HEAD: `{_git_head()}`", f"- 计划：{inventory['planned_videos']} 个独立视频、{inventory['planned_windows']} 个固定网格窗口。", f"- 实际前端完成：{inventory['frontend_results']} 个窗口；H/B 特征：{inventory['feature_windows']} 个窗口。运行状态：`{frontend.get('status')}`。", "- `2007` 是固定时间网格窗口总数，不是条件评分项，也不是视频数。评分表会为未运行窗口保留缺失行；缺失不填 0。", f"- 窗口状态：{inventory['window_statuses']}；模型有效评分：{inventory['scored_windows']}；model-used PTS（含每视频窗口内重复计数）={inventory['model_used_pts']}，按视频去重后={inventory['unique_model_used_pts']}。", f"- source 状态：COMPLETE={inventory['complete_sources']}；PARTIAL={inventory['partial_sources']}；未运行={inventory['unrun_sources']}。", "- 时间网格先于标签冻结；每个窗口独立初始化 289 查询点。", "- 真实视频窗口只作负类；fake 仅在一秒窗口完整包含于标注区间并集时作主正类；BOUNDARY_MIXED/OUTSIDE 仅描述。", "- 冻结条件：H_MEAN_A、B_MEAN_A、B_MEAN_C；仅使用 held-out source 的旧 fold 模型与原标准化。", "", "## 条件摘要", ""]
     for condition, value in summary.get("conditions", {}).items():
         lines.append(f"- `{condition}`：source mean AUROC={value.get('source_mean_auroc')}, CI={value.get('bootstrap_ci95')}, pooled AUROC={value.get('pooled_auroc')}, AP={value.get('pooled_ap')}，source 数={value.get('source_count')}。")
-    lines += ["", "## 限制", "", "本 pilot 不是 sealed-test、不是新模型训练，也没有空间真值。无分数窗口区分为无支撑/缺模型/前端失败，不填零。可评分时间点是离散 model-used PTS，不等同连续像素覆盖。"]
+    lines += ["", "## 覆盖与可判定性", "", f"固定网格标签类别计数：{inventory['annotation_categories']}。当前只有基准窗口有观测和分数；没有完整 source，因此 source 等权 AUROC、配对差值和 bootstrap CI 均为 NA，不能据此判断模型是否看到修改过程。标注区间的网格相交与模型支撑需在完整前端结果后再统计。", "", "## 限制", "", "本 pilot 不是 sealed-test、不是新模型训练，也没有空间真值。无分数窗口区分为未运行、无有效 triplet、模型缺失或前端失败，不填零。可评分时间点是离散 model-used PTS，不等同连续像素覆盖；窗口有分数不等于失真部位有观测。"]
     (root / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
