@@ -19,9 +19,10 @@ import signal
 import subprocess
 import time
 import traceback
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
+from xml.sax.saxutils import escape
 
 import numpy as np
 
@@ -80,6 +81,7 @@ MAX_FRONTEND_ATTEMPTS = 3
 PHASE_RESERVE_S = 1200.0
 BUDGET_STATE_NAME = "budget_state.json"
 RUN_LOCK_NAME = "run.lock"
+BUDGET_SCOPE = "frontend_end_to_end_until_selected_source_prefix_or_budget; postprocess_excluded"
 TAPNET_SOURCE = diagnostic.TAPNET_SOURCE
 TAPNET_CHECKPOINT = diagnostic.TAPNET_CHECKPOINT
 DEPTH_SOURCE = diagnostic.DEPTH_SOURCE
@@ -182,6 +184,8 @@ def _load_budget_state(root: Path, budget_s: float, existing_results: Mapping[st
         state = json.loads(path.read_text(encoding="utf-8"))
         if abs(float(state.get("budget_s", budget_s)) - float(budget_s)) > 1e-6:
             raise RuntimeError("BUDGET_ARGUMENT_MISMATCH: persisted budget differs from requested budget")
+        state.setdefault("budget_scope", BUDGET_SCOPE)
+        state.setdefault("elapsed_before_this_process_s", float(state.get("consumed_s", 0.0)))
         return state
     benchmark = root / "evaluation" / "benchmark.json"
     if benchmark.is_file() and existing_results:
@@ -191,6 +195,8 @@ def _load_budget_state(root: Path, budget_s: float, existing_results: Mapping[st
             "consumed_s": 0.0,
             "prior_benchmark_elapsed_s": elapsed,
             "accounting_status": "FORMAL_RUN_NOT_STARTED_BOUNDED_BENCHMARK",
+            "budget_scope": BUDGET_SCOPE,
+            "elapsed_before_this_process_s": 0.0,
             "updated_unix": time.time(),
         }
         _atomic_json(path, state)
@@ -198,13 +204,80 @@ def _load_budget_state(root: Path, budget_s: float, existing_results: Mapping[st
     raise RuntimeError("BUDGET_ACCOUNTING_UNKNOWN: no persisted runtime state or bounded benchmark evidence")
 
 
-def _update_budget_state(root: Path, state: dict[str, Any], elapsed_s: float, **extra: Any) -> None:
-    state["consumed_s"] = float(state.get("consumed_s", 0.0)) + max(0.0, float(elapsed_s))
+def _start_budget_clock(state: Mapping[str, Any], *, monotonic_start: float | None = None, wall_start: float | None = None) -> dict[str, float]:
+    """Start one process clock without folding its elapsed time into itself twice."""
+
+    before = float(state.get("consumed_s", 0.0))
+    return {
+        "elapsed_before_this_process_s": before,
+        "process_start_monotonic": float(time.monotonic() if monotonic_start is None else monotonic_start),
+        "process_start_unix": float(time.time() if wall_start is None else wall_start),
+    }
+
+
+def _budget_snapshot(clock: Mapping[str, float], *, monotonic_now: float | None = None) -> tuple[float, float]:
+    """Return (cumulative_budget_seconds, this_process_seconds)."""
+
+    process_elapsed = max(
+        0.0,
+        float(time.monotonic() if monotonic_now is None else monotonic_now) - float(clock["process_start_monotonic"]),
+    )
+    return float(clock["elapsed_before_this_process_s"]) + process_elapsed, process_elapsed
+
+
+def _persist_budget_state(
+    root: Path,
+    state: dict[str, Any],
+    clock: Mapping[str, float],
+    *,
+    stop_reason: str | None = None,
+    **extra: Any,
+) -> None:
+    cumulative, process_elapsed = _budget_snapshot(clock)
+    state["budget_scope"] = BUDGET_SCOPE
+    state["elapsed_before_this_process_s"] = float(clock["elapsed_before_this_process_s"])
+    state["process_start_unix"] = float(clock["process_start_unix"])
+    state["process_elapsed_s"] = process_elapsed
+    state["consumed_s"] = cumulative
+    if stop_reason is not None:
+        state["last_stop_reason"] = str(stop_reason)
+        if not state.get("stop_recorded_this_process", False):
+            state["stop_cumulative_s"] = cumulative
+            state["stop_budget_s"] = float(state.get("budget_s", 0.0))
+            state["stop_recorded_this_process"] = True
+        state["accounting_status"] = str(stop_reason)
     if state.get("accounting_status") == "FORMAL_RUN_NOT_STARTED_BOUNDED_BENCHMARK":
         state["accounting_status"] = "RUNNING"
     state["updated_unix"] = time.time()
     state.update(extra)
     _atomic_json(root / "manifests" / BUDGET_STATE_NAME, state)
+
+
+def _update_budget_state(
+    root: Path,
+    state: dict[str, Any],
+    elapsed_s: float,
+    *,
+    clock: Mapping[str, float] | None = None,
+    **extra: Any,
+) -> None:
+    """Persist budget progress using one cumulative process clock.
+
+    ``elapsed_s`` is retained for callers outside the runner, but the live
+    frontend always supplies ``clock``.  That path never adds a window
+    duration to a value which already includes the current process.
+    """
+
+    if clock is None:
+        state["consumed_s"] = float(state.get("consumed_s", 0.0)) + max(0.0, float(elapsed_s))
+        state["elapsed_before_this_process_s"] = float(state.get("consumed_s", 0.0))
+        state["process_elapsed_s"] = 0.0
+        state["budget_scope"] = BUDGET_SCOPE
+        state["updated_unix"] = time.time()
+        state.update(extra)
+        _atomic_json(root / "manifests" / BUDGET_STATE_NAME, state)
+        return
+    _persist_budget_state(root, state, clock, **extra)
 
 
 def _plan_identity(row: Mapping[str, Any]) -> tuple[Any, ...]:
@@ -445,19 +518,20 @@ def _select_source_prefix(root: Path, rows: Sequence[Mapping[str, Any]], valid: 
         selected_rows = [dict(row) for row in rows]
         return order, selected_rows, None
     old_prefix = [str(value) for value in execution.get("selected_source_prefix", [])]
-    old_prefix_complete = all(
-        all(str(row["window_id"]) in valid for row in by_source.get(source, []))
-        for source in old_prefix
-    )
-    start = order.index(old_prefix[-1]) + 1 if old_prefix and old_prefix_complete and old_prefix[-1] in order else 0
-    prefix = [] if old_prefix_complete else old_prefix
+    if old_prefix:
+        # A persisted prefix is a frozen execution decision.  Resume may
+        # finish it, but must not silently add a new source in this run.
+        source_set = set(old_prefix)
+        selected_rows = [dict(row) for row in rows if str(row["source_id"]) in source_set]
+        selected_rows.sort(key=lambda row: (old_prefix.index(str(row["source_id"])), str(row["role"]), int(row["grid_index"])))
+        if not selected_rows:
+            return [], [], "FROZEN_SOURCE_PREFIX_EMPTY"
+        return old_prefix, selected_rows, None
+    start = 0
+    prefix: list[str] = []
     estimate_per_window = _estimate_window_seconds(_load_results(root))
     consumed = float(budget_state.get("consumed_s", 0.0))
     remaining = float(budget_state.get("budget_s", 0.0)) - consumed
-    prefix_pending = sum(str(row["window_id"]) not in valid for source in prefix for row in by_source.get(source, []))
-    prefix_estimate = prefix_pending * estimate_per_window
-    if prefix and not old_prefix_complete and prefix_estimate + PHASE_RESERVE_S > remaining:
-        prefix = []
     if not prefix:
         estimate = 0.0
         for source in order[start:]:
@@ -490,9 +564,17 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
     stored_results = _load_results(root) if resume else {}
     valid_results, invalid_cache = _validated_results(root, rows)
     budget_state = _load_budget_state(root, budget_s, stored_results)
+    budget_clock = _start_budget_clock(budget_state)
+    budget_state["accounting_status"] = "RUNNING"
+    budget_state["current_process_started_unix"] = budget_clock["process_start_unix"]
+    budget_state["current_process_elapsed_s"] = 0.0
+    budget_state["stop_recorded_this_process"] = False
+    _atomic_json(root / "manifests" / BUDGET_STATE_NAME, budget_state)
     source_prefix, selected_rows, selection_error = _select_source_prefix(root, rows, valid_results, budget_state)
     if selection_error is not None:
-        _progress(root, "frontend", len(valid_results), len(rows), selection_error, planned_windows=len(rows), selected_windows=0, invalid_cache=invalid_cache)
+        _persist_budget_state(root, budget_state, budget_clock, stop_reason=selection_error)
+        cumulative, process_elapsed = _budget_snapshot(budget_clock)
+        _progress(root, "frontend", len(valid_results), len(rows), selection_error, planned_windows=len(rows), selected_windows=0, invalid_cache=invalid_cache, elapsed_s=process_elapsed, consumed_s=cumulative, stop_reason=selection_error)
         return {"status": selection_error, "completed": len(valid_results), "total": len(rows), "selected_windows": 0, "selected_source_prefix": []}
     if max_windows is not None:
         selected_rows = selected_rows[: int(max_windows)]
@@ -506,8 +588,10 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
     if not pending:
         selected_complete = all(str(row["window_id"]) in valid_results for row in selected_rows)
         status = "COMPLETE" if len(valid_results) == len(rows) else ("SOURCE_PREFIX_COMPLETE" if selected_complete else "RETRY_LIMIT_REACHED")
-        _progress(root, "frontend", len(valid_results), len(rows), status, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, invalid_cache=invalid_cache, retry_limited=retry_limited)
-        return {"status": status, "completed": len(valid_results), "total": len(rows), "selected_windows": len(selected_rows), "selected_source_prefix": source_prefix, "invalid_cache": invalid_cache, "retry_limited": retry_limited}
+        _persist_budget_state(root, budget_state, budget_clock, stop_reason=status)
+        cumulative, process_elapsed = _budget_snapshot(budget_clock)
+        _progress(root, "frontend", len(valid_results), len(rows), status, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, invalid_cache=invalid_cache, retry_limited=retry_limited, elapsed_s=process_elapsed, consumed_s=cumulative, stop_reason=status)
+        return {"status": status, "completed": len(valid_results), "total": len(rows), "selected_windows": len(selected_rows), "selected_source_prefix": source_prefix, "invalid_cache": invalid_cache, "retry_limited": retry_limited, "budget_state": budget_state}
 
     import torch
     from scripts.run_v7_explicit_geometry_frontend import (
@@ -524,8 +608,8 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
     print(f"frontend device={torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'cpu'} selected_sources={source_prefix} selected_windows={len(selected_rows)}", flush=True)
     tracker = OnlineBootsTapir(TAPNET_SOURCE, TAPNET_CHECKPOINT, process_size=256, grid_size=17)
     depth_runner = DepthProRunner(DEPTH_SOURCE, DEPTH_CHECKPOINT)
-    started_all = time.monotonic()
     stop_requested = False
+    stop_reason: str | None = None
     results = dict(stored_results)
 
     def stop(_signum: int, _frame: Any) -> None:
@@ -536,10 +620,11 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
     old_int = signal.signal(signal.SIGINT, stop)
     try:
         for number, row in enumerate(pending, 1):
-            elapsed = time.monotonic() - started_all
-            consumed = float(budget_state.get("consumed_s", 0.0))
-            if stop_requested or consumed + elapsed >= float(budget_state.get("budget_s", budget_s)):
-                _progress(root, "frontend", len(valid_results), len(rows), "STOPPED_SAFE" if stop_requested else "BUDGET_EXHAUSTED", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, elapsed_s=elapsed, consumed_s=consumed, invalid_cache=invalid_cache)
+            cumulative, process_elapsed = _budget_snapshot(budget_clock)
+            if stop_requested or cumulative >= float(budget_state.get("budget_s", budget_s)):
+                stop_reason = "STOPPED_SAFE" if stop_requested else "BUDGET_EXHAUSTED"
+                _persist_budget_state(root, budget_state, budget_clock, stop_reason=stop_reason, last_window_status="STOPPED_BEFORE_NEXT_WINDOW")
+                _progress(root, "frontend", len(valid_results), len(rows), stop_reason, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, elapsed_s=process_elapsed, consumed_s=cumulative, stop_reason=stop_reason, invalid_cache=invalid_cache)
                 break
             window_started = time.perf_counter()
             window_id = str(row["window_id"])
@@ -574,8 +659,9 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
                 _save_results(root, results)
                 valid_results[str(row["window_id"])] = result
                 window_elapsed = float(result["elapsed_s"])
-                _update_budget_state(root, budget_state, window_elapsed, last_window=window_id, last_window_status="FRONTEND_COMPLETE")
-                _progress(root, "frontend", len(valid_results), len(rows), "RUNNING", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, attempted=number, succeeded=len(valid_results), failed=sum(item.get("status") == "FRONTEND_FAILED" for item in results.values()), last_window=window_id, elapsed_s=time.monotonic() - started_all, consumed_s=budget_state["consumed_s"], invalid_cache=invalid_cache)
+                _update_budget_state(root, budget_state, window_elapsed, clock=budget_clock, last_window=window_id, last_window_status="FRONTEND_COMPLETE")
+                cumulative, process_elapsed = _budget_snapshot(budget_clock)
+                _progress(root, "frontend", len(valid_results), len(rows), "RUNNING", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, attempted=number, succeeded=len(valid_results), failed=sum(item.get("status") == "FRONTEND_FAILED" for item in results.values()), last_window=window_id, elapsed_s=process_elapsed, consumed_s=cumulative, invalid_cache=invalid_cache)
                 print(f"frontend {len(results)}/{len(rows)} source={row['source_id']} role={row['role']} grid={row['grid_index']} new {result['elapsed_s']:.1f}s", flush=True)
                 del decoded, depths, uv, visibility, xyz, geometry_valid, sequence
                 gc.collect()
@@ -585,8 +671,9 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
                 error = {**row, "result_key": f"{row['window_id']}::density289", "status": "FRONTEND_FAILED", "attempt_count": attempt_count, "error": f"{type(exc).__name__}: {exc}", "elapsed_s": window_elapsed}
                 results[str(row["window_id"])] = error
                 _save_results(root, results)
-                _update_budget_state(root, budget_state, window_elapsed, last_window=window_id, last_window_status="FRONTEND_FAILED")
-                _progress(root, "frontend", len(valid_results), len(rows), "RUNNING", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, attempted=number, succeeded=len(valid_results), failed=sum(item.get("status") == "FRONTEND_FAILED" for item in results.values()), last_error=error["error"], consumed_s=budget_state["consumed_s"], invalid_cache=invalid_cache)
+                _update_budget_state(root, budget_state, window_elapsed, clock=budget_clock, last_window=window_id, last_window_status="FRONTEND_FAILED")
+                cumulative, process_elapsed = _budget_snapshot(budget_clock)
+                _progress(root, "frontend", len(valid_results), len(rows), "RUNNING", planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, attempted=number, succeeded=len(valid_results), failed=sum(item.get("status") == "FRONTEND_FAILED" for item in results.values()), last_error=error["error"], elapsed_s=process_elapsed, consumed_s=cumulative, invalid_cache=invalid_cache)
                 print(f"frontend FAILED {row['window_id']}: {error['error']}", flush=True)
     finally:
         signal.signal(signal.SIGTERM, old_handler)
@@ -597,23 +684,31 @@ def run_frontend(root: Path, budget_s: float, resume: bool = True, max_windows: 
             torch.cuda.empty_cache()
     valid_results, invalid_cache = _validated_results(root, rows)
     selected_complete = all(str(row["window_id"]) in valid_results for row in selected_rows)
+    cumulative, process_elapsed = _budget_snapshot(budget_clock)
     if len(valid_results) == len(rows):
         status = "COMPLETE"
+        stop_reason = stop_reason or "COMPLETE"
     elif stop_requested:
         status = "STOPPED_SAFE"
-    elif float(budget_state.get("consumed_s", 0.0)) >= float(budget_state.get("budget_s", budget_s)):
+        stop_reason = stop_reason or "STOPPED_SAFE"
+    elif cumulative >= float(budget_state.get("budget_s", budget_s)):
         status = "BUDGET_EXHAUSTED"
+        stop_reason = stop_reason or "BUDGET_EXHAUSTED"
     elif selected_complete and max_windows is None:
         status = "SOURCE_PREFIX_COMPLETE"
+        stop_reason = stop_reason or "SOURCE_PREFIX_COMPLETE"
     elif max_windows is not None:
         status = "BENCHMARK_PARTIAL"
+        stop_reason = stop_reason or "BENCHMARK_PARTIAL"
     else:
         status = "FRONTEND_INCOMPLETE"
-    _progress(root, "frontend", len(valid_results), len(rows), status, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, elapsed_s=time.monotonic() - started_all, consumed_s=budget_state.get("consumed_s", 0.0), invalid_cache=invalid_cache, retry_limited=retry_limited)
+        stop_reason = stop_reason or "FRONTEND_INCOMPLETE"
+    _persist_budget_state(root, budget_state, budget_clock, stop_reason=stop_reason, last_window_status=stop_reason)
+    _progress(root, "frontend", len(valid_results), len(rows), status, planned_windows=len(rows), selected_windows=len(selected_rows), selected_source_prefix=source_prefix, elapsed_s=process_elapsed, consumed_s=cumulative, stop_reason=stop_reason, invalid_cache=invalid_cache, retry_limited=retry_limited)
     if max_windows is not None:
         benchmark_ids = [str(row["window_id"]) for row in selected_rows]
         _atomic_json(root / "evaluation" / "benchmark.json", {"source_id": source_prefix[0] if source_prefix else None, "window_ids": benchmark_ids, "completed": [window_id for window_id in benchmark_ids if window_id in valid_results], "note": "bounded frontend validation; no label/score selection"})
-    return {"status": status, "completed": len(valid_results), "total": len(rows), "selected_windows": len(selected_rows), "selected_source_prefix": source_prefix, "invalid_cache": invalid_cache, "retry_limited": retry_limited, "budget_state": budget_state}
+    return {"status": status, "completed": len(valid_results), "total": len(rows), "selected_windows": len(selected_rows), "selected_source_prefix": source_prefix, "invalid_cache": invalid_cache, "retry_limited": retry_limited, "budget_state": budget_state, "process_elapsed_s": process_elapsed, "stop_reason": stop_reason}
 
 
 def _feature_path(root: Path, window_id: str) -> Path:
@@ -769,7 +864,7 @@ def score_windows(root: Path, resume: bool = True) -> dict[str, Any]:
         window_id = str(row["window_id"])
         result = results.get(window_id, {})
         feature_path = _feature_path(root, window_id)
-        base: dict[str, Any] = {"window_id": window_id, "source_id": str(row["source_id"]), "role": str(row["role"]), "grid_index": int(row["grid_index"]), "annotation_category": row.get("annotation_category"), "annotation_overlap_s": row.get("annotation_overlap_s"), "annotation_overlap_fraction": row.get("annotation_overlap_fraction"), "frontend_status": result.get("status", "FRONTEND_COMPLETE" if result.get("sequence_prefix") else "MISSING"), "frontend_frame_count": len(result.get("frame_indices", [])), "model_used_pts_count": 0, "model_used_frame_indices": ""}
+        base: dict[str, Any] = {"window_id": window_id, "source_id": str(row["source_id"]), "source_video_id": str(row.get("source_video_id", "")), "role": str(row["role"]), "grid_index": int(row["grid_index"]), "interval_start_s": row.get("interval_start_s"), "interval_end_s": row.get("interval_end_s"), "annotation_category": row.get("annotation_category"), "annotation_overlap_s": row.get("annotation_overlap_s"), "annotation_overlap_fraction": row.get("annotation_overlap_fraction"), "frontend_status": result.get("status", "FRONTEND_COMPLETE" if result.get("sequence_prefix") else "MISSING"), "frontend_frame_count": len(result.get("frame_indices", [])), "model_used_pts_count": 0, "model_used_frame_indices": ""}
         if not result:
             base["score_status"] = "MISSING_FRONTEND"
             score_rows.append(base)
@@ -814,8 +909,9 @@ def score_windows(root: Path, resume: bool = True) -> dict[str, Any]:
         score_rows.append(base)
     _write_csv(root / "scores/window_scores.csv", score_rows)
     _write_csv(root / "evaluation/model_used_frames.csv", _model_used_frame_rows(root, rows))
-    scored_by_condition = {condition: sum(_condition_scored(row, condition) for row in score_rows) for condition in CONDITIONS}
-    _progress(root, "score", sum(scored_by_condition.values()), len(rows), "COMPLETE", processed_rows=len(score_rows), scored_by_condition=scored_by_condition, invalid_cache=invalid_cache)
+    unique_score_rows, duplicate_score_ids = _unique_window_rows(score_rows)
+    scored_by_condition = {condition: sum(_condition_scored(row, condition) for row in unique_score_rows) for condition in CONDITIONS}
+    _progress(root, "score", sum(scored_by_condition.values()), len(unique_score_rows), "COMPLETE", processed_rows=len(score_rows), unique_window_count=len(unique_score_rows), scored_by_condition=scored_by_condition, duplicate_window_ids=duplicate_score_ids, invalid_cache=invalid_cache)
     return {"processed_windows": len(score_rows), "models": len(models), "scored_by_condition": scored_by_condition, "invalid_cache": invalid_cache}
 
 
@@ -847,30 +943,232 @@ def _condition_scored(row: Mapping[str, Any], condition: str) -> bool:
         return False
 
 
+def _unique_window_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """Keep one deterministic score row per frozen ``window_id``."""
+
+    unique: dict[str, dict[str, Any]] = {}
+    duplicate_ids: list[str] = []
+    for row in rows:
+        window_id = str(row.get("window_id", ""))
+        if window_id in unique:
+            if window_id not in duplicate_ids:
+                duplicate_ids.append(window_id)
+            continue
+        unique[window_id] = dict(row)
+    return list(unique.values()), sorted(duplicate_ids)
+
+
+def _score_window_sets(rows: Sequence[Mapping[str, Any]], complete_sources: set[str]) -> dict[str, Any]:
+    """Compute scoring populations from unique window identities only."""
+
+    unique_rows, duplicate_ids = _unique_window_rows(rows)
+    condition_ids = {
+        condition: {str(row["window_id"]) for row in unique_rows if _condition_scored(row, condition)}
+        for condition in CONDITIONS
+    }
+    raw_intersection = set.intersection(*(condition_ids[condition] for condition in CONDITIONS)) if CONDITIONS else set()
+    complete_intersection = {
+        str(row["window_id"])
+        for row in unique_rows
+        if str(row.get("window_id")) in raw_intersection and str(row.get("source_id")) in complete_sources
+    }
+    main_intersection = {
+        str(row["window_id"])
+        for row in unique_rows
+        if str(row.get("window_id")) in complete_intersection
+        and (
+            row.get("role") == "real"
+            or (row.get("role") == "fake" and row.get("annotation_category") == "FAKE_MANIPULATION")
+        )
+    }
+    return {
+        "unique_rows": unique_rows,
+        "duplicate_window_ids": duplicate_ids,
+        "condition_ids": condition_ids,
+        "raw_three_condition_ids": raw_intersection,
+        "complete_source_three_condition_ids": complete_intersection,
+        "main_label_filtered_ids": main_intersection,
+    }
+
+
+def _unscored_reason_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Summarize missing scores without turning missing into numeric values."""
+
+    unique_rows, _ = _unique_window_rows(rows)
+    counts: Counter[tuple[str, str]] = Counter()
+    for condition in CONDITIONS:
+        status_name = f"{condition}_status"
+        for row in unique_rows:
+            if _condition_scored(row, condition):
+                continue
+            reason = str(row.get(status_name) or row.get("score_status") or row.get("frontend_status") or "UNKNOWN")
+            counts[(condition, reason)] += 1
+    return [{"condition": condition, "reason": reason, "count": count} for (condition, reason), count in sorted(counts.items())]
+
+
+def _write_source_coverage_summary(
+    root: Path,
+    rows: Sequence[Mapping[str, Any]],
+    complete_sources: set[str],
+    window_sets: Mapping[str, Any],
+) -> None:
+    """Write source-level processing and scoring coverage in one small table."""
+
+    coverage_path = root / "coverage" / "source_coverage.csv"
+    base_rows = {
+        str(row["source_id"]): dict(row)
+        for row in csv.DictReader(coverage_path.open(newline="", encoding="utf-8"))
+    } if coverage_path.is_file() else {}
+    raw_ids = set(window_sets["raw_three_condition_ids"])
+    complete_ids = set(window_sets["complete_source_three_condition_ids"])
+    main_ids = set(window_sets["main_label_filtered_ids"])
+    source_ids = sorted({str(row.get("source_id")) for row in rows} | set(base_rows))
+    output: list[dict[str, Any]] = []
+    for source in source_ids:
+        source_rows = [row for row in rows if str(row.get("source_id")) == source]
+        row: dict[str, Any] = {
+            "source_id": source,
+            "complete_source": source in complete_sources,
+            "planned_windows": base_rows.get(source, {}).get("planned_windows", len(source_rows)),
+            "frontend_windows": base_rows.get(source, {}).get("frontend_windows", ""),
+            "feature_windows": base_rows.get(source, {}).get("feature_windows", ""),
+            "no_valid_support_windows": base_rows.get(source, {}).get("no_valid_support_windows", ""),
+            "failed_windows": base_rows.get(source, {}).get("failed_windows", ""),
+            "not_run_windows": base_rows.get(source, {}).get("not_run_windows", ""),
+            "raw_three_condition_windows": sum(str(item.get("window_id")) in raw_ids for item in source_rows),
+            "complete_source_three_condition_windows": sum(str(item.get("window_id")) in complete_ids for item in source_rows),
+            "main_label_filtered_windows": sum(str(item.get("window_id")) in main_ids for item in source_rows),
+            "main_real_windows": sum(str(item.get("window_id")) in main_ids and item.get("role") == "real" for item in source_rows),
+            "main_fake_windows": sum(str(item.get("window_id")) in main_ids and item.get("role") == "fake" for item in source_rows),
+        }
+        for condition in CONDITIONS:
+            row[f"{condition}_scored_windows"] = sum(_condition_scored(item, condition) for item in source_rows)
+        output.append(row)
+    _write_csv(root / "evaluation/source_coverage_summary.csv", output)
+
+
+def _write_time_curve_outputs(root: Path, rows: Sequence[Mapping[str, Any]], complete_sources: set[str]) -> None:
+    """Write dependency-free SVG curves for complete sources; missing scores break lines."""
+
+    unique_rows, _ = _unique_window_rows(rows)
+    output_dir = root / "evaluation" / "time_curves"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    index_rows: list[dict[str, Any]] = []
+    colors = {
+        ("real", "H_MEAN_A"): "#2563eb", ("fake", "H_MEAN_A"): "#ef4444",
+        ("real", "B_MEAN_A"): "#16a34a", ("fake", "B_MEAN_A"): "#f97316",
+        ("real", "B_MEAN_C"): "#7c3aed", ("fake", "B_MEAN_C"): "#a16207",
+    }
+    for source in sorted(complete_sources):
+        source_rows = [row for row in unique_rows if str(row.get("source_id")) == source and row.get("role") in {"real", "fake"}]
+        finite_values = [
+            float(row[condition])
+            for row in source_rows
+            for condition in CONDITIONS
+            if _condition_scored(row, condition)
+        ]
+        if finite_values:
+            y_min, y_max = min(finite_values), max(finite_values)
+            if y_max <= y_min:
+                y_min, y_max = y_min - 1.0, y_max + 1.0
+            margin = max(0.1, (y_max - y_min) * 0.08)
+            y_min, y_max = y_min - margin, y_max + margin
+        else:
+            y_min, y_max = -1.0, 1.0
+        x_values = []
+        for row in source_rows:
+            try:
+                x_values.append(float(row["interval_start_s"]))
+            except (KeyError, TypeError, ValueError):
+                pass
+        x_min = min(x_values) if x_values else 0.0
+        x_max = max(x_values) if x_values else 1.0
+        if x_max <= x_min:
+            x_max = x_min + 1.0
+        left, right, top, bottom = 80.0, 1060.0, 55.0, 560.0
+
+        def px(value: float) -> float:
+            return left + (value - x_min) / (x_max - x_min) * (right - left)
+
+        def py(value: float) -> float:
+            return bottom - (value - y_min) / (y_max - y_min) * (bottom - top)
+
+        elements = [
+            '<rect width="1120" height="640" fill="white"/>',
+            f'<text x="80" y="25" font-family="sans-serif" font-size="16">source {escape(source)} frozen model logits (missing scores are gaps)</text>',
+            f'<line x1="{left}" y1="{bottom}" x2="{right}" y2="{bottom}" stroke="#334155"/>',
+            f'<line x1="{left}" y1="{top}" x2="{left}" y2="{bottom}" stroke="#334155"/>',
+            f'<text x="{right - 90}" y="610" font-family="sans-serif" font-size="12">video time (s)</text>',
+            f'<text x="12" y="{top + 20}" transform="rotate(-90 12 {top + 20})" font-family="sans-serif" font-size="12">logit</text>',
+        ]
+        # Dataset annotation windows are a separate background layer.
+        annotation_intervals = []
+        for row in source_rows:
+            if row.get("role") != "fake" or row.get("annotation_category") != "FAKE_MANIPULATION":
+                continue
+            try:
+                annotation_intervals.append((float(row["interval_start_s"]), float(row["interval_end_s"])))
+            except (KeyError, TypeError, ValueError):
+                continue
+        for start, end in annotation_intervals:
+            elements.append(f'<rect x="{px(start):.2f}" y="{top}" width="{max(1.0, px(end) - px(start)):.2f}" height="{bottom - top}" fill="#facc15" opacity="0.15"/>')
+        for role in ("real", "fake"):
+            role_rows = sorted((row for row in source_rows if row.get("role") == role), key=lambda item: (float(item.get("interval_start_s", 0.0)), int(item.get("grid_index", 0))))
+            for condition in CONDITIONS:
+                segments: list[list[tuple[float, float]]] = []
+                segment: list[tuple[float, float]] = []
+                for row in role_rows:
+                    if not _condition_scored(row, condition):
+                        if segment:
+                            segments.append(segment); segment = []
+                        continue
+                    try:
+                        point = (float(row["interval_start_s"]), float(row[condition]))
+                    except (KeyError, TypeError, ValueError):
+                        if segment:
+                            segments.append(segment); segment = []
+                        continue
+                    segment.append(point)
+                if segment:
+                    segments.append(segment)
+                color = colors[(role, condition)]
+                for points in segments:
+                    if len(points) >= 2:
+                        path = " ".join(f"{px(x):.2f},{py(y):.2f}" for x, y in points)
+                        elements.append(f'<polyline points="{path}" fill="none" stroke="{color}" stroke-width="2"/>')
+                    for x, y in points:
+                        elements.append(f'<circle cx="{px(x):.2f}" cy="{py(y):.2f}" r="3" fill="{color}"/>')
+        legend_x, legend_y = 80.0, 595.0
+        for index, ((role, condition), color) in enumerate(colors.items()):
+            x = legend_x + (index % 3) * 300
+            y = legend_y + (index // 3) * 18
+            elements.append(f'<line x1="{x:.2f}" y1="{y - 4:.2f}" x2="{x + 18:.2f}" y2="{y - 4:.2f}" stroke="{color}" stroke-width="3"/>')
+            elements.append(f'<text x="{x + 24:.2f}" y="{y:.2f}" font-family="sans-serif" font-size="12">{role} {condition}</text>')
+        elements.append(f'<text x="{left + 8:.2f}" y="{top + 16:.2f}" font-family="sans-serif" font-size="11" fill="#a16207">yellow = dataset annotation window, not prediction</text>')
+        svg_path = output_dir / f"source_{_safe(source)}.svg"
+        svg_path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="640">' + "".join(elements) + "</svg>\n", encoding="utf-8")
+        index_rows.append({"source_id": source, "path": str(svg_path), "window_count": len(source_rows), "note": "real/fake curves; missing score rows are disconnected"})
+    _write_csv(root / "evaluation/time_curve_index.csv", index_rows)
+
+
 def evaluate(root: Path) -> dict[str, Any]:
     with (root / "scores/window_scores.csv").open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle))
+        rows, duplicate_window_ids = _unique_window_rows(list(csv.DictReader(handle)))
     coverage_path = root / "coverage" / "source_coverage.csv"
     coverage = {str(row["source_id"]): row for row in csv.DictReader(coverage_path.open(newline="", encoding="utf-8"))} if coverage_path.is_file() else {}
     complete_sources = {source for source, row in coverage.items() if str(row.get("complete_source", "")).lower() == "true"}
+    window_sets = _score_window_sets(rows, complete_sources)
     per_source: list[dict[str, Any]] = []
     summary: dict[str, Any] = {
         "conditions": {},
-        "protocol": {"positive": "fake windows fully inside annotation union", "negative": "all real windows", "boundary_and_outside": "descriptive only", "main_comparison": "complete sources and common windows across all conditions", "threshold": "logit >= 0", "bootstrap": {"unit": "source", "seed": SEED, "replicates": 10000}},
+        "protocol": {"positive": "fake windows fully inside annotation union", "negative": "all real windows", "boundary_and_outside": "descriptive only", "main_comparison": "complete sources and common windows across all conditions", "threshold": "logit >= 0", "bootstrap": {"unit": "source", "seed": SEED, "replicates": 10000}, "budget_scope": BUDGET_SCOPE},
         "complete_sources": sorted(complete_sources),
         "partial_sources": sorted(set(coverage) - complete_sources),
+        "duplicate_window_ids": duplicate_window_ids,
     }
     source_ids = sorted({str(row["source_id"]) for row in rows})
-    common_rows: list[dict[str, Any]] = []
-    for row in rows:
-        if str(row["source_id"]) not in complete_sources:
-            continue
-        if row.get("role") not in {"real", "fake"}:
-            continue
-        if row.get("role") == "fake" and row.get("annotation_category") != "FAKE_MANIPULATION":
-            continue
-        if all(_condition_scored(row, condition) for condition in CONDITIONS):
-            common_rows.append(row)
+    main_ids = window_sets["main_label_filtered_ids"]
+    common_rows = [row for row in rows if str(row.get("window_id")) in main_ids]
 
     def ci(values: Sequence[float]) -> list[float] | None:
         if not values:
@@ -905,10 +1203,29 @@ def evaluate(root: Path) -> dict[str, Any]:
         differences = [source_scores[left][source] - source_scores[right][source] for source in shared]
         comparisons[name] = {"source_count": len(differences), "sources": shared, "source_mean_difference": float(np.mean(differences)) if differences else None, "bootstrap_ci95": ci(differences)}
     summary["paired_comparisons"] = comparisons
+    summary["window_sets"] = {
+        "unique_window_count": len(rows),
+        "condition_scored_windows": {condition: len(window_sets["condition_ids"][condition]) for condition in CONDITIONS},
+        "raw_three_condition_intersection": len(window_sets["raw_three_condition_ids"]),
+        "complete_source_three_condition_intersection": len(window_sets["complete_source_three_condition_ids"]),
+        "main_label_filtered_intersection": len(window_sets["main_label_filtered_ids"]),
+        "duplicate_window_count": len(duplicate_window_ids),
+    }
+    summary["unscored_reasons"] = _unscored_reason_rows(rows)
     summary["common_window_count"] = len(common_rows)
     _write_csv(root / "evaluation/per_source_metrics.csv", per_source)
+    _write_csv(root / "evaluation/unscored_reasons.csv", summary["unscored_reasons"])
+    _write_csv(root / "evaluation/window_set_counts.csv", [
+        {"set_name": "unique_window_count", "count": len(rows)},
+        *({"set_name": f"condition_scored:{condition}", "count": len(window_sets["condition_ids"][condition])} for condition in CONDITIONS),
+        {"set_name": "raw_three_condition_intersection", "count": len(window_sets["raw_three_condition_ids"])},
+        {"set_name": "complete_source_three_condition_intersection", "count": len(window_sets["complete_source_three_condition_ids"])},
+        {"set_name": "main_label_filtered_intersection", "count": len(window_sets["main_label_filtered_ids"])},
+    ])
+    _write_source_coverage_summary(root, rows, complete_sources, window_sets)
+    _write_time_curve_outputs(root, rows, complete_sources)
     _atomic_json(root / "evaluation/summary.json", summary)
-    _progress(root, "evaluate", sum(int(value["source_count"]) for value in summary["conditions"].values()), len(CONDITIONS) * len(source_ids), "COMPLETE", common_windows=len(common_rows), complete_sources=sorted(complete_sources), partial_sources=sorted(set(source_ids) - complete_sources))
+    _progress(root, "evaluate", len(complete_sources), len(source_ids), "COMPLETE", common_windows=len(common_rows), complete_source_count=len(complete_sources), source_count=len(source_ids), condition_source_cells=sum(int(value["source_count"]) for value in summary["conditions"].values()), window_sets=summary["window_sets"], complete_sources=sorted(complete_sources), partial_sources=sorted(set(source_ids) - complete_sources))
     return summary
 
 
@@ -924,7 +1241,8 @@ def _actual_inventory(root: Path) -> dict[str, Any]:
     results = _load_results(root)
     valid_results, invalid_cache = _validated_results(root, rows)
     score_path = root / "scores/window_scores.csv"
-    scores = list(csv.DictReader(score_path.open(newline="", encoding="utf-8"))) if score_path.is_file() else []
+    scores_raw = list(csv.DictReader(score_path.open(newline="", encoding="utf-8"))) if score_path.is_file() else []
+    scores, duplicate_score_ids = _unique_window_rows(scores_raw)
     source_rows = list(csv.DictReader((root / "coverage/source_coverage.csv").open(newline="", encoding="utf-8"))) if (root / "coverage/source_coverage.csv").is_file() else []
     feature_summary_path = root / "manifests/feature_summary.json"
     feature_windows = int(json.loads(feature_summary_path.read_text(encoding="utf-8")).get("windows", 0)) if feature_summary_path.is_file() else 0
@@ -937,7 +1255,9 @@ def _actual_inventory(root: Path) -> dict[str, Any]:
     categories = defaultdict(int)
     for row in rows:
         categories[str(row.get("annotation_category", "UNLABELED"))] += 1
-    return {"planned_windows": len(rows), "planned_videos": len({str(row["source_video_id"]) for row in rows}), "frontend_results": len(success), "frontend_processed_frames": frontend_frames, "feature_windows": feature_windows, "window_statuses": dict(statuses), "scored_windows": scored, "model_used_frames_by_condition": model_counts, "model_used_frame_rows": len(model_rows), "annotation_categories": dict(categories), "invalid_cache": invalid_cache, "complete_sources": [row["source_id"] for row in source_rows if str(row.get("complete_source")).lower() == "true"], "partial_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) > 0 and str(row.get("complete_source")).lower() != "true"], "unrun_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) == 0]}
+    summary_path = root / "evaluation/summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else {}
+    return {"planned_windows": len(rows), "planned_videos": len({str(row["source_video_id"]) for row in rows}), "frontend_results": len(success), "frontend_processed_frames": frontend_frames, "feature_windows": feature_windows, "window_statuses": dict(statuses), "scored_windows": scored, "duplicate_score_window_ids": duplicate_score_ids, "window_sets": summary.get("window_sets", {}), "unscored_reasons": summary.get("unscored_reasons", []), "model_used_frames_by_condition": model_counts, "model_used_frame_rows": len(model_rows), "annotation_categories": dict(categories), "invalid_cache": invalid_cache, "complete_sources": [row["source_id"] for row in source_rows if str(row.get("complete_source")).lower() == "true"], "partial_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) > 0 and str(row.get("complete_source")).lower() != "true"], "unrun_sources": [row["source_id"] for row in source_rows if int(row.get("frontend_windows", 0)) == 0]}
 
 
 def write_report(root: Path, frontend: Mapping[str, Any], feature: Mapping[str, Any], summary: Mapping[str, Any]) -> None:
@@ -946,6 +1266,50 @@ def write_report(root: Path, frontend: Mapping[str, Any], feature: Mapping[str, 
     for condition, value in summary.get("conditions", {}).items():
         lines.append(f"- `{condition}`：source mean AUROC={value.get('source_mean_auroc')}, CI={value.get('bootstrap_ci95')}, pooled AUROC={value.get('pooled_auroc')}, AP={value.get('pooled_ap')}，source 数={value.get('source_count')}。")
     lines += ["", "## 覆盖与可判定性", "", f"固定网格标签类别计数：{inventory['annotation_categories']}。只有完整处理 source 且三条件共同有有效分数的窗口才进入主评价；部分 source、NO_VALID_TRIPLET、缺少 seed 模型、前端失败和未运行窗口保留为描述，不填 0。", "", "## 限制", "", "本 pilot 不是 sealed-test、不是新模型训练，也没有空间真值。模型实际使用帧从 H/B triplet 支撑恢复；若无法从支撑映射到序列 PTS，记录 UNKNOWN。窗口有分数不等于失真部位有观测；缺失不自动解释为伪造。"]
+    (root / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_report_v2(root: Path, frontend: Mapping[str, Any], feature: Mapping[str, Any], summary: Mapping[str, Any]) -> None:
+    """Write the post-recovery report with explicit budget and score populations."""
+
+    inventory = _actual_inventory(root)
+    budget_path = root / "manifests" / BUDGET_STATE_NAME
+    budget = json.loads(budget_path.read_text(encoding="utf-8")) if budget_path.is_file() else {}
+    lines = [
+        "# V7 固定时间网格观测与冻结模型评分 pilot",
+        "",
+        f"- Git HEAD: `{_git_head()}`",
+        f"- 计划：{inventory['planned_videos']} 个独立视频、{inventory['planned_windows']} 个固定网格窗口；该计数是窗口总数，不是视频数或评分完成数。",
+        f"- 前端完成：{inventory['frontend_results']}；前端处理帧数：{inventory['frontend_processed_frames']}；H/B 特征：{inventory['feature_windows']}；前端状态：`{frontend.get('status')}`。",
+        f"- source：COMPLETE={inventory['complete_sources']}；PARTIAL={inventory['partial_sources']}；未运行={inventory['unrun_sources']}。",
+        f"- 预算范围：`{budget.get('budget_scope', BUDGET_SCOPE)}`；累计前端预算={budget.get('consumed_s')} / {budget.get('budget_s')} s；本次进程前累计={budget.get('elapsed_before_this_process_s')} s；停止原因=`{budget.get('last_stop_reason', frontend.get('stop_reason'))}`。",
+        f"- 旧 bounded benchmark 耗时 `{budget.get('prior_benchmark_elapsed_s')}` s 不计入正式 7200 s；后处理不参与前端停止判断。",
+        f"- 缓存身份问题：{inventory['invalid_cache']}；重复 score window_id：{inventory.get('duplicate_score_window_ids', [])}。",
+        "- 时间网格先于标签冻结；每个窗口独立初始化 17×17=289 查询点。",
+        "- real 窗口作负类；fake 仅在一秒窗口完整包含于标注区间并集时作主正类；BOUNDARY_MIXED/OUTSIDE 仅描述。",
+        "- 冻结条件：H_MEAN_A、B_MEAN_A、B_MEAN_C；仅使用 held-out source 的旧 fold 模型与原标准化。",
+        "",
+        "## 评分集合口径",
+        "",
+    ]
+    for name, count in summary.get("window_sets", {}).items():
+        lines.append(f"- `{name}`：{count}")
+    lines += ["", "## 条件摘要", ""]
+    for condition, value in summary.get("conditions", {}).items():
+        real_count = (value.get("tn") or 0) + (value.get("fp") or 0) if value.get("tn") is not None else None
+        fake_count = (value.get("fn") or 0) + (value.get("tp") or 0) if value.get("fn") is not None else None
+        lines.append(f"- `{condition}`：source mean AUROC={value.get('source_mean_auroc')}, CI={value.get('bootstrap_ci95')}, pooled AUROC={value.get('pooled_auroc')}, AP={value.get('pooled_ap')}，pooled n={value.get('pooled_window_count')}，real/fake={real_count}/{fake_count}，source 数={value.get('source_count')}。")
+    for name, value in summary.get("paired_comparisons", {}).items():
+        lines.append(f"- 配对 `{name}`：source mean difference={value.get('source_mean_difference')}, CI={value.get('bootstrap_ci95')}, source 数={value.get('source_count')}。")
+    lines += ["", "## 未评分原因", "", "缺失分数保持为空；以下是唯一 window_id 上按条件统计的缺失原因："]
+    for row in summary.get("unscored_reasons", []):
+        lines.append(f"- `{row['condition']}` / `{row['reason']}`：{row['count']}")
+    lines += ["", "## Source 覆盖", "", "详细表：`evaluation/source_coverage_summary.csv`。该表分别记录计划、前端、有效结构、各条件评分、三条件交集和主标签过滤交集；部分 source 不进入主 source-level 统计。", ""]
+    coverage_summary_path = root / "evaluation/source_coverage_summary.csv"
+    if coverage_summary_path.is_file():
+        for row in csv.DictReader(coverage_summary_path.open(newline="", encoding="utf-8")):
+            lines.append(f"- `{row.get('source_id')}`：planned={row.get('planned_windows')}, frontend={row.get('frontend_windows')}, H={row.get('H_MEAN_A_scored_windows')}, B-A={row.get('B_MEAN_A_scored_windows')}, B-C={row.get('B_MEAN_C_scored_windows')}, main real/fake={row.get('main_real_windows')}/{row.get('main_fake_windows')}。")
+    lines += ["", "## 时间响应", "", "完整 source 的 real/fake 冻结 logit 曲线以 SVG 输出到 `evaluation/time_curves/`，缺失评分处断线；黄色背景是数据集标注窗口，不是模型预测。索引：`evaluation/time_curve_index.csv`。", "", "## 观测支撑与限制", "", f"各条件模型实际使用帧（按 source/video/window/frame/PTS 去重）：{inventory['model_used_frames_by_condition']}；记录行数：{inventory['model_used_frame_rows']}。前端处理帧不自动等同模型使用时刻。", f"固定网格标签类别计数：{inventory['annotation_categories']}。只有完整处理 source 且三条件共同有有效分数、并满足主标签过滤的窗口才进入主评价；部分 source、NO_VALID_TRIPLET、缺少 seed 模型、前端失败和未运行窗口均保留为缺失，不填 0。", "本 pilot 不是 sealed-test、不是新模型训练，也没有空间真值。窗口有分数不等于失真部位有观测；缺失不自动解释为伪造。"]
     (root / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -985,15 +1349,17 @@ def run(root: Path, *, resume: bool, budget_s: float, max_frontend_windows: int 
         frontend = run_frontend(root, budget_s=budget_s, resume=resume, max_windows=max_frontend_windows)
         if max_frontend_windows is not None:
             return {"frontend": frontend, "status": frontend.get("status")}
+        postprocess_started = time.monotonic()
         feature = build_features(root, resume=resume)
         scores = score_windows(root, resume=resume)
         reproduction = reproduce_old_score(root)
         summary = evaluate(root)
         build_review(root)
-        write_report(root, frontend, feature, summary)
+        _write_report_v2(root, frontend, feature, summary)
+        postprocess_elapsed_s = time.monotonic() - postprocess_started
         inventory = _actual_inventory(root)
         final_status = frontend.get("status")
-        _atomic_json(root / "final_status.json", {"status": final_status, "frontend": frontend, "feature": feature, "scores": scores, "inventory": inventory, "old_score_reproduction": reproduction, "git_head": _git_head(), "planned_windows": inventory["planned_windows"], "frontend_results": inventory["frontend_results"], "updated_unix": time.time()})
+        _atomic_json(root / "final_status.json", {"status": final_status, "frontend": frontend, "feature": feature, "scores": scores, "inventory": inventory, "old_score_reproduction": reproduction, "postprocess_elapsed_s": postprocess_elapsed_s, "git_head": _git_head(), "planned_windows": inventory["planned_windows"], "frontend_results": inventory["frontend_results"], "updated_unix": time.time()})
         return {"frontend": frontend, "feature": feature, "scores": scores, "old_score_reproduction": reproduction, "inventory": inventory, "status": final_status}
     except Exception as exc:
         _atomic_json(root / "final_status.json", {"status": "FAILED", "error": f"{type(exc).__name__}: {exc}", "traceback": traceback.format_exc(), "git_head": _git_head(), "updated_unix": time.time()})

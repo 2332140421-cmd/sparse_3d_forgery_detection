@@ -64,6 +64,21 @@ completed=2007` 是基准前向产生的评分行数，不代表 2007 个视频�
 - 预算状态写入数据盘并在恢复时累加，不重置 7200 秒预算；运行锁和无缓冲日志防止
   重复启动。若历史预算无法核实，脚本拒绝静默开启新预算。
 
+## 预算与评分口径修复
+
+- 预算状态将 `elapsed_before_this_process_s` 与当前进程的 monotonic elapsed 分开；
+  累计值为二者之和，不再把已经写入累计值的本次窗口耗时再次相加。预算范围明确为
+  前端从进程启动到选定 source 前缀完成或预算停止；feature、score、evaluate 和
+  report 后处理单独记录，不参与前端停止判断。`last_stop_reason`、停止时累计值和
+  预算上限均持久化。
+- 已写入 `execution_plan.json` 的 source 前缀是本轮冻结执行选择。`--resume` 只完成
+  该前缀，不会因为剩余预算自动扩展到新 source。
+- 评价先按唯一 `window_id` 建立三个集合：各条件有分数窗口、三条件原始交集、完整
+  source 交集，再按 real/`FAKE_MANIPULATION` 主标签过滤。`evaluation/window_set_counts.csv`
+  和 `evaluation/unscored_reasons.csv` 保留这些口径及缺失原因；缺失不填零。
+- 完整 source 的 real/fake 冻结 logit 时间曲线输出为 `evaluation/time_curves/*.svg`，
+  缺失评分处断线，黄色背景仅表示数据集时间标注，不是模型预测。
+
 ## 解释边界
 
 可评分只表示离散 model-used PTS 具备输入支撑，不表示连续时间或像素区域覆盖。

@@ -75,6 +75,59 @@ def test_budget_resume_does_not_reset_consumed_time(tmp_path):
     assert state["consumed_s"] == 321.5
 
 
+def test_budget_clock_adds_process_elapsed_once():
+    state = {"consumed_s": 100.0}
+    clock = runner._start_budget_clock(state, monotonic_start=10.0, wall_start=20.0)
+    cumulative, process_elapsed = runner._budget_snapshot(clock, monotonic_now=35.0)
+    assert process_elapsed == 25.0
+    assert cumulative == 125.0
+
+
+def test_score_window_sets_are_unique_and_label_filtered():
+    def row(window_id, source_id, role, category, h, b_a, b_c):
+        return {
+            "window_id": window_id,
+            "source_id": source_id,
+            "role": role,
+            "annotation_category": category,
+            "H_MEAN_A": h,
+            "H_MEAN_A_status": "SCORED" if h is not None else "NO_VALID_TRIPLET",
+            "B_MEAN_A": b_a,
+            "B_MEAN_A_status": "SCORED" if b_a is not None else "NO_VALID_TRIPLET",
+            "B_MEAN_C": b_c,
+            "B_MEAN_C_status": "SCORED" if b_c is not None else "NO_VALID_TRIPLET",
+        }
+
+    rows = [
+        row("real", "S", "real", "REAL_NEGATIVE", -1.0, -1.0, -1.0),
+        row("fake", "S", "fake", "FAKE_MANIPULATION", 1.0, 1.0, 1.0),
+        row("boundary", "S", "fake", "BOUNDARY_MIXED", 2.0, 2.0, 2.0),
+        row("partial", "P", "real", "REAL_NEGATIVE", -2.0, -2.0, -2.0),
+        row("h_only", "S", "real", "REAL_NEGATIVE", -3.0, None, -3.0),
+        row("fake", "S", "fake", "FAKE_MANIPULATION", 1.0, 1.0, 1.0),
+    ]
+    sets = runner._score_window_sets(rows, {"S"})
+    assert len(sets["unique_rows"]) == 5
+    assert sets["duplicate_window_ids"] == ["fake"]
+    assert {condition: len(values) for condition, values in sets["condition_ids"].items()} == {"H_MEAN_A": 5, "B_MEAN_A": 4, "B_MEAN_C": 5}
+    assert len(sets["raw_three_condition_ids"]) == 4
+    assert len(sets["complete_source_three_condition_ids"]) == 3
+    assert sets["main_label_filtered_ids"] == {"real", "fake"}
+
+
+def test_resume_keeps_persisted_source_prefix(tmp_path):
+    (tmp_path / "manifests").mkdir()
+    (tmp_path / "manifests" / "execution_plan.json").write_text(json.dumps({"source_order": ["A", "B"], "selected_source_prefix": ["A"]}))
+    rows = [
+        {"window_id": "A::0", "source_id": "A", "role": "real", "grid_index": 0},
+        {"window_id": "B::0", "source_id": "B", "role": "real", "grid_index": 0},
+    ]
+    selected, selected_rows, error = runner._select_source_prefix(tmp_path, rows, {"A::0": {}}, {"consumed_s": 0.0, "budget_s": 7200.0})
+    assert error is None
+    assert selected == ["A"]
+    assert [row["source_id"] for row in selected_rows] == ["A"]
+
+
 def test_missing_score_placeholder_is_not_scored():
     row = {"H_MEAN_A": "", "H_MEAN_A_status": "MISSING_FEATURE"}
     assert runner._condition_scored(row, "H_MEAN_A") is False
