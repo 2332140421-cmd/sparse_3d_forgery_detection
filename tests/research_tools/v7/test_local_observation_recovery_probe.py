@@ -10,6 +10,8 @@ from research_tools.v7.local_observation_recovery_probe.probe import (
     history_evaluation_status,
     layer_counts,
     nearest_frame,
+    recent_trace_indices,
+    _trajectory_entry,
     validate_roi_rect,
 )
 
@@ -74,3 +76,22 @@ def test_history_frame_is_not_model_evaluation_frame():
 
 def test_roi_validation_is_source_pixel_bookkeeping_only():
     assert validate_roi_rect([110.2, -3, 370.4, 359.9], 480, 360) == (110, 0, 370, 360)
+
+
+def test_recent_trace_keeps_saved_order_and_limits_to_five_frames():
+    assert recent_trace_indices([487, 488, 489, 490, 491, 492], 5) == [1, 2, 3, 4, 5]
+    assert recent_trace_indices([487, 488], 1, limit=5) == [0, 1]
+
+
+def test_trajectory_payload_preserves_frame_order_and_missing_uv():
+    payload = _trajectory_entry(
+        np.asarray([487, 488], dtype=np.int64),
+        np.asarray([16.2495, 16.2829], dtype=np.float64),
+        np.asarray([[[1.0, 2.0]], [[np.nan, np.nan]]], dtype=np.float32),
+        np.asarray([[True], [False]], dtype=bool),
+        np.asarray([[True], [False]], dtype=bool),
+    )
+    assert payload["frame_indices"] == [487, 488]
+    assert payload["uv"][0][0] == [1.0, 2.0]
+    assert payload["uv"][1][0] is None
+    assert payload["uv_finite"] == [[True], [False]]

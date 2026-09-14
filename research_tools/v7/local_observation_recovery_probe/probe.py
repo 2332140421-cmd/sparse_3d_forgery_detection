@@ -163,6 +163,35 @@ def validate_roi_rect(rectangle_xyxy: Sequence[float], width: int, height: int) 
     return x0, y0, x1, y1
 
 
+def recent_trace_indices(frame_indices: Sequence[int], current_index: int, limit: int = 5) -> list[int]:
+    """Return at most ``limit`` saved frames ending at one array index."""
+    if int(limit) <= 0 or not 0 <= int(current_index) < len(frame_indices):
+        raise ValueError("current_index must be valid and limit must be positive")
+    start = max(0, int(current_index) - int(limit) + 1)
+    return list(range(start, int(current_index) + 1))
+
+
+def _trajectory_entry(frame_indices: np.ndarray, timestamps_s: np.ndarray, uv: np.ndarray, visibility: np.ndarray, geometry_validity: np.ndarray | None) -> dict[str, Any]:
+    """Create a small browser-review payload while preserving missing UV explicitly."""
+    uv = np.asarray(uv)
+    finite = np.isfinite(uv).all(axis=-1)
+    safe_uv = [
+        [[float(x), float(y)] if finite[t, n] else None for n, (x, y) in enumerate(uv[t])]
+        for t in range(uv.shape[0])
+    ]
+    payload: dict[str, Any] = {
+        "frame_indices": np.asarray(frame_indices, dtype=np.int64).astype(int).tolist(),
+        "timestamps_s": np.asarray(timestamps_s, dtype=np.float64).astype(float).tolist(),
+        "track_ids": list(range(int(uv.shape[1]))),
+        "uv": safe_uv,
+        "uv_finite": finite.astype(bool).tolist(),
+        "visibility": np.asarray(visibility, dtype=bool).tolist(),
+    }
+    if geometry_validity is not None:
+        payload["geometry_validity"] = np.asarray(geometry_validity, dtype=bool).tolist()
+    return payload
+
+
 def _jsonable(value: Any) -> Any:
     if isinstance(value, np.ndarray):
         return value.tolist()
@@ -695,13 +724,14 @@ def _run_cotracker(output: Path, decoded: Any) -> dict[str, Any]:
 
 
 def _html_page(output: Path, manifest: Mapping[str, Any], statuses: Mapping[str, Any]) -> None:
-    # The page is deliberately dependency-free and reads only case_data.json.
+    # The page is deliberately dependency-free and reads the small case and trajectory JSON payloads.
     page = """<!doctype html><meta charset='utf-8'><title>V7 local observation recovery</title>
-<style>body{font:15px sans-serif;background:#111827;color:#e5e7eb;margin:20px}h1{font-size:24px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.panel,.roi{background:#1f2937;padding:12px;border-radius:8px;margin:10px 0}.view,.roi-view{position:relative;background:#000}.view img,.roi-view img{width:100%;display:block}.view canvas,.roi-view canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.roi-view canvas{pointer-events:auto}.muted{color:#9ca3af}.ok{color:#86efac}.warn{color:#fbbf24}button{margin:3px;padding:5px}input{width:70px;margin:2px}code{color:#bfdbfe}</style>
+<style>body{font:15px sans-serif;background:#111827;color:#e5e7eb;margin:20px}h1{font-size:24px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.panel,.roi{background:#1f2937;padding:12px;border-radius:8px;margin:10px 0}.view,.roi-view{position:relative;background:#000}.view img,.roi-view img{width:100%;display:block}.view canvas,.roi-view canvas{position:absolute;inset:0;width:100%;height:100%}.view canvas{pointer-events:auto;cursor:crosshair}.roi-view canvas{pointer-events:auto}.muted{color:#9ca3af}.ok{color:#86efac}.warn{color:#fbbf24}button{margin:3px;padding:5px}input{width:70px;margin:2px}code{color:#bfdbfe}</style>
 <h1>V7 04LAX fake 局部观测恢复</h1>
 <p class='muted'>这是单案例观测诊断，不是检测器评价。O/R/T 的 query ID 不跨条件连接；不可见点不生成有效 XYZ。</p>
 <div id='facts'></div>
 <div><button id='prev'>上一帧</button><button id='next'>下一帧</button><button id='jump'>跳到源帧488</button><span id='frame'></span></div>
+<div class='panel'>选点 ID（条件内）：<input id='pointId' type='number' min='0' max='288' value='0'> <label><input id='showIds' type='checkbox' checked>显示 ID</label> <label><input id='showTrail' type='checkbox' checked>显示最近5帧尾线</label>；点击 O/R/T 任一点可选择该条件自己的 ID。跨条件同号不表示同一物理点。</div>
 <div class='grid'><section class='panel'><h2>O 原有结果</h2><div id='oStatus'></div><div class='view'><img id='oImg'><canvas id='oCanvas'></canvas></div></section>
 <section class='panel'><h2>R 重新查询</h2><div id='rStatus'></div><div class='view'><img id='rImg'><canvas id='rCanvas'></canvas></div></section>
 <section class='panel'><h2>T CoTracker3 online</h2><div id='tStatus'></div><div class='view'><img id='tImg'><canvas id='tCanvas'></canvas></div></section></div>
@@ -713,19 +743,89 @@ def _html_page(output: Path, manifest: Mapping[str, Any], statuses: Mapping[str,
 <div id='roiCoord' class='muted'>把鼠标移到原图上查看源像素坐标。</div><div id='roiState' class='warn'>PENDING_USER_CONFIRMATION</div></section>
 <p>图例：<span class='ok'>绿色=当前可见且有 UV</span>；状态文字区分未查询、二维轨迹和三维几何。源帧 487/488 的 PTS 是 16.249583/16.282950 s。R 查询启动前显示 NOT QUERIED；T 的不可见预测 UV 与有效观测分开保存。</p>
 <script>
-let d=null,i=0;const $=x=>document.getElementById(x);const roiKey='v7-04LAX-source-frame-488-roi';
+let d=null,trace=null,i=0,selectedPanel='O',selectedId=0;const $=x=>document.getElementById(x);const roiKey='v7-04LAX-source-frame-488-roi';
 function esc(x){return String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function draw(panel){const p=d.conditions[panel],img=$(panel.toLowerCase()+'Img'),can=$(panel.toLowerCase()+'Canvas');if(!p||!p.rows){img.removeAttribute('src');can.getContext('2d').clearRect(0,0,can.width,can.height);$(panel.toLowerCase()+'Status').textContent='NOT QUERIED';return}const sourceFrame=d.conditions.O.rows[i].source_frame_index;const j=p.rows.findIndex(r=>Number(r.source_frame_index)===Number(sourceFrame));if(j<0||!p.screenshots||!p.screenshots[j]){img.removeAttribute('src');can.getContext('2d').clearRect(0,0,can.width,can.height);$(panel.toLowerCase()+'Status').textContent=panel==='R'?'NOT QUERIED BEFORE R START / OUTSIDE R RANGE':(p.status||'NO RESULT');return}img.src='../'+p.screenshots[j];const row=p.rows[j];$(panel.toLowerCase()+'Status').innerHTML=`frame=${row.source_frame_index}, PTS=${Number(row.timestamp_s).toFixed(6)} s; query=${row.query_count}, UV=${row.uv_available_count}, visible=${row.visibility_count}, geometry=${row.geometry_valid_count??'UNKNOWN'}; ${row.support_status||''}`;}
+function statusHtml(panel,row,p){const twoD=panel==='O'?'REUSED_CANONICAL_2D':(panel==='R'?'REQUERY_2D_TRACKS':(panel==='T'?'OFFICIAL_COTRACKER3_ONLINE_2D':'UNKNOWN'));const xyz=panel==='O'?'REUSED_CANONICAL_XYZ':(row.geometry_status||'NOT_COMPUTED');const hb=panel==='O'?'SAVED_H_B':(row.support_status||'NOT_COMPUTED');const trip=panel==='O'?'SAVED_H_B_TRIPLET':(panel==='R'?'NOT_COMPUTED_NEW_ID':'NOT_COMPUTED_T');return `condition: ${p.status||'UNKNOWN'}<br>2D tracking: ${twoD}; frame=${row.source_frame_index}, PTS=${Number(row.timestamp_s).toFixed(6)} s, UV=${row.uv_available_count}, visible=${row.visibility_count}<br>XYZ: ${xyz}; H/B grouping: ${hb}; triplet support: ${trip}`}
+function overlay(panel,j){const rec=trace&&trace.conditions[panel],can=$(panel.toLowerCase()+'Canvas');if(!rec||j<0||!can.width)return;const g=can.getContext('2d'),id=panel===selectedPanel?Math.max(0,Math.min(Number(selectedId)||0,rec.track_ids.length-1)):-1;g.clearRect(0,0,can.width,can.height);if(id<0)return;const uv=rec.uv[j]?.[id];const finite=uv&&rec.uv_finite[j]?.[id];if($('showTrail').checked){const start=Math.max(0,j-4);g.strokeStyle='#facc15';g.lineWidth=3;g.beginPath();let active=false;for(let k=start;k<=j;k++){const q=rec.uv[k]?.[id];if(!q||!rec.uv_finite[k]?.[id]||!rec.visibility[k]?.[id]){active=false;continue}if(active)g.lineTo(q[0],q[1]);else g.moveTo(q[0],q[1]);active=true}g.stroke()}if(finite){g.fillStyle='#ffffff';g.strokeStyle='#ef4444';g.lineWidth=2;g.beginPath();g.arc(uv[0],uv[1],5,0,Math.PI*2);g.fill();g.stroke();if($('showIds').checked){g.fillStyle='#ffffff';g.font='bold 14px sans-serif';g.fillText(`id=${id}`,uv[0]+7,uv[1]-7)}}}
+function draw(panel){const p=d.conditions[panel],img=$(panel.toLowerCase()+'Img'),can=$(panel.toLowerCase()+'Canvas');if(!p||!p.rows){img.removeAttribute('src');can.getContext('2d').clearRect(0,0,can.width,can.height);$(panel.toLowerCase()+'Status').textContent='NOT_QUERIED';return}const sourceFrame=d.conditions.O.rows[i].source_frame_index;const j=p.rows.findIndex(r=>Number(r.source_frame_index)===Number(sourceFrame));const traceIndex=trace?.conditions?.[panel]?.frame_indices?.indexOf(Number(sourceFrame))??-1;if(j<0||traceIndex<0||!p.screenshots||!p.screenshots[j]){img.removeAttribute('src');can.getContext('2d').clearRect(0,0,can.width,can.height);$(panel.toLowerCase()+'Status').textContent=panel==='R'?'NOT_QUERIED_BEFORE_R_START / OUTSIDE_R_RANGE':(p.status||'NO_RESULT');return}const row=p.rows[j];$(panel.toLowerCase()+'Status').innerHTML=statusHtml(panel,row,p);img.onload=()=>{can.width=img.naturalWidth;can.height=img.naturalHeight;overlay(panel,traceIndex)};img.src='../'+p.screenshots[j];if(img.complete){can.width=img.naturalWidth;can.height=img.naturalHeight;overlay(panel,traceIndex)}}
 function render(){const o=d.conditions.O;if(!o)return;i=Math.max(0,Math.min(i,o.rows.length-1));$('frame').textContent=` O[${i}/${o.rows.length-1}] source_frame=${o.rows[i].source_frame_index} PTS=${Number(o.rows[i].timestamp_s).toFixed(6)} s phase=${o.rows[i].phase||''}`;draw('O');draw('R');draw('T')}
 function rect(){return ['x0','y0','x1','y1'].map(k=>Number($(k).value))}
 function drawRoi(){const img=$('roiImg'),c=$('roiCanvas');if(!img.naturalWidth)return;c.width=img.naturalWidth;c.height=img.naturalHeight;const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);const r=rect();if(r.every(Number.isFinite)){g.strokeStyle='#facc15';g.lineWidth=3;g.strokeRect(r[0],r[1],r[2]-r[0],r[3]-r[1])}}
 function updateRoi(){['x0','y0','x1','y1'].forEach(k=>$(k).addEventListener('input',drawRoi));drawRoi();}
-fetch('../case_data.json').then(x=>x.json()).then(x=>{d=x;const tr=x.manifest.support.selected_triplet,h=x.manifest.history_evaluation;$('facts').innerHTML=`<p>source=${esc(x.manifest.source_id)} role=${esc(x.manifest.role)} window=${esc(x.manifest.window_id)}; init frame=${x.manifest.query_initialization.source_frame_index} PTS=${Number(x.manifest.query_initialization.timestamp_s).toFixed(6)} s; frame488=${h.target_frame_status[1].phase} (${Number(h.target_frame_status[1].relative_to_initialization_s).toFixed(6)} s after init, model target=${h.target_frame_status[1].model_evaluation_frame}); H groups=${x.manifest.support.h_group_count} (member slots=${x.manifest.support.h_member_slot_count}), B groups=${x.manifest.support.b_group_count}, H pairs=${x.manifest.support.h_pair_count}, H triplets=${x.manifest.support.h_triplet_count}; selected triplet=${tr?tr.triplet_id:'none'}.</p>`;for(const k of ['R','T'])$(k.toLowerCase()+'Status').textContent=x.conditions[k]?.status||'NOT_RUN';const saved=localStorage.getItem(roiKey);const r=saved?JSON.parse(saved):{rectangle_xyxy:x.manifest.roi.suggested_rectangle_xyxy||[110,0,370,359],confirmed:false};['x0','y0','x1','y1'].forEach((k,n)=>$(k).value=r.rectangle_xyxy[n]);$('roiConfirm').checked=!!r.confirmed;$('roiState').textContent=r.confirmed?'CONFIRMED_USER_LOCAL':'PENDING_USER_CONFIRMATION';const oi=x.conditions.O.rows.findIndex(r=>Number(r.source_frame_index)===488);i=oi>=0?oi:0;render();updateRoi()});
-['prev','next'].forEach(k=>$(k).onclick=()=>{i+=k==='next'?1:-1;render()});$('jump').onclick=()=>{if(!d)return;const j=d.conditions.O.rows.findIndex(r=>Number(r.source_frame_index)===488);if(j>=0){i=j;render()}};$('roiImg').onload=drawRoi;['x0','y0','x1','y1'].forEach(k=>$(k).oninput=drawRoi);$('roiCanvas').onmousemove=e=>{const r=$('roiCanvas').getBoundingClientRect();$('roiCoord').textContent=`源像素 x=${((e.clientX-r.left)*$('roiCanvas').width/r.width).toFixed(1)}, y=${((e.clientY-r.top)*$('roiCanvas').height/r.height).toFixed(1)}（宽480×高360）`};$('roiConfirm').onchange=()=>{$('roiState').textContent=$('roiConfirm').checked?'READY_TO_SAVE_USER_CONFIRMATION':'PENDING_USER_CONFIRMATION'};$('roiSave').onclick=()=>{const r=rect();if(!$('roiConfirm').checked||!(r[0]<r[2]&&r[1]<r[3])){alert('请先确认复选框，并保证 ROI 面积为正');return}const payload={status:'USER_CONFIRMED_SOURCE_PIXEL_ROI',source:'04LAX',role:'fake',window_id:'0002_MANIP_25::fake',source_frame_index:488,pts_s:16.28294961628295,image_size_hw:[360,480],rectangle_xyxy:r,not_ground_truth:true,confirmed_at:new Date().toISOString()};localStorage.setItem(roiKey,JSON.stringify({rectangle_xyxy:r,confirmed:true}));$('roiState').textContent='CONFIRMED_USER_LOCAL; JSON downloaded';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='roi_mapping_04LAX_frame488.json';a.click()};
+Promise.all([fetch('../case_data.json').then(x=>x.json()),fetch('trajectory_data.json').then(x=>x.json())]).then(([x,t])=>{d=x;trace=t;const tr=x.manifest.support.selected_triplet,h=x.manifest.history_evaluation;$('facts').innerHTML=`<p>source=${esc(x.manifest.source_id)} role=${esc(x.manifest.role)} window=${esc(x.manifest.window_id)}; init frame=${x.manifest.query_initialization.source_frame_index} PTS=${Number(x.manifest.query_initialization.timestamp_s).toFixed(6)} s; frame488=${h.target_frame_status[1].phase} (${Number(h.target_frame_status[1].relative_to_initialization_s).toFixed(6)} s after init, model target=${h.target_frame_status[1].model_evaluation_frame}); H groups=${x.manifest.support.h_group_count} (member slots=${x.manifest.support.h_member_slot_count}), B groups=${x.manifest.support.b_group_count}, H pairs=${x.manifest.support.h_pair_count}, H triplets=${x.manifest.support.h_triplet_count}; selected triplet=${tr?tr.triplet_id:'none'}.</p>`;const saved=localStorage.getItem(roiKey);const r=saved?JSON.parse(saved):{rectangle_xyxy:x.manifest.roi.suggested_rectangle_xyxy||[110,0,370,359],confirmed:false};['x0','y0','x1','y1'].forEach((k,n)=>$(k).value=r.rectangle_xyxy[n]);$('roiConfirm').checked=!!r.confirmed;$('roiState').textContent=r.confirmed?'CONFIRMED_USER_LOCAL':'PENDING_USER_CONFIRMATION';const oi=x.conditions.O.rows.findIndex(r=>Number(r.source_frame_index)===488);i=oi>=0?oi:0;render();updateRoi()});
+['prev','next'].forEach(k=>$(k).onclick=()=>{i+=k==='next'?1:-1;render()});$('jump').onclick=()=>{if(!d)return;const j=d.conditions.O.rows.findIndex(r=>Number(r.source_frame_index)===488);if(j>=0){i=j;render()}};$('pointId').oninput=()=>{selectedId=Math.max(0,Math.min(288,Number($('pointId').value)||0));render()};['showIds','showTrail'].forEach(k=>$(k).onchange=()=>render());['O','R','T'].forEach(panel=>$(panel.toLowerCase()+'Canvas').onclick=e=>{if(!d||!trace)return;const rec=trace.conditions[panel],sourceFrame=d.conditions.O.rows[i].source_frame_index,j=rec.frame_indices.indexOf(Number(sourceFrame));if(j<0)return;const box=$(panel.toLowerCase()+'Canvas').getBoundingClientRect(),x=(e.clientX-box.left)*$(panel.toLowerCase()+'Canvas').width/box.width,y=(e.clientY-box.top)*$(panel.toLowerCase()+'Canvas').height/box.height;let best=-1,dist=Infinity;rec.uv[j].forEach((q,n)=>{if(!q||!rec.uv_finite[j][n]||!rec.visibility[j][n])return;const dd=(q[0]-x)**2+(q[1]-y)**2;if(dd<dist){dist=dd;best=n}});if(best>=0&&dist<400){selectedId=best;$('pointId').value=best;render()}});$('roiImg').onload=drawRoi;['x0','y0','x1','y1'].forEach(k=>$(k).oninput=drawRoi);$('roiCanvas').onmousemove=e=>{const r=$('roiCanvas').getBoundingClientRect();$('roiCoord').textContent=`源像素 x=${((e.clientX-r.left)*$('roiCanvas').width/r.width).toFixed(1)}, y=${((e.clientY-r.top)*$('roiCanvas').height/r.height).toFixed(1)}（宽480×高360）`};$('roiConfirm').onchange=()=>{$('roiState').textContent=$('roiConfirm').checked?'READY_TO_SAVE_USER_CONFIRMATION':'PENDING_USER_CONFIRMATION'};$('roiSave').onclick=()=>{const r=rect();if(!$('roiConfirm').checked||!(r[0]<r[2]&&r[1]<r[3])){alert('请先确认复选框，并保证 ROI 面积为正');return}const payload={status:'USER_CONFIRMED_SOURCE_PIXEL_ROI',source:'04LAX',role:'fake',window_id:'0002_MANIP_25::fake',source_frame_index:488,pts_s:16.28294961628295,image_size_hw:[360,480],rectangle_xyxy:r,not_ground_truth:true,confirmed_at:new Date().toISOString()};localStorage.setItem(roiKey,JSON.stringify({rectangle_xyxy:r,confirmed:true}));$('roiState').textContent='CONFIRMED_USER_LOCAL; JSON downloaded';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='roi_mapping_04LAX_frame488.json';a.click()};
+['O','R','T'].forEach(panel=>$(panel.toLowerCase()+'Canvas').addEventListener('click',()=>{selectedPanel=panel;render()}));
 </script>"""
     review = output / "review"
     review.mkdir(parents=True, exist_ok=True)
     (review / "index.html").write_text(page, encoding="utf-8")
+
+
+def _motion_stats(delta: np.ndarray, mask: np.ndarray) -> dict[str, Any]:
+    values = np.asarray(delta, dtype=np.float64)[np.asarray(mask, dtype=bool)]
+    values = values[np.isfinite(values)]
+    if values.size == 0:
+        return {"n": 0, "nonzero": 0, "mean": None, "median": None, "p95": None, "max": None}
+    return {
+        "n": int(values.size),
+        "nonzero": int(np.count_nonzero(values > 0.0)),
+        "mean": float(np.mean(values)),
+        "median": float(np.median(values)),
+        "p95": float(np.percentile(values, 95)),
+        "max": float(np.max(values)),
+    }
+
+
+def _t_motion_diagnostics(output: Path, statuses: Mapping[str, Any], manifest: Mapping[str, Any]) -> dict[str, Any]:
+    """Check saved T UV at the requested source frames without rerunning T."""
+    status = statuses.get("T", {})
+    artifact = status.get("artifact")
+    if not artifact or not Path(str(artifact)).is_file():
+        return {"status": "T_ARTIFACT_UNAVAILABLE"}
+    try:
+        with np.load(Path(str(artifact)), allow_pickle=False) as z:
+            frame_indices = np.asarray(z["frame_indices"], dtype=np.int64)
+            uv = np.asarray(z["uv"], dtype=np.float32)
+            visibility = np.asarray(z["visibility"], dtype=bool)
+        index = {int(frame): int(i) for i, frame in enumerate(frame_indices.tolist())}
+        rectangle = manifest.get("roi", {}).get("suggested_rectangle_xyxy") or [110, 0, 370, 359]
+        x0, y0, x1, y1 = (float(x) for x in rectangle)
+        pairs = ((487, 488), (488, 498), (487, 498))
+        result: dict[str, Any] = {
+            "status": "T_ARRAYS_VERIFIED",
+            "artifact": str(artifact),
+            "frame_to_array_index": {str(frame): index.get(frame) for frame in (487, 488, 498)},
+            "roi_rectangle_xyxy": [x0, y0, x1, y1],
+            "pairs": [],
+        }
+        for first, second in pairs:
+            if first not in index or second not in index:
+                result["pairs"].append({"first_frame": first, "second_frame": second, "status": "FRAME_MISSING"})
+                continue
+            ia, ib = index[first], index[second]
+            delta = np.linalg.norm(uv[ib] - uv[ia], axis=-1)
+            finite = np.isfinite(uv[ia]).all(axis=-1) & np.isfinite(uv[ib]).all(axis=-1)
+            roi = (
+                finite
+                & (uv[ia, :, 0] >= x0)
+                & (uv[ia, :, 0] < x1)
+                & (uv[ia, :, 1] >= y0)
+                & (uv[ia, :, 1] < y1)
+            )
+            result["pairs"].append({
+                "first_frame": first,
+                "second_frame": second,
+                "first_array_index": ia,
+                "second_array_index": ib,
+                "arrays_exact_equal": bool(np.array_equal(uv[ia], uv[ib], equal_nan=True)),
+                "first_visibility_count": int(np.count_nonzero(visibility[ia])),
+                "second_visibility_count": int(np.count_nonzero(visibility[ib])),
+                "all_points": _motion_stats(delta, finite),
+                "rough_roi": _motion_stats(delta, roi),
+            })
+        return result
+    except (OSError, KeyError, ValueError) as exc:
+        return {"status": "T_ARRAY_READ_FAILED", "error": f"{type(exc).__name__}: {exc}"}
 
 
 def _write_report(output: Path, manifest: Mapping[str, Any], statuses: Mapping[str, Any]) -> None:
@@ -785,6 +885,30 @@ def _write_report(output: Path, manifest: Mapping[str, Any], statuses: Mapping[s
         f"- R 几何元数据：depth `{geometry_meta.get('depth', 'UNKNOWN')}`, pose `{geometry_meta.get('pose', 'UNKNOWN')}`, pose convention `{geometry_meta.get('pose_convention', 'UNKNOWN')}`；复用耗时本轮为 `{r_status.get('geometry_elapsed_s', 'UNKNOWN')}` s（0 表示身份核验后复用，首次计算耗时保留在历史 JSON/日志）。",
         f"- T：`{t_status.get('status')}`。唯一候选为官方 CoTracker3 online（commit `{COTRACKER_SHA}`），本地官方源码和 `scaled_online.pth` 已存在时按官方 chunk API 完成二维轨迹；原始预测 UV 与 visibility 分开保存，未将不可见预测位置当 XYZ。T 当前 `geometry_status={t_status.get('geometry_status', 'UNKNOWN')}`，没有 T 三维/H/B 结果，也不与 O/R ID 连接。阻塞错误：`{t_status.get('error', '无')}`。",
         "",
+        "### T 数组和绘图索引核验",
+    ]
+    t_motion = _t_motion_diagnostics(output, statuses, manifest)
+    if t_motion.get("status") == "T_ARRAYS_VERIFIED":
+        lines.extend([
+            f"- T 不是面板占位：保存的官方预测数组为 `{t_motion['artifact']}`；源帧到数组索引为 `487→{t_motion['frame_to_array_index'].get('487')}`、`488→{t_motion['frame_to_array_index'].get('488')}`、`498→{t_motion['frame_to_array_index'].get('498')}`。页面 `trajectory_data.json` 保留该 NPZ 的每帧顺序，按源帧查索引后绘制，未广播初始 query。",
+            "- `arrays_exact_equal` 若为 false 只证明保存的 UV 数组发生变化，不证明跟踪正确；T 无 XYZ/H/B，不能把这些二维变化解释为三维结构或伪造证据。",
+            "",
+            "| 源帧对 | 数组完全相同 | 全体点位移(px): n / 非零 / median / p95 / max | 粗 ROI 位移(px): n / 非零 / median / p95 / max |",
+            "|---|---|---|---|",
+        ])
+        for pair in t_motion["pairs"]:
+            if pair.get("status") == "FRAME_MISSING":
+                lines.append(f"| {pair['first_frame']}→{pair['second_frame']} | FRAME_MISSING | NA | NA |")
+                continue
+            a, r = pair["all_points"], pair["rough_roi"]
+            def stat_text(s: Mapping[str, Any]) -> str:
+                return f"{s['n']} / {s['nonzero']} / {s['median']:.6f} / {s['p95']:.6f} / {s['max']:.6f}"
+            lines.append(f"| {pair['first_frame']}→{pair['second_frame']} | {pair['arrays_exact_equal']} | {stat_text(a)} | {stat_text(r)} |")
+        lines.append(f"- 粗 ROI 采用待用户确认的源像素框 `{t_motion['roi_rectangle_xyxy']}`；它用于观察位移，不是空间真值。T 可见数为 frame487=`{t_motion['pairs'][0].get('first_visibility_count', 'UNKNOWN')}`、frame488=`{t_motion['pairs'][0].get('second_visibility_count', 'UNKNOWN')}`、frame498=`{t_motion['pairs'][1].get('second_visibility_count', 'UNKNOWN')}`。")
+    else:
+        lines.append(f"- T 数组核验状态：`{t_motion.get('status')}`；未用静态网格冒充跟踪结果。错误：`{t_motion.get('error', '无')}`。")
+    lines += [
+        "",
         "## 历史/评估阶段和筛选链",
         "",
         "`query -> 有限UV -> visibility且UV有限 -> geometry_validity且XYZ有限 -> 保存的H/B成员与pair/triplet支撑 -> 页面显示`。frame 487/488 的下降是 canonical O 数组中 visibility/UV/geometry 共同反映的保存状态；这三个布尔层不是三个独立失败证据。frame 488 在首个 0.5 s 历史范围内，而既有模型评分目标从更晚的 frame 491 等开始。",
@@ -802,6 +926,52 @@ def _write_report(output: Path, manifest: Mapping[str, Any], statuses: Mapping[s
         "本结果不运行冻结检测器、不训练、不计算 AUROC，也不把单案例的点消失解释为伪造导致的跟踪失败。R 的前三维状态形成不等于恢复了 O 旧轨迹跨失踪事件的物理对应；T 仅为官方 online 二维替代跟踪诊断。",
     ]
     (output / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_trajectory_data(output: Path, paths: Mapping[str, Path]) -> str:
+    """Export only review-sized UV/visibility arrays for browser inspection."""
+    conditions: dict[str, Any] = {}
+    for condition, path in paths.items():
+        with np.load(path, allow_pickle=False) as z:
+            conditions[condition] = _trajectory_entry(
+                z["frame_indices"],
+                z["timestamps_s"],
+                z["uv"],
+                z["visibility"],
+                z["geometry_validity"] if "geometry_validity" in z.files else None,
+            )
+    target = output / "review" / "trajectory_data.json"
+    _write_json(target, {"conditions": conditions, "note": "review payload only; IDs are condition-local and UV null means no finite prediction was saved"})
+    return str(Path("review/trajectory_data.json"))
+
+
+def render_existing(output: Path) -> dict[str, Any]:
+    """Rebuild review JSON/HTML/report from saved artifacts without running O/R/T."""
+    case_path = output / "case_data.json"
+    manifest_path = output / "case_manifest.json"
+    if not case_path.is_file() or not manifest_path.is_file():
+        raise FileNotFoundError("existing case_data.json and case_manifest.json are required")
+    case = _load_json(case_path)
+    manifest = dict(_load_json(manifest_path))
+    statuses = case.get("conditions", {})
+    paths: dict[str, Path] = {}
+    o_artifact = manifest.get("artifact")
+    if o_artifact and Path(str(o_artifact)).is_file():
+        paths["O"] = Path(str(o_artifact))
+    for condition in ("R", "T"):
+        status = statuses.get(condition, {})
+        artifact = status.get("geometry_artifact") or status.get("artifact")
+        if artifact and Path(str(artifact)).is_file():
+            paths[condition] = Path(str(artifact))
+    if "O" not in paths:
+        raise FileNotFoundError("canonical O artifact is unavailable")
+    manifest["trajectory_data"] = _write_trajectory_data(output, paths)
+    _write_json(manifest_path, manifest)
+    case["manifest"] = manifest
+    _write_json(case_path, case)
+    _html_page(output, manifest, statuses)
+    _write_report(output, manifest, statuses)
+    return {"output": str(output), "conditions": statuses, "trajectory_data": manifest["trajectory_data"]}
 
 
 def run(output: Path, *, run_requery: bool = True, run_cotracker: bool = False) -> dict[str, Any]:
@@ -844,6 +1014,12 @@ def run(output: Path, *, run_requery: bool = True, run_cotracker: bool = False) 
     statuses["T"] = _run_cotracker(output, decoded) if run_cotracker else {"status": "NOT_RUN", "official_repo": "https://github.com/facebookresearch/co-tracker", "source_commit": COTRACKER_SHA}
     if statuses["T"].get("artifact") and (output / "frame_layer_counts_T.csv").is_file():
         statuses["T"]["rows"] = list(csv.DictReader((output / "frame_layer_counts_T.csv").open(encoding="utf-8")))
+    trajectory_paths: dict[str, Path] = {"O": PARTICLE}
+    if statuses["R"].get("artifact"):
+        trajectory_paths["R"] = Path(str(statuses["R"].get("geometry_artifact") or statuses["R"]["artifact"]))
+    if statuses["T"].get("artifact"):
+        trajectory_paths["T"] = Path(str(statuses["T"]["artifact"]))
+    manifest["trajectory_data"] = _write_trajectory_data(output, trajectory_paths)
     _write_json(output / "case_manifest.json", manifest)
     _write_json(output / "case_data.json", {"manifest": manifest, "conditions": statuses, "created_unix": time.time(), "elapsed_s": time.perf_counter() - started})
     _html_page(output, manifest, statuses)
@@ -862,7 +1038,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--no-requery", action="store_true")
     parser.add_argument("--run-cotracker", action="store_true")
+    parser.add_argument("--render-existing", action="store_true", help="rebuild review files from existing O/R/T artifacts only")
     args = parser.parse_args(argv)
+    if args.render_existing:
+        result = render_existing(args.output)
+        print(json.dumps({"output": str(args.output), "rendered_existing": True, "trajectory_data": result["trajectory_data"]}, indent=2), flush=True)
+        return 0
     result = run(args.output, run_requery=not args.no_requery, run_cotracker=args.run_cotracker)
     print(json.dumps({"output": str(args.output), "elapsed_s": result["elapsed_s"], "R": result["conditions"]["R"].get("status"), "T": result["conditions"]["T"].get("status")}, indent=2), flush=True)
     return 0

@@ -33,6 +33,29 @@ O 的源帧 487 为 `289/289/289`（可用 UV/visibility/geometry），源帧
 不能直接当成已经被模型评分的目标时刻。visibility、geometry 和 relation
 support 是同一观测链的不同筛选层，不能描述成三个独立失败证据。
 
+## 本轮 T 轨迹核验与页面修复
+
+T 并非静态网格或面板占位：`conditions/T_cotracker3_online.npz` 的状态为
+`COMPLETE_2D_TRACKS_NO_3D`，由官方 CoTracker3 online（源码 commit
+`82e02e8029753ad4ef13cf06be7f4fc5facdda4d`、官方
+`scaled_online.pth`）生成。源帧到数组索引核对为
+`487→11`、`488→12`、`498→22`；页面现在从
+`review/trajectory_data.json` 按源帧查找该索引，不使用初始 query 广播，且保留
+visibility 与预测 UV 的区别。三帧的 UV 数组均不完全相同：
+
+| 源帧对 | 全体点位移 median / p95 / max (px) | 粗人物框内位移 median / p95 / max (px) |
+|---|---:|---:|
+| 487→488 | 0.780046 / 3.624831 / 24.441378 | 1.734038 / 4.391930 / 24.441378 |
+| 488→498 | 0.503594 / 2.541998 / 3.649551 | 0.793961 / 2.835928 / 3.649551 |
+| 487→498 | 1.084733 / 5.726220 / 25.163301 | 2.316031 / 6.133122 / 25.163301 |
+
+这些非零位移只说明保存数组发生变化，不证明跟踪正确。T 仍是二维诊断，
+`XYZ`、H/B 分组和 triplet 支撑均为未计算。页面状态已分开显示二维跟踪、XYZ、
+H/B grouping 和 triplet support；可选点 ID 与最近五帧尾线均按条件本地数组工作，
+不把 O/R/T 的同号 ID 当成同一物理点。R 的 geometry 计数来自独立
+`R_geometry.npz` 的 UV、visibility、深度采样、位姿变换和有限 XYZ 联合有效性；
+R 尚未形成新轨迹的 H/B/triplet 支撑。
+
 ## ROI 与边界
 
 对话截图只用于给出源帧 488 的粗略建议框，状态是
