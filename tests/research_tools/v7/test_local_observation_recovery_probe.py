@@ -1,6 +1,7 @@
 """Pure-contract tests for the bounded local observation recovery probe."""
 
 import json
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -12,6 +13,7 @@ from research_tools.v7.local_observation_recovery_probe.probe import (
     nearest_frame,
     recent_trace_indices,
     _trajectory_entry,
+    build_r_local_structure,
     validate_roi_rect,
 )
 
@@ -95,3 +97,49 @@ def test_trajectory_payload_preserves_frame_order_and_missing_uv():
     assert payload["uv"][0][0] == [1.0, 2.0]
     assert payload["uv"][1][0] is None
     assert payload["uv_finite"] == [[True], [False]]
+
+
+def _synthetic_r_sequence() -> SimpleNamespace:
+    frame_count, track_count = 31, 6
+    timestamps = np.arange(frame_count, dtype=np.float64) / 30.0
+    base = np.asarray(
+        [[0.00, 0.00, 1.0], [0.04, 0.00, 1.0], [0.00, 0.04, 1.0],
+         [0.04, 0.04, 1.0], [0.08, 0.00, 1.0], [0.00, 0.08, 1.0]],
+        dtype=np.float64,
+    )
+    xyz = np.stack([base + np.asarray([0.001 * frame, 0.0, 0.0]) for frame in range(frame_count)])
+    return SimpleNamespace(
+        frame_indices=np.arange(frame_count, dtype=np.int64),
+        timestamps_s=timestamps,
+        frame_sizes_hw=np.tile(np.asarray([[360, 480]], dtype=np.int64), (frame_count, 1)),
+        track_ids=np.arange(100, 100 + track_count, dtype=np.int64),
+        uv=np.zeros((frame_count, track_count, 2), dtype=np.float32),
+        visibility=np.ones((frame_count, track_count), dtype=bool),
+        geometry_validity=np.ones((frame_count, track_count), dtype=bool),
+        xyz=xyz,
+    )
+
+
+def test_r_structure_uses_independent_ids_and_actual_common_support():
+    sequence = _synthetic_r_sequence()
+    structure, rows = build_r_local_structure(sequence, query_start_pts_s=0.0, query_start_frame=100)
+    assert structure["id_namespace"] == "R::independent_query_frame_488"
+    assert structure["old_condition_reused"] is False
+    assert structure["summary"]["h_valid_triplet_count"] == 3
+    assert all(all(track_id >= 100 for track_id in triplet["common_track_ids"]) for triplet in structure["support"]["triplets"])
+    assert rows[15]["support_status"] == "VALID_R_LOCAL_H"
+    assert rows[15]["structure_triplet_count"] == 1
+    assert rows[0]["common_relation_support"] is None
+
+
+def test_r_structure_keeps_missing_common_support_as_missing_not_zero():
+    sequence = _synthetic_r_sequence()
+    sequence.visibility[15, :4] = False
+    sequence.geometry_validity[15, :4] = False
+    sequence.uv[15, :4] = np.nan
+    sequence.xyz[15, :4] = np.nan
+    structure, rows = build_r_local_structure(sequence, query_start_pts_s=0.0, query_start_frame=100)
+    assert any(item["reason"] == "COMMON_VALID_MEMBERS_LT3" for item in structure["support"]["invalid_reasons"])
+    assert rows[15]["structure_triplet_count"] == 0
+    assert rows[15]["common_relation_support"] is None
+    assert rows[15]["support_status"] == "NO_R_LOCAL_H_TRIPLET_AT_FRAME"

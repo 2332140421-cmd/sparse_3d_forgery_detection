@@ -16,9 +16,19 @@ import math
 from pathlib import Path
 import sys
 import time
+from types import SimpleNamespace
 from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
+
+from research_tools.v7.local_organization_probe.grouping import (
+    build_local_groups,
+    build_local_support,
+    json_ready_local_support,
+    rebuild_components_fast,
+    validate_grouping,
+)
+from research_tools.v7.local_structural_temporal_probe.representation import compute_local_derivatives
 
 
 CASE_ID = "04LAX_fake_0002_MANIP_25"
@@ -43,6 +53,7 @@ COTRACKER_SHA = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
 COTRACKER_SOURCE = Path("/root/.cache/torch/hub/facebookresearch_co-tracker_main")
 COTRACKER_CHECKPOINT = Path("/root/.cache/torch/hub/checkpoints/scaled_online.pth")
 COTRACKER_CHECKPOINT_SHA256 = "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218"
+SEGMENTATION_CACHE_DIR = DATA_ROOT / "derived/v7_activityforensics_boundary_pooling_pilot_v1/masks"
 
 
 def nearest_frame(frame_indices: Sequence[int], timestamps_s: Sequence[float], target_s: float) -> dict[str, Any]:
@@ -476,6 +487,268 @@ def _reuse_verified_r_geometry(output: Path) -> dict[str, Any] | None:
         return None
 
 
+def _load_r_geometry_sequence(geometry_path: Path) -> SimpleNamespace:
+    """Load the saved R geometry as an immutable-in-practice review input."""
+    required = {
+        "frame_indices",
+        "timestamps_s",
+        "frame_sizes_hw",
+        "track_ids",
+        "uv",
+        "visibility",
+        "geometry_validity",
+        "xyz",
+    }
+    with np.load(geometry_path, allow_pickle=False) as arrays:
+        if not required.issubset(arrays.files):
+            missing = sorted(required.difference(arrays.files))
+            raise ValueError(f"R geometry is missing fields: {missing}")
+        values = {name: np.array(arrays[name], copy=True) for name in required}
+    frame_indices = np.asarray(values["frame_indices"], dtype=np.int64)
+    timestamps_s = np.asarray(values["timestamps_s"], dtype=np.float64)
+    frame_sizes_hw = np.asarray(values["frame_sizes_hw"], dtype=np.int64)
+    track_ids = np.asarray(values["track_ids"], dtype=np.int64)
+    uv = np.asarray(values["uv"], dtype=np.float32)
+    visibility = np.asarray(values["visibility"], dtype=bool)
+    geometry_validity = np.asarray(values["geometry_validity"], dtype=bool)
+    xyz = np.asarray(values["xyz"], dtype=np.float32)
+    if (
+        frame_indices.ndim != 1
+        or timestamps_s.shape != frame_indices.shape
+        or frame_sizes_hw.shape != (frame_indices.size, 2)
+        or uv.shape != (frame_indices.size, track_ids.size, 2)
+        or visibility.shape != uv.shape[:2]
+        or geometry_validity.shape != uv.shape[:2]
+        or xyz.shape != (frame_indices.size, track_ids.size, 3)
+    ):
+        raise ValueError("R geometry arrays have incompatible shapes")
+    if frame_indices.size == 0 or not np.all(np.isfinite(timestamps_s)) or np.any(np.diff(timestamps_s) <= 0):
+        raise ValueError("R geometry timestamps must be finite and strictly increasing")
+    if len(np.unique(track_ids)) != track_ids.size:
+        raise ValueError("R track IDs are not unique")
+    finite_xyz = np.isfinite(xyz).all(axis=-1)
+    finite_uv = np.isfinite(uv).all(axis=-1)
+    if np.any(geometry_validity & ~visibility) or np.any(geometry_validity & ~finite_xyz):
+        raise ValueError("R geometry_validity does not satisfy the saved validity contract")
+    if np.any(visibility & ~finite_uv):
+        raise ValueError("R visibility contains non-finite UV")
+    return SimpleNamespace(
+        frame_indices=frame_indices,
+        timestamps_s=timestamps_s,
+        frame_sizes_hw=frame_sizes_hw,
+        track_ids=track_ids,
+        uv=uv,
+        visibility=visibility,
+        geometry_validity=geometry_validity,
+        xyz=xyz,
+    )
+
+
+def _matching_r_segmentation_cache(query_frame: int) -> dict[str, Any] | None:
+    """Find a pre-existing mask at R's query frame without running segmentation."""
+    for path in sorted(SEGMENTATION_CACHE_DIR.glob("*.json")):
+        try:
+            metadata = _load_json(path)
+            frame_index = int(metadata.get("frame_index", -1))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            continue
+        if (
+            metadata.get("source_video") == str(FAKE_VIDEO)
+            and frame_index == int(query_frame)
+            and metadata.get("status") == "COMPLETE"
+        ):
+            return {"path": str(path), "frame_index": int(query_frame), "status": metadata.get("status")}
+    return None
+
+
+def build_r_local_structure(
+    sequence: Any,
+    *,
+    query_start_pts_s: float | None = None,
+    query_start_frame: int | None = None,
+    source_id: str = SOURCE_ID,
+    window_id: str = WINDOW_ID,
+    geometry_meta: Mapping[str, Any] | None = None,
+    source_artifact: str | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Build R-only H support from the saved new-query geometry.
+
+    The half-second history starts at R's own query PTS.  This is deliberately
+    not the O window boundary: R has no pre-query frames and its local IDs,
+    history scale, components and triplets must remain independent.
+    """
+    frame_indices = np.asarray(sequence.frame_indices, dtype=np.int64)
+    timestamps_s = np.asarray(sequence.timestamps_s, dtype=np.float64)
+    track_ids = np.asarray(sequence.track_ids, dtype=np.int64)
+    if query_start_pts_s is None:
+        query_start_pts_s = float(timestamps_s[0])
+    if query_start_frame is None:
+        query_start_frame = int(frame_indices[0])
+    query_start_pts_s = float(query_start_pts_s)
+    history_indices = np.flatnonzero(timestamps_s < query_start_pts_s + 0.5).astype(np.int64)
+    if history_indices.size == 0:
+        raise ValueError("R local history is empty")
+    components = rebuild_components_fast(sequence.xyz, sequence.geometry_validity, history_indices)
+    grouping = build_local_groups(sequence, history_indices, old_components=components)
+    grouping_validation = validate_grouping(grouping, track_ids)
+    if not grouping_validation["all_pass"]:
+        raise ValueError(f"R grouping validation failed: {grouping_validation}")
+    support = json_ready_local_support(
+        build_local_support(sequence, window_start_s=query_start_pts_s, grouping=grouping)
+    )
+    for triplet in support["triplets"]:
+        center, first, second = compute_local_derivatives(triplet["states"], triplet["timestamps_s"])
+        triplet["center_state"] = center.tolist()
+        triplet["first_derivative"] = first.tolist()
+        triplet["second_derivative"] = second.tolist()
+
+    retained_groups = [row for row in grouping["groups"] if row.get("retained")]
+    retained_slots = sorted({int(slot) for row in retained_groups for slot in row["member_slots"]})
+    frame_to_triplets: dict[int, list[dict[str, Any]]] = {}
+    for triplet in support["triplets"]:
+        for frame in triplet["frame_indices"]:
+            frame_to_triplets.setdefault(int(frame), []).append(triplet)
+    frame_rows: list[dict[str, Any]] = []
+    visible = np.asarray(sequence.visibility, dtype=bool)
+    geometry = np.asarray(sequence.geometry_validity, dtype=bool)
+    finite_xyz = np.isfinite(np.asarray(sequence.xyz)).all(axis=-1)
+    for array_index, frame in enumerate(frame_indices.tolist()):
+        base = layer_counts(
+            sequence.uv[array_index],
+            visible[array_index],
+            geometry[array_index],
+            sequence.xyz[array_index],
+            group_slots=retained_slots,
+            pair_slots=(),
+        )
+        group_mask = np.zeros(track_ids.size, dtype=bool)
+        group_mask[retained_slots] = True
+        group_geometry_count = int(np.count_nonzero(group_mask & geometry[array_index] & finite_xyz[array_index]))
+        relation_count = 0
+        triplet_count = 0
+        for triplet in frame_to_triplets.get(int(frame), []):
+            position = triplet["frame_indices"].index(int(frame))
+            if position < 0:
+                continue
+            triplet_count += 1
+            for left, right in triplet["pair_indices"]:
+                relation_count += int(bool(geometry[array_index, int(left)] and geometry[array_index, int(right)]))
+        frame_rows.append(
+            {
+                "condition": "R",
+                "array_index": int(array_index),
+                "source_frame_index": int(frame),
+                "timestamp_s": float(timestamps_s[array_index]),
+                **base,
+                "local_group_geometry_valid_count": group_geometry_count,
+                "structure_triplet_count": triplet_count,
+                "common_relation_support": relation_count if triplet_count else None,
+                "geometry_status": "REUSED_IDENTITY_VERIFIED_R_3D",
+                "support_status": "VALID_R_LOCAL_H" if triplet_count else "NO_R_LOCAL_H_TRIPLET_AT_FRAME",
+                "query_start_frame": int(query_start_frame),
+            }
+        )
+    b_cache = _matching_r_segmentation_cache(int(query_start_frame))
+    if b_cache is None:
+        b_status = "NOT_COMPUTED_NO_MATCHING_R_HISTORY_START_SEGMENTATION_CACHE"
+        b_reason = "Existing masks contain source frame 476, not R query frame 488; O segmentation is not reused."
+    else:
+        b_status = "MATCHING_R_HISTORY_START_SEGMENTATION_CACHE_AVAILABLE_NOT_USED"
+        b_reason = "A matching cache exists, but B was not recomputed in this bounded H-only completion."
+    compact_grouping = {
+        key: value
+        for key, value in grouping.items()
+        if key not in {"parent_components"}
+    }
+    compact_grouping["parent_components"] = [
+        {
+            key: row[key]
+            for key in ("parent_component_id", "track_ids", "member_slots", "history_frame_count")
+            if key in row
+        }
+        for row in grouping["parent_components"]
+    ]
+    structure = {
+        "schema_version": 1,
+        "condition": "R",
+        "source_id": source_id,
+        "window_id": window_id,
+        "id_namespace": "R::independent_query_frame_488",
+        "old_condition_reused": False,
+        "source_artifact": source_artifact,
+        "geometry_metadata": dict(geometry_meta or {}),
+        "query_start": {"source_frame_index": int(query_start_frame), "timestamp_s": query_start_pts_s},
+        "history_window_s": 0.5,
+        "history_boundary_s": query_start_pts_s + 0.5,
+        "history_frame_indices": frame_indices[history_indices].astype(int).tolist(),
+        "history_timestamps_s": timestamps_s[history_indices].astype(float).tolist(),
+        "evaluation_frame_indices": frame_indices[timestamps_s >= query_start_pts_s + 0.5].astype(int).tolist(),
+        "evaluation_timestamps_s": timestamps_s[timestamps_s >= query_start_pts_s + 0.5].astype(float).tolist(),
+        "grouping": compact_grouping,
+        "grouping_validation": grouping_validation,
+        "support": support,
+        "b_status": b_status,
+        "b_reason": b_reason,
+        "b_cache": b_cache,
+        "summary": {
+            "parent_component_count": len(grouping["parent_components"]),
+            "group_count_total": len(grouping["groups"]),
+            "h_retained_group_count": int(grouping["retained_group_count"]),
+            "h_retained_member_slot_count": len(retained_slots),
+            "h_retained_pair_count": int(sum(len(row["member_slots"]) * (len(row["member_slots"]) - 1) // 2 for row in retained_groups)),
+            "h_valid_triplet_count": int(support["valid_triplet_count"]),
+            "h_invalid_reason_counts": {},
+            "frames_with_triplet_support": sorted(int(frame) for frame, rows in frame_to_triplets.items() if rows),
+        },
+    }
+    from collections import Counter
+
+    structure["summary"]["h_invalid_reason_counts"] = dict(Counter(item["reason"] for item in support["invalid_reasons"]))
+    return structure, frame_rows
+
+
+def _build_r_structure(output: Path) -> dict[str, Any]:
+    """Create the H-only R structure artifact from saved arrays, never a frontend run."""
+    geometry_path = output / "conditions" / "R_geometry.npz"
+    r_path = output / "conditions" / "R_requery.npz"
+    metadata_path = output / "conditions" / "R_geometry.json"
+    if not geometry_path.is_file() or not r_path.is_file() or not metadata_path.is_file():
+        raise FileNotFoundError("verified R_requery, R_geometry and R_geometry metadata are required")
+    sequence = _load_r_geometry_sequence(geometry_path)
+    with np.load(r_path, allow_pickle=False) as r_arrays:
+        for key in ("frame_indices", "timestamps_s", "uv", "visibility"):
+            if not np.array_equal(r_arrays[key], getattr(sequence, key), equal_nan=True):
+                raise ValueError(f"R geometry and R trajectory disagree in {key}")
+    metadata = _load_json(metadata_path)
+    structure, rows = build_r_local_structure(
+        sequence,
+        query_start_pts_s=float(sequence.timestamps_s[0]),
+        query_start_frame=int(sequence.frame_indices[0]),
+        geometry_meta=metadata,
+        source_artifact=str(r_path),
+    )
+    structure_path = output / "conditions" / "R_structure.json"
+    _write_json(structure_path, structure)
+    _write_csv(output / "frame_layer_counts_R.csv", rows)
+    summary = structure["summary"]
+    status = {
+        "structure_status": "COMPLETE_R_LOCAL_H",
+        "structure_artifact": str(structure_path),
+        "id_namespace": structure["id_namespace"],
+        "old_condition_reused": False,
+        "h_group_count": summary["h_retained_group_count"],
+        "h_group_count_total": summary["group_count_total"],
+        "h_member_slot_count": summary["h_retained_member_slot_count"],
+        "h_retained_pair_count": summary["h_retained_pair_count"],
+        "h_valid_triplet_count": summary["h_valid_triplet_count"],
+        "h_support_status": structure["support"]["support_status"],
+        "b_status": structure["b_status"],
+        "b_reason": structure["b_reason"],
+        "structure_frame_rows": len(rows),
+    }
+    return {"structure": structure, "rows": rows, "status": status}
+
+
 def _run_requery(output: Path, *, max_extra_s: float = 1.0) -> dict[str, Any]:
     started = time.perf_counter()
     result: dict[str, Any] = {"condition": "R", "status": "NOT_RUN"}
@@ -732,6 +1005,7 @@ def _html_page(output: Path, manifest: Mapping[str, Any], statuses: Mapping[str,
 <div id='facts'></div>
 <div><button id='prev'>上一帧</button><button id='next'>下一帧</button><button id='jump'>跳到源帧488</button><span id='frame'></span></div>
 <div class='panel'>选点 ID（条件内）：<input id='pointId' type='number' min='0' max='288' value='0'> <label><input id='showIds' type='checkbox' checked>显示 ID</label> <label><input id='showTrail' type='checkbox' checked>显示最近5帧尾线</label>；点击 O/R/T 任一点可选择该条件自己的 ID。跨条件同号不表示同一物理点。</div>
+<div class='panel'><b>R 独立 H 结构核对：</b>组 <select id='rGroup'></select> triplet <select id='rTriplet'></select> <label><input id='rGroupLayer' type='checkbox' checked>R组成员</label> <label><input id='rCommonLayer' type='checkbox' checked>共同成员</label> <label><input id='rPairLayer' type='checkbox' checked>有效 pair</label> <span id='rStructureStatus' class='muted'>结构载荷读取中…</span><br><span class='muted'>橙色=保留组成员，青色=当前 triplet 三帧共同成员，紫色连线=实际有效 pair；未高亮的可见点未参与所选结构。R 组/ID 仅在 R 命名空间内解释。</span></div>
 <div class='grid'><section class='panel'><h2>O 原有结果</h2><div id='oStatus'></div><div class='view'><img id='oImg'><canvas id='oCanvas'></canvas></div></section>
 <section class='panel'><h2>R 重新查询</h2><div id='rStatus'></div><div class='view'><img id='rImg'><canvas id='rCanvas'></canvas></div></section>
 <section class='panel'><h2>T CoTracker3 online</h2><div id='tStatus'></div><div class='view'><img id='tImg'><canvas id='tCanvas'></canvas></div></section></div>
@@ -743,18 +1017,21 @@ def _html_page(output: Path, manifest: Mapping[str, Any], statuses: Mapping[str,
 <div id='roiCoord' class='muted'>把鼠标移到原图上查看源像素坐标。</div><div id='roiState' class='warn'>PENDING_USER_CONFIRMATION</div></section>
 <p>图例：<span class='ok'>绿色=当前可见且有 UV</span>；状态文字区分未查询、二维轨迹和三维几何。源帧 487/488 的 PTS 是 16.249583/16.282950 s。R 查询启动前显示 NOT QUERIED；T 的不可见预测 UV 与有效观测分开保存。</p>
 <script>
-let d=null,trace=null,i=0,selectedPanel='O',selectedId=0;const $=x=>document.getElementById(x);const roiKey='v7-04LAX-source-frame-488-roi';
+let d=null,trace=null,rStructure=null,i=0,selectedPanel='O',selectedId=0,selectedRGroup=0,selectedRTriplet=0;const $=x=>document.getElementById(x);const roiKey='v7-04LAX-source-frame-488-roi';
 function esc(x){return String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function statusHtml(panel,row,p){const twoD=panel==='O'?'REUSED_CANONICAL_2D':(panel==='R'?'REQUERY_2D_TRACKS':(panel==='T'?'OFFICIAL_COTRACKER3_ONLINE_2D':'UNKNOWN'));const xyz=panel==='O'?'REUSED_CANONICAL_XYZ':(row.geometry_status||'NOT_COMPUTED');const hb=panel==='O'?'SAVED_H_B':(row.support_status||'NOT_COMPUTED');const trip=panel==='O'?'SAVED_H_B_TRIPLET':(panel==='R'?'NOT_COMPUTED_NEW_ID':'NOT_COMPUTED_T');return `condition: ${p.status||'UNKNOWN'}<br>2D tracking: ${twoD}; frame=${row.source_frame_index}, PTS=${Number(row.timestamp_s).toFixed(6)} s, UV=${row.uv_available_count}, visible=${row.visibility_count}<br>XYZ: ${xyz}; H/B grouping: ${hb}; triplet support: ${trip}`}
+function statusHtml(panel,row,p){const twoD=panel==='O'?'REUSED_CANONICAL_2D':(panel==='R'?'REQUERY_2D_TRACKS':(panel==='T'?'OFFICIAL_COTRACKER3_ONLINE_2D':'UNKNOWN'));const xyz=panel==='O'?'REUSED_CANONICAL_XYZ':(row.geometry_status||'NOT_COMPUTED');const hb=panel==='O'?'SAVED_H_B':(row.support_status||'NOT_COMPUTED');const trip=panel==='O'?'SAVED_H_B_TRIPLET':(panel==='R'?(Number(row.structure_triplet_count||0)>0?`R_LOCAL_H_TRIPLETS=${row.structure_triplet_count}`:'NO_R_LOCAL_H_TRIPLET_AT_FRAME'):'NOT_COMPUTED_T');return `condition: ${p.status||'UNKNOWN'}<br>2D tracking: ${twoD}; frame=${row.source_frame_index}, PTS=${Number(row.timestamp_s).toFixed(6)} s, UV=${row.uv_available_count}, visible=${row.visibility_count}<br>XYZ: ${xyz}; H/B grouping: ${hb}; triplet support: ${trip}`}
 function overlay(panel,j){const rec=trace&&trace.conditions[panel],can=$(panel.toLowerCase()+'Canvas');if(!rec||j<0||!can.width)return;const g=can.getContext('2d'),id=panel===selectedPanel?Math.max(0,Math.min(Number(selectedId)||0,rec.track_ids.length-1)):-1;g.clearRect(0,0,can.width,can.height);if(id<0)return;const uv=rec.uv[j]?.[id];const finite=uv&&rec.uv_finite[j]?.[id];if($('showTrail').checked){const start=Math.max(0,j-4);g.strokeStyle='#facc15';g.lineWidth=3;g.beginPath();let active=false;for(let k=start;k<=j;k++){const q=rec.uv[k]?.[id];if(!q||!rec.uv_finite[k]?.[id]||!rec.visibility[k]?.[id]){active=false;continue}if(active)g.lineTo(q[0],q[1]);else g.moveTo(q[0],q[1]);active=true}g.stroke()}if(finite){g.fillStyle='#ffffff';g.strokeStyle='#ef4444';g.lineWidth=2;g.beginPath();g.arc(uv[0],uv[1],5,0,Math.PI*2);g.fill();g.stroke();if($('showIds').checked){g.fillStyle='#ffffff';g.font='bold 14px sans-serif';g.fillText(`id=${id}`,uv[0]+7,uv[1]-7)}}}
 function draw(panel){const p=d.conditions[panel],img=$(panel.toLowerCase()+'Img'),can=$(panel.toLowerCase()+'Canvas');if(!p||!p.rows){img.removeAttribute('src');can.getContext('2d').clearRect(0,0,can.width,can.height);$(panel.toLowerCase()+'Status').textContent='NOT_QUERIED';return}const sourceFrame=d.conditions.O.rows[i].source_frame_index;const j=p.rows.findIndex(r=>Number(r.source_frame_index)===Number(sourceFrame));const traceIndex=trace?.conditions?.[panel]?.frame_indices?.indexOf(Number(sourceFrame))??-1;if(j<0||traceIndex<0||!p.screenshots||!p.screenshots[j]){img.removeAttribute('src');can.getContext('2d').clearRect(0,0,can.width,can.height);$(panel.toLowerCase()+'Status').textContent=panel==='R'?'NOT_QUERIED_BEFORE_R_START / OUTSIDE_R_RANGE':(p.status||'NO_RESULT');return}const row=p.rows[j];$(panel.toLowerCase()+'Status').innerHTML=statusHtml(panel,row,p);img.onload=()=>{can.width=img.naturalWidth;can.height=img.naturalHeight;overlay(panel,traceIndex)};img.src='../'+p.screenshots[j];if(img.complete){can.width=img.naturalWidth;can.height=img.naturalHeight;overlay(panel,traceIndex)}}
-function render(){const o=d.conditions.O;if(!o)return;i=Math.max(0,Math.min(i,o.rows.length-1));$('frame').textContent=` O[${i}/${o.rows.length-1}] source_frame=${o.rows[i].source_frame_index} PTS=${Number(o.rows[i].timestamp_s).toFixed(6)} s phase=${o.rows[i].phase||''}`;draw('O');draw('R');draw('T')}
+function populateRSelectors(){if(!rStructure)return;const groups=(rStructure.grouping?.groups||[]).filter(x=>x.retained);const trips=rStructure.support?.triplets||[];$('rGroup').innerHTML=groups.map((x,n)=>`<option value='${n}'>G${x.local_group_id} (${x.track_ids.length} members)</option>`).join('');$('rTriplet').innerHTML=trips.map((x,n)=>`<option value='${n}'>T${x.triplet_id} / G${x.local_group_id} (${x.common_track_ids.length} common)</option>`).join('');selectedRGroup=Math.min(selectedRGroup,Math.max(0,groups.length-1));selectedRTriplet=Math.min(selectedRTriplet,Math.max(0,trips.length-1));$('rGroup').value=String(selectedRGroup);$('rTriplet').value=String(selectedRTriplet)}
+function overlayRStructure(j){const s=rStructure,rec=trace?.conditions?.R,can=$('rCanvas');if(!s||!rec||j<0||!can.width)return;const groups=(s.grouping?.groups||[]).filter(x=>x.retained),trips=s.support?.triplets||[],group=groups[selectedRGroup],trip=trips[selectedRTriplet],uv=rec.uv[j]||[],vis=rec.visibility[j]||[],geo=rec.geometry_validity?.[j]||[],g=can.getContext('2d');const point=(slot,colour,radius)=>{const q=uv[slot];if(!q||!rec.uv_finite[j]?.[slot]||!vis[slot])return false;g.beginPath();g.arc(q[0],q[1],radius,0,Math.PI*2);g.fillStyle=colour;g.fill();return true};let groupCount=0,commonCount=0,pairCount=0;if($('rGroupLayer').checked&&group){for(const slot of group.member_slots)if(point(Number(slot),'#f59e0b',5))groupCount++}if($('rCommonLayer').checked&&trip){for(const slot of trip.common_member_indices)if(point(Number(slot),'#22d3ee',7))commonCount++}if($('rPairLayer').checked&&trip){g.strokeStyle='#e879f9';g.lineWidth=2;for(const pair of trip.pair_indices){const a=Number(pair[0]),b=Number(pair[1]),qa=uv[a],qb=uv[b];if(qa&&qb&&rec.uv_finite[j]?.[a]&&rec.uv_finite[j]?.[b]&&vis[a]&&vis[b]&&geo[a]&&geo[b]){g.beginPath();g.moveTo(qa[0],qa[1]);g.lineTo(qb[0],qb[1]);g.stroke();pairCount++}}}const frame=Number(rec.frame_indices[j]);$('rStructureStatus').textContent=`H=${s.summary?.h_retained_group_count??'NA'}组/${s.summary?.h_valid_triplet_count??'NA'} triplet；当前 frame ${frame}：组可见 ${groupCount}，共同成员 ${commonCount}，有效 pair ${pairCount}；B=${s.b_status||'UNKNOWN'}`}
+function render(){const o=d.conditions.O;if(!o)return;i=Math.max(0,Math.min(i,o.rows.length-1));$('frame').textContent=` O[${i}/${o.rows.length-1}] source_frame=${o.rows[i].source_frame_index} PTS=${Number(o.rows[i].timestamp_s).toFixed(6)} s phase=${o.rows[i].phase||''}`;draw('O');draw('R');draw('T');if(rStructure){const r=trace?.conditions?.R,j=r?Number(r.frame_indices.indexOf(Number(o.rows[i].source_frame_index))):-1;if(j>=0)requestAnimationFrame(()=>overlayRStructure(j))}}
 function rect(){return ['x0','y0','x1','y1'].map(k=>Number($(k).value))}
 function drawRoi(){const img=$('roiImg'),c=$('roiCanvas');if(!img.naturalWidth)return;c.width=img.naturalWidth;c.height=img.naturalHeight;const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);const r=rect();if(r.every(Number.isFinite)){g.strokeStyle='#facc15';g.lineWidth=3;g.strokeRect(r[0],r[1],r[2]-r[0],r[3]-r[1])}}
 function updateRoi(){['x0','y0','x1','y1'].forEach(k=>$(k).addEventListener('input',drawRoi));drawRoi();}
 Promise.all([fetch('../case_data.json').then(x=>x.json()),fetch('trajectory_data.json').then(x=>x.json())]).then(([x,t])=>{d=x;trace=t;const tr=x.manifest.support.selected_triplet,h=x.manifest.history_evaluation;$('facts').innerHTML=`<p>source=${esc(x.manifest.source_id)} role=${esc(x.manifest.role)} window=${esc(x.manifest.window_id)}; init frame=${x.manifest.query_initialization.source_frame_index} PTS=${Number(x.manifest.query_initialization.timestamp_s).toFixed(6)} s; frame488=${h.target_frame_status[1].phase} (${Number(h.target_frame_status[1].relative_to_initialization_s).toFixed(6)} s after init, model target=${h.target_frame_status[1].model_evaluation_frame}); H groups=${x.manifest.support.h_group_count} (member slots=${x.manifest.support.h_member_slot_count}), B groups=${x.manifest.support.b_group_count}, H pairs=${x.manifest.support.h_pair_count}, H triplets=${x.manifest.support.h_triplet_count}; selected triplet=${tr?tr.triplet_id:'none'}.</p>`;const saved=localStorage.getItem(roiKey);const r=saved?JSON.parse(saved):{rectangle_xyxy:x.manifest.roi.suggested_rectangle_xyxy||[110,0,370,359],confirmed:false};['x0','y0','x1','y1'].forEach((k,n)=>$(k).value=r.rectangle_xyxy[n]);$('roiConfirm').checked=!!r.confirmed;$('roiState').textContent=r.confirmed?'CONFIRMED_USER_LOCAL':'PENDING_USER_CONFIRMATION';const oi=x.conditions.O.rows.findIndex(r=>Number(r.source_frame_index)===488);i=oi>=0?oi:0;render();updateRoi()});
 ['prev','next'].forEach(k=>$(k).onclick=()=>{i+=k==='next'?1:-1;render()});$('jump').onclick=()=>{if(!d)return;const j=d.conditions.O.rows.findIndex(r=>Number(r.source_frame_index)===488);if(j>=0){i=j;render()}};$('pointId').oninput=()=>{selectedId=Math.max(0,Math.min(288,Number($('pointId').value)||0));render()};['showIds','showTrail'].forEach(k=>$(k).onchange=()=>render());['O','R','T'].forEach(panel=>$(panel.toLowerCase()+'Canvas').onclick=e=>{if(!d||!trace)return;const rec=trace.conditions[panel],sourceFrame=d.conditions.O.rows[i].source_frame_index,j=rec.frame_indices.indexOf(Number(sourceFrame));if(j<0)return;const box=$(panel.toLowerCase()+'Canvas').getBoundingClientRect(),x=(e.clientX-box.left)*$(panel.toLowerCase()+'Canvas').width/box.width,y=(e.clientY-box.top)*$(panel.toLowerCase()+'Canvas').height/box.height;let best=-1,dist=Infinity;rec.uv[j].forEach((q,n)=>{if(!q||!rec.uv_finite[j][n]||!rec.visibility[j][n])return;const dd=(q[0]-x)**2+(q[1]-y)**2;if(dd<dist){dist=dd;best=n}});if(best>=0&&dist<400){selectedId=best;$('pointId').value=best;render()}});$('roiImg').onload=drawRoi;['x0','y0','x1','y1'].forEach(k=>$(k).oninput=drawRoi);$('roiCanvas').onmousemove=e=>{const r=$('roiCanvas').getBoundingClientRect();$('roiCoord').textContent=`源像素 x=${((e.clientX-r.left)*$('roiCanvas').width/r.width).toFixed(1)}, y=${((e.clientY-r.top)*$('roiCanvas').height/r.height).toFixed(1)}（宽480×高360）`};$('roiConfirm').onchange=()=>{$('roiState').textContent=$('roiConfirm').checked?'READY_TO_SAVE_USER_CONFIRMATION':'PENDING_USER_CONFIRMATION'};$('roiSave').onclick=()=>{const r=rect();if(!$('roiConfirm').checked||!(r[0]<r[2]&&r[1]<r[3])){alert('请先确认复选框，并保证 ROI 面积为正');return}const payload={status:'USER_CONFIRMED_SOURCE_PIXEL_ROI',source:'04LAX',role:'fake',window_id:'0002_MANIP_25::fake',source_frame_index:488,pts_s:16.28294961628295,image_size_hw:[360,480],rectangle_xyxy:r,not_ground_truth:true,confirmed_at:new Date().toISOString()};localStorage.setItem(roiKey,JSON.stringify({rectangle_xyxy:r,confirmed:true}));$('roiState').textContent='CONFIRMED_USER_LOCAL; JSON downloaded';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='roi_mapping_04LAX_frame488.json';a.click()};
 ['O','R','T'].forEach(panel=>$(panel.toLowerCase()+'Canvas').addEventListener('click',()=>{selectedPanel=panel;render()}));
+fetch('../conditions/R_structure.json').then(x=>x.ok?x.json():null).then(s=>{rStructure=s;if(!s){$('rStructureStatus').textContent='R_STRUCTURE_NOT_AVAILABLE';return}populateRSelectors();$('rGroup').onchange=()=>{selectedRGroup=Number($('rGroup').value)||0;render()};$('rTriplet').onchange=()=>{selectedRTriplet=Number($('rTriplet').value)||0;render()};['rGroupLayer','rCommonLayer','rPairLayer'].forEach(k=>$(k).onchange=()=>render());$('rImg').addEventListener('load',()=>{const o=d?.conditions?.O,r=trace?.conditions?.R;if(!o||!r)return;const j=r.frame_indices.indexOf(Number(o.rows[i].source_frame_index));if(j>=0)setTimeout(()=>overlayRStructure(j),0)});render()}).catch(e=>{$('rStructureStatus').textContent='R_STRUCTURE_LOAD_FAILED: '+e});
 </script>"""
     review = output / "review"
     review.mkdir(parents=True, exist_ok=True)
@@ -847,6 +1124,14 @@ def _write_report(output: Path, manifest: Mapping[str, Any], statuses: Mapping[s
         r_count_rows = list(csv.DictReader(r_count_path.open(encoding="utf-8")))
     r_key_counts = next((row for row in r_count_rows if int(row["source_frame_index"]) == 488), None)
     r_last_counts = r_count_rows[-1] if r_count_rows else None
+    r_structure = {}
+    structure_path = output / "conditions" / "R_structure.json"
+    if structure_path.is_file():
+        try:
+            r_structure = _load_json(structure_path)
+        except (OSError, json.JSONDecodeError):
+            r_structure = {}
+    r_summary = r_structure.get("summary", {})
     lines = [
         "# V7 04LAX fake 局部观测恢复诊断结果",
         "",
@@ -881,7 +1166,7 @@ def _write_report(output: Path, manifest: Mapping[str, Any], statuses: Mapping[s
         "",
         "## R/T",
         "",
-        f"- R：`{r_status.get('status')}`。从源帧 `{r_status.get('query_start_frame', 'UNKNOWN')}`（PTS `{r_status.get('query_start_pts_s', 'UNKNOWN')}`）重新以 17×17/289 点查询；R 的 `R_geometry.npz` 已按帧、PTS、query 数、UV/visibility/XYZ shape 复核并复用。Depth Pro / Open3D RGB-D odometry 形成了独立 R 三维状态；frame488 几何有效 `{r_key_counts.get('geometry_valid_count') if r_key_counts else 'UNKNOWN'}`，末帧 518 几何有效 `{r_last_counts.get('geometry_valid_count') if r_last_counts else 'UNKNOWN'}`，逐帧见 `frame_layer_counts_R.csv`。新轨迹没有复用 O 的 H/B 成员，因此 `support_status=NOT_COMPUTED_NEW_ID_NO_REUSED_HB`，不宣称恢复旧 ID 的跨失踪对应。",
+        f"- R：`{r_status.get('status')}`。从源帧 `{r_status.get('query_start_frame', 'UNKNOWN')}`（PTS `{r_status.get('query_start_pts_s', 'UNKNOWN')}`）重新以 17×17/289 点查询；R 的 `R_geometry.npz` 已按帧、PTS、query 数、UV/visibility/XYZ shape 复核并复用。Depth Pro / Open3D RGB-D odometry 形成了独立 R 三维状态；frame488 几何有效 `{r_key_counts.get('geometry_valid_count') if r_key_counts else 'UNKNOWN'}`，末帧 518 几何有效 `{r_last_counts.get('geometry_valid_count') if r_last_counts else 'UNKNOWN'}`，逐帧见 `frame_layer_counts_R.csv`。R 结构状态为 `{r_status.get('structure_status', 'NOT_COMPUTED')}`，只使用 R 自己的 ID、历史尺度、H 分组与 triplet，不连接 O 旧 ID。",
         f"- R 几何元数据：depth `{geometry_meta.get('depth', 'UNKNOWN')}`, pose `{geometry_meta.get('pose', 'UNKNOWN')}`, pose convention `{geometry_meta.get('pose_convention', 'UNKNOWN')}`；复用耗时本轮为 `{r_status.get('geometry_elapsed_s', 'UNKNOWN')}` s（0 表示身份核验后复用，首次计算耗时保留在历史 JSON/日志）。",
         f"- T：`{t_status.get('status')}`。唯一候选为官方 CoTracker3 online（commit `{COTRACKER_SHA}`），本地官方源码和 `scaled_online.pth` 已存在时按官方 chunk API 完成二维轨迹；原始预测 UV 与 visibility 分开保存，未将不可见预测位置当 XYZ。T 当前 `geometry_status={t_status.get('geometry_status', 'UNKNOWN')}`，没有 T 三维/H/B 结果，也不与 O/R ID 连接。阻塞错误：`{t_status.get('error', '无')}`。",
         "",
@@ -907,7 +1192,40 @@ def _write_report(output: Path, manifest: Mapping[str, Any], statuses: Mapping[s
         lines.append(f"- 粗 ROI 采用待用户确认的源像素框 `{t_motion['roi_rectangle_xyxy']}`；它用于观察位移，不是空间真值。T 可见数为 frame487=`{t_motion['pairs'][0].get('first_visibility_count', 'UNKNOWN')}`、frame488=`{t_motion['pairs'][0].get('second_visibility_count', 'UNKNOWN')}`、frame498=`{t_motion['pairs'][1].get('second_visibility_count', 'UNKNOWN')}`。")
     else:
         lines.append(f"- T 数组核验状态：`{t_motion.get('status')}`；未用静态网格冒充跟踪结果。错误：`{t_motion.get('error', '无')}`。")
-    lines += [
+    r_lines = [
+        "",
+        "## R 独立结构支撑（H）",
+        "",
+        f"- R 的局部历史从自己的查询起点 frame `{r_structure.get('query_start', {}).get('source_frame_index', r_status.get('query_start_frame', 'UNKNOWN'))}` / PTS `{r_structure.get('query_start', {}).get('timestamp_s', r_status.get('query_start_pts_s', 'UNKNOWN'))}` 开始，边界为 `{r_structure.get('history_boundary_s', 'UNKNOWN')}` s；历史帧与评估帧分别见 `conditions/R_structure.json`。这与 O 的 frame476 起始历史不是同一时间范围，不能当作匹配检测对照。",
+        f"- R 结构身份域：`{r_structure.get('id_namespace', r_status.get('id_namespace', 'UNKNOWN'))}`；`old_condition_reused={r_structure.get('old_condition_reused', 'UNKNOWN')}`。几何来源为 `{r_structure.get('source_artifact', 'UNKNOWN')}`，结构计算只读取已保存 `R_geometry.npz`，没有再次运行 tracking/depth/pose。",
+        f"- H 父 component `{r_summary.get('parent_component_count', 'UNKNOWN')}`；R 局部组总数 `{r_summary.get('group_count_total', 'UNKNOWN')}`，保留组 `{r_summary.get('h_retained_group_count', 'UNKNOWN')}`，保留成员 slot `{r_summary.get('h_retained_member_slot_count', 'UNKNOWN')}`，历史有效 pair `{r_summary.get('h_retained_pair_count', 'UNKNOWN')}`；有效 H triplet `{r_summary.get('h_valid_triplet_count', 'UNKNOWN')}`。",
+        f"- H grouping validation：`{r_structure.get('grouping_validation', {}).get('all_pass', 'UNKNOWN')}`；固定历史尺度为每个 R 局部组自己的历史有效 pair 距离中位数，未复用 O 尺度。",
+        f"- B 状态：`{r_structure.get('b_status', r_status.get('b_status', 'UNKNOWN'))}`。{r_structure.get('b_reason', r_status.get('b_reason', ''))} 不使用 O frame476 mask 冒充 R frame488 的分割缓存。",
+        "- 用户提供的框目前仍是待确认建议 ROI；因此本轮不能声称某个 R group/pair 已落在用户所指区域。页面可在源帧 488 原像素上确认一次粗框，再人工查看 R 的橙/青/紫图层；这不是空间真值。",
+        "",
+        "### R 有效 triplet 与多阶表示",
+        "",
+        "下表列出 R 每个有效 triplet 的共同成员、关系数、三帧真实源索引/PTS、四维 S(t)、一阶和二阶量；完整数组保存在 `conditions/R_structure.json`。",
+        "",
+        "| triplet | local group | common track IDs | pair 数 | 源帧/PTS | history scale (m) | S(t0); S(t1); S(t2) | 一阶 | 二阶 |",
+        "|---:|---:|---|---:|---|---:|---|---|---|",
+    ]
+    for triplet in r_structure.get("support", {}).get("triplets", []):
+        states = triplet.get("states", [])
+        state_text = "; ".join("[" + ", ".join(f"{float(value):.5f}" for value in state) + "]" for state in states)
+        first_text = "[" + ", ".join(f"{float(value):.5f}" for value in triplet.get("first_derivative", [])) + "]"
+        second_text = "[" + ", ".join(f"{float(value):.5f}" for value in triplet.get("second_derivative", [])) + "]"
+        frame_text = ", ".join(f"{int(frame)} @ {float(pts):.6f}" for frame, pts in zip(triplet.get("frame_indices", []), triplet.get("timestamps_s", [])))
+        r_lines.append(
+            f"| {triplet.get('triplet_id')} | {triplet.get('local_group_id')} | `{triplet.get('common_track_ids')}` | {len(triplet.get('pair_ids', []))} | {frame_text} | {float(triplet.get('history_scale')):.6f} | {state_text} | {first_text} | {second_text} |"
+        )
+    if not r_structure.get("support", {}).get("triplets"):
+        r_lines.append("| — | — | — | 0 | — | — | 无有效 triplet | — | — |")
+    r_lines += [
+        "",
+        "R 的结构支撑只能证明新查询轨迹在这些历史/目标帧上形成了可计算的局部状态与多阶量；它不证明旧 O 轨迹跨 frame487→488 的物理对应被恢复。未参与所选组/triplet 的可见点仍保留在页面上，并与实际参与点用不同图层区分。",
+    ]
+    lines += r_lines + [
         "",
         "## 历史/评估阶段和筛选链",
         "",
@@ -946,7 +1264,7 @@ def _write_trajectory_data(output: Path, paths: Mapping[str, Path]) -> str:
 
 
 def render_existing(output: Path) -> dict[str, Any]:
-    """Rebuild review JSON/HTML/report from saved artifacts without running O/R/T."""
+    """Rebuild review JSON/HTML/report and R H support without running O/R/T."""
     case_path = output / "case_data.json"
     manifest_path = output / "case_manifest.json"
     if not case_path.is_file() or not manifest_path.is_file():
@@ -954,6 +1272,13 @@ def render_existing(output: Path) -> dict[str, Any]:
     case = _load_json(case_path)
     manifest = dict(_load_json(manifest_path))
     statuses = case.get("conditions", {})
+    if statuses.get("R", {}).get("geometry_artifact"):
+        r_structure = _build_r_structure(output)
+        statuses["R"] = {
+            **statuses.get("R", {}),
+            **r_structure["status"],
+            "rows": r_structure["rows"],
+        }
     paths: dict[str, Path] = {}
     o_artifact = manifest.get("artifact")
     if o_artifact and Path(str(o_artifact)).is_file():
@@ -1014,6 +1339,10 @@ def run(output: Path, *, run_requery: bool = True, run_cotracker: bool = False) 
     statuses["T"] = _run_cotracker(output, decoded) if run_cotracker else {"status": "NOT_RUN", "official_repo": "https://github.com/facebookresearch/co-tracker", "source_commit": COTRACKER_SHA}
     if statuses["T"].get("artifact") and (output / "frame_layer_counts_T.csv").is_file():
         statuses["T"]["rows"] = list(csv.DictReader((output / "frame_layer_counts_T.csv").open(encoding="utf-8")))
+    if statuses["R"].get("geometry_artifact"):
+        r_structure = _build_r_structure(output)
+        statuses["R"].update(r_structure["status"])
+        statuses["R"]["rows"] = r_structure["rows"]
     trajectory_paths: dict[str, Path] = {"O": PARTICLE}
     if statuses["R"].get("artifact"):
         trajectory_paths["R"] = Path(str(statuses["R"].get("geometry_artifact") or statuses["R"]["artifact"]))

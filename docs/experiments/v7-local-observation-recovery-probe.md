@@ -53,8 +53,35 @@ visibility 与预测 UV 的区别。三帧的 UV 数组均不完全相同：
 `XYZ`、H/B 分组和 triplet 支撑均为未计算。页面状态已分开显示二维跟踪、XYZ、
 H/B grouping 和 triplet support；可选点 ID 与最近五帧尾线均按条件本地数组工作，
 不把 O/R/T 的同号 ID 当成同一物理点。R 的 geometry 计数来自独立
-`R_geometry.npz` 的 UV、visibility、深度采样、位姿变换和有限 XYZ 联合有效性；
-R 尚未形成新轨迹的 H/B/triplet 支撑。
+`R_geometry.npz` 的 UV、visibility、深度采样、位姿变换和有限 XYZ 联合有效性。
+
+## R 独立 H 结构支撑（本轮补齐）
+
+本轮只读取已通过身份核验的 `R_requery.npz`、`R_geometry.npz` 和几何元数据，
+没有重跑 tracking、depth 或 pose。R 的局部历史以自己的查询起点 frame 488
+（PTS `16.28294961628295` s）为零点，使用已有半秒规则，历史为 frame 488--502，
+目标匹配帧为 503、506、509、512、515；这与 O 从 frame 476 开始的历史不是同一
+时间范围，不能直接作为匹配检测对照。
+
+- R 使用独立命名空间 `R::independent_query_frame_488`，没有复用 O 的成员 ID、
+  历史尺度或 triplet，也没有连接旧轨迹跨失踪事件的对应。
+- 既有 component 规则得到 1 个历史父 component、49 个局部组，其中 44 个保留，
+  覆盖 281 个 R track slot；保留组历史 pair 共 890 个。
+- H 支撑得到 101 个有效 triplet；每个 triplet 都记录三帧真实源索引/PTS、共同
+  成员、实际 pair、历史尺度、四维 `S(t)`、一阶和二阶量。完整值在数据盘
+  `conditions/R_structure.json`，页面可通过 R 结构选择器高亮组成员、三帧共同
+  成员及有效 pair。
+- frame 488--502 是 R 的结构历史，尚无目标 triplet；有效 triplet 支撑出现在
+  503、506、509、512、515。逐帧的组可见数、几何有效数、triplet 数和关系支撑
+  在 `frame_layer_counts_R.csv`。
+- B 明确为
+  `NOT_COMPUTED_NO_MATCHING_R_HISTORY_START_SEGMENTATION_CACHE`：已有 mask 是
+  O 的 frame 476，未找到 R frame 488 的匹配缓存，因此没有复用 O mask 或新增
+  分割推理。
+
+因此，本轮可以确认 R 新查询轨迹形成了可计算的局部 H 结构和多阶表示；不能据此
+确认用户建议 ROI 内存在伪造真值，也不能宣称恢复了 O 旧轨迹的物理对应。建议 ROI
+仍待用户在源帧 488 原像素上确认。
 
 ## ROI 与边界
 
