@@ -7,8 +7,10 @@ import numpy as np
 from research_tools.v7.local_observation_recovery_probe.probe import (
     condition_frame_status,
     fixed_members,
+    history_evaluation_status,
     layer_counts,
     nearest_frame,
+    validate_roi_rect,
 )
 
 
@@ -54,3 +56,21 @@ def test_requery_has_no_prequery_display_state():
     assert condition_frame_status("R", 487, query_start_frame=488) == "NOT_QUERIED"
     assert condition_frame_status("R", 488, query_start_frame=488) == "AVAILABLE"
     assert condition_frame_status("O", 487, query_start_frame=488) == "AVAILABLE"
+
+
+def test_history_frame_is_not_model_evaluation_frame():
+    status = history_evaluation_status(
+        initialization_frame=476,
+        initialization_pts_s=15.88254921588255,
+        frame_index=488,
+        frame_pts_s=16.28294961628295,
+        model_frame_indices=[491, 493, 496, 499, 502],
+    )
+    assert status["within_first_history_window"] is True
+    assert status["model_evaluation_frame"] is False
+    assert status["phase"] == "HISTORY"
+    assert np.isclose(status["relative_to_initialization_s"], 0.4004004004004)
+
+
+def test_roi_validation_is_source_pixel_bookkeeping_only():
+    assert validate_roi_rect([110.2, -3, 370.4, 359.9], 480, 360) == (110, 0, 370, 360)

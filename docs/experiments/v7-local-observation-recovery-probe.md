@@ -11,10 +11,12 @@
 
 - **O**：原有 `density289` 数组、H 支撑和原配置，完全复用，不重跑检测器。
 - **R**：在源帧 488 重新用同一 BootsTAPIR 和 17×17（289）网格查询；新
-  ID 不与 O 连接。当前实现只保存 2D UV/visibility，未把它伪装成 3D
-  几何结果。
-- **T**：唯一替代候选是官方 CoTracker3 online；若官方运行时不可用则保留
-  阻塞证据，不替换为其他跟踪器。
+  ID 不与 O 连接。已用同一 Depth Pro、首帧内参策略和 Open3D RGB-D
+  odometry 形成独立三维状态；由于新 ID 没有旧 H/B 成员映射，不宣称恢复
+  O 的跨失踪物理对应。
+- **T**：唯一替代候选是官方 CoTracker3 online。官方源码/权重可用时按官方
+  chunk API 形成独立 2D UV/visibility；本案例不把 T 的 2D 输出扩展成三维
+  或 H/B 结果。若官方资源不可用，运行状态保留明确阻塞证据。
 
 ## 现有数组证据
 
@@ -24,12 +26,21 @@ O 的源帧 487 为 `289/289/289`（可用 UV/visibility/geometry），源帧
 因此原始 tracker 的未掩码预测 UV 不可恢复；不能据此断言 tracker 没有输出
 预测坐标。逐层 CSV 位于数据目录的 `frame_layer_counts_*.csv`。
 
+## 历史与评估阶段
+
+源帧 488 的 PTS 相对初始化帧 476 为约 0.4004004 s，属于首个 0.5 s
+历史窗口；既有 detail 的模型目标从更晚的帧 491 等开始。因此这两个用户时刻
+不能直接当成已经被模型评分的目标时刻。visibility、geometry 和 relation
+support 是同一观测链的不同筛选层，不能描述成三个独立失败证据。
+
 ## ROI 与边界
 
-对话截图是浏览器截图，当前没有可复核的浏览器到源视频像素变换文件，故
-ROI 标记为 `PENDING_SOURCE_PIXEL_MAPPING`，没有编造 ROI 内外统计。页面只
-显示真实源帧、PTS、保存的 UV/visibility/geometry 和已保存 H 关系；缺失不
-补 XYZ，不把单案例现象称为伪造检测或定位成功。
+对话截图只用于给出源帧 488 的粗略建议框，状态是
+`PENDING_USER_CONFIRMATION`，不是空间真值。页面显示未标注的源帧原图、原
+像素坐标读数、可编辑框和一次性下载确认 JSON。用户确认前不输出 ROI 内外
+统计；固定 query ID 的后续存续和当前落框数量保持分开。页面仍显示真实源帧、
+PTS、保存的 UV/visibility/geometry 和已保存 H 关系；缺失不补 XYZ，不把单
+案例现象称为伪造检测或定位成功。
 
 ## 产物与访问
 
