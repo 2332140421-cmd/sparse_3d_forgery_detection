@@ -10,6 +10,8 @@ from sparse3d_forgery.video_input import DecodedFrame, DecodedVideoSample
 from research_tools.v7.periodic_requery_probe.runner import (
     OFFSETS_S,
     _build_sequence,
+    _persist_parent_completion,
+    Budget,
     _window_label,
     _choose_parents,
 )
@@ -75,3 +77,34 @@ def test_build_sequence_converts_geometry_dtype_without_repairing_missing() -> N
     assert sequence.xyz.dtype == np.float32
     assert np.isnan(sequence.xyz[1, 7]).all()
     assert not sequence.geometry_validity[1, 7]
+
+
+def test_parent_completion_persists_results_progress_and_budget_once(tmp_path: Path) -> None:
+    root = tmp_path / "pilot"
+    result_path = root / "frontend" / "results.json"
+    budget = Budget(root, "frontend", 100.0)
+    results: dict[str, dict[str, object]] = {}
+    generated = [
+        {"window_id": f"P::b{index}", "status": "FRONTEND_COMPLETE"}
+        for index in range(3)
+    ]
+    _persist_parent_completion(
+        root,
+        result_path,
+        results,
+        generated,
+        parent_id="P",
+        parent_elapsed_s=1.25,
+        budget=budget,
+        parent_completed=1,
+        total_windows=3,
+    )
+    saved = json.loads(result_path.read_text())
+    progress = json.loads((root / "progress.json").read_text())
+    budget_state = json.loads((root / "state" / "frontend_budget.json").read_text())
+    assert len(saved) == 3
+    assert progress["status"] == "RUNNING"
+    assert progress["completed"] == 3
+    assert progress["total"] == 3
+    assert budget_state["elapsed_before_this_process_s"] == 0.0
+    assert budget_state["cumulative_s"] >= budget_state["process_elapsed_s"]

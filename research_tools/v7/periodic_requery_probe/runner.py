@@ -174,6 +174,43 @@ def _progress(root: Path, stage: str, status: str, completed: int, total: int, b
     })
 
 
+def _completed_window_count(results: Mapping[str, Mapping[str, Any]]) -> int:
+    return sum(item.get("status") == "FRONTEND_COMPLETE" for item in results.values())
+
+
+def _persist_parent_completion(
+    root: Path,
+    result_path: Path,
+    results: dict[str, dict[str, Any]],
+    generated: Sequence[Mapping[str, Any]],
+    *,
+    parent_id: str,
+    parent_elapsed_s: float,
+    budget: Budget,
+    parent_completed: int,
+    total_windows: int,
+) -> float:
+    """Atomically persist a completed parent and its matching progress state."""
+
+    for item in generated:
+        row = dict(item)
+        row["parent_elapsed_s"] = float(parent_elapsed_s)
+        results[str(row["window_id"])] = row
+    _atomic_json(result_path, list(sorted(results.values(), key=lambda item: str(item["window_id"]))))
+    budget.save(None, last_parent=str(parent_id), last_parent_elapsed_s=float(parent_elapsed_s))
+    _progress(
+        root,
+        "frontend",
+        "RUNNING",
+        _completed_window_count(results),
+        total_windows,
+        budget=budget,
+        completed_parent_count=int(parent_completed),
+        current_parent=str(parent_id),
+    )
+    return float(parent_elapsed_s)
+
+
 def _window_label(role: str, start_s: float, end_s: float, segments: Sequence[Mapping[str, Any]]) -> tuple[int | None, str]:
     if role == "real":
         return 0, "REAL_NEGATIVE"
@@ -339,6 +376,69 @@ def _sequence_identity_ok(prefix: Path, row: Mapping[str, Any], mode: str) -> bo
         return False
 
 
+def _sequence_manifest_identity_ok(prefix: Path, frame_indices: Sequence[int], timestamps_s: Sequence[float], *, source_video_id: str, mode: str, expected_lineage: Mapping[str, Any] | None = None) -> bool:
+    try:
+        sequence = load_particle_sequence(prefix)
+        if not np.array_equal(sequence.frame_indices, np.asarray(frame_indices, dtype=np.int64)):
+            return False
+        if not np.allclose(sequence.timestamps_s, np.asarray(timestamps_s, dtype=np.float64), atol=1e-7, rtol=0):
+            return False
+        if sequence.source_video_id != source_video_id or int(sequence.num_tracks) != 289:
+            return False
+        lineage = sequence.lineage
+        provenance = sequence.provenance
+        if str(lineage.get("source_id", "")) != source_video_id.split("::", 1)[0] or str(provenance.get("query_cohort", "")) != mode:
+            return False
+        if expected_lineage and any(str(lineage.get(key, "")) != str(value) for key, value in expected_lineage.items()):
+            return False
+        return True
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
+def _cached_parent_outputs(parent: Mapping[str, Any], subwindows: Sequence[Mapping[str, Any]], root: Path) -> list[dict[str, Any]] | None:
+    """Return reconstructed results only when every required cache is valid."""
+
+    parent_id = str(parent["parent_id"])
+    parent_prefix = root / "particles" / _safe(parent_id) / "O_parent"
+    expected_video_id = f"{parent['source_id']}::{parent['role']}"
+    expected_lineage = {"source_id": parent["source_id"], "pair_id": parent["pair_id"], "role": parent["role"], "parent_id": parent_id}
+    if not _sequence_manifest_identity_ok(parent_prefix, parent["parent_frame_indices"], parent["parent_timestamps_s"], source_video_id=expected_video_id, mode="O", expected_lineage=expected_lineage):
+        return None
+    parent_sequence = load_particle_sequence(parent_prefix)
+    outputs: list[dict[str, Any]] = []
+    for row in subwindows:
+        offset = float(row["offset_s"])
+        reuse_b0 = abs(offset) < 1e-9
+        prefix_r = parent_prefix if reuse_b0 else root / "particles" / _safe(parent_id) / f"R_{_safe(str(row['window_id']))}"
+        if not reuse_b0 and not _sequence_identity_ok(prefix_r, row, "R"):
+            return None
+        loaded_r = parent_sequence if reuse_b0 else load_particle_sequence(prefix_r)
+        outputs.append({
+            **dict(row),
+            "status": "FRONTEND_COMPLETE",
+            "o_sequence_prefix": str(parent_prefix),
+            "r_sequence_prefix": str(prefix_r),
+            "r_status": "REUSED_O_B0" if reuse_b0 else "FRONTEND_COMPLETE",
+            "o_frame_count": int(parent_sequence.num_frames),
+            "r_frame_count": int(loaded_r.num_frames),
+            "o_query_count": int(parent_sequence.num_tracks),
+            "r_query_count": int(loaded_r.num_tracks),
+            "o_geometry_valid_fraction": float(np.mean(parent_sequence.geometry_validity)),
+            "r_geometry_valid_fraction": float(np.mean(loaded_r.geometry_validity)),
+            "shared_geometry": True,
+            "parent_frame_count": int(parent_sequence.num_frames),
+            "parent_pts_start_s": float(parent_sequence.timestamps_s[0]),
+            "parent_pts_end_s": float(parent_sequence.timestamps_s[-1]),
+            "fixed_focal_px": None,
+            "pose_pair_valid_fraction": None,
+            "pose_valid_fraction": None,
+            "elapsed_s": 0.0,
+            "cache_reused": True,
+        })
+    return outputs
+
+
 def _slice_decoded(decoded: DecodedVideoSample, positions: Sequence[int], sample_id: str) -> DecodedVideoSample:
     return DecodedVideoSample(sample_id=sample_id, source_video_id=decoded.source_video_id, frames=tuple(decoded.frames[int(pos)] for pos in positions))
 
@@ -376,11 +476,14 @@ def _build_sequence(decoded: DecodedVideoSample, *, uv: np.ndarray, visibility: 
 
 
 def _frontend_parent(parent: Mapping[str, Any], subwindows: Sequence[Mapping[str, Any]], tracker: Any, depth_runner: Any, root: Path) -> list[dict[str, Any]]:
-    import torch
     parent_id = str(parent["parent_id"])
     source_path = Path(str(parent["video_path"]))
     if str(parent.get("status")) != "PLANNED" or not source_path.is_file():
         return [{"window_id": str(row["window_id"]), "status": "SOURCE_MISSING" if not source_path.is_file() else "PARENT_UNAVAILABLE", "error": "parent is not runnable"} for row in subwindows]
+    cached = _cached_parent_outputs(parent, subwindows, root)
+    if cached is not None:
+        return cached
+    import torch
     frame_indices = np.asarray(parent["parent_frame_indices"], dtype=np.int64)
     decoded = decode_video(VideoSource(sample_id=f"v7-periodic-{parent_id}", source_video_id=f"{parent['source_id']}::{parent['role']}", source_locator=source_path), frame_indices.tolist())
     depths, focals, frame_depth_valid = depth_runner.infer(decoded)
@@ -388,11 +491,12 @@ def _frontend_parent(parent: Mapping[str, Any], subwindows: Sequence[Mapping[str
     frontend = __import__("scripts.run_v7_explicit_geometry_frontend", fromlist=["rgbd_odometry", "accumulate_world_from_camera", "sample_depth_at_uv", "world_xyz"])
     adjacent, pair_valid, information = frontend.rgbd_odometry(decoded, depths, intrinsics)
     world_from_camera, pose_valid = frontend.accumulate_world_from_camera(adjacent, pair_valid)
-    uv_o, visibility_o = tracker.track(decoded)
     outputs: list[dict[str, Any]] = []
     parent_dir = root / "particles" / _safe(parent_id)
     parent_prefix = parent_dir / "O_parent"
-    if not parent_prefix.with_suffix(".npz").is_file() or not parent_prefix.with_suffix(".json").is_file():
+    parent_cache_valid = _sequence_manifest_identity_ok(parent_prefix, parent["parent_frame_indices"], parent["parent_timestamps_s"], source_video_id=f"{parent['source_id']}::{parent['role']}", mode="O", expected_lineage={"source_id": parent["source_id"], "pair_id": parent["pair_id"], "role": parent["role"], "parent_id": parent_id})
+    if not parent_cache_valid:
+        uv_o, visibility_o = tracker.track(decoded)
         observation = visibility_o & frame_depth_valid[:, None]
         sampled, sampled_valid = frontend.sample_depth_at_uv(depths, uv_o)
         observation &= sampled_valid
@@ -416,7 +520,7 @@ def _frontend_parent(parent: Mapping[str, Any], subwindows: Sequence[Mapping[str
         reuse_b0 = abs(float(row["offset_s"])) < 1e-9
         if reuse_b0:
             prefix_r = prefix_o
-        elif not _sequence_identity_ok(prefix_r, row, "R"):
+        elif not parent_cache_valid or not _sequence_identity_ok(prefix_r, row, "R"):
             uv_r, visibility_r = tracker.track(sub_decoded)
             depths_sub = depths[positions]
             intrinsics_sub = intrinsics[positions]
@@ -468,8 +572,9 @@ def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
     _progress(root, "frontend", "RUNNING", sum(item.get("status") == "FRONTEND_COMPLETE" for item in results.values()), len(subwindows), budget=budget, completed_parent_count=0)
     if budget.remaining() <= 0:
         budget.save("BUDGET_EXHAUSTED")
-        _progress(root, "frontend", "BUDGET_EXHAUSTED", len(results), len(subwindows), budget=budget, stop_reason="BUDGET_EXHAUSTED")
-        return {"status": "BUDGET_EXHAUSTED", "completed": len(results), "total": len(subwindows)}
+        completed_now = _completed_window_count(results)
+        _progress(root, "frontend", "BUDGET_EXHAUSTED", completed_now, len(subwindows), budget=budget, stop_reason="BUDGET_EXHAUSTED")
+        return {"status": "BUDGET_EXHAUSTED", "completed": completed_now, "total": len(subwindows)}
     try:
         import torch
         torch.set_num_threads(4)
@@ -483,8 +588,9 @@ def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
         error = f"{type(exc).__name__}: {exc}"
         _atomic_json(root / "state/frontend_error.json", {"status": "FRONTEND_BLOCKED", "error": error})
         budget.save("FRONTEND_BLOCKED", error=error)
-        _progress(root, "frontend", "FRONTEND_BLOCKED", len(results), len(subwindows), budget=budget, stop_reason="FRONTEND_BLOCKED", error=error)
-        return {"status": "FRONTEND_BLOCKED", "error": error, "completed": len(results), "total": len(subwindows)}
+        completed_now = _completed_window_count(results)
+        _progress(root, "frontend", "FRONTEND_BLOCKED", completed_now, len(subwindows), budget=budget, stop_reason="FRONTEND_BLOCKED", error=error)
+        return {"status": "FRONTEND_BLOCKED", "error": error, "completed": completed_now, "total": len(subwindows)}
     old_handler = signal.getsignal(signal.SIGTERM)
     old_int = signal.getsignal(signal.SIGINT)
     def stop(_signal: int, _frame: Any) -> None:
@@ -508,20 +614,17 @@ def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
             started = time.perf_counter()
             try:
                 generated = _frontend_parent(parent, parent_rows, tracker, depth_runner, root)
-                for item in generated:
-                    item["parent_elapsed_s"] = time.perf_counter() - started
-                    results[str(item["window_id"])] = item
-                _atomic_json(result_path, list(sorted(results.values(), key=lambda item: str(item["window_id"]))))
                 parent_completed += 1
-                budget.save(None, last_parent=str(parent["parent_id"]), last_parent_elapsed_s=time.perf_counter() - started)
-                print(f"periodic parent {parent_completed}/{len(parents)} {parent['parent_id']} subwindows={len(generated)} elapsed={time.perf_counter()-started:.1f}s remaining={budget.remaining():.1f}s", flush=True)
-                _progress(root, "frontend", len(results), len(subwindows), budget=budget, completed_parent_count=parent_completed, current_parent=str(parent["parent_id"]))
+                elapsed = time.perf_counter() - started
+                _persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=parent_completed, total_windows=len(subwindows))
+                print(f"periodic parent {parent_completed}/{len(parents)} {parent['parent_id']} subwindows={len(generated)} elapsed={elapsed:.1f}s remaining={budget.remaining():.1f}s", flush=True)
             except Exception as exc:
                 error = {"parent_id": str(parent["parent_id"]), "status": "FRONTEND_FAILED", "error": f"{type(exc).__name__}: {exc}", "traceback": __import__("traceback").format_exc()}
                 for row in parent_rows:
                     results[str(row["window_id"])] = {**dict(row), **error, "window_id": str(row["window_id"])}
                 _atomic_json(result_path, list(sorted(results.values(), key=lambda item: str(item["window_id"]))))
                 budget.save(None, last_parent=str(parent["parent_id"]), last_error=error["error"])
+                _progress(root, "frontend", "RUNNING", _completed_window_count(results), len(subwindows), budget=budget, completed_parent_count=parent_completed, current_parent=str(parent["parent_id"]), last_error=error["error"])
                 print(f"periodic parent FAILED {parent['parent_id']}: {error['error']}", flush=True)
     finally:
         signal.signal(signal.SIGTERM, old_handler)
