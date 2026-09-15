@@ -14,10 +14,12 @@ import csv
 import fcntl
 import hashlib
 import json
+import math
 import os
 import signal
 import subprocess
 import time
+import traceback
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -36,7 +38,6 @@ from sparse3d_forgery.video_input import DecodedVideoSample, VideoSource, decode
 
 from research_tools.v7.local_organization_probe.grouping import (
     build_local_groups,
-    build_local_support,
     rebuild_components_fast,
 )
 from research_tools.v7.multi_order_sequence_probe.model import (
@@ -54,6 +55,7 @@ from research_tools.v7.multi_order_sequence_probe.model import (
     train_one,
 )
 from research_tools.v7.multi_order_sequence_probe.representation import (
+    build_five_time_unit,
     condition_feature_matrix,
 )
 from research_tools.v7.observation_density_diagnostic import run_diagnostic as diagnostic
@@ -80,19 +82,25 @@ def _safe(value: str) -> str:
     return "".join(c if c.isalnum() or c in "._-" else "_" for c in value)
 
 
-def _jsonable(value: Any) -> Any:
+def _jsonable(value: Any, path: str = "$") -> Any:
     if isinstance(value, Path):
         return str(value)
     if isinstance(value, np.ndarray):
-        return value.tolist()
+        if value.ndim == 0:
+            return _jsonable(value.item(), path)
+        return [_jsonable(item, f"{path}[{index}]") for index, item in enumerate(value)]
     if isinstance(value, (np.integer, np.floating, np.bool_)):
-        return value.item()
+        return _jsonable(value.item(), path)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError(f"non-finite JSON value at {path}: {value!r}")
+        return value
     if isinstance(value, tuple):
-        return [_jsonable(item) for item in value]
+        return [_jsonable(item, f"{path}[{index}]") for index, item in enumerate(value)]
     if isinstance(value, list):
-        return [_jsonable(item) for item in value]
+        return [_jsonable(item, f"{path}[{index}]") for index, item in enumerate(value)]
     if isinstance(value, dict):
-        return {str(key): _jsonable(item) for key, item in value.items()}
+        return {str(key): _jsonable(item, f"{path}.{key}") for key, item in value.items()}
     return value
 
 
@@ -651,9 +659,47 @@ def _support_for_sequence(prefix: Path, row: Mapping[str, Any], mode: str) -> di
     history = np.flatnonzero(sequence.timestamps_s < float(row["interval_start_s"]) + 0.5).astype(np.int64)
     components = rebuild_components_fast(sequence.xyz, sequence.geometry_validity, history)
     grouping = build_local_groups(sequence, history, old_components=components)
-    support = build_local_support(sequence, window_start_s=float(row["interval_start_s"]), grouping=grouping)
-    built = condition_feature_matrix({"units": support.get("triplets", [])}, str(row["window_id"]))
-    valid_units = [item for item in support.get("triplets", []) if item.get("status") == "VALID"]
+    units = [
+        build_five_time_unit(
+            sequence,
+            window_id=str(row["window_id"]),
+            window_start_s=float(row["interval_start_s"]),
+            member_slots=group["member_slots"],
+            local_group_id=int(group["local_group_id"]),
+        )
+        for group in grouping.get("groups", [])
+        if bool(group.get("retained"))
+    ]
+    valid_units = [item for item in units if item.get("status") == "VALID"]
+    invalid_reasons = [
+        {
+            "local_group_id": int(item["local_group_id"]),
+            "reason": str(item.get("reason", "UNKNOWN_SUPPORT_FAILURE")),
+        }
+        for item in units
+        if item.get("status") != "VALID"
+    ]
+    if not units:
+        invalid_reasons.append({
+            "local_group_id": None,
+            "reason": "NO_RETAINED_LOCAL_GROUP",
+        })
+    support = {
+        "support_status": "VALID" if valid_units else "NO_VALID_FIVE_TIME_UNIT",
+        "valid_unit_count": len(valid_units),
+        "invalid_reasons": invalid_reasons,
+        "units": [
+            {key: value for key, value in item.items() if key != "states"}
+            for item in units
+        ],
+    }
+    built = condition_feature_matrix({"units": units}, str(row["window_id"]))
+    intervals_s: list[float] | None = None
+    if valid_units:
+        intervals = np.diff(np.asarray(valid_units[0]["timestamps_s"], dtype=np.float64))
+        if intervals.shape != (4,) or not np.all(np.isfinite(intervals)) or not np.all(intervals > 0):
+            raise ValueError(f"valid five-time support has invalid intervals for {row['window_id']} {mode}")
+        intervals_s = [float(value) for value in intervals]
     # condition_feature_matrix consumes the same support unit schema as the
     # existing multi-order runner; no B segmentation or new grouping is used.
     return {
@@ -671,13 +717,21 @@ def _support_for_sequence(prefix: Path, row: Mapping[str, Any], mode: str) -> di
         "particle_prefix": str(prefix),
         "frame_indices": [int(x) for x in sequence.frame_indices],
         "timestamps_s": [float(x) for x in sequence.timestamps_s],
-        "intervals_s": (np.diff(np.asarray(valid_units[0]["timestamps_s"], dtype=np.float64)) if valid_units else np.empty(4, dtype=np.float64)),
+        "intervals_s": intervals_s,
         "group_count": int(len(grouping.get("groups", []))),
         "retained_group_count": int(grouping.get("retained_group_count", 0)),
         "support_status": str(support.get("support_status")),
         "valid_unit_count": int(len(valid_units)),
-        "support_reasons": sorted({str(item.get("reason")) for item in support.get("invalid_reasons", [])}),
-        "grouping": grouping,
+        "support_reasons": sorted({str(item.get("reason")) for item in invalid_reasons}),
+        "grouping": {
+            "local_diameter_m": grouping.get("local_diameter_m"),
+            "component_config": grouping.get("component_config"),
+            "history_array_indices": grouping.get("history_array_indices"),
+            "parent_component_count": len(grouping.get("parent_components", [])),
+            "groups": grouping.get("groups", []),
+            "retained_group_count": grouping.get("retained_group_count", 0),
+            "support_insufficient_group_count": grouping.get("support_insufficient_group_count", 0),
+        },
         "support": support,
         "features": built["features"],
         "permutations": built["permutations"],
@@ -936,6 +990,7 @@ def report(root: Path) -> dict[str, Any]:
     results = json.loads((root / "frontend/results.json").read_text(encoding="utf-8")) if (root / "frontend/results.json").is_file() else []
     models = json.loads((root / "models/fold_models.json").read_text(encoding="utf-8")) if (root / "models/fold_models.json").is_file() else {"records": []}
     support = json.loads((root / "support/support_summary.json").read_text(encoding="utf-8")) if (root / "support/support_summary.json").is_file() else {}
+    training_budget = json.loads((root / "state/training_budget.json").read_text(encoding="utf-8")) if (root / "state/training_budget.json").is_file() else {}
     frontend_complete = sum(item.get("status") == "FRONTEND_COMPLETE" for item in results)
     complete_parents = 0
     for parent in parents:
@@ -949,7 +1004,7 @@ def report(root: Path) -> dict[str, Any]:
         "",
         "## 直接回答",
         "",
-        f"1. 实际完成 source/父片段/分析窗口/模型：{len({str(item.get('source_id')) for item in parents if item.get('status') == 'PLANNED'})}/{complete_parents}/{frontend_complete}/{len(models.get('records', []))}（计划 {len(parents)}/{len(subwindows)}/{len(CONDITIONS)*len({str(item.get('source_id')) for item in parents})*len(SEEDS)}）。",
+        f"1. 实际完成 source/父片段/分析窗口/模型：{len({str(item.get('source_id')) for item in parents if item.get('status') == 'PLANNED'})}/{complete_parents}/{frontend_complete}/{len(models.get('records', []))}（计划父片段/窗口 {len(parents)}/{len(subwindows)}；模型键按 paired common support 确定）。",
         f"2. R 五时刻结构支撑：O 有效窗口 {support.get('o_valid_windows', 'NA')}，R 有效窗口 {support.get('r_valid_windows', 'NA')}；配对窗口 {support.get('paired_windows', 'NA')}。有效支撑不是物理对应证明。",
         "3. 增量按 real/fake 和 offset 的完整覆盖见 `support/coverage.csv`；不按分数排除窗口。",
         f"4. R_SET−O_SET：{summary.get('paired_comparisons', {}).get('R_SET_MINUS_O_SET', {})}。",
@@ -957,6 +1012,8 @@ def report(root: Path) -> dict[str, Any]:
         "6. R-only 新增覆盖与检测改善不是同一件事；主差值只使用 O/R 共同支持窗口。",
         "7. 计算成本记录在 `state/frontend_budget.json`、`state/training_budget.json` 及 frontend/results.json。",
         "8. 没有空间真值；不能据此宣称失真部位进入模型，也不能宣称跨 cohort 恢复物理点对应。",
+        "9. 本次修复：无支撑摘要中的未定义 `intervals_s` 使用 JSON `null` 并保留原因；严格 JSON 序列化仍拒绝有效字段中的 NaN/Inf。",
+        f"10. 前端缓存复用 {frontend_complete}/{len(subwindows)} 条；训练实际 {len(models.get('records', []))} 个唯一 condition×held-out-source×seed 键，预算累计 {training_budget.get('cumulative_s', 'NA')} / {training_budget.get('budget_s', 'NA')} 秒。",
         "",
         "## 条件结果（source 等权 AUROC；括号内为 source bootstrap 95% CI）",
         "",
@@ -967,6 +1024,12 @@ def report(root: Path) -> dict[str, Any]:
         item = summary.get("conditions", {}).get(condition, {}); macro = item.get("source_auroc", {})
         lines.append(f"| {condition} | {macro.get('mean', 'NA')} [{macro.get('ci95', 'NA')}] | {item.get('pooled_auroc', 'NA')} | {item.get('pooled_ap', 'NA')} | {item.get('window_count', 'NA')} | {item.get('source_count', 'NA')} |")
     lines += [
+        "",
+        "## 覆盖与有效性",
+        "",
+        f"- `window_support.json` 严格解析得到 {support.get('mode_rows', 'NA')} 个 O/R 行；O 有效单元 {support.get('o_units', 'NA')}，R 有效单元 {support.get('r_units', 'NA')}。",
+        "- 缺失支撑保持为缺失；`null` 只表示该摘要字段在当前无支撑下未定义，不转成 0，也不进入训练。",
+        "- 主评价仅使用 paired common support 且同时有 real/fake 的 source；逐 source 完整结果见 `evaluation/per_source_metrics.csv`。",
         "",
         "## 冻结与隔离",
         "",
@@ -983,7 +1046,39 @@ def report(root: Path) -> dict[str, Any]:
     ]
     (root / "report.md").write_text("\n".join(lines), encoding="utf-8")
     _progress(root, "report", "COMPLETE", 1, 1)
-    return {"report": str(root / "report.md"), "models": len(models.get("records", [])), "frontend_windows": frontend_complete}
+    report_summary = {"report": str(root / "report.md"), "models": len(models.get("records", [])), "frontend_windows": frontend_complete}
+    support_rows = json.loads((root / "support/window_support.json").read_text(encoding="utf-8")) if (root / "support/window_support.json").is_file() else []
+    eligible_sources = {
+        str(item["source_id"])
+        for item in support_rows
+        if bool(item.get("paired_eligible")) and item.get("label") in (0, 1)
+    }
+    expected_models = len(eligible_sources) * len(CONDITIONS) * len(SEEDS)
+    model_keys = {
+        (str(item["condition"]), str(item["held_out_source"]), int(item["seed"]))
+        for item in models.get("records", [])
+    }
+    complete = (
+        frontend_complete == len(subwindows)
+        and len(support_rows) == 2 * len(subwindows)
+        and len(model_keys) == expected_models
+        and expected_models > 0
+        and bool(summary.get("conditions"))
+    )
+    _atomic_json(root / "final_status.json", {
+        "status": "COMPLETE" if complete else "PARTIAL",
+        "stop_reason": None if complete else "PLANNED_DOWNSTREAM_INCOMPLETE",
+        "frontend_windows": frontend_complete,
+        "planned_windows": len(subwindows),
+        "support_rows": len(support_rows),
+        "completed_models": len(model_keys),
+        "expected_models": expected_models,
+        "evaluation_present": bool(summary.get("conditions")),
+        "report": report_summary,
+        "git_head": _git_head(),
+        "updated_unix": time.time(),
+    })
+    return report_summary
 
 
 def run_all(root: Path, *, device: str, resume: bool, frontend_budget_s: float, train_budget_s: float) -> dict[str, Any]:
@@ -1008,6 +1103,29 @@ def run_all(root: Path, *, device: str, resume: bool, frontend_budget_s: float, 
     return final
 
 
+def _record_current_failure(root: Path, requested_stage: str, exc: BaseException) -> None:
+    progress_path = root / "progress.json"
+    progress = json.loads(progress_path.read_text(encoding="utf-8")) if progress_path.is_file() else {}
+    failed_stage = requested_stage if requested_stage != "all" else str(progress.get("stage") or requested_stage)
+    error = f"{type(exc).__name__}: {exc}"
+    _progress(
+        root,
+        failed_stage,
+        "FAILED",
+        int(progress.get("completed", 0)),
+        int(progress.get("total", 0)),
+        failure_reason=error,
+    )
+    _atomic_json(root / "final_status.json", {
+        "status": "FAILED",
+        "failed_stage": failed_stage,
+        "failure_reason": error,
+        "traceback": traceback.format_exc(),
+        "git_head": _git_head(),
+        "updated_unix": time.time(),
+    })
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("stage", choices=("prepare", "frontend", "features", "train", "evaluate", "report", "all"))
@@ -1026,27 +1144,38 @@ def main() -> int:
         except BlockingIOError:
             raise SystemExit("RUN_LOCK_HELD")
         _atomic_json(root / "resolved_config.json", {"git_head": _git_head(), "device": args.device, "frontend_budget_s": args.frontend_budget_s, "train_budget_s": args.train_budget_s, "resume": bool(args.resume), "output_root": str(root)})
+        _atomic_json(root / "final_status.json", {
+            "status": "RUNNING",
+            "requested_stage": args.stage,
+            "pid": os.getpid(),
+            "git_head": _git_head(),
+            "started_unix": time.time(),
+        })
         global STOP_REQUESTED
         def stop(_signal: int, _frame: Any) -> None:
             STOP_REQUESTED = True
         signal.signal(signal.SIGTERM, stop)
         signal.signal(signal.SIGINT, stop)
-        if args.stage == "prepare":
-            prepare(root)
-        elif args.stage == "frontend":
-            if not (root / "manifests/subwindows.json").is_file():
+        try:
+            if args.stage == "prepare":
                 prepare(root)
-            run_frontend(root, args.frontend_budget_s, resume=args.resume)
-        elif args.stage == "features":
-            features(root)
-        elif args.stage == "train":
-            train(root, args.train_budget_s, args.device, args.resume)
-        elif args.stage == "evaluate":
-            evaluate(root, args.device)
-        elif args.stage == "report":
-            report(root)
-        else:
-            run_all(root, device=args.device, resume=args.resume, frontend_budget_s=args.frontend_budget_s, train_budget_s=args.train_budget_s)
+            elif args.stage == "frontend":
+                if not (root / "manifests/subwindows.json").is_file():
+                    prepare(root)
+                run_frontend(root, args.frontend_budget_s, resume=args.resume)
+            elif args.stage == "features":
+                features(root)
+            elif args.stage == "train":
+                train(root, args.train_budget_s, args.device, args.resume)
+            elif args.stage == "evaluate":
+                evaluate(root, args.device)
+            elif args.stage == "report":
+                report(root)
+            else:
+                run_all(root, device=args.device, resume=args.resume, frontend_budget_s=args.frontend_budget_s, train_budget_s=args.train_budget_s)
+        except Exception as exc:
+            _record_current_failure(root, args.stage, exc)
+            raise
     return 0
 
 

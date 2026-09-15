@@ -2,19 +2,149 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from sparse3d_forgery.video_input import DecodedFrame, DecodedVideoSample
 
+from research_tools.v7.periodic_requery_probe import runner
 from research_tools.v7.periodic_requery_probe.runner import (
     OFFSETS_S,
+    _atomic_json,
     _build_sequence,
     _persist_parent_completion,
+    _support_for_sequence,
     Budget,
     _window_label,
     _choose_parents,
 )
+
+
+def test_undefined_support_summary_round_trips_as_null_with_reason(tmp_path: Path) -> None:
+    path = tmp_path / "support.json"
+    value = {
+        "support_status": "NO_VALID_FIVE_TIME_UNIT",
+        "support_reasons": ["COMMON_VALID_MEMBERS_LT3"],
+        "valid_unit_count": 0,
+        "intervals_s": None,
+        "features": {"SET_A": None},
+    }
+    _atomic_json(path, value)
+    loaded = json.loads(path.read_text())
+    assert loaded["intervals_s"] is None
+    assert loaded["features"]["SET_A"] is None
+    assert loaded["support_reasons"] == ["COMMON_VALID_MEMBERS_LT3"]
+    assert loaded["valid_unit_count"] == 0
+
+
+def test_nonfinite_valid_feature_is_rejected_with_field_path(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match=r"\$\.features\.SET_A\[0\]\[0\]"):
+        _atomic_json(tmp_path / "support.json", {"features": {"SET_A": np.asarray([[np.nan]])}})
+
+
+def test_current_failure_replaces_stale_final_status(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    _atomic_json(tmp_path / "final_status.json", {"status": "STOPPED_SAFE"})
+    _atomic_json(tmp_path / "progress.json", {"stage": "features", "completed": 12, "total": 96})
+    monkeypatch.setattr(runner, "_git_head", lambda: "abc")
+    try:
+        raise ValueError("bad support")
+    except ValueError as exc:
+        runner._record_current_failure(tmp_path, "features", exc)
+    final = json.loads((tmp_path / "final_status.json").read_text())
+    progress = json.loads((tmp_path / "progress.json").read_text())
+    assert final["status"] == "FAILED"
+    assert final["failed_stage"] == "features"
+    assert final["failure_reason"] == "ValueError: bad support"
+    assert "ValueError: bad support" in final["traceback"]
+    assert progress["status"] == "FAILED"
+    assert progress["completed"] == 12
+    assert progress["total"] == 96
+
+
+def test_periodic_support_uses_five_time_units(monkeypatch: pytest.MonkeyPatch) -> None:
+    sequence = SimpleNamespace(
+        timestamps_s=np.asarray([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]),
+        frame_indices=np.arange(10, dtype=np.int64),
+        xyz=np.zeros((10, 3, 3), dtype=np.float32),
+        geometry_validity=np.ones((10, 3), dtype=np.bool_),
+    )
+    monkeypatch.setattr(runner, "load_particle_sequence", lambda _prefix: sequence)
+    monkeypatch.setattr(runner, "rebuild_components_fast", lambda *_args: ((0, 1, 2),))
+    monkeypatch.setattr(
+        runner,
+        "build_local_groups",
+        lambda *_args, **_kwargs: {
+            "groups": [{"retained": True, "member_slots": [0, 1, 2], "local_group_id": 7}],
+            "retained_group_count": 1,
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "build_five_time_unit",
+        lambda *_args, **_kwargs: {
+            "status": "VALID",
+            "local_group_id": 7,
+            "timestamps_s": [0.5, 0.6, 0.7, 0.8, 0.9],
+            "states": np.ones((5, 4), dtype=np.float64),
+        },
+    )
+    output = _support_for_sequence(
+        Path("unused"),
+        {
+            "window_id": "W",
+            "source_id": "S",
+            "pair_id": "P",
+            "role": "real",
+            "kind": "MANIP",
+            "label": 0,
+            "annotation_category": "REAL_NEGATIVE",
+            "offset_s": 0.0,
+            "interval_start_s": 0.0,
+            "interval_end_s": 1.0,
+        },
+        "R",
+    )
+    assert output["support_status"] == "VALID"
+    assert output["valid_unit_count"] == 1
+    assert output["features"]["SET_A"].shape == (1, 5, 4)
+    assert output["intervals_s"] == pytest.approx([0.1, 0.1, 0.1, 0.1])
+    assert "states" not in output["support"]["units"][0]
+
+
+def test_periodic_support_records_no_retained_group_reason(monkeypatch: pytest.MonkeyPatch) -> None:
+    sequence = SimpleNamespace(
+        timestamps_s=np.asarray([0.0, 0.1]),
+        frame_indices=np.arange(2, dtype=np.int64),
+        xyz=np.zeros((2, 3, 3), dtype=np.float32),
+        geometry_validity=np.ones((2, 3), dtype=np.bool_),
+    )
+    monkeypatch.setattr(runner, "load_particle_sequence", lambda _prefix: sequence)
+    monkeypatch.setattr(runner, "rebuild_components_fast", lambda *_args: ())
+    monkeypatch.setattr(
+        runner,
+        "build_local_groups",
+        lambda *_args, **_kwargs: {"groups": [], "retained_group_count": 0},
+    )
+    output = _support_for_sequence(
+        Path("unused"),
+        {
+            "window_id": "W",
+            "source_id": "S",
+            "pair_id": "P",
+            "role": "real",
+            "kind": "MANIP",
+            "label": 0,
+            "annotation_category": "REAL_NEGATIVE",
+            "offset_s": 0.0,
+            "interval_start_s": 0.0,
+            "interval_end_s": 1.0,
+        },
+        "O",
+    )
+    assert output["intervals_s"] is None
+    assert output["support_reasons"] == ["NO_RETAINED_LOCAL_GROUP"]
 
 
 def test_label_mapping_is_applied_after_fixed_sampling() -> None:
