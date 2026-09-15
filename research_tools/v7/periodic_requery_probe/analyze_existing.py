@@ -451,6 +451,37 @@ def main():
     all_r_relations = sum(row["R_relations"] for row in rows)
     common_o_relations = sum(row["O_relations"] for row in common_rows)
     common_r_relations = sum(row["R_relations"] for row in common_rows)
+
+    # Small stratified coverage table.  The saved manifest has only the
+    # paired_eligible flag for the non-primary rows; it does not distinguish
+    # boundary from outside-annotation windows, so that distinction stays NA.
+    strata = [
+        ("role", "real", lambda row: row["role"] == "real", "role from manifest"),
+        ("role", "fake", lambda row: row["role"] == "fake", "role from manifest"),
+        ("primary_class", "primary_negative", lambda row: row["paired_eligible"] and row["label"] == 0, "label=0 and paired_eligible=True"),
+        ("primary_class", "primary_positive", lambda row: row["paired_eligible"] and row["label"] == 1, "label=1 and paired_eligible=True"),
+        ("primary_class", "ineligible_label_window", lambda row: not row["paired_eligible"], "saved artifact does not split boundary vs outside"),
+        ("offset", "b=0.0", lambda row: float(row["offset_s"]) == 0.0, "frozen offset"),
+        ("offset", "b=0.5", lambda row: float(row["offset_s"]) == 0.5, "frozen offset"),
+        ("offset", "b=1.0", lambda row: float(row["offset_s"]) == 1.0, "frozen offset"),
+    ]
+    layer_rows = []
+    for dimension, level, predicate, notes in strata:
+        selected = [row for row in rows if predicate(row)]
+        for mode in MODES:
+            valid_field = f"{mode}_valid"
+            unit_field = f"{mode}_units"
+            relation_field = f"{mode}_relations"
+            layer_rows.append({
+                "dimension": dimension, "level": level, "mode": mode,
+                "planned_windows": len(selected),
+                "valid_windows": sum(row[valid_field] for row in selected),
+                "invalid_windows": sum(not row[valid_field] for row in selected),
+                "valid_units": sum(row[unit_field] for row in selected),
+                "valid_relations": sum(row[relation_field] for row in selected),
+                "notes": notes,
+            })
+    write_csv(analysis / "support_layer_summary.csv", layer_rows, list(layer_rows[0]))
     report = []
     report.append("# V7 periodic re-query pilot：既有产物描述性分析\n")
     report.append("本报告只读取已完成 pilot 的 JSON/CSV 产物；没有重新运行 frontend、tracking、depth、pose、segmentation、模型前向或训练。原始 `report.md` 与 `evaluation/summary.json` 保持不变。\n")
@@ -473,6 +504,12 @@ def main():
         report.append(f"- `{row['window_id']}` ({row['role']}, label={row['label']}, b={row['offset_s']}): O reason=`{row['O_reasons']}`, R units={row['R_units']}, R reason field=`{row['R_reasons'] or 'VALID'}`。\n")
     report.append(f"保存的无效窗口计数（窗口数，不是 reason occurrence）：O={sum(not r['O_valid'] for r in rows)}，R={sum(not r['R_valid'] for r in rows)}。O reasons={dict(o_reason_counts)}；R reasons={dict(r_reason_counts)}。\n")
     report.append(f"共同 79 个窗口的有效单元为 O={common_o_units}、R={common_r_units}，有效关系为 O={common_o_relations}、R={common_r_relations}；固定 96 窗口全体的 O/R 单元计数为 {all_o_units}/{all_r_units}，R-only 六窗额外贡献 R={all_r_units-common_r_units} 个单元和 {all_r_relations-common_r_relations} 条关系。这里的 2296/2401 是全体固定窗口的 O/R 有效单元总数，而不是把两种模式强行放到相同窗口集合后的数字。\n")
+    report.append("分层支撑汇总见 `analysis/support_layer_summary.csv`：它同时按 real/fake、主负/主正、offset=b=0/0.5/1.0 列出计划窗口、有效窗口、单元和关系。当前保存的 metadata 对 17 个 `paired_eligible=False` 窗口没有进一步区分 boundary 与 outside，因此这一层只能报告为 `ineligible_label_window`，不能虚构两类数量。\n")
+    report.append("\n| offset | O planned/valid/units | R planned/valid/units |\n|---|---:|---:|\n")
+    for level in ("b=0.0", "b=0.5", "b=1.0"):
+        o_layer = next(item for item in layer_rows if item["dimension"] == "offset" and item["level"] == level and item["mode"] == "O")
+        r_layer = next(item for item in layer_rows if item["dimension"] == "offset" and item["level"] == level and item["mode"] == "R")
+        report.append(f"| {level} | {o_layer['planned_windows']}/{o_layer['valid_windows']}/{o_layer['valid_units']} | {r_layer['planned_windows']}/{r_layer['valid_windows']}/{r_layer['valid_units']} |\n")
     report.append("\n## 六条件复算（seed logit 先平均；阈值 logit≥0）\n")
     report.append("| condition | macro source AUROC | 95% CI | pooled AUROC | AP | P | R | F1 | ACC | TN/FP/FN/TP |\n|---|---:|---|---:|---:|---:|---:|---:|---:|---|\n")
     for condition in CONDITIONS:
