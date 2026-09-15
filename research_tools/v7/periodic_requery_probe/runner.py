@@ -349,13 +349,26 @@ def _positions_for_frames(parent_indices: np.ndarray, frame_indices: Sequence[in
 
 
 def _build_sequence(decoded: DecodedVideoSample, *, uv: np.ndarray, visibility: np.ndarray, xyz: np.ndarray, geometry_valid: np.ndarray, row: Mapping[str, Any], mode: str, parent_id: str, cohort_start_s: float) -> Any:
+    # Geometry helpers may calculate in float64 (notably during inverse
+    # intrinsics and pose multiplication), while the logical ParticleSequence
+    # contract requires float32 XYZ.  Convert only at this construction
+    # boundary; preserve NaN missing values and never repair invalid geometry.
+    xyz_array = np.asarray(xyz)
+    geometry_array = np.asarray(geometry_valid, dtype=np.bool_)
+    if xyz_array.shape[:2] != geometry_array.shape or xyz_array.shape[-1:] != (3,):
+        raise ValueError("xyz and geometry_validity shapes are incompatible before ParticleSequence construction")
+    xyz_array = xyz_array.astype(np.float32, copy=False)
+    if np.any(geometry_array & ~np.all(np.isfinite(xyz_array), axis=-1)):
+        raise ValueError("geometry-valid XYZ must remain finite before ParticleSequence construction")
+    if np.any(~geometry_array & ~np.all(np.isnan(xyz_array), axis=-1)):
+        raise ValueError("geometry-invalid XYZ must remain NaN before ParticleSequence construction")
     return build_particle_sequence(
         decoded,
         track_ids=np.arange(289, dtype=np.int64),
-        xyz=np.asarray(xyz, dtype=np.float64),
+        xyz=xyz_array,
         uv=np.asarray(uv, dtype=np.float32),
         visibility=np.asarray(visibility, dtype=bool),
-        geometry_validity=np.asarray(geometry_valid, dtype=bool),
+        geometry_validity=geometry_array,
         coordinate_system=CoordinateSystem(frame_name="first_camera_world", handedness=Handedness.RIGHT, axis_directions=("right", "down", "forward"), length_unit=LengthUnit.METER, camera_motion_compensated=True, normalization={}),
         lineage={"dataset": "ActivityForensics+Charades", "official_split": "train", "source_id": str(row["source_id"]), "pair_id": str(row["pair_id"]), "role": str(row["role"]), "parent_id": parent_id, "window_id": str(row["window_id"]), "query_cohort": mode},
         provenance={"tracker": "online_bootstapir", "tracker_source_sha": diagnostic.TRACKER_SHA, "depth": "apple_depth_pro", "depth_source_sha": diagnostic.DEPTH_SHA, "depth_semantics": "optical_axis_z_depth", "pose": "open3d_rgbd_odometry", "pose_convention": "target_camera_from_source_camera_inverted", "process_size": 256, "query_grid_size": 17, "query_count": 289, "query_cohort": mode, "cohort_start_s": float(cohort_start_s), "parent_id": parent_id, "cross_cohort_identity": False, "causal_execution": False, "causal_training_reason": "offline parent-window geometry and fixed time support; no target construction"},

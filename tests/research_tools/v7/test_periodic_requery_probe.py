@@ -5,8 +5,11 @@ from pathlib import Path
 
 import numpy as np
 
+from sparse3d_forgery.video_input import DecodedFrame, DecodedVideoSample
+
 from research_tools.v7.periodic_requery_probe.runner import (
     OFFSETS_S,
+    _build_sequence,
     _window_label,
     _choose_parents,
 )
@@ -38,3 +41,37 @@ def test_window_ids_keep_query_cohorts_separate() -> None:
         assert len(row["frame_indices"]) == len(row["timestamps_s"])
         if row["timestamps_s"]:
             assert np.all(np.diff(np.asarray(row["timestamps_s"], dtype=float)) > 0)
+
+
+def test_build_sequence_converts_geometry_dtype_without_repairing_missing() -> None:
+    frames = tuple(
+        DecodedFrame(
+            source_frame_index=index,
+            timestamp_s=float(index) * 0.1,
+            rgb=np.zeros((4, 5, 3), dtype=np.uint8),
+        )
+        for index in range(3)
+    )
+    decoded = DecodedVideoSample("sample", "video", frames)
+    visibility = np.ones((3, 289), dtype=np.bool_)
+    geometry = np.ones((3, 289), dtype=np.bool_)
+    visibility[1, 7] = False
+    geometry[1, 7] = False
+    xyz = np.zeros((3, 289, 3), dtype=np.float64)
+    xyz[1, 7] = np.nan
+    uv = np.zeros((3, 289, 2), dtype=np.float32)
+    uv[1, 7] = np.nan
+    sequence = _build_sequence(
+        decoded,
+        uv=uv,
+        visibility=visibility,
+        xyz=xyz,
+        geometry_valid=geometry,
+        row={"source_id": "S", "pair_id": "P", "role": "real", "window_id": "W"},
+        mode="O",
+        parent_id="PARENT",
+        cohort_start_s=0.0,
+    )
+    assert sequence.xyz.dtype == np.float32
+    assert np.isnan(sequence.xyz[1, 7]).all()
+    assert not sequence.geometry_validity[1, 7]
