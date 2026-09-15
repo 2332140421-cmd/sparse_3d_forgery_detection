@@ -46,3 +46,30 @@ O/R 有效窗口为 79/85，共同有效窗口为 79；训练完成 270 个唯�
 condition×held-out-source×seed 键，每个 200 epochs。完整数值结果和成本
 记录在数据盘的 `report.md`、`evaluation/summary.json`、
 `evaluation/per_source_metrics.csv` 及 `state/*_budget.json` 中。
+
+## 已完成产物的描述性分析补充（不改变原主结果）
+
+本补充只读取上述 pilot 的既有 support、三 seed OOF logit 和评价表，未重新运行
+前端、模型前向或训练。分析入口为
+`research_tools/v7/periodic_requery_probe/analyze_existing.py`，结果写入数据盘
+`derived/v7_activityforensics_periodic_requery_pilot_v1/analysis/`，主报告为
+`analysis/report.md`。
+
+核对后，固定 96 个窗口中 O 有效 79、R 有效 85、共同有效 79；两种模式均有效的
+窗口分为 both=79、O-only=0、R-only=6、neither=11。O/R 全部固定窗口的有效单元
+总数为 2296/2401；在共同 79 窗口上为 2296/2382，R-only 六窗另贡献 19 个 R
+单元。六个 R-only 窗口的原始 support 原因、窗口清单和关系计数均保存在 analysis
+小表中，不把它们解释为空间失真真值。
+
+原报告的 macro 与 pooled 分母不同：pooled 主标签集合为 79 窗口（real=39、
+fake=40，保留 01KML 的 fake-only 窗口），source-macro 为 14 个双类别 source
+的 76 窗口（real=39、fake=37）。本补充复算六条件指标并与既有 summary 对照，
+不替换原主结果，也不调阈值。R_SET−O_SET 的平均 source 差值在 5 个 source
+上升、6 个持平、3 个下降，三 seed 方向完全一致的 source 为 8/14，source
+bootstrap 区间仍跨零。b=0 的 28 个共同窗口、三种保存表示均逐元素一致（84/84），
+但 O/R 模型与标准化不同，最终 logit 不要求相同。
+
+跨 source 正负 pair 的排序分解仅用于描述 pooled 与 source-macro 差异；不同留出
+source 使用不同 LOSO 模型，不能据此区分 source 分布和模型尺度，也不能推出统一
+部署模型效果。该补充不支持扩大实验、real-only 或图关系方法结论，空间单元增加也
+不等于失真部位被观测。
