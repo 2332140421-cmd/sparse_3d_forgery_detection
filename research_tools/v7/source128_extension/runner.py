@@ -29,6 +29,8 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
+from research_tools.v7.observation_density_diagnostic import run_diagnostic as diagnostic
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_ROOT = Path("/root/autodl-tmp/data/sparse_3d_forgery_detection")
