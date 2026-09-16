@@ -7,6 +7,7 @@ import pytest
 
 from research_tools.v7.source128_extension import runner
 from research_tools.v7.source128_extension.runner import _bootstrap, _effective_training_rows, _stable_key, atomic_json, report
+from research_tools.v7.periodic_requery_probe.runner import Budget as PeriodicBudget
 
 
 def test_selection_key_is_stable_and_order_independent() -> None:
@@ -27,6 +28,28 @@ def test_source_bootstrap_uses_paired_sources_and_fixed_seed() -> None:
 def test_atomic_json_rejects_nonfinite(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         atomic_json(tmp_path / "bad.json", {"value": float("nan")})
+
+
+def test_recovery_frontend_budget_does_not_consume_or_rewrite_historical_budget(tmp_path: Path) -> None:
+    historical = {
+        "budget_s": 7200.0,
+        "cumulative_s": 90.945,
+        "estimated_reserved_s": 11161.097,
+        "budget_accounted_upper_s": 11252.042,
+        "process_state": "BUDGET_UNCERTAIN",
+        "uncertain_attempt": {"lower_bound_s_approx": 5.0, "upper_bound_s": 11161.097, "actual_elapsed_s": None},
+    }
+    atomic_json(tmp_path / "state/frontend_budget.json", historical)
+
+    budget = PeriodicBudget(tmp_path, "frontend_recovery", 5400.0)
+
+    assert json.loads((tmp_path / "state/frontend_budget.json").read_text()) == historical
+    recovery = json.loads((tmp_path / "state/frontend_recovery_budget.json").read_text())
+    assert recovery["budget_s"] == 5400.0
+    assert recovery["cumulative_s"] < 1.0
+    assert recovery["estimated_reserved_s"] == 0.0
+    assert budget.remaining() <= 5400.0
+    assert budget.remaining() > 5399.0
 
 
 def test_effective_training_rows_keep_frozen_selection_and_report_no_support() -> None:

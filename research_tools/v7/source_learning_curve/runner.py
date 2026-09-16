@@ -432,10 +432,10 @@ def prepare_periodic(root: Path) -> dict[str, Any]:
     return result
 
 
-def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
+def run_frontend(root: Path, budget_s: float, resume: bool, budget_name: str = "frontend") -> dict[str, Any]:
     from research_tools.v7.periodic_requery_probe import runner as periodic
     periodic.BASE_ROOT = STAGING_ROOT
-    return periodic.run_frontend(root, budget_s=budget_s, resume=resume)
+    return periodic.run_frontend(root, budget_s=budget_s, resume=resume, budget_name=budget_name)
 
 
 def run_features(root: Path) -> dict[str, Any]:

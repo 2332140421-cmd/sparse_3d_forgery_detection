@@ -629,9 +629,9 @@ def _frontend_parent(parent: Mapping[str, Any], subwindows: Sequence[Mapping[str
     return outputs
 
 
-def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
+def run_frontend(root: Path, budget_s: float, resume: bool, budget_name: str = "frontend") -> dict[str, Any]:
     global STOP_REQUESTED
-    budget = Budget(root, "frontend", budget_s)
+    budget = Budget(root, budget_name, budget_s)
     parents = _load_parents(root)
     subwindows = _load_subwindows(root)
     result_path = root / "frontend/results.json"

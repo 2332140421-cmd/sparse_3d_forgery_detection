@@ -33,7 +33,8 @@ command=("$PYTHON" -u -m research_tools.v7.source128_extension.runner all
     --resume
     --output-root "$OUTPUT_ROOT"
     --device cuda
-    --frontend-budget-s 7200
+    --frontend-budget-s 5400
+    --frontend-budget-name frontend_recovery
     --train-budget-s 900
     --log-path "$log_path"
     --wrapper-pid "$$"
