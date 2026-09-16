@@ -779,7 +779,7 @@ def report(root: Path) -> dict[str, Any]:
                 status = existing_status
         except (OSError, ValueError, TypeError):
             pass
-    atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
+    atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "media_status_counts": dict(media_counts), "complete_source_count": int(complete_source_count), "planned_source_count": int(len(protocol["selection"]["base_sources"]) + len(protocol["selection"]["added_sources"]) + len(protocol["selection"]["validation_sources"])), "smoke_frontend": smoke_frontend, "smoke_train": smoke_train, "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
     progress(root, "report", status, 1 if status == "COMPLETE" else 0, 1)
     return {"status": status, "report": str(path)}
 
