@@ -574,6 +574,14 @@ def _load_rows(root: Path) -> list[dict[str, Any]]:
     return [dict(row) for row in rows if str(row.get("mode")) == "R" and int(row.get("valid_unit_count", 0)) > 0 and row.get("label") in (0, 1) and row.get("features", {}).get("SET_A") is not None]
 
 
+def _load_parents(root: Path) -> list[dict[str, Any]]:
+    return [dict(row) for row in json.loads((root / "manifests/parents.json").read_text(encoding="utf-8"))]
+
+
+def _load_subwindows(root: Path) -> list[dict[str, Any]]:
+    return [dict(row) for row in json.loads((root / "manifests/subwindows.json").read_text(encoding="utf-8"))]
+
+
 def _load_validation_baseline() -> list[dict[str, Any]]:
     path = BASELINE_ROOT / "scores/validation_window_scores.csv"
     with path.open(newline="", encoding="utf-8") as handle:
