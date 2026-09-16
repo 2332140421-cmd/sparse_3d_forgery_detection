@@ -15,10 +15,12 @@
 
 该 pilot 不是 sealed test，不证明未知 generator 泛化或空间定位能力。未访问旧 R7/V5，不改变正式 `src` 检测链。
 
-## 当前执行状态（2026-09-16）
+## 执行状态与恢复记录（2026-09-16）
 
-冻结清单已写入数据盘；新增 64 个 source 的选择未依据分数或前端成功率。一次有界下载恢复后，媒体 manifest 实际为 209/288 条有效（180 `REUSED_EXISTING`、20 `MATERIALIZED`、9 `DOWNLOADED`），新增 source 中 10 个 real/fake 成对可用；其余条目保留 77 个下载失败和 2 个校验失败，未被当作可训练数据。S3 Charades 中央目录后续三次 SSL EOF，`run_all --resume` 因媒体不完整写入 `MEDIA_INCOMPLETE` 并停止，未启动正式 128-source 前端或训练。
+最初的有界下载曾停在 209/288 并写入 `MEDIA_INCOMPLETE`；该历史记录保留，但已被后续用户确认的下载完成状态取代。本次恢复不重新下载：数据盘媒体清单现为 288/288 有效，144 个 source 均有 real/fake 媒体，状态为 61 `DOWNLOADED`、47 `MATERIALIZED`、180 `REUSED_EXISTING`，本地字节数与冻结 manifest 一致。
 
-新增 source `VG94P` 的 real/fake 两个父片段已通过真实 CUDA 前端和 R 特征 smoke（6 个窗口），并以 1 source、6 窗口完成独立 200 epoch 双类别 CUDA 训练；smoke 模型不进入正式比较。正式模型数为 0/3，验证指标尚未生成。
+冻结计划已按 144 source、288 个父片段、864 个时间子窗口展开，既有 540 个窗口 ID/PTS/帧身份未改变。旧 80 source 的 160 个父片段缓存通过身份核验；新增 source `VG94P` 的 2 个 smoke 父片段有效。计划剩余 126 个新父片段前端计算。前端累计预算已消费 90.9448/7200 秒，剩余约 7109.0552 秒；此前端到端 smoke 为 PASS（CUDA，1 source、6 窗口、200 epochs），不进入正式结果。正式特征待按完整 864 窗口计划重建；旧 support 文件只有 540 窗口/1080 个 O/R 行，不满足当前计划身份，不能复用。正式模型仍为 0/3；固定验证为 14 source/83 窗口；特征加正式训练的 900 秒预算此前尚未启动。
 
-恢复方式：网络可用后，在仓库根目录执行 `.venv/bin/python -u -m research_tools.v7.source128_extension.runner all --resume --output-root /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v7_activityforensics_source128_extension_v1 --device cuda`。脚本会先重试并严格校验媒体；只有 288/288 条媒体有效时才继续 128-source 窗口、前端、特征和正式训练，部分训练池会被硬门禁拒绝。
+恢复入口为 `.venv/bin/python -u -m research_tools.v7.source128_extension.runner all --resume --output-root /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v7_activityforensics_source128_extension_v1 --device cuda`。它在单一运行锁内依次完成前端、完整性核验后的特征、三 seed 正式训练、固定验证评分及报告。前端完成前不生成缺失特征占位；前端和特征缓存按固定身份恢复。特征耗时与训练共用且累计 900 秒上限；预算或运行失败会保留阶段状态并且不会标记 `COMPLETE`。训练只纳入冻结 128 source 池内标签合格、R 特征有效的窗口，不替换无支撑 source，报告同时给出计划池和实际有效覆盖。
+
+恢复前最后核验：无同一实验运行进程，未发现正在运行的下载；源代码小修针对恢复完整性、有效训练覆盖记录和训练集评估，不改变冻结研究方法。启动状态、PID、阶段进度、累计预算与最终报告均写在上述输出目录的数据盘路径中。

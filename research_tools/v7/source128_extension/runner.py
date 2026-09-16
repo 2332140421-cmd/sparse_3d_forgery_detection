@@ -571,9 +571,110 @@ def features(root: Path) -> dict[str, Any]:
     return curve.run_features(root)
 
 
+def _feature_artifacts_complete(root: Path) -> bool:
+    """Only reuse features when they cover the current, complete window plan."""
+    try:
+        subwindows = _load_subwindows(root)
+        expected = {str(row["window_id"]): row for row in subwindows}
+        if not expected:
+            return False
+        frontend_rows = json.loads((root / "frontend/results.json").read_text(encoding="utf-8"))
+        frontend_by_id = {str(row["window_id"]): row for row in frontend_rows}
+        if len(frontend_by_id) != len(expected) or set(frontend_by_id) != set(expected):
+            return False
+        identity_fields = (
+            "source_id", "role", "parent_id", "pair_id", "kind", "offset_s",
+            "frame_indices", "timestamps_s", "interval_start_s", "interval_end_s",
+            "label", "annotation_category", "video_path",
+        )
+        for window_id, row in frontend_by_id.items():
+            if str(row.get("status")) != "FRONTEND_COMPLETE":
+                return False
+            if any(row.get(field) != expected[window_id].get(field) for field in identity_fields):
+                return False
+            if not row.get("o_sequence_prefix") or not row.get("r_sequence_prefix"):
+                return False
+        support_rows = json.loads((root / "support/window_support.json").read_text(encoding="utf-8"))
+        keys = [(str(row["window_id"]), str(row["mode"])) for row in support_rows]
+        expected_keys = {(window_id, mode) for window_id in expected for mode in ("O", "R")}
+        if len(keys) != len(expected_keys) or set(keys) != expected_keys:
+            return False
+        for row in support_rows:
+            window_id = str(row["window_id"])
+            source = expected[window_id]
+            frontend = frontend_by_id[window_id]
+            for field in ("source_id", "role", "pair_id", "kind", "offset_s", "interval_start_s", "interval_end_s", "label", "annotation_category"):
+                if row.get(field) != source.get(field):
+                    return False
+            if str(row.get("support_status")) in {"MISSING_FRONTEND", "FEATURE_FAILED"}:
+                return False
+            prefix_key = "o_sequence_prefix" if str(row["mode"]) == "O" else "r_sequence_prefix"
+            if str(row.get("particle_prefix")) != str(frontend.get(prefix_key)):
+                return False
+            frame_indices = [int(value) for value in row.get("frame_indices", [])]
+            timestamps = [float(value) for value in row.get("timestamps_s", [])]
+            if not frame_indices or len(frame_indices) != len(timestamps) or len(frame_indices) != int(frontend.get("o_frame_count" if row["mode"] == "O" else "r_frame_count", -1)):
+                return False
+            if any(right <= left for left, right in zip(frame_indices, frame_indices[1:])) or any(right <= left for left, right in zip(timestamps, timestamps[1:])):
+                return False
+            frame_to_time = dict(zip(frame_indices, timestamps))
+            for frame, timestamp in zip(source["frame_indices"], source["timestamps_s"]):
+                if int(frame) not in frame_to_time or not math.isclose(frame_to_time[int(frame)], float(timestamp), rel_tol=0.0, abs_tol=1e-7):
+                    return False
+            if not isinstance(row.get("features"), Mapping) or "SET_A" not in row["features"]:
+                return False
+            valid_unit_count = int(row.get("valid_unit_count", 0))
+            feature = row["features"]["SET_A"]
+            if valid_unit_count > 0:
+                if str(row.get("support_status")) != "VALID" or feature is None:
+                    return False
+                values = np.asarray(feature, dtype=np.float64)
+                if values.size == 0 or not np.all(np.isfinite(values)):
+                    return False
+            elif str(row.get("support_status")) == "VALID":
+                return False
+        summary = json.loads((root / "support/support_summary.json").read_text(encoding="utf-8"))
+        return int(summary.get("subwindow_count", -1)) == len(expected) and int(summary.get("mode_rows", -1)) == len(expected_keys)
+    except (OSError, ValueError, TypeError, KeyError):
+        return False
+
+
+def _features_with_budget(root: Path, budget: Budget) -> dict[str, Any]:
+    """Charge feature extraction to the frozen combined feature/training budget."""
+    started = time.monotonic()
+    state_path = root / "state/feature_runtime.json"
+    old = json.loads(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {"attempts": []}
+    try:
+        result = features(root)
+        status = "COMPLETE" if _feature_artifacts_complete(root) else "INCOMPLETE"
+        reason = None if status == "COMPLETE" else "FEATURE_ARTIFACT_IDENTITY_OR_COMPLETENESS_FAILURE"
+    except BaseException as exc:
+        status = "FAILED"
+        reason = f"{type(exc).__name__}: {exc}"
+        elapsed = max(0.0, time.monotonic() - started)
+        attempts = list(old.get("attempts", []))
+        attempts.append({"status": status, "elapsed_s": elapsed, "error": reason, "updated_unix": time.time()})
+        atomic_json(state_path, {"attempts": attempts, "cumulative_feature_elapsed_s": sum(float(item.get("elapsed_s", 0.0)) for item in attempts)})
+        budget.save("FEATURE_EXTRACTION_FAILED", stage="features", feature_elapsed_s=elapsed, error=reason)
+        raise
+    elapsed = max(0.0, time.monotonic() - started)
+    attempts = list(old.get("attempts", []))
+    attempts.append({"status": status, "elapsed_s": elapsed, "updated_unix": time.time()})
+    atomic_json(state_path, {"attempts": attempts, "cumulative_feature_elapsed_s": sum(float(item.get("elapsed_s", 0.0)) for item in attempts)})
+    budget.save(reason, stage="features", feature_elapsed_s=elapsed, feature_status=status)
+    return {"status": status, "summary": result, "elapsed_s": elapsed, "error": reason}
+
+
 def _load_rows(root: Path) -> list[dict[str, Any]]:
     rows = json.loads((root / "support/window_support.json").read_text(encoding="utf-8"))
     return [dict(row) for row in rows if str(row.get("mode")) == "R" and int(row.get("valid_unit_count", 0)) > 0 and row.get("label") in (0, 1) and row.get("features", {}).get("SET_A") is not None]
+
+
+def _effective_training_rows(rows: Sequence[Mapping[str, Any]], planned_sources: Sequence[str]) -> tuple[list[dict[str, Any]], set[str], list[str]]:
+    planned = {str(source) for source in planned_sources}
+    selected = [dict(row) for row in rows if str(row.get("source_id")) in planned]
+    effective = {str(row["source_id"]) for row in selected}
+    return selected, effective, sorted(planned - effective)
 
 
 def _load_parents(root: Path) -> list[dict[str, Any]]:
@@ -598,15 +699,11 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
     import torch
     from research_tools.v7.periodic_requery_probe import runner as periodic
 
+    budget = _budget(root, budget_s)
     rows = _load_rows(root)
     protocol = json.loads((root / "protocol.json").read_text(encoding="utf-8"))
     train_sources = [str(x) for x in protocol["selection"]["base_sources"] + protocol["selection"]["added_sources"]]
-    train_set = set(train_sources)
-    train_rows = [row for row in rows if str(row["source_id"]) in train_set]
-    observed_sources = {str(row["source_id"]) for row in train_rows}
-    if observed_sources != train_set:
-        missing = sorted(train_set - observed_sources)
-        raise RuntimeError(f"TRAINING_SOURCE_SET_INCOMPLETE:{len(observed_sources)}/{len(train_set)}:missing={missing}")
+    train_rows, observed_sources, missing_sources = _effective_training_rows(rows, train_sources)
     if not train_rows:
         raise RuntimeError("NO_VALID_128_TRAINING_ROWS")
     counts = Counter(int(row["label"]) for row in train_rows)
@@ -617,13 +714,21 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
     standardizer = periodic.fit_standardizer("SET_A", [row["features"]["SET_A"] for row in values], weights)
     batch = periodic.make_batch("SET_A", values, standardizer)
     batch["window_weights"] = weights
+    write_csv(root / "models/training_window_manifest.csv", [
+        {"window_id": row["window_id"], "source_id": row["source_id"], "role": row["role"], "label": row["label"], "valid_unit_count": row.get("valid_unit_count", 0), "included": True}
+        for row in train_rows
+    ])
+    coverage_by_source = Counter(str(row["source_id"]) for row in train_rows)
+    write_csv(root / "models/training_source_coverage.csv", [
+        {"source_id": source, "selected_for_training": True, "valid_label_eligible_window_count": int(coverage_by_source.get(source, 0)), "effective_training_source": source in observed_sources}
+        for source in train_sources
+    ])
     model_path = root / "models/fold_models.json"
     records = json.loads(model_path.read_text(encoding="utf-8")).get("records", []) if resume and model_path.is_file() else []
     done = {(int(item["seed"]), int(item.get("source_count", 0))) for item in records if item.get("status") == "TRAIN_COMPLETE"}
-    budget = _budget(root, budget_s)
     root.joinpath("models").mkdir(parents=True, exist_ok=True)
     total = len(MODEL_SEEDS)
-    progress(root, "train", "RUNNING", len(done), total, source_count=TOTAL_SOURCE_COUNT, training_window_count=len(train_rows), training_real_count=counts[0], training_fake_count=counts[1], cumulative_elapsed_s=budget.elapsed())
+    progress(root, "train", "RUNNING", len(done), total, planned_source_count=TOTAL_SOURCE_COUNT, effective_training_source_count=len(observed_sources), missing_training_source_count=len(missing_sources), missing_training_sources=missing_sources, training_window_count=len(train_rows), training_real_count=counts[0], training_fake_count=counts[1], cumulative_elapsed_s=budget.elapsed())
     for seed in MODEL_SEEDS:
         if (int(seed), TOTAL_SOURCE_COUNT) in done:
             continue
@@ -633,7 +738,7 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
             return {"status": "TRAINING_BUDGET_EXHAUSTED", "completed_models": len(done), "total_models": total}
         started = time.perf_counter()
         model, fit = periodic.train_one("SET_A", batch, seed=int(seed), device=device, epochs=EPOCHS)
-        record = {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "seed": int(seed), "status": "TRAIN_COMPLETE", "training_sources": train_sources, "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1], "parameter_count": periodic.parameter_count("SET_A"), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "device": str(torch.device(device)), "state_dict": periodic.model_state(model)}
+        record = {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "planned_source_count": TOTAL_SOURCE_COUNT, "effective_training_source_count": len(observed_sources), "missing_training_source_count": len(missing_sources), "missing_training_sources": missing_sources, "seed": int(seed), "status": "TRAIN_COMPLETE", "training_sources": train_sources, "effective_training_sources": sorted(observed_sources), "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1], "parameter_count": periodic.parameter_count("SET_A"), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "device": str(torch.device(device)), "state_dict": periodic.model_state(model)}
         records.append(record)
         atomic_json(model_path, {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "epochs": EPOCHS, "seeds": list(MODEL_SEEDS), "records": records})
         done.add((int(seed), TOTAL_SOURCE_COUNT))
@@ -644,7 +749,7 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
             torch.cuda.empty_cache()
     budget.save(None, completed_models=len(done), total_models=total)
     progress(root, "train", "COMPLETE", len(done), total, cumulative_elapsed_s=budget.elapsed())
-    return {"status": "COMPLETE", "completed_models": len(done), "total_models": total, "elapsed_s": budget.elapsed(), "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1]}
+    return {"status": "COMPLETE", "completed_models": len(done), "total_models": total, "planned_source_count": TOTAL_SOURCE_COUNT, "effective_training_source_count": len(observed_sources), "missing_training_source_count": len(missing_sources), "missing_training_sources": missing_sources, "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1]}
 
 
 def _metrics(labels: Sequence[int], scores: Sequence[float]) -> dict[str, Any]:
@@ -682,15 +787,26 @@ def evaluate(root: Path, device: str = "cuda") -> dict[str, Any]:
     import torch
     from research_tools.v7.periodic_requery_probe import runner as periodic
 
-    rows = _load_rows(root)
+    all_rows = _load_rows(root)
+    protocol = json.loads((root / "protocol.json").read_text(encoding="utf-8"))
+    planned_train_sources = set(str(x) for x in protocol["selection"]["base_sources"] + protocol["selection"]["added_sources"])
+    train_rows = [row for row in all_rows if str(row["source_id"]) in planned_train_sources]
+    training_manifest = root / "models/training_window_manifest.csv"
+    if training_manifest.is_file():
+        with training_manifest.open(newline="", encoding="utf-8") as handle:
+            expected_training_ids = {str(item["window_id"]) for item in csv.DictReader(handle)}
+        if expected_training_ids != {str(row["window_id"]) for row in train_rows}:
+            raise RuntimeError("TRAINING_EVALUATION_WINDOW_SET_MISMATCH")
+    rows = all_rows
     baseline_rows = _load_validation_baseline()
     baseline_by_id = {str(row["window_id"]): row for row in baseline_rows}
     validation_ids = set(baseline_by_id)
-    rows = [row for row in rows if str(row["window_id"]) in validation_ids and str(row["source_id"]) in set(json.loads((root / "protocol.json").read_text(encoding="utf-8"))["selection"]["validation_sources"])]
+    rows = [row for row in rows if str(row["window_id"]) in validation_ids and str(row["source_id"]) in set(protocol["selection"]["validation_sources"])]
     if len(rows) != len(validation_ids):
         raise RuntimeError(f"VALIDATION_FEATURE_SET_MISMATCH:{len(rows)}:{len(validation_ids)}")
     records = json.loads((root / "models/fold_models.json").read_text(encoding="utf-8"))["records"]
     score_rows = [{"window_id": str(row["window_id"]), "source_id": str(row["source_id"]), "role": str(row["role"]), "label": int(row["label"]), "valid_unit_count": int(row.get("valid_unit_count", 0)), "baseline_seed_20260909": float(baseline_by_id[str(row["window_id"])]["MEAN_BASELINE_seed_20260909"]), "baseline_seed_20260910": float(baseline_by_id[str(row["window_id"])]["MEAN_BASELINE_seed_20260910"]), "baseline_seed_20260911": float(baseline_by_id[str(row["window_id"])]["MEAN_BASELINE_seed_20260911"]), "baseline_mean_logit": float(baseline_by_id[str(row["window_id"])]["MEAN_BASELINE_MEAN_LOGIT"])} for row in rows]
+    training_score_rows = [{"window_id": str(row["window_id"]), "source_id": str(row["source_id"]), "role": str(row["role"]), "label": int(row["label"]), "valid_unit_count": int(row.get("valid_unit_count", 0))} for row in train_rows]
     standardizers: dict[int, Any] = {}
     for record in records:
         seed = int(record["seed"])
@@ -701,6 +817,11 @@ def evaluate(root: Path, device: str = "cuda") -> dict[str, Any]:
         scores = periodic.score_batch("SET_A", model, batch, device)
         for item, value in zip(score_rows, scores):
             item[f"source128_seed_{seed}"] = float(value)
+        train_batch_rows = [{**dict(row), "features": {"SET_A": np.asarray(row["features"]["SET_A"], dtype=np.float64)}} for row in train_rows]
+        train_batch = periodic.make_batch("SET_A", train_batch_rows, standardizers[seed], require_labels=False)
+        train_scores = periodic.score_batch("SET_A", model, train_batch, device)
+        for item, value in zip(training_score_rows, train_scores):
+            item[f"source128_seed_{seed}"] = float(value)
         del model
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -710,8 +831,13 @@ def evaluate(root: Path, device: str = "cuda") -> dict[str, Any]:
             raise RuntimeError(f"MISSING_128_SEED_SCORE:{item['window_id']}")
         item["source128_mean_logit"] = float(np.mean([item[name] for name in seed_names]))
         item["baseline_mean_logit"] = float(np.mean([item[f"baseline_seed_{seed}"] for seed in MODEL_SEEDS]))
+    for item in training_score_rows:
+        if not all(name in item for name in seed_names):
+            raise RuntimeError(f"MISSING_128_TRAIN_SEED_SCORE:{item['window_id']}")
+        item["source128_mean_logit"] = float(np.mean([item[name] for name in seed_names]))
     root.joinpath("scores").mkdir(parents=True, exist_ok=True)
     write_csv(root / "scores/validation_window_scores.csv", score_rows)
+    write_csv(root / "scores/train_window_scores.csv", training_score_rows)
     labels = [int(row["label"]) for row in score_rows]
     metrics_rows: list[dict[str, Any]] = []
     for condition, key in (("MEAN_BASELINE_64", "baseline_mean_logit"), ("SUMMARY_SET_128", "source128_mean_logit")):
@@ -722,6 +848,22 @@ def evaluate(root: Path, device: str = "cuda") -> dict[str, Any]:
             source_seed = _source_values(score_rows, skey)
             metrics_rows.append({"condition": condition, "seed": int(seed), "source_count": len(source_seed), "source_macro_auroc": _bootstrap(source_seed), **_metrics(labels, [float(row[skey]) for row in score_rows])})
     write_csv(root / "evaluation/metrics.csv", metrics_rows)
+    training_metrics: list[dict[str, Any]] = []
+    for seed in MODEL_SEEDS:
+        key = f"source128_seed_{seed}"
+        by_source = _source_values(training_score_rows, key)
+        training_metrics.append({"condition": "SUMMARY_SET_128_TRAIN", "seed": int(seed), "source_count": len(by_source), **_metrics([int(row["label"]) for row in training_score_rows], [float(row[key]) for row in training_score_rows]), "source_macro_auroc_point_estimate": float(np.mean(list(by_source.values()))) if by_source else None})
+    train_source_mean = _source_values(training_score_rows, "source128_mean_logit")
+    training_metrics.append({"condition": "SUMMARY_SET_128_TRAIN", "seed": "MEAN_LOGIT", "source_count": len(train_source_mean), **_metrics([int(row["label"]) for row in training_score_rows], [float(row["source128_mean_logit"]) for row in training_score_rows]), "source_macro_auroc_point_estimate": float(np.mean(list(train_source_mean.values()))) if train_source_mean else None})
+    baseline_summary = json.loads((BASELINE_ROOT / "evaluation/summary.json").read_text(encoding="utf-8"))
+    baseline_training_metrics = [dict(row) for row in baseline_summary.get("metrics", []) if row.get("condition") == "MEAN_BASELINE" and row.get("split") == "train"]
+    write_csv(root / "evaluation/train_metrics.csv", [
+        {"condition": "MEAN_BASELINE_64_TRAIN", "seed": row.get("seed"), "source_count": row.get("source_count"), "window_count": row.get("window_count"), "real_count": row.get("real_count"), "fake_count": row.get("fake_count"), "source_macro_auroc": row.get("source_macro_auroc"), "pooled_auroc": row.get("pooled_auroc"), "pooled_ap": row.get("pooled_ap"), "precision": row.get("precision"), "recall": row.get("recall"), "f1": row.get("f1"), "accuracy": row.get("accuracy"), "tn": row.get("tn"), "fp": row.get("fp"), "fn": row.get("fn"), "tp": row.get("tp"), "origin": "saved attention-pooling pilot evaluation"}
+        for row in baseline_training_metrics
+    ] + [
+        {"condition": row["condition"], "seed": row["seed"], "source_count": row["source_count"], "window_count": row["window_count"], "real_count": row["real_count"], "fake_count": row["fake_count"], "source_macro_auroc": row["source_macro_auroc_point_estimate"], "pooled_auroc": row["pooled_auroc"], "pooled_ap": row["pooled_ap"], "precision": row["precision"], "recall": row["recall"], "f1": row["f1"], "accuracy": row["accuracy"], "tn": row["tn"], "fp": row["fp"], "fn": row["fn"], "tp": row["tp"], "origin": "forward pass on training windows using saved 128-source model"}
+        for row in training_metrics
+    ])
     baseline_source = _source_values(score_rows, "baseline_mean_logit")
     new_source = _source_values(score_rows, "source128_mean_logit")
     per_source = []
@@ -734,7 +876,7 @@ def evaluate(root: Path, device: str = "cuda") -> dict[str, Any]:
         per_source.append(item)
     write_csv(root / "evaluation/per_source_metrics.csv", per_source)
     paired = _bootstrap(new_source, baseline_source)
-    summary = {"validation_population": {"source_count": len(new_source), "window_count": len(score_rows), "real_count": int(sum(x == 0 for x in labels)), "fake_count": int(sum(x == 1 for x in labels)), "window_ids": sorted(validation_ids)}, "conditions": metrics_rows, "primary_comparison": {"name": "SUMMARY_SET_128_MINUS_MEAN_BASELINE_64", **paired}, "per_source": per_source, "baseline_source": baseline_source, "source128_source": new_source, "device": str(torch.device(device)), "model_count": len(records), "baseline_artifact": str(BASELINE_ROOT), "score_identity": "baseline MEAN_BASELINE seed scores reused; 128 scores from newly trained models"}
+    summary = {"validation_population": {"source_count": len(new_source), "window_count": len(score_rows), "real_count": int(sum(x == 0 for x in labels)), "fake_count": int(sum(x == 1 for x in labels)), "window_ids": sorted(validation_ids)}, "training_population": {"planned_source_count": len(planned_train_sources), "effective_source_count": len({str(row['source_id']) for row in train_rows}), "window_count": len(train_rows), "real_count": sum(int(row["label"]) == 0 for row in train_rows), "fake_count": sum(int(row["label"]) == 1 for row in train_rows), "window_ids_file": str(root / "models/training_window_manifest.csv")}, "training_metrics": training_metrics, "baseline_training_metrics": baseline_training_metrics, "conditions": metrics_rows, "primary_comparison": {"name": "SUMMARY_SET_128_MINUS_MEAN_BASELINE_64", **paired}, "per_source": per_source, "baseline_source": baseline_source, "source128_source": new_source, "device": str(torch.device(device)), "model_count": len(records), "baseline_artifact": str(BASELINE_ROOT), "score_identity": "baseline MEAN_BASELINE seed scores reused; 128 scores from newly trained models"}
     atomic_json(root / "evaluation/summary.json", summary)
     return summary
 
@@ -745,8 +887,17 @@ def report(root: Path) -> dict[str, Any]:
     frontend_rows = json.loads((root / "frontend/results.json").read_text(encoding="utf-8")) if (root / "frontend/results.json").is_file() else []
     support_rows = json.loads((root / "support/window_support.json").read_text(encoding="utf-8")) if (root / "support/window_support.json").is_file() else []
     model_records = json.loads((root / "models/fold_models.json").read_text(encoding="utf-8")).get("records", []) if (root / "models/fold_models.json").is_file() else []
+    subwindows = _load_subwindows(root) if (root / "manifests/subwindows.json").is_file() else []
     counts = Counter(str(row.get("status")) for row in frontend_rows)
     support_valid = Counter(str(row.get("mode")) for row in support_rows if int(row.get("valid_unit_count", 0)) > 0)
+    support_status_counts = Counter(f"{row.get('mode')}:{row.get('support_status')}" for row in support_rows)
+    feature_errors = sum(str(row.get("support_status")) == "FEATURE_FAILED" for row in support_rows)
+    r_train_rows = [row for row in support_rows if str(row.get("mode")) == "R" and int(row.get("valid_unit_count", 0)) > 0 and row.get("label") in (0, 1) and row.get("features", {}).get("SET_A") is not None]
+    r_train_windows = {str(row["window_id"]) for row in r_train_rows}
+    r_train_sources = {str(row["source_id"]) for row in r_train_rows}
+    frontend_complete_ids = {str(row.get("window_id")) for row in frontend_rows if str(row.get("status")) == "FRONTEND_COMPLETE"}
+    frontend_complete_parents = {str(row.get("parent_id")) for row in frontend_rows if str(row.get("status")) == "FRONTEND_COMPLETE"}
+    feature_ready = _feature_artifacts_complete(root)
     media_rows = json.loads((root / "acquisition/media_manifest.json").read_text(encoding="utf-8")).get("results", []) if (root / "acquisition/media_manifest.json").is_file() else []
     media_counts = Counter(str(row.get("status")) for row in media_rows)
     download_error = json.loads((root / "state/download_error.json").read_text(encoding="utf-8")) if (root / "state/download_error.json").is_file() else {}
@@ -764,20 +915,57 @@ def report(root: Path) -> dict[str, Any]:
         if str(item.get("status")) in {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"}:
             source_pairs[str(item.get("source_id"))].add(str(item.get("role")))
     complete_source_count = sum(roles == {"real", "fake"} for roles in source_pairs.values())
-    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 下载状态：{'COMPLETE' if media_complete else 'INCOMPLETE'}（{media_completed_count}/{expected_media_count} 项）；媒体状态：{dict(media_counts)}；成对可用 source：{complete_source_count}（计划 {planned_source_count}）；前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
+    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 下载状态：{'COMPLETE' if media_complete else 'INCOMPLETE'}（{media_completed_count}/{expected_media_count} 项）；媒体状态：{dict(media_counts)}；成对可用 source：{complete_source_count}（计划 {planned_source_count}）；前端结果：{len(frontend_complete_ids)}/{len(subwindows)} 个子窗口、{len(frontend_complete_parents)} 个父片段完成；状态分布：{dict(counts)}。", f"- 支撑处理：R 有效几何/结构行 {support_valid.get('R', 0)}；R 标签合格且 SET_A 有效窗口 {len(r_train_windows)}，覆盖 {len(r_train_sources)}/{len(selection['base_sources']) + len(selection['added_sources'])} 个冻结训练 source；O/R 支撑状态分布：{dict(support_status_counts)}；特征执行错误 {feature_errors}；特征清单可复用：{feature_ready}。", f"- 正式模型：{sum(row.get('status') == 'TRAIN_COMPLETE' for row in model_records)}/3；端到端 smoke 仅作验收，不进入正式比较。"]
     if smoke_frontend or smoke_train:
         lines.append(f"- 端到端 smoke：frontend={smoke_frontend.get('status', '未记录')} source={smoke_frontend.get('source_id', '未记录')}；训练={smoke_train.get('status', '未记录')} epochs={smoke_train.get('epochs', '未记录')}；smoke 不进入正式比较。")
     if summary:
         primary = summary.get("primary_comparison", {})
         lines += [f"- 主比较 128−64 source-macro AUROC：{primary.get('mean')}，95% CI={primary.get('ci95')}。", "- 该区间若跨 0，不解释为稳定扩容收益。"]
-    lines += ["", "## 主指标", "", "| condition | seed | windows | real | fake | source-macro AUROC | CI | pooled AUROC | AP | F1 | ACC |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+        per_source = [row for row in summary.get("per_source", []) if row.get("delta") is not None]
+        directions = {
+            "higher": sum(float(row["delta"]) > 1e-12 for row in per_source),
+            "tie": sum(abs(float(row["delta"])) <= 1e-12 for row in per_source),
+            "lower": sum(float(row["delta"]) < -1e-12 for row in per_source),
+        }
+        lines.append(f"- 逐 source 主比较方向（128 相对 64）：提高 {directions['higher']}、持平 {directions['tie']}、下降 {directions['lower']}；此处单位为验证 source，不是窗口。")
+        conditions = summary.get("conditions", [])
+        for seed in MODEL_SEEDS:
+            baseline_seed = next((row for row in conditions if row.get("condition") == "MEAN_BASELINE_64" and row.get("seed") == seed), None)
+            extended_seed = next((row for row in conditions if row.get("condition") == "SUMMARY_SET_128" and row.get("seed") == seed), None)
+            if baseline_seed is not None and extended_seed is not None:
+                left = baseline_seed.get("source_macro_auroc", {}).get("mean")
+                right = extended_seed.get("source_macro_auroc", {}).get("mean")
+                if left is not None and right is not None:
+                    seed_deltas = [float(row[f"delta_seed_{seed}"]) for row in per_source if row.get(f"delta_seed_{seed}") is not None]
+                    seed_directions = {
+                        "higher": sum(value > 1e-12 for value in seed_deltas),
+                        "tie": sum(abs(value) <= 1e-12 for value in seed_deltas),
+                        "lower": sum(value < -1e-12 for value in seed_deltas),
+                    }
+                    lines.append(f"- Seed {seed}: source-macro AUROC 64={left:.6f}, 128={right:.6f}, Δ={right-left:+.6f}; 逐 source 提高/持平/下降={seed_directions['higher']}/{seed_directions['tie']}/{seed_directions['lower']}。")
+    lines += ["", "## 主验证指标（固定 14 source / 83 window；logit≥0）", "", "| condition | seed | windows | real | fake | source-macro AUROC | CI | pooled AUROC | AP | Precision | Recall | F1 | ACC |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for row in summary.get("conditions", []):
         macro = row.get("source_macro_auroc", {})
-        cls = row.get("classification", {})
-        lines.append(f"| {row.get('condition')} | {row.get('seed')} | {row.get('window_count')} | {row.get('real_count')} | {row.get('fake_count')} | {macro.get('mean')} | {macro.get('ci95')} | {row.get('pooled_auroc')} | {row.get('pooled_ap')} | {cls.get('f1')} | {cls.get('accuracy')} |")
-    lines += ["", "## 冻结与覆盖", "", f"- 新增 source 选择：stable SHA-256，seed={SELECTION_SEED}；不使用分数、支撑或人工观察。", "- 训练仅纳入标签为 0/1 且 R SET_A 特征有效的窗口；验证标准化、权重和模型训练完全排除。", "- 旧 64-source MEAN_BASELINE 分数来自 attention-pooling pilot；不使用 ATTENTION_POOL。", f"- 前端预算={FRONTEND_BUDGET_S}s，训练预算={TRAINING_BUDGET_S}s；实际预算文件见 `state/`。", "", "## 边界", "", "未访问旧 R7/V5；未修改正式 src 检测链；未改变点数、窗口、R 前端、分组、表示或聚合方法；未提交视频、权重、粒子数组或大缓存；不声称空间定位或未知生成器泛化。", ""]
+        cls = row.get("classification", row)
+        lines.append(f"| {row.get('condition')} | {row.get('seed')} | {row.get('window_count')} | {row.get('real_count')} | {row.get('fake_count')} | {macro.get('mean')} | {macro.get('ci95')} | {row.get('pooled_auroc')} | {row.get('pooled_ap')} | {cls.get('precision')} | {cls.get('recall')} | {cls.get('f1')} | {cls.get('accuracy')} |")
+    training_metrics = summary.get("training_metrics", [])
+    baseline_training_metrics = summary.get("baseline_training_metrics", [])
+    if training_metrics or baseline_training_metrics:
+        lines += ["", "## 训练集拟合表现（样本总体不同，不作配对收益解释）", "", "| condition | seed | macro AUROC | macro source n | pooled AUROC | AP | Precision | Recall | F1 | ACC | windows (real/fake) |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+        for row in baseline_training_metrics:
+            lines.append(f"| MEAN_BASELINE_64_TRAIN | {row.get('seed')} | {row.get('source_macro_auroc')} | {row.get('source_count')} | {row.get('pooled_auroc')} | {row.get('pooled_ap')} | {row.get('precision')} | {row.get('recall')} | {row.get('f1')} | {row.get('accuracy')} | {row.get('window_count')} ({row.get('real_count')}/{row.get('fake_count')}) |")
+        for row in training_metrics:
+            lines.append(f"| SUMMARY_SET_128_TRAIN | {row.get('seed')} | {row.get('source_macro_auroc_point_estimate')} | {row.get('source_count')} | {row.get('pooled_auroc')} | {row.get('pooled_ap')} | {row.get('precision')} | {row.get('recall')} | {row.get('f1')} | {row.get('accuracy')} | {row.get('window_count')} ({row.get('real_count')}/{row.get('fake_count')}) |")
+    frontend_budget = json.loads((root / "state/frontend_budget.json").read_text(encoding="utf-8")) if (root / "state/frontend_budget.json").is_file() else {}
+    training_budget = json.loads((root / "state/training_budget.json").read_text(encoding="utf-8")) if (root / "state/training_budget.json").is_file() else {}
+    lines += ["", "## 冻结与覆盖", "", f"- 新增 source 选择：stable SHA-256，seed={SELECTION_SEED}；不使用分数、支撑或人工观察。", f"- 训练池计划 {len(selection['base_sources']) + len(selection['added_sources'])} 个 source；实际仅纳入标签为 0/1 且 R SET_A 特征有效的窗口。无支撑窗口保留缺失原因，不填零；未以其他 source 替换。", "- 验证标准化、权重与模型训练完全排除；旧 64-source MEAN_BASELINE 分数来自 attention-pooling pilot，不使用 ATTENTION_POOL。", f"- 前端预算：{frontend_budget.get('cumulative_s', 0.0):.1f}/{FRONTEND_BUDGET_S:.0f}s（余 {max(0.0, FRONTEND_BUDGET_S - float(frontend_budget.get('cumulative_s', 0.0))):.1f}s）；特征+训练累计预算：{training_budget.get('cumulative_s', 0.0):.1f}/{TRAINING_BUDGET_S:.0f}s（余 {max(0.0, TRAINING_BUDGET_S - float(training_budget.get('cumulative_s', 0.0))):.1f}s；特征耗时计入此上限）。", "", "## 边界", "", "未访问旧 R7/V5；未修改正式 src 检测链；未改变点数、窗口、R 前端、分组、表示或聚合方法；未提交视频、权重、粒子数组或大缓存；不声称空间定位或未知生成器泛化。", ""]
     path = root / "report.md"; path.write_text("\n".join(lines), encoding="utf-8")
-    status = "COMPLETE" if len(model_records) == 3 and summary else ("PARTIAL" if model_records or frontend_rows else "PLANNED")
+    expected_window_ids = {str(row["window_id"]) for row in subwindows}
+    model_seeds = {int(row["seed"]) for row in model_records if row.get("status") == "TRAIN_COMPLETE"}
+    model_complete = model_seeds == set(MODEL_SEEDS) and len(model_records) == len(MODEL_SEEDS)
+    evaluation_complete = bool(summary) and len(summary.get("conditions", [])) >= 8 and int(summary.get("validation_population", {}).get("window_count", 0)) == 83
+    frontend_complete = bool(expected_window_ids) and frontend_complete_ids == expected_window_ids and len(frontend_rows) == len(expected_window_ids)
+    status = "COMPLETE" if media_complete and frontend_complete and feature_ready and feature_errors == 0 and model_complete and evaluation_complete else ("PARTIAL" if model_records or frontend_rows or support_rows else "PLANNED")
     existing_final_path = root / "final_status.json"
     if existing_final_path.is_file():
         try:
@@ -786,7 +974,7 @@ def report(root: Path) -> dict[str, Any]:
                 status = existing_status
         except (OSError, ValueError, TypeError):
             pass
-    atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "media_status_counts": dict(media_counts), "complete_source_count": int(complete_source_count), "planned_source_count": int(len(protocol["selection"]["base_sources"]) + len(protocol["selection"]["added_sources"]) + len(protocol["selection"]["validation_sources"])), "download_error": download_error, "smoke_frontend": smoke_frontend, "smoke_train": smoke_train, "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
+    atomic_json(root / "final_status.json", {"status": status, "model_count": sum(row.get("status") == "TRAIN_COMPLETE" for row in model_records), "expected_model_count": 3, "model_seed_set_complete": sorted(model_seeds) == list(MODEL_SEEDS), "frontend_result_rows": len(frontend_rows), "frontend_expected_subwindows": len(subwindows), "frontend_complete_subwindows": len(frontend_complete_ids), "frontend_complete_parents": len(frontend_complete_parents), "frontend_status_counts": dict(counts), "feature_artifacts_complete": feature_ready, "feature_error_rows": feature_errors, "support_rows": len(support_rows), "r_valid_labeled_feature_windows": len(r_train_windows), "r_effective_training_sources": len(r_train_sources), "evaluation_present": bool(summary), "media_status_counts": dict(media_counts), "complete_source_count": int(complete_source_count), "planned_source_count": int(len(protocol["selection"]["base_sources"]) + len(protocol["selection"]["added_sources"]) + len(protocol["selection"]["validation_sources"])), "download_error": download_error, "smoke_frontend": smoke_frontend, "smoke_train": smoke_train, "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
     final_status = json.loads((root / "final_status.json").read_text(encoding="utf-8"))
     final_status.update(
         media_download_complete=media_complete,
@@ -916,6 +1104,7 @@ def _ensure_plan(root: Path) -> None:
 def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_budget_s: float, train_budget_s: float) -> dict[str, Any]:
     global STOP_REQUESTED
     _ensure_plan(root)
+    atomic_json(root / "final_status.json", {"status": "RUNNING", "stage": "frontend", "git_head": git_head(), "pid": os.getpid(), "updated_unix": time.time()})
     media_ready = False
     media_path = root / "acquisition/media_manifest.json"
     if media_path.is_file():
@@ -952,13 +1141,29 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
         verify_legacy_cache_identity(root)
     frontend_result = frontend(root, frontend_budget_s, resume=resume)
     if frontend_result.get("status") not in {"COMPLETE", "FRONTEND_INCOMPLETE", "BUDGET_EXHAUSTED", "STOPPED_SAFE"}:
-        return {"status": frontend_result.get("status", "FRONTEND_FAILED"), "frontend": frontend_result}
-    features_result = features(root)
-    smoke_result = None
+        report_result = report(root)
+        final = {"status": "BLOCKED", "frontend": frontend_result, "report": report_result, "git_head": git_head(), "updated_unix": time.time()}
+        atomic_json(root / "final_status.json", final)
+        return final
+    features_result: dict[str, Any] = {"status": "DEFERRED_FRONTEND_INCOMPLETE"}
+    smoke_result = json.loads((root / "smoke/summary.json").read_text(encoding="utf-8")) if (root / "smoke/summary.json").is_file() else None
     training_result: dict[str, Any] = {"status": "NOT_RUN", "reason": "FRONTEND_NOT_COMPLETE"}
     if frontend_result.get("status") == "COMPLETE":
-        smoke_result = run_smoke(root, device=device) if not (root / "smoke/summary.json").is_file() else json.loads((root / "smoke/summary.json").read_text(encoding="utf-8"))
-        training_result = train(root, train_budget_s, device, resume=resume)
+        if _feature_artifacts_complete(root):
+            features_result = {"status": "COMPLETE", "reused": True, "summary": json.loads((root / "support/support_summary.json").read_text(encoding="utf-8"))}
+        else:
+            combined_budget = Budget(root, "training", train_budget_s)
+            if combined_budget.remaining() <= 0:
+                combined_budget.save("FEATURE_TRAIN_BUDGET_EXHAUSTED", stage="features")
+                features_result = {"status": "BUDGET_EXHAUSTED", "elapsed_s": combined_budget.elapsed()}
+            else:
+                features_result = _features_with_budget(root, combined_budget)
+        if features_result.get("status") == "COMPLETE":
+            if smoke_result is None or smoke_result.get("status") != "PASS":
+                smoke_result = run_smoke(root, device=device)
+            training_result = train(root, train_budget_s, device, resume=resume)
+        else:
+            training_result = {"status": "NOT_RUN", "reason": "FEATURE_EXTRACTION_INCOMPLETE"}
     evaluation = evaluate(root, device) if training_result.get("status") == "COMPLETE" else {}
     report_result = report(root)
     status = "COMPLETE" if frontend_result.get("status") == "COMPLETE" and training_result.get("status") == "COMPLETE" and bool(evaluation) and report_result.get("status") == "COMPLETE" else ("PARTIAL" if frontend_result.get("completed", 0) or training_result.get("completed_models", 0) else "BLOCKED")
@@ -999,7 +1204,10 @@ def main() -> int:
             atomic_json(root / "state/last_exit.json", {"status": "OK", "stage": args.stage, "result": result, "updated_unix": time.time()})
             return 0
         except BaseException as exc:
-            atomic_json(root / "state/last_exit.json", {"status": "FAILED", "stage": args.stage, "error": f"{type(exc).__name__}: {exc}", "updated_unix": time.time()})
+            error = f"{type(exc).__name__}: {exc}"
+            traceback_text = __import__("traceback").format_exc()
+            atomic_json(root / "state/last_exit.json", {"status": "FAILED", "stage": args.stage, "error": error, "traceback": traceback_text, "updated_unix": time.time()})
+            atomic_json(root / "final_status.json", {"status": "FAILED", "failed_stage": args.stage, "error": error, "git_head": git_head(), "updated_unix": time.time()})
             raise
 
 
