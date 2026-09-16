@@ -749,6 +749,7 @@ def report(root: Path) -> dict[str, Any]:
     support_valid = Counter(str(row.get("mode")) for row in support_rows if int(row.get("valid_unit_count", 0)) > 0)
     media_rows = json.loads((root / "acquisition/media_manifest.json").read_text(encoding="utf-8")).get("results", []) if (root / "acquisition/media_manifest.json").is_file() else []
     media_counts = Counter(str(row.get("status")) for row in media_rows)
+    download_error = json.loads((root / "state/download_error.json").read_text(encoding="utf-8")) if (root / "state/download_error.json").is_file() else {}
     smoke_frontend = json.loads((root / "smoke/frontend_summary.json").read_text(encoding="utf-8")) if (root / "smoke/frontend_summary.json").is_file() else {}
     smoke_train = json.loads((root / "smoke/summary.json").read_text(encoding="utf-8")) if (root / "smoke/summary.json").is_file() else {}
     lines = ["# V7 64→128 source 训练扩容对照", "", "本报告为当前数据集内的开发性 source 扩容 pilot；固定 R、SET_A/SUMMARY_SET、平均局部聚合和原验证总体，不是 sealed test 或最终泛化结论。", "", "## 结论先行", ""]
@@ -779,7 +780,7 @@ def report(root: Path) -> dict[str, Any]:
                 status = existing_status
         except (OSError, ValueError, TypeError):
             pass
-    atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "media_status_counts": dict(media_counts), "complete_source_count": int(complete_source_count), "planned_source_count": int(len(protocol["selection"]["base_sources"]) + len(protocol["selection"]["added_sources"]) + len(protocol["selection"]["validation_sources"])), "smoke_frontend": smoke_frontend, "smoke_train": smoke_train, "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
+    atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "media_status_counts": dict(media_counts), "complete_source_count": int(complete_source_count), "planned_source_count": int(len(protocol["selection"]["base_sources"]) + len(protocol["selection"]["added_sources"]) + len(protocol["selection"]["validation_sources"])), "download_error": download_error, "smoke_frontend": smoke_frontend, "smoke_train": smoke_train, "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
     progress(root, "report", status, 1 if status == "COMPLETE" else 0, 1)
     return {"status": status, "report": str(path)}
 
