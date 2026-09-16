@@ -747,8 +747,14 @@ def report(root: Path) -> dict[str, Any]:
     model_records = json.loads((root / "models/fold_models.json").read_text(encoding="utf-8")).get("records", []) if (root / "models/fold_models.json").is_file() else []
     counts = Counter(str(row.get("status")) for row in frontend_rows)
     support_valid = Counter(str(row.get("mode")) for row in support_rows if int(row.get("valid_unit_count", 0)) > 0)
+    media_rows = json.loads((root / "acquisition/media_manifest.json").read_text(encoding="utf-8")).get("results", []) if (root / "acquisition/media_manifest.json").is_file() else []
+    media_counts = Counter(str(row.get("status")) for row in media_rows)
+    smoke_frontend = json.loads((root / "smoke/frontend_summary.json").read_text(encoding="utf-8")) if (root / "smoke/frontend_summary.json").is_file() else {}
+    smoke_train = json.loads((root / "smoke/summary.json").read_text(encoding="utf-8")) if (root / "smoke/summary.json").is_file() else {}
     lines = ["# V7 64→128 source 训练扩容对照", "", "本报告为当前数据集内的开发性 source 扩容 pilot；固定 R、SET_A/SUMMARY_SET、平均局部聚合和原验证总体，不是 sealed test 或最终泛化结论。", "", "## 结论先行", ""]
-    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
+    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 媒体状态：{dict(media_counts)}；前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
+    if smoke_frontend or smoke_train:
+        lines.append(f"- 端到端 smoke：frontend={smoke_frontend.get('status', '未记录')} source={smoke_frontend.get('source_id', '未记录')}；训练={smoke_train.get('status', '未记录')} epochs={smoke_train.get('epochs', '未记录')}；smoke 不进入正式比较。")
     if summary:
         primary = summary.get("primary_comparison", {})
         lines += [f"- 主比较 128−64 source-macro AUROC：{primary.get('mean')}，95% CI={primary.get('ci95')}。", "- 该区间若跨 0，不解释为稳定扩容收益。"]
@@ -760,6 +766,14 @@ def report(root: Path) -> dict[str, Any]:
     lines += ["", "## 冻结与覆盖", "", f"- 新增 source 选择：stable SHA-256，seed={SELECTION_SEED}；不使用分数、支撑或人工观察。", "- 训练仅纳入标签为 0/1 且 R SET_A 特征有效的窗口；验证标准化、权重和模型训练完全排除。", "- 旧 64-source MEAN_BASELINE 分数来自 attention-pooling pilot；不使用 ATTENTION_POOL。", f"- 前端预算={FRONTEND_BUDGET_S}s，训练预算={TRAINING_BUDGET_S}s；实际预算文件见 `state/`。", "", "## 边界", "", "未访问旧 R7/V5；未修改正式 src 检测链；未改变点数、窗口、R 前端、分组、表示或聚合方法；未提交视频、权重、粒子数组或大缓存；不声称空间定位或未知生成器泛化。", ""]
     path = root / "report.md"; path.write_text("\n".join(lines), encoding="utf-8")
     status = "COMPLETE" if len(model_records) == 3 and summary else ("PARTIAL" if model_records or frontend_rows else "PLANNED")
+    existing_final_path = root / "final_status.json"
+    if existing_final_path.is_file():
+        try:
+            existing_status = str(json.loads(existing_final_path.read_text(encoding="utf-8")).get("status", ""))
+            if existing_status == "MEDIA_INCOMPLETE":
+                status = existing_status
+        except (OSError, ValueError, TypeError):
+            pass
     atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
     progress(root, "report", status, 1 if status == "COMPLETE" else 0, 1)
     return {"status": status, "report": str(path)}
@@ -891,7 +905,14 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
         except (OSError, ValueError, TypeError):
             media_ready = False
     if not media_ready:
-        download_result = download(root, workers=workers)
+        try:
+            download_result = download(root, workers=workers)
+        except Exception as exc:
+            error = f"{type(exc).__name__}: {exc}"
+            final = {"status": "MEDIA_INCOMPLETE", "download": {"status": "DOWNLOAD_BLOCKED", "error": error}, "git_head": git_head(), "updated_unix": time.time()}
+            atomic_json(root / "final_status.json", final)
+            progress(root, "download", "MEDIA_INCOMPLETE", 0, 0, error=error)
+            return final
         if str(download_result.get("status")) != "COMPLETE":
             final = {"status": "MEDIA_INCOMPLETE", "download": download_result, "git_head": git_head(), "updated_unix": time.time()}
             atomic_json(root / "final_status.json", final)
