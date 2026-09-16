@@ -603,6 +603,10 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
     train_sources = [str(x) for x in protocol["selection"]["base_sources"] + protocol["selection"]["added_sources"]]
     train_set = set(train_sources)
     train_rows = [row for row in rows if str(row["source_id"]) in train_set]
+    observed_sources = {str(row["source_id"]) for row in train_rows}
+    if observed_sources != train_set:
+        missing = sorted(train_set - observed_sources)
+        raise RuntimeError(f"TRAINING_SOURCE_SET_INCOMPLETE:{len(observed_sources)}/{len(train_set)}:missing={missing}")
     if not train_rows:
         raise RuntimeError("NO_VALID_128_TRAINING_ROWS")
     counts = Counter(int(row["label"]) for row in train_rows)
@@ -887,7 +891,12 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
         except (OSError, ValueError, TypeError):
             media_ready = False
     if not media_ready:
-        download(root, workers=workers)
+        download_result = download(root, workers=workers)
+        if str(download_result.get("status")) != "COMPLETE":
+            final = {"status": "MEDIA_INCOMPLETE", "download": download_result, "git_head": git_head(), "updated_unix": time.time()}
+            atomic_json(root / "final_status.json", final)
+            progress(root, "download", "MEDIA_INCOMPLETE", int(download_result.get("completed", 0)), int(download_result.get("count", 0)), status_counts=download_result.get("status_counts", {}))
+            return final
     if not (root / "manifests/parents.json").is_file():
         build_and_prepare(root)
     _save_extension_protocol(root)
