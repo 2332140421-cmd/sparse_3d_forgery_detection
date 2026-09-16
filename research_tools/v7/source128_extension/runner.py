@@ -752,12 +752,21 @@ def report(root: Path) -> dict[str, Any]:
 
 
 def run_smoke(root: Path, device: str = "cuda") -> dict[str, Any]:
-    """Run one 200-epoch endpoint using the first 8 frozen training sources."""
+    """Run one 200-epoch endpoint on a tiny, deterministic training subset.
+
+    The subset deliberately includes the first available added source so the
+    smoke path exercises the newly materialized source rather than only the
+    legacy cache.  This model is written only under ``smoke/`` and is never
+    used by the formal 128-source comparison.
+    """
     import torch
     from research_tools.v7.periodic_requery_probe import runner as periodic
     rows = _load_rows(root)
     protocol = json.loads((root / "protocol.json").read_text(encoding="utf-8"))
-    first_sources = set(protocol["selection"]["base_sources"][:8])
+    available = {str(row["source_id"]) for row in rows}
+    added = [str(source) for source in protocol["selection"]["added_sources"] if str(source) in available]
+    base = [str(source) for source in protocol["selection"]["base_sources"] if str(source) in available]
+    first_sources = set((added[:1] + base[:7]) or base[:8])
     train_rows = [row for row in rows if str(row["source_id"]) in first_sources]
     if not train_rows:
         raise RuntimeError("SMOKE_NO_ROWS")
@@ -766,10 +775,86 @@ def run_smoke(root: Path, device: str = "cuda") -> dict[str, Any]:
     values = [{**dict(row), "features": {"SET_A": np.asarray(row["features"]["SET_A"], dtype=np.float64)}} for row in train_rows]
     batch = periodic.make_batch("SET_A", values, standardizer); batch["window_weights"] = weights
     model, fit = periodic.train_one("SET_A", batch, seed=MODEL_SEEDS[0], device=device, epochs=EPOCHS)
-    output = {"status": "PASS", "source_count": len(first_sources), "window_count": len(train_rows), "epochs": fit["epochs"], "device": str(torch.device(device)), "formal_records_untouched": True}
+    output = {"status": "PASS", "source_count": len(first_sources), "source_ids": sorted(first_sources), "added_source_ids": sorted(set(added) & first_sources), "window_count": len(train_rows), "epochs": fit["epochs"], "device": str(torch.device(device)), "formal_records_untouched": True}
     atomic_json(root / "smoke/summary.json", output)
     del model
     if torch.cuda.is_available(): torch.cuda.empty_cache()
+    return output
+
+
+def run_frontend_smoke(root: Path, *, budget_s: float = FRONTEND_BUDGET_S, resume: bool = True) -> dict[str, Any]:
+    """Materialize one complete added source (real and fake) through R.
+
+    This is an endpoint check before the long formal run.  It uses the same
+    frozen parent/window configuration and the same frontend budget clock;
+    completed parents are atomically persisted and can be reused by the
+    subsequent ``--resume`` run.
+    """
+    import torch
+    from research_tools.v7.periodic_requery_probe import runner as periodic
+
+    protocol = json.loads((root / "protocol.json").read_text(encoding="utf-8"))
+    added = [str(source) for source in protocol["selection"]["added_sources"]]
+    parents = _load_parents(root)
+    subwindows = _load_subwindows(root)
+    result_path = root / "frontend/results.json"
+    results = {str(item["window_id"]): dict(item) for item in (json.loads(result_path.read_text(encoding="utf-8")) if result_path.is_file() else [])} if resume else {}
+    by_parent: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in subwindows:
+        by_parent[str(row["parent_id"])].append(dict(row))
+    by_source_role = {(str(parent["source_id"]), str(parent["role"])): parent for parent in parents}
+    selected_source = None
+    selected_parents: list[dict[str, Any]] = []
+    for source in added:
+        candidate = [by_source_role.get((source, role)) for role in ("real", "fake")]
+        if all(item is not None for item in candidate):
+            selected_source = source
+            selected_parents = [item for item in candidate if item is not None]
+            break
+    if selected_source is None:
+        raise RuntimeError("SMOKE_NO_ADDED_SOURCE_IN_WINDOW_PLAN")
+    pending = [parent for parent in selected_parents if not all(str(row["window_id"]) in results and str(results[str(row["window_id"])].get("status")) == "FRONTEND_COMPLETE" for row in by_parent[str(parent["parent_id"])] )]
+    budget = Budget(root, "frontend", budget_s)
+    if not pending:
+        output = {"status": "PASS", "source_id": selected_source, "parents": 2, "reused": True, "budget_elapsed_s": budget.elapsed()}
+        atomic_json(root / "smoke/frontend_summary.json", output)
+        return output
+    if budget.remaining() <= 0:
+        budget.save("SMOKE_FRONTEND_BUDGET_EXHAUSTED", smoke_source=selected_source)
+        output = {"status": "BUDGET_EXHAUSTED", "source_id": selected_source, "parents_completed": 0, "parents_total": len(pending), "budget_elapsed_s": budget.elapsed()}
+        atomic_json(root / "smoke/frontend_summary.json", output)
+        return output
+    torch.set_num_threads(4)
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA_UNAVAILABLE_FRONTEND_REQUIRES_GPU")
+    from scripts.run_v7_explicit_geometry_frontend import DepthProRunner, OnlineBootsTapir
+    tracker = OnlineBootsTapir(diagnostic.TAPNET_SOURCE, diagnostic.TAPNET_CHECKPOINT, process_size=256, grid_size=17)
+    depth_runner = DepthProRunner(diagnostic.DEPTH_SOURCE, diagnostic.DEPTH_CHECKPOINT)
+    completed_parents = 0
+    errors: list[str] = []
+    started_total = time.perf_counter()
+    try:
+        for parent in pending:
+            if budget.remaining() <= 0:
+                budget.save("SMOKE_FRONTEND_BUDGET_EXHAUSTED", smoke_source=selected_source, completed_parents=completed_parents)
+                break
+            parent_rows = by_parent[str(parent["parent_id"])]
+            started = time.perf_counter()
+            try:
+                generated = _frontend_parent(parent, parent_rows, tracker, depth_runner, root)
+                elapsed = time.perf_counter() - started
+                periodic._persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=completed_parents + 1, total_windows=len(subwindows))
+                completed_parents += 1
+            except Exception as exc:
+                errors.append(f"{parent['parent_id']}:{type(exc).__name__}: {exc}")
+                break
+    finally:
+        del tracker, depth_runner
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    status = "PASS" if completed_parents == len(pending) and not errors else ("BUDGET_EXHAUSTED" if budget.remaining() <= 0 else "FAILED")
+    output = {"status": status, "source_id": selected_source, "parents_completed": completed_parents, "parents_total": len(pending), "elapsed_s": time.perf_counter() - started_total, "budget_elapsed_s": budget.elapsed(), "errors": errors}
+    atomic_json(root / "smoke/frontend_summary.json", output)
     return output
 
 
@@ -817,7 +902,7 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("plan", "download", "windows", "verify-cache", "frontend", "features", "smoke", "train", "evaluate", "report", "all"))
+    parser.add_argument("stage", choices=("plan", "download", "windows", "verify-cache", "frontend", "smoke-frontend", "features", "smoke", "train", "evaluate", "report", "all"))
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--resume", action="store_true")
@@ -837,6 +922,7 @@ def main() -> int:
             elif args.stage == "windows": result = build_and_prepare(root)
             elif args.stage == "verify-cache": result = verify_legacy_cache_identity(root)
             elif args.stage == "frontend": result = frontend(root, args.frontend_budget_s, args.resume)
+            elif args.stage == "smoke-frontend": result = run_frontend_smoke(root, budget_s=args.frontend_budget_s, resume=args.resume)
             elif args.stage == "features": result = features(root)
             elif args.stage == "smoke": result = run_smoke(root, args.device)
             elif args.stage == "train": result = train(root, args.train_budget_s, args.device, args.resume)
