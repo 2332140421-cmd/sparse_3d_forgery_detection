@@ -806,15 +806,15 @@ def _load_validation_baseline() -> list[dict[str, Any]]:
         return [dict(row) for row in csv.DictReader(handle)]
 
 
-def _budget(root: Path, budget_s: float) -> Budget:
-    return Budget(root, "training", budget_s)
+def _budget(root: Path, budget_s: float, budget_name: str = "training") -> Budget:
+    return Budget(root, budget_name, budget_s)
 
 
-def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda", resume: bool = True) -> dict[str, Any]:
+def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda", resume: bool = True, budget_name: str = "training") -> dict[str, Any]:
     import torch
     from research_tools.v7.periodic_requery_probe import runner as periodic
 
-    budget = _budget(root, budget_s)
+    budget = _budget(root, budget_s, budget_name)
     rows = _load_rows(root)
     protocol = json.loads((root / "protocol.json").read_text(encoding="utf-8"))
     train_sources = [str(x) for x in protocol["selection"]["base_sources"] + protocol["selection"]["added_sources"]]
@@ -1075,6 +1075,8 @@ def report(root: Path) -> dict[str, Any]:
     recovery_budget_path = root / "state/frontend_recovery_budget.json"
     recovery_budget = json.loads(recovery_budget_path.read_text(encoding="utf-8")) if recovery_budget_path.is_file() else {}
     training_budget = json.loads((root / "state/training_budget.json").read_text(encoding="utf-8")) if (root / "state/training_budget.json").is_file() else {}
+    recovery_training_path = root / "state/training_recovery_budget.json"
+    recovery_training_budget = json.loads(recovery_training_path.read_text(encoding="utf-8")) if recovery_training_path.is_file() else {}
     uncertain = frontend_budget.get("uncertain_attempt") or {}
     historic_lower = uncertain.get("lower_bound_s_approx")
     historic_upper = uncertain.get("upper_bound_s")
@@ -1086,7 +1088,10 @@ def report(root: Path) -> dict[str, Any]:
     recovery_allowance = float(recovery_budget.get("budget_s", 0.0))
     recovery_remaining = max(0.0, recovery_allowance - recovery_accounted)
     training_used = float(training_budget.get("cumulative_s", 0.0))
-    lines += ["", "## 冻结与覆盖", "", f"- 新增 source 选择：stable SHA-256，seed={SELECTION_SEED}；不使用分数、支撑或人工观察。", f"- 训练池计划 {len(selection['base_sources']) + len(selection['added_sources'])} 个 source；实际仅纳入标签为 0/1 且 R SET_A 特征有效的窗口。无支撑窗口保留缺失原因，不填零；未以其他 source 替换。", "- 验证标准化、权重与模型训练完全排除；旧 64-source MEAN_BASELINE 分数来自 attention-pooling pilot，不使用 ATTENTION_POOL。", f"- 原7200秒前端额度历史：已保存实测累计 {float(frontend_budget.get('cumulative_s', 0.0)):.1f}s；{historic_interval}；旧记录的估算预留 {float(frontend_budget.get('estimated_reserved_s', 0.0)):.1f}s。历史未知区间与预留保持独立，不改写为实测，也不抵扣本次新增额度。", f"- 本次独立恢复前端额度：实际累计 {recovery_used:.1f}/{recovery_allowance:.0f}s；按本次额度账面上界剩余 {recovery_remaining:.1f}s；估算预留 {float(recovery_budget.get('estimated_reserved_s', 0.0)):.1f}s。额度记录：`{recovery_budget_path}`。", f"- 特征+训练累计预算：{training_used:.1f}/{TRAINING_BUDGET_S:.0f}s（余 {max(0.0, TRAINING_BUDGET_S - float(training_budget.get('budget_accounted_upper_s', training_used))):.1f}s；特征耗时计入此上限）。", "", "## 边界", "", "未访问旧 R7/V5；未修改正式 src 检测链；未改变点数、窗口、R 前端、分组、表示或聚合方法；未提交视频、权重、粒子数组或大缓存；不声称空间定位或未知生成器泛化。", ""]
+    recovery_training_used = float(recovery_training_budget.get("cumulative_s", 0.0))
+    recovery_training_allowance = float(recovery_training_budget.get("budget_s", 0.0))
+    recovery_training_accounted = float(recovery_training_budget.get("budget_accounted_upper_s", recovery_training_used))
+    lines += ["", "## 冻结与覆盖", "", f"- 新增 source 选择：stable SHA-256，seed={SELECTION_SEED}；不使用分数、支撑或人工观察。", f"- 训练池计划 {len(selection['base_sources']) + len(selection['added_sources'])} 个 source；实际仅纳入标签为 0/1 且 R SET_A 特征有效的窗口。无支撑窗口保留缺失原因，不填零；未以其他 source 替换。", "- 验证标准化、权重与模型训练完全排除；旧 64-source MEAN_BASELINE 分数来自 attention-pooling pilot，不使用 ATTENTION_POOL。", f"- 原7200秒前端额度历史：已保存实测累计 {float(frontend_budget.get('cumulative_s', 0.0)):.1f}s；{historic_interval}；旧记录的估算预留 {float(frontend_budget.get('estimated_reserved_s', 0.0)):.1f}s。历史未知区间与预留保持独立，不改写为实测，也不抵扣本次新增额度。", f"- 本次独立恢复前端额度：实际累计 {recovery_used:.1f}/{recovery_allowance:.0f}s；按本次额度账面上界剩余 {recovery_remaining:.1f}s；估算预留 {float(recovery_budget.get('estimated_reserved_s', 0.0)):.1f}s。额度记录：`{recovery_budget_path}`。", f"- 历史特征+训练账本保持：{training_used:.1f}/{TRAINING_BUDGET_S:.0f}s，状态={training_budget.get('process_state', '未记录')}；其已完成特征耗时不计入本次新增正式训练额度。", f"- 本次新增正式训练额度：{recovery_training_used:.1f}/{recovery_training_allowance:.0f}s；账面剩余 {max(0.0, recovery_training_allowance - recovery_training_accounted):.1f}s；额度记录：`{recovery_training_path}`。", "", "## 边界", "", "未访问旧 R7/V5；未修改正式 src 检测链；未改变点数、窗口、R 前端、分组、表示或聚合方法；未提交视频、权重、粒子数组或大缓存；不声称空间定位或未知生成器泛化。", ""]
     path = root / "report.md"; path.write_text("\n".join(lines), encoding="utf-8")
     expected_window_ids = {str(row["window_id"]) for row in subwindows}
     model_seeds = {int(row["seed"]) for row in model_records if row.get("status") == "TRAIN_COMPLETE"}
@@ -1235,7 +1240,7 @@ def _ensure_plan(root: Path) -> None:
     _save_extension_protocol(root)
 
 
-def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_budget_s: float, train_budget_s: float, frontend_budget_name: str = "frontend") -> dict[str, Any]:
+def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_budget_s: float, train_budget_s: float, frontend_budget_name: str = "frontend", train_budget_name: str = "training") -> dict[str, Any]:
     global STOP_REQUESTED
     _ensure_plan(root)
     atomic_json(root / "final_status.json", {"status": "RUNNING", "stage": "frontend", "git_head": git_head(), "pid": os.getpid(), "updated_unix": time.time()})
@@ -1286,7 +1291,7 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
         if _feature_artifacts_complete(root):
             features_result = {"status": "COMPLETE", "reused": True, "summary": json.loads((root / "support/support_summary.json").read_text(encoding="utf-8"))}
         else:
-            combined_budget = Budget(root, "training", train_budget_s)
+            combined_budget = Budget(root, train_budget_name, train_budget_s)
             if combined_budget.remaining() <= 0:
                 combined_budget.save("FEATURE_TRAIN_BUDGET_EXHAUSTED", stage="features")
                 features_result = {"status": "BUDGET_EXHAUSTED", "elapsed_s": combined_budget.elapsed()}
@@ -1295,7 +1300,7 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
         if features_result.get("status") == "COMPLETE":
             if smoke_result is None or smoke_result.get("status") != "PASS":
                 smoke_result = run_smoke(root, device=device)
-            training_result = train(root, train_budget_s, device, resume=resume)
+            training_result = train(root, train_budget_s, device, resume=resume, budget_name=train_budget_name)
         else:
             training_result = {"status": "NOT_RUN", "reason": "FEATURE_EXTRACTION_INCOMPLETE"}
     evaluation = evaluate(root, device) if training_result.get("status") == "COMPLETE" else {}
@@ -1316,6 +1321,7 @@ def main() -> int:
     parser.add_argument("--frontend-budget-s", type=float, default=FRONTEND_BUDGET_S)
     parser.add_argument("--frontend-budget-name", choices=("frontend", "frontend_recovery"), default="frontend")
     parser.add_argument("--train-budget-s", type=float, default=TRAINING_BUDGET_S)
+    parser.add_argument("--train-budget-name", choices=("training", "training_recovery"), default="training")
     parser.add_argument("--log-path")
     parser.add_argument("--wrapper-pid", type=int)
     parser.add_argument("--screen-session")
@@ -1356,10 +1362,10 @@ def main() -> int:
             elif args.stage == "smoke-frontend": result = run_frontend_smoke(root, budget_s=args.frontend_budget_s, resume=args.resume)
             elif args.stage == "features": result = features(root)
             elif args.stage == "smoke": result = run_smoke(root, args.device)
-            elif args.stage == "train": result = train(root, args.train_budget_s, args.device, args.resume)
+            elif args.stage == "train": result = train(root, args.train_budget_s, args.device, args.resume, budget_name=args.train_budget_name)
             elif args.stage == "evaluate": result = evaluate(root, args.device)
             elif args.stage == "report": result = report(root)
-            else: result = run_all(root, device=args.device, resume=args.resume, workers=args.workers, frontend_budget_s=args.frontend_budget_s, train_budget_s=args.train_budget_s, frontend_budget_name=args.frontend_budget_name)
+            else: result = run_all(root, device=args.device, resume=args.resume, workers=args.workers, frontend_budget_s=args.frontend_budget_s, train_budget_s=args.train_budget_s, frontend_budget_name=args.frontend_budget_name, train_budget_name=args.train_budget_name)
             atomic_json(root / "state/last_exit.json", {"status": "OK", "stage": args.stage, "result": result, "updated_unix": time.time()})
             return 0
         except BaseException as exc:

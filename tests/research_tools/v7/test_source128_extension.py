@@ -52,6 +52,25 @@ def test_recovery_frontend_budget_does_not_consume_or_rewrite_historical_budget(
     assert budget.remaining() > 5399.0
 
 
+def test_formal_training_recovery_budget_is_independent_of_exhausted_feature_budget(tmp_path: Path) -> None:
+    historical = {
+        "budget_s": 900.0,
+        "cumulative_s": 2976.735,
+        "budget_accounted_upper_s": 2976.735,
+        "process_state": "TRAINING_BUDGET_EXHAUSTED",
+    }
+    atomic_json(tmp_path / "state/training_budget.json", historical)
+
+    budget = runner._budget(tmp_path, 900.0, "training_recovery")
+
+    assert json.loads((tmp_path / "state/training_budget.json").read_text()) == historical
+    recovery = json.loads((tmp_path / "state/training_recovery_budget.json").read_text())
+    assert recovery["budget_s"] == 900.0
+    assert recovery["cumulative_s"] < 1.0
+    assert recovery["estimated_reserved_s"] == 0.0
+    assert budget.remaining() > 899.0
+
+
 def test_effective_training_rows_keep_frozen_selection_and_report_no_support() -> None:
     rows, effective, missing = _effective_training_rows(
         [{"window_id": "w1", "source_id": "S1"}, {"window_id": "outside", "source_id": "S3"}],
