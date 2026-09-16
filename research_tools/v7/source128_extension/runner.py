@@ -394,10 +394,28 @@ def download(root: Path, workers: int = 4) -> dict[str, Any]:
         except (OSError, urllib.error.URLError, TimeoutError) as exc:
             output.update(status="DOWNLOAD_FAILURE", error=f"{type(exc).__name__}: {exc}", partial_bytes=part.stat().st_size if part.is_file() else 0); return output
 
-    central_client = RangeClient("https://ai2-public-datasets.s3-us-west-2.amazonaws.com/charades/Charades_v1.zip", timeout=60.0)
-    central, _ = read_central_directory(central_client)
+    central_url = "https://ai2-public-datasets.s3-us-west-2.amazonaws.com/charades/Charades_v1.zip"
+    central_client = None
+    central = None
+    central_errors: list[str] = []
+    for attempt in range(1, 4):
+        try:
+            central_client = RangeClient(central_url, timeout=60.0)
+            central, _ = read_central_directory(central_client)
+            break
+        except Exception as exc:
+            central_errors.append(f"attempt={attempt}:{type(exc).__name__}: {exc}")
+            central_client = None
+            central = None
+            if attempt < 3:
+                time.sleep(2.0)
+    if central_client is None or central is None:
+        error = "CHARADES_CENTRAL_DIRECTORY_UNAVAILABLE; " + " | ".join(central_errors)
+        atomic_json(root / "state/download_error.json", {"status": "DOWNLOAD_BLOCKED", "error": error, "updated_unix": time.time()})
+        progress(root, "download", "DOWNLOAD_BLOCKED", sum(item.get("status") in {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"} for item in results.values()), len(rows), error=error)
+        raise RuntimeError(error)
     def _download_real(row: Mapping[str, Any]) -> dict[str, Any]:
-        nonlocal central_client, central
+        nonlocal central
         output = dict(row); path = Path(str(row["path"])); expected = row.get("expected_bytes")
         if expected is None:
             output.update(status="SOURCE_MEMBER_MISSING"); return output
