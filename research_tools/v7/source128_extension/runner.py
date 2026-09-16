@@ -851,7 +851,7 @@ def run_frontend_smoke(root: Path, *, budget_s: float = FRONTEND_BUDGET_S, resum
             parent_rows = by_parent[str(parent["parent_id"])]
             started = time.perf_counter()
             try:
-                generated = _frontend_parent(parent, parent_rows, tracker, depth_runner, root)
+                generated = periodic._frontend_parent(parent, parent_rows, tracker, depth_runner, root)
                 elapsed = time.perf_counter() - started
                 periodic._persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=completed_parents + 1, total_windows=len(subwindows))
                 completed_parents += 1
