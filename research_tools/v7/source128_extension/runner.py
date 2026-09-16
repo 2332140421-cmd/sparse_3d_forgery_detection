@@ -411,10 +411,15 @@ def download(root: Path, workers: int = 4) -> dict[str, Any]:
             # Give each member its own HTTP session so independent ranges can
             # proceed concurrently without sharing mutable requests state.
             member_client = RangeClient("https://ai2-public-datasets.s3-us-west-2.amazonaws.com/charades/Charades_v1.zip", timeout=60.0)
+            # ``extract_member`` writes the bounded temporary payload and
+            # atomically renames ``*.part`` to the requested target itself.
+            # Check the final target, rather than the already-renamed
+            # temporary path (the latter used to turn successful extracts
+            # into spurious FileNotFoundError failures).
             extract_member(member_client, member, part)
-            if part.stat().st_size != int(expected):
-                output.update(status="CHECKSUM_FAILURE", local_bytes=part.stat().st_size); return output
-            os.replace(part, path); output.update(status="MATERIALIZED", local_bytes=path.stat().st_size, local_sha256=sha256(path)); return output
+            if not path.is_file() or path.stat().st_size != int(expected):
+                output.update(status="CHECKSUM_FAILURE", local_bytes=path.stat().st_size if path.is_file() else 0); return output
+            output.update(status="MATERIALIZED", local_bytes=path.stat().st_size, local_sha256=sha256(path)); return output
         except Exception as exc:
             output.update(status="DOWNLOAD_FAILURE", error=f"{type(exc).__name__}: {exc}"); return output
 
@@ -737,7 +742,15 @@ def _ensure_plan(root: Path) -> None:
 def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_budget_s: float, train_budget_s: float) -> dict[str, Any]:
     global STOP_REQUESTED
     _ensure_plan(root)
-    if not (root / "acquisition/media_manifest.json").is_file():
+    media_ready = False
+    media_path = root / "acquisition/media_manifest.json"
+    if media_path.is_file():
+        try:
+            media_rows = json.loads(media_path.read_text(encoding="utf-8")).get("results", [])
+            media_ready = bool(media_rows) and all(str(item.get("status")) in {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"} for item in media_rows)
+        except (OSError, ValueError, TypeError):
+            media_ready = False
+    if not media_ready:
         download(root, workers=workers)
     if not (root / "manifests/parents.json").is_file():
         build_and_prepare(root)
