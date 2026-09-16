@@ -752,7 +752,12 @@ def report(root: Path) -> dict[str, Any]:
     smoke_frontend = json.loads((root / "smoke/frontend_summary.json").read_text(encoding="utf-8")) if (root / "smoke/frontend_summary.json").is_file() else {}
     smoke_train = json.loads((root / "smoke/summary.json").read_text(encoding="utf-8")) if (root / "smoke/summary.json").is_file() else {}
     lines = ["# V7 64→128 source 训练扩容对照", "", "本报告为当前数据集内的开发性 source 扩容 pilot；固定 R、SET_A/SUMMARY_SET、平均局部聚合和原验证总体，不是 sealed test 或最终泛化结论。", "", "## 结论先行", ""]
-    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 媒体状态：{dict(media_counts)}；前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
+    source_pairs = defaultdict(set)
+    for item in media_rows:
+        if str(item.get("status")) in {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"}:
+            source_pairs[str(item.get("source_id"))].add(str(item.get("role")))
+    complete_source_count = sum(roles == {"real", "fake"} for roles in source_pairs.values())
+    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 媒体状态：{dict(media_counts)}；成对可用 source：{complete_source_count}（计划 144）；前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
     if smoke_frontend or smoke_train:
         lines.append(f"- 端到端 smoke：frontend={smoke_frontend.get('status', '未记录')} source={smoke_frontend.get('source_id', '未记录')}；训练={smoke_train.get('status', '未记录')} epochs={smoke_train.get('epochs', '未记录')}；smoke 不进入正式比较。")
     if summary:
@@ -911,7 +916,14 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
             error = f"{type(exc).__name__}: {exc}"
             final = {"status": "MEDIA_INCOMPLETE", "download": {"status": "DOWNLOAD_BLOCKED", "error": error}, "git_head": git_head(), "updated_unix": time.time()}
             atomic_json(root / "final_status.json", final)
-            progress(root, "download", "MEDIA_INCOMPLETE", 0, 0, error=error)
+            try:
+                current_rows = json.loads(media_path.read_text(encoding="utf-8")).get("results", []) if media_path.is_file() else []
+                current_completed = sum(str(item.get("status")) in {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"} for item in current_rows)
+                current_total = len(current_rows)
+                current_counts = dict(Counter(str(item.get("status")) for item in current_rows))
+            except (OSError, ValueError, TypeError):
+                current_completed, current_total, current_counts = 0, 0, {}
+            progress(root, "download", "MEDIA_INCOMPLETE", current_completed, current_total, error=error, status_counts=current_counts)
             return final
         if str(download_result.get("status")) != "COMPLETE":
             final = {"status": "MEDIA_INCOMPLETE", "download": download_result, "git_head": git_head(), "updated_unix": time.time()}
