@@ -752,13 +752,19 @@ def report(root: Path) -> dict[str, Any]:
     download_error = json.loads((root / "state/download_error.json").read_text(encoding="utf-8")) if (root / "state/download_error.json").is_file() else {}
     smoke_frontend = json.loads((root / "smoke/frontend_summary.json").read_text(encoding="utf-8")) if (root / "smoke/frontend_summary.json").is_file() else {}
     smoke_train = json.loads((root / "smoke/summary.json").read_text(encoding="utf-8")) if (root / "smoke/summary.json").is_file() else {}
+    selection = protocol["selection"]
+    planned_source_count = len(selection["base_sources"]) + len(selection["added_sources"]) + len(selection["validation_sources"])
+    expected_media_count = planned_source_count * 2
+    media_success = {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"}
+    media_complete = len(media_rows) == expected_media_count and expected_media_count > 0 and all(str(row.get("status")) in media_success for row in media_rows)
+    media_completed_count = sum(str(row.get("status")) in media_success for row in media_rows)
     lines = ["# V7 64→128 source 训练扩容对照", "", "本报告为当前数据集内的开发性 source 扩容 pilot；固定 R、SET_A/SUMMARY_SET、平均局部聚合和原验证总体，不是 sealed test 或最终泛化结论。", "", "## 结论先行", ""]
     source_pairs = defaultdict(set)
     for item in media_rows:
         if str(item.get("status")) in {"DOWNLOADED", "MATERIALIZED", "REUSED_EXISTING"}:
             source_pairs[str(item.get("source_id"))].add(str(item.get("role")))
     complete_source_count = sum(roles == {"real", "fake"} for roles in source_pairs.values())
-    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 媒体状态：{dict(media_counts)}；成对可用 source：{complete_source_count}（计划 144）；前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
+    lines += [f"- 冻结训练池：原 64 + 新增 {len(protocol['selection']['added_sources'])} = {len(protocol['selection']['base_sources']) + len(protocol['selection']['added_sources'])} source；验证：{len(protocol['selection']['validation_sources'])} source。", f"- 下载状态：{'COMPLETE' if media_complete else 'INCOMPLETE'}（{media_completed_count}/{expected_media_count} 项）；媒体状态：{dict(media_counts)}；成对可用 source：{complete_source_count}（计划 {planned_source_count}）；前端窗口状态：{dict(counts)}；R 有效支撑行：{support_valid.get('R', 0)}；模型完成：{len(model_records)}/3。"]
     if smoke_frontend or smoke_train:
         lines.append(f"- 端到端 smoke：frontend={smoke_frontend.get('status', '未记录')} source={smoke_frontend.get('source_id', '未记录')}；训练={smoke_train.get('status', '未记录')} epochs={smoke_train.get('epochs', '未记录')}；smoke 不进入正式比较。")
     if summary:
@@ -776,11 +782,19 @@ def report(root: Path) -> dict[str, Any]:
     if existing_final_path.is_file():
         try:
             existing_status = str(json.loads(existing_final_path.read_text(encoding="utf-8")).get("status", ""))
-            if existing_status == "MEDIA_INCOMPLETE":
+            if existing_status == "MEDIA_INCOMPLETE" and not media_complete:
                 status = existing_status
         except (OSError, ValueError, TypeError):
             pass
     atomic_json(root / "final_status.json", {"status": status, "model_count": len(model_records), "expected_model_count": 3, "frontend_result_rows": len(frontend_rows), "frontend_status_counts": dict(counts), "support_rows": len(support_rows), "evaluation_present": bool(summary), "media_status_counts": dict(media_counts), "complete_source_count": int(complete_source_count), "planned_source_count": int(len(protocol["selection"]["base_sources"]) + len(protocol["selection"]["added_sources"]) + len(protocol["selection"]["validation_sources"])), "download_error": download_error, "smoke_frontend": smoke_frontend, "smoke_train": smoke_train, "report": str(path), "git_head": git_head(), "updated_unix": time.time()})
+    final_status = json.loads((root / "final_status.json").read_text(encoding="utf-8"))
+    final_status.update(
+        media_download_complete=media_complete,
+        media_manifest_count=len(media_rows),
+        expected_media_count=expected_media_count,
+        download_error_resolved=bool(media_complete and download_error),
+    )
+    atomic_json(root / "final_status.json", final_status)
     progress(root, "report", status, 1 if status == "COMPLETE" else 0, 1)
     return {"status": status, "report": str(path)}
 
