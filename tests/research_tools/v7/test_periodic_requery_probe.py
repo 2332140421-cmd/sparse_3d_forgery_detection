@@ -213,6 +213,7 @@ def test_parent_completion_persists_results_progress_and_budget_once(tmp_path: P
     root = tmp_path / "pilot"
     result_path = root / "frontend" / "results.json"
     budget = Budget(root, "frontend", 100.0)
+    _atomic_json(root / "state/current_parent.json", {"status": "RUNNING", "parent_id": "P", "started_unix": 10.0})
     results: dict[str, dict[str, object]] = {}
     generated = [
         {"window_id": f"P::b{index}", "status": "FRONTEND_COMPLETE"}
@@ -228,13 +229,19 @@ def test_parent_completion_persists_results_progress_and_budget_once(tmp_path: P
         budget=budget,
         parent_completed=1,
         total_windows=3,
+        parent_started_unix=10.0,
+        total_parents=1,
     )
     saved = json.loads(result_path.read_text())
     progress = json.loads((root / "progress.json").read_text())
     budget_state = json.loads((root / "state" / "frontend_budget.json").read_text())
+    parent_state = json.loads((root / "state/current_parent.json").read_text())
     assert len(saved) == 3
     assert progress["status"] == "RUNNING"
     assert progress["completed"] == 3
     assert progress["total"] == 3
     assert budget_state["elapsed_before_this_process_s"] == 0.0
     assert budget_state["cumulative_s"] >= budget_state["process_elapsed_s"]
+    assert parent_state["status"] == "COMPLETE"
+    assert parent_state["started_unix"] == 10.0
+    assert parent_state["parent_id"] == "P"

@@ -147,25 +147,65 @@ class Budget:
         old = json.loads(self.path.read_text(encoding="utf-8")) if self.path.is_file() else {}
         if old and abs(float(old.get("budget_s", budget_s)) - float(budget_s)) > 1e-9:
             raise ValueError(f"{name.upper()}_BUDGET_ARGUMENT_MISMATCH")
+        self.recovered_interrupted_process: dict[str, Any] | None = None
         self.before = float(old.get("cumulative_s", 0.0))
+        self.estimated_reserved_before = float(old.get("estimated_reserved_s", 0.0))
+        if old.get("process_state") == "RUNNING":
+            try:
+                previous_before = float(old["elapsed_before_this_process_s"])
+                previous_start = float(old["process_start_unix"])
+                previous_checkpoint = float(old.get("process_elapsed_s", 0.0))
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"{name.upper()}_BUDGET_ACTIVE_PROCESS_RECORD_INCOMPLETE") from exc
+            if not all(math.isfinite(value) for value in (previous_before, previous_start, previous_checkpoint)):
+                raise ValueError(f"{name.upper()}_BUDGET_ACTIVE_PROCESS_RECORD_NONFINITE")
+            now_unix = time.time()
+            wall_upper = max(0.0, now_unix - previous_start)
+            recovered_elapsed = max(wall_upper, previous_checkpoint)
+            expected_checkpoint = previous_before + previous_checkpoint
+            old_cumulative = float(old.get("cumulative_s", expected_checkpoint))
+            if not math.isclose(old_cumulative, expected_checkpoint, rel_tol=0.0, abs_tol=1e-3):
+                raise ValueError(f"{name.upper()}_BUDGET_RUNNING_CHECKPOINT_INCONSISTENT")
+            self.before = expected_checkpoint
+            newly_reserved = max(0.0, recovered_elapsed - previous_checkpoint)
+            self.estimated_reserved_before += newly_reserved
+            self.recovered_interrupted_process = {
+                "previous_process_start_unix": previous_start,
+                "detected_unix": now_unix,
+                "wall_elapsed_upper_s": wall_upper,
+                "last_checkpoint_process_elapsed_s": previous_checkpoint,
+                "charged_process_elapsed_s": recovered_elapsed,
+                "new_estimated_reservation_s": newly_reserved,
+                "accounting": "elapsed_before_this_process + last checkpoint; reserve only wall/checkpoint delta",
+            }
         self.budget_s = float(budget_s)
         self.started_monotonic = time.monotonic()
         self.started_unix = time.time()
+        self.save(None, process_state="RUNNING")
 
     def elapsed(self) -> float:
         return self.before + max(0.0, time.monotonic() - self.started_monotonic)
 
     def remaining(self) -> float:
-        return max(0.0, self.budget_s - self.elapsed())
+        return max(0.0, self.budget_s - self.accounted_upper())
 
-    def save(self, stop_reason: str | None = None, **extra: Any) -> None:
+    def accounted_upper(self) -> float:
+        return self.before + self.estimated_reserved_before + max(0.0, time.monotonic() - self.started_monotonic)
+
+    def save(self, stop_reason: str | None = None, *, process_state: str | None = None, **extra: Any) -> None:
+        if process_state is None:
+            process_state = "RUNNING" if stop_reason is None else "STOPPED"
         _atomic_json(self.path, {
             "budget_s": self.budget_s,
             "elapsed_before_this_process_s": self.before,
             "process_start_unix": self.started_unix,
             "process_elapsed_s": max(0.0, time.monotonic() - self.started_monotonic),
             "cumulative_s": self.elapsed(),
+            "estimated_reserved_s": self.estimated_reserved_before,
+            "budget_accounted_upper_s": self.accounted_upper(),
             "stop_reason": stop_reason,
+            "process_state": process_state,
+            "recovered_interrupted_process": self.recovered_interrupted_process,
             **extra,
         })
 
@@ -197,6 +237,8 @@ def _persist_parent_completion(
     budget: Budget,
     parent_completed: int,
     total_windows: int,
+    parent_started_unix: float | None = None,
+    total_parents: int | None = None,
 ) -> float:
     """Atomically persist a completed parent and its matching progress state."""
 
@@ -206,6 +248,23 @@ def _persist_parent_completion(
         results[str(row["window_id"])] = row
     _atomic_json(result_path, list(sorted(results.values(), key=lambda item: str(item["window_id"]))))
     budget.save(None, last_parent=str(parent_id), last_parent_elapsed_s=float(parent_elapsed_s))
+    parent_row = dict(generated[0]) if generated else {}
+    _atomic_json(root / "state/current_parent.json", {
+        "status": "COMPLETE",
+        "parent_id": str(parent_id),
+        "source_id": parent_row.get("source_id"),
+        "role": parent_row.get("role"),
+        "window_ids": [str(item["window_id"]) for item in generated],
+        "started_unix": parent_started_unix,
+        "completed_unix": time.time(),
+        "elapsed_s": float(parent_elapsed_s),
+        "completed_parent_count": int(parent_completed),
+        "total_parent_count": int(total_parents) if total_parents is not None else None,
+        "completed_window_count": _completed_window_count(results),
+        "total_window_count": int(total_windows),
+        "budget_elapsed_s": budget.elapsed(),
+        "budget_remaining_s": budget.remaining(),
+    })
     _progress(
         root,
         "frontend",
@@ -620,17 +679,35 @@ def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
                 _progress(root, "frontend", reason, completed_now, len(subwindows), budget=budget, stop_reason=reason, completed_parent_count=parent_completed)
                 break
             started = time.perf_counter()
+            parent_started_unix = time.time()
+            _atomic_json(root / "state/current_parent.json", {
+                "status": "RUNNING",
+                "parent_id": str(parent["parent_id"]),
+                "source_id": str(parent["source_id"]),
+                "role": str(parent["role"]),
+                "window_ids": [str(row["window_id"]) for row in parent_rows],
+                "started_unix": parent_started_unix,
+                "started_parent_count": int(parent_completed + 1),
+                "total_parent_count": len(parents),
+                "completed_window_count": _completed_window_count(results),
+                "total_window_count": len(subwindows),
+                "budget_elapsed_s": budget.elapsed(),
+                "budget_remaining_s": budget.remaining(),
+            })
+            _progress(root, "frontend", "RUNNING", _completed_window_count(results), len(subwindows), budget=budget, completed_parent_count=parent_completed, current_parent=str(parent["parent_id"]), current_parent_status="RUNNING")
+            print(f"periodic parent START {parent_completed + 1}/{len(parents)} {parent['parent_id']} subwindows={len(parent_rows)} elapsed={budget.elapsed():.1f}s remaining={budget.remaining():.1f}s", flush=True)
             try:
                 generated = _frontend_parent(parent, parent_rows, tracker, depth_runner, root)
                 parent_completed += 1
                 elapsed = time.perf_counter() - started
-                _persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=parent_completed, total_windows=len(subwindows))
+                _persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=parent_completed, total_windows=len(subwindows), parent_started_unix=parent_started_unix, total_parents=len(parents))
                 print(f"periodic parent {parent_completed}/{len(parents)} {parent['parent_id']} subwindows={len(generated)} elapsed={elapsed:.1f}s remaining={budget.remaining():.1f}s", flush=True)
             except Exception as exc:
                 error = {"parent_id": str(parent["parent_id"]), "status": "FRONTEND_FAILED", "error": f"{type(exc).__name__}: {exc}", "traceback": __import__("traceback").format_exc()}
                 for row in parent_rows:
                     results[str(row["window_id"])] = {**dict(row), **error, "window_id": str(row["window_id"])}
                 _atomic_json(result_path, list(sorted(results.values(), key=lambda item: str(item["window_id"]))))
+                _atomic_json(root / "state/current_parent.json", {"status": "FAILED", "parent_id": str(parent["parent_id"]), "source_id": str(parent["source_id"]), "role": str(parent["role"]), "window_ids": [str(row["window_id"]) for row in parent_rows], "started_unix": parent_started_unix, "finished_unix": time.time(), "elapsed_s": time.perf_counter() - started, "error": error["error"], "traceback": error["traceback"]})
                 budget.save(None, last_parent=str(parent["parent_id"]), last_error=error["error"])
                 _progress(root, "frontend", "RUNNING", _completed_window_count(results), len(subwindows), budget=budget, completed_parent_count=parent_completed, current_parent=str(parent["parent_id"]), last_error=error["error"])
                 print(f"periodic parent FAILED {parent['parent_id']}: {error['error']}", flush=True)
@@ -649,7 +726,7 @@ def run_frontend(root: Path, budget_s: float, resume: bool) -> dict[str, Any]:
             pass
     complete = sum(item.get("status") == "FRONTEND_COMPLETE" for item in results.values())
     status = "COMPLETE" if complete == len(subwindows) else ("STOPPED_SAFE" if STOP_REQUESTED else ("BUDGET_EXHAUSTED" if budget.remaining() <= 0 else "FRONTEND_INCOMPLETE"))
-    budget.save(None if status == "COMPLETE" else status)
+    budget.save(None if status == "COMPLETE" else status, process_state=status)
     _progress(root, "frontend", status, complete, len(subwindows), budget=budget, completed_parent_count=parent_completed, stop_reason=None if status == "COMPLETE" else status)
     return {"status": status, "completed": complete, "total": len(subwindows), "parent_completed": parent_completed, "cumulative_s": budget.elapsed()}
 
@@ -858,7 +935,7 @@ def train(root: Path, budget_s: float, device: str, resume: bool) -> dict[str, A
                     del model
                     _progress(root, "train", "RUNNING", len(completed), total, budget=budget, current_condition=condition, held_out_source=held_out, seed=int(seed))
     status = "COMPLETE" if len(completed) == total else "PARTIAL"
-    budget.save(None if status == "COMPLETE" else status)
+    budget.save(None if status == "COMPLETE" else status, process_state=status)
     _progress(root, "train", status, len(completed), total, budget=budget)
     return {"status": status, "completed_models": len(completed), "total_models": total, "cumulative_s": budget.elapsed()}
 

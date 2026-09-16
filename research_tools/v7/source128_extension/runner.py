@@ -18,6 +18,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -121,27 +122,141 @@ class Budget:
         old = json.loads(self.path.read_text(encoding="utf-8")) if self.path.is_file() else {}
         if old and abs(float(old.get("budget_s", budget_s)) - float(budget_s)) > 1e-9:
             raise ValueError(f"{name.upper()}_BUDGET_ARGUMENT_MISMATCH")
+        self.recovered_interrupted_process: dict[str, Any] | None = None
         self.before = float(old.get("cumulative_s", 0.0))
+        self.estimated_reserved_before = float(old.get("estimated_reserved_s", 0.0))
+        if old.get("process_state") == "RUNNING":
+            try:
+                previous_before = float(old["elapsed_before_this_process_s"])
+                previous_start = float(old["process_start_unix"])
+                previous_checkpoint = float(old.get("process_elapsed_s", 0.0))
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"{name.upper()}_BUDGET_ACTIVE_PROCESS_RECORD_INCOMPLETE") from exc
+            if not all(math.isfinite(value) for value in (previous_before, previous_start, previous_checkpoint)):
+                raise ValueError(f"{name.upper()}_BUDGET_ACTIVE_PROCESS_RECORD_NONFINITE")
+            now_unix = time.time()
+            wall_upper = max(0.0, now_unix - previous_start)
+            recovered_elapsed = max(wall_upper, previous_checkpoint)
+            expected_checkpoint = previous_before + previous_checkpoint
+            old_cumulative = float(old.get("cumulative_s", expected_checkpoint))
+            if not math.isclose(old_cumulative, expected_checkpoint, rel_tol=0.0, abs_tol=1e-3):
+                raise ValueError(f"{name.upper()}_BUDGET_RUNNING_CHECKPOINT_INCONSISTENT")
+            self.before = expected_checkpoint
+            newly_reserved = max(0.0, recovered_elapsed - previous_checkpoint)
+            self.estimated_reserved_before += newly_reserved
+            self.recovered_interrupted_process = {
+                "previous_process_start_unix": previous_start,
+                "detected_unix": now_unix,
+                "wall_elapsed_upper_s": wall_upper,
+                "last_checkpoint_process_elapsed_s": previous_checkpoint,
+                "charged_process_elapsed_s": recovered_elapsed,
+                "new_estimated_reservation_s": newly_reserved,
+                "accounting": "elapsed_before_this_process + last checkpoint; reserve only wall/checkpoint delta",
+            }
         self.budget_s = float(budget_s)
         self.started_monotonic = time.monotonic()
         self.started_unix = time.time()
+        self.save(None, process_state="RUNNING")
 
     def elapsed(self) -> float:
         return self.before + max(0.0, time.monotonic() - self.started_monotonic)
 
     def remaining(self) -> float:
-        return max(0.0, self.budget_s - self.elapsed())
+        return max(0.0, self.budget_s - self.accounted_upper())
 
-    def save(self, reason: str | None = None, **extra: Any) -> None:
+    def accounted_upper(self) -> float:
+        return self.before + self.estimated_reserved_before + max(0.0, time.monotonic() - self.started_monotonic)
+
+    def save(self, reason: str | None = None, *, process_state: str | None = None, **extra: Any) -> None:
+        if process_state is None:
+            process_state = "RUNNING" if reason is None else "STOPPED"
         atomic_json(self.path, {
             "budget_s": self.budget_s,
             "elapsed_before_this_process_s": self.before,
             "process_start_unix": self.started_unix,
             "process_elapsed_s": max(0.0, time.monotonic() - self.started_monotonic),
             "cumulative_s": self.elapsed(),
+            "estimated_reserved_s": self.estimated_reserved_before,
+            "budget_accounted_upper_s": self.accounted_upper(),
             "stop_reason": reason,
+            "process_state": process_state,
+            "recovered_interrupted_process": self.recovered_interrupted_process,
             **extra,
         })
+
+
+def record_supervisor_exit(
+    root: Path,
+    *,
+    runner_pid: int,
+    wrapper_pid: int,
+    exit_code: int,
+    started_unix: float,
+    log_path: str,
+    screen_session: str,
+    command: str,
+) -> dict[str, Any]:
+    ended_unix = time.time()
+    record = {
+        "status": "CAPTURED",
+        "runner_pid": int(runner_pid),
+        "wrapper_pid": int(wrapper_pid),
+        "exit_code": int(exit_code),
+        "started_unix": float(started_unix),
+        "ended_unix": ended_unix,
+        "elapsed_wall_s": max(0.0, ended_unix - float(started_unix)),
+        "log_path": str(log_path),
+        "screen_session": str(screen_session),
+        "command": str(command),
+    }
+    atomic_json(root / "state/supervisor_exit.json", record)
+
+    launch_path = root / "state/launch.json"
+    final_path = root / "final_status.json"
+    try:
+        launch = json.loads(launch_path.read_text(encoding="utf-8"))
+        final = json.loads(final_path.read_text(encoding="utf-8")) if final_path.is_file() else {}
+    except (OSError, ValueError, TypeError):
+        return record
+    is_our_launch = int(launch.get("pid", -1)) == int(runner_pid) and float(launch.get("started_unix", 0.0)) >= float(started_unix) - 1.0
+    if is_our_launch:
+        for name in ("frontend", "training"):
+            budget_path = root / "state" / f"{name}_budget.json"
+            if not budget_path.is_file():
+                continue
+            try:
+                budget = json.loads(budget_path.read_text(encoding="utf-8"))
+                if budget.get("process_state") != "RUNNING" or float(budget.get("process_start_unix", 0.0)) < float(started_unix) - 1.0:
+                    continue
+                before = float(budget["elapsed_before_this_process_s"])
+                checkpoint = float(budget.get("process_elapsed_s", 0.0))
+                previous_cumulative = float(budget.get("cumulative_s", before + checkpoint))
+                if not math.isclose(previous_cumulative, before + checkpoint, rel_tol=0.0, abs_tol=1e-3):
+                    continue
+                wall_upper = max(0.0, ended_unix - float(budget["process_start_unix"]))
+                settled_elapsed = max(wall_upper, checkpoint)
+                additional_reservation = max(0.0, settled_elapsed - checkpoint)
+                budget["estimated_reserved_s"] = float(budget.get("estimated_reserved_s", 0.0)) + additional_reservation
+                budget["budget_accounted_upper_s"] = previous_cumulative + float(budget["estimated_reserved_s"])
+                budget["process_state"] = "INTERRUPTED"
+                budget["stop_reason"] = "SUPERVISOR_CAPTURED_RUNNER_EXIT"
+                budget["supervisor_exit_code"] = int(exit_code)
+                budget["supervisor_exit_unix"] = ended_unix
+                budget["settled_process_elapsed_upper_s"] = settled_elapsed
+                budget["new_estimated_reservation_s"] = additional_reservation
+                atomic_json(budget_path, budget)
+            except (OSError, ValueError, TypeError, KeyError):
+                continue
+        if final.get("status") == "RUNNING":
+            final.update({
+                "status": "INTERRUPTED",
+                "stop_reason": "RUNNER_EXITED_BEFORE_FINAL_STATUS",
+                "wrapper_exit_code": int(exit_code),
+                "wrapper_exit_unix": ended_unix,
+                "updated_unix": ended_unix,
+            })
+            atomic_json(final_path, final)
+    return record
 
 
 @contextmanager
@@ -655,13 +770,13 @@ def _features_with_budget(root: Path, budget: Budget) -> dict[str, Any]:
         attempts = list(old.get("attempts", []))
         attempts.append({"status": status, "elapsed_s": elapsed, "error": reason, "updated_unix": time.time()})
         atomic_json(state_path, {"attempts": attempts, "cumulative_feature_elapsed_s": sum(float(item.get("elapsed_s", 0.0)) for item in attempts)})
-        budget.save("FEATURE_EXTRACTION_FAILED", stage="features", feature_elapsed_s=elapsed, error=reason)
+        budget.save("FEATURE_EXTRACTION_FAILED", process_state="FAILED", stage="features", feature_elapsed_s=elapsed, error=reason)
         raise
     elapsed = max(0.0, time.monotonic() - started)
     attempts = list(old.get("attempts", []))
     attempts.append({"status": status, "elapsed_s": elapsed, "updated_unix": time.time()})
     atomic_json(state_path, {"attempts": attempts, "cumulative_feature_elapsed_s": sum(float(item.get("elapsed_s", 0.0)) for item in attempts)})
-    budget.save(reason, stage="features", feature_elapsed_s=elapsed, feature_status=status)
+    budget.save(reason, process_state=status, stage="features", feature_elapsed_s=elapsed, feature_status=status)
     return {"status": status, "summary": result, "elapsed_s": elapsed, "error": reason}
 
 
@@ -733,7 +848,7 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
         if (int(seed), TOTAL_SOURCE_COUNT) in done:
             continue
         if budget.remaining() <= 0:
-            budget.save("TRAINING_BUDGET_EXHAUSTED", completed_models=len(done), total_models=total)
+            budget.save("TRAINING_BUDGET_EXHAUSTED", process_state="TRAINING_BUDGET_EXHAUSTED", completed_models=len(done), total_models=total)
             progress(root, "train", "TRAINING_BUDGET_EXHAUSTED", len(done), total, cumulative_elapsed_s=budget.elapsed())
             return {"status": "TRAINING_BUDGET_EXHAUSTED", "completed_models": len(done), "total_models": total}
         started = time.perf_counter()
@@ -742,12 +857,12 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
         records.append(record)
         atomic_json(model_path, {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "epochs": EPOCHS, "seeds": list(MODEL_SEEDS), "records": records})
         done.add((int(seed), TOTAL_SOURCE_COUNT))
-        budget.save(None, last_seed=int(seed), completed_models=len(done), total_models=total)
+        budget.save(None, process_state="RUNNING", last_seed=int(seed), completed_models=len(done), total_models=total)
         progress(root, "train", "RUNNING", len(done), total, last_seed=int(seed), cumulative_elapsed_s=budget.elapsed())
         del model
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-    budget.save(None, completed_models=len(done), total_models=total)
+    budget.save(None, process_state="COMPLETE", completed_models=len(done), total_models=total)
     progress(root, "train", "COMPLETE", len(done), total, cumulative_elapsed_s=budget.elapsed())
     return {"status": "COMPLETE", "completed_models": len(done), "total_models": total, "planned_source_count": TOTAL_SOURCE_COUNT, "effective_training_source_count": len(observed_sources), "missing_training_source_count": len(missing_sources), "missing_training_sources": missing_sources, "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1]}
 
@@ -1054,6 +1169,7 @@ def run_frontend_smoke(root: Path, *, budget_s: float = FRONTEND_BUDGET_S, resum
     if not pending:
         output = {"status": "PASS", "source_id": selected_source, "parents": 2, "reused": True, "budget_elapsed_s": budget.elapsed()}
         atomic_json(root / "smoke/frontend_summary.json", output)
+        budget.save(None, process_state="COMPLETE", smoke_source=selected_source, completed_parents=0, total_parents=0)
         return output
     if budget.remaining() <= 0:
         budget.save("SMOKE_FRONTEND_BUDGET_EXHAUSTED", smoke_source=selected_source)
@@ -1076,19 +1192,24 @@ def run_frontend_smoke(root: Path, *, budget_s: float = FRONTEND_BUDGET_S, resum
                 break
             parent_rows = by_parent[str(parent["parent_id"])]
             started = time.perf_counter()
+            parent_started_unix = time.time()
+            atomic_json(root / "state/current_parent.json", {"status": "RUNNING", "parent_id": str(parent["parent_id"]), "source_id": str(parent["source_id"]), "role": str(parent["role"]), "window_ids": [str(row["window_id"]) for row in parent_rows], "started_unix": parent_started_unix, "started_parent_count": completed_parents + 1, "total_parent_count": len(pending), "budget_elapsed_s": budget.elapsed(), "budget_remaining_s": budget.remaining(), "smoke": True})
             try:
                 generated = periodic._frontend_parent(parent, parent_rows, tracker, depth_runner, root)
                 elapsed = time.perf_counter() - started
-                periodic._persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=completed_parents + 1, total_windows=len(subwindows))
+                periodic._persist_parent_completion(root, result_path, results, generated, parent_id=str(parent["parent_id"]), parent_elapsed_s=elapsed, budget=budget, parent_completed=completed_parents + 1, total_windows=len(subwindows), parent_started_unix=parent_started_unix, total_parents=len(pending))
                 completed_parents += 1
             except Exception as exc:
-                errors.append(f"{parent['parent_id']}:{type(exc).__name__}: {exc}")
+                error = f"{type(exc).__name__}: {exc}"
+                errors.append(f"{parent['parent_id']}:{error}")
+                atomic_json(root / "state/current_parent.json", {"status": "FAILED", "parent_id": str(parent["parent_id"]), "source_id": str(parent["source_id"]), "role": str(parent["role"]), "window_ids": [str(row["window_id"]) for row in parent_rows], "started_unix": parent_started_unix, "finished_unix": time.time(), "elapsed_s": time.perf_counter() - started, "error": error, "smoke": True})
                 break
     finally:
         del tracker, depth_runner
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
     status = "PASS" if completed_parents == len(pending) and not errors else ("BUDGET_EXHAUSTED" if budget.remaining() <= 0 else "FAILED")
+    budget.save(None if status == "PASS" else status, process_state="COMPLETE" if status == "PASS" else status, smoke_source=selected_source, completed_parents=completed_parents, total_parents=len(pending), errors=errors)
     output = {"status": status, "source_id": selected_source, "parents_completed": completed_parents, "parents_total": len(pending), "elapsed_s": time.perf_counter() - started_total, "budget_elapsed_s": budget.elapsed(), "errors": errors}
     atomic_json(root / "smoke/frontend_summary.json", output)
     return output
@@ -1174,18 +1295,42 @@ def run_all(root: Path, *, device: str, resume: bool, workers: int, frontend_bud
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("plan", "download", "windows", "verify-cache", "frontend", "smoke-frontend", "features", "smoke", "train", "evaluate", "report", "all"))
+    parser.add_argument("stage", choices=("plan", "download", "windows", "verify-cache", "frontend", "smoke-frontend", "features", "smoke", "train", "evaluate", "report", "all", "record-wrapper-exit"))
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--frontend-budget-s", type=float, default=FRONTEND_BUDGET_S)
     parser.add_argument("--train-budget-s", type=float, default=TRAINING_BUDGET_S)
+    parser.add_argument("--log-path")
+    parser.add_argument("--wrapper-pid", type=int)
+    parser.add_argument("--screen-session")
+    parser.add_argument("--runner-pid", type=int)
+    parser.add_argument("--exit-code", type=int)
+    parser.add_argument("--started-unix", type=float)
+    parser.add_argument("--command-line")
     args = parser.parse_args()
     root = args.output_root
     root.mkdir(parents=True, exist_ok=True)
+    if args.stage == "record-wrapper-exit":
+        required = (args.runner_pid, args.wrapper_pid, args.exit_code, args.started_unix, args.log_path, args.screen_session, args.command_line)
+        if any(value is None for value in required):
+            parser.error("record-wrapper-exit requires runner/wrapper PID, exit code, start time, log path, screen session, and command line")
+        record_supervisor_exit(
+            root,
+            runner_pid=args.runner_pid,
+            wrapper_pid=args.wrapper_pid,
+            exit_code=args.exit_code,
+            started_unix=args.started_unix,
+            log_path=args.log_path,
+            screen_session=args.screen_session,
+            command=args.command_line,
+        )
+        return 0
     with run_lock(root):
-        atomic_json(root / "state/launch.json", {"stage": args.stage, "pid": os.getpid(), "git_head": git_head(), "started_unix": time.time(), "device": args.device})
+        started_unix = time.time()
+        command = [sys.executable, "-u", "-m", "research_tools.v7.source128_extension.runner", *sys.argv[1:]]
+        atomic_json(root / "state/launch.json", {"stage": args.stage, "pid": os.getpid(), "wrapper_pid": args.wrapper_pid, "screen_session": args.screen_session, "command": command, "log_path": args.log_path, "git_head": git_head(), "started_unix": started_unix, "device": args.device})
         try:
             _ensure_plan(root)
             if args.stage == "plan":

@@ -105,6 +105,93 @@ def test_feature_runtime_is_charged_to_resumed_combined_budget(tmp_path: Path, m
     assert resumed.remaining() <= 10.0 - saved["cumulative_s"] + 1e-6
 
 
+@pytest.mark.parametrize("budget_name", ["source128", "periodic"])
+def test_interrupted_budget_resume_charges_from_fixed_process_base_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    budget_name: str,
+) -> None:
+    from research_tools.v7.periodic_requery_probe.runner import Budget as PeriodicBudget
+
+    clock = {"wall": 1000.0, "monotonic": 100.0}
+    monkeypatch.setattr(runner.time, "time", lambda: clock["wall"])
+    monkeypatch.setattr(runner.time, "monotonic", lambda: clock["monotonic"])
+    budget_type = runner.Budget if budget_name == "source128" else PeriodicBudget
+
+    first = budget_type(tmp_path, "frontend", 100.0)
+    assert json.loads((tmp_path / "state/frontend_budget.json").read_text())["process_state"] == "RUNNING"
+    clock["monotonic"] = 108.0
+    first.save(None)
+    checkpoint = json.loads((tmp_path / "state/frontend_budget.json").read_text())
+    assert checkpoint["cumulative_s"] == pytest.approx(8.0)
+
+    # Simulate an unrecorded process that started from elapsed_before=0 and
+    # was found 30 wall seconds later.  The 8 s checkpoint is measured; only
+    # the remaining 22 s are conservatively reserved, not counted twice.
+    clock.update(wall=1030.0, monotonic=5.0)
+    resumed = budget_type(tmp_path, "frontend", 100.0)
+    saved = json.loads((tmp_path / "state/frontend_budget.json").read_text())
+    assert resumed.before == pytest.approx(8.0)
+    assert saved["cumulative_s"] == pytest.approx(8.0)
+    assert saved["estimated_reserved_s"] == pytest.approx(22.0)
+    assert saved["budget_accounted_upper_s"] == pytest.approx(30.0)
+    assert saved["recovered_interrupted_process"]["charged_process_elapsed_s"] == pytest.approx(30.0)
+    assert resumed.remaining() == pytest.approx(70.0)
+
+
+def test_supervisor_exit_records_code_and_only_marks_its_own_running_attempt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(runner.time, "time", lambda: 120.0)
+    atomic_json(tmp_path / "state/launch.json", {"pid": 456, "started_unix": 101.0})
+    atomic_json(tmp_path / "final_status.json", {"status": "RUNNING", "pid": 456})
+    atomic_json(tmp_path / "state/frontend_budget.json", {
+        "budget_s": 100.0,
+        "elapsed_before_this_process_s": 10.0,
+        "process_start_unix": 100.0,
+        "process_elapsed_s": 8.0,
+        "cumulative_s": 18.0,
+        "estimated_reserved_s": 2.0,
+        "process_state": "RUNNING",
+    })
+
+    record = runner.record_supervisor_exit(
+        tmp_path,
+        runner_pid=456,
+        wrapper_pid=123,
+        exit_code=143,
+        started_unix=100.0,
+        log_path="/tmp/source128.log",
+        screen_session="v7-source128-extension",
+        command="python -u -m research_tools.v7.source128_extension.runner all",
+    )
+
+    saved_exit = json.loads((tmp_path / "state/supervisor_exit.json").read_text())
+    saved_final = json.loads((tmp_path / "final_status.json").read_text())
+    saved_budget = json.loads((tmp_path / "state/frontend_budget.json").read_text())
+    assert saved_exit["exit_code"] == record["exit_code"] == 143
+    assert saved_exit["elapsed_wall_s"] == pytest.approx(20.0)
+    assert saved_exit["log_path"] == "/tmp/source128.log"
+    assert saved_final["status"] == "INTERRUPTED"
+    assert saved_final["wrapper_exit_code"] == 143
+    assert saved_budget["cumulative_s"] == pytest.approx(18.0)
+    assert saved_budget["estimated_reserved_s"] == pytest.approx(14.0)
+    assert saved_budget["budget_accounted_upper_s"] == pytest.approx(32.0)
+    assert saved_budget["process_state"] == "INTERRUPTED"
+
+    atomic_json(tmp_path / "state/launch.json", {"pid": 789, "started_unix": 101.0})
+    atomic_json(tmp_path / "final_status.json", {"status": "RUNNING", "pid": 789})
+    runner.record_supervisor_exit(
+        tmp_path,
+        runner_pid=456,
+        wrapper_pid=123,
+        exit_code=1,
+        started_unix=100.0,
+        log_path="/tmp/old-wrapper.log",
+        screen_session="v7-source128-extension",
+        command="another run",
+    )
+    assert json.loads((tmp_path / "final_status.json").read_text())["pid"] == 789
+
+
 def _report_fixture(tmp_path: Path, real_status: str, fake_status: str) -> None:
     atomic_json(tmp_path / "protocol.json", {"selection": {"base_sources": ["S1"], "added_sources": [], "validation_sources": []}})
     atomic_json(tmp_path / "acquisition/media_manifest.json", {"results": [
