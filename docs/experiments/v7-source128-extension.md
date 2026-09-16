@@ -14,4 +14,3 @@
 正式比较使用与固定 64-source MEAN_BASELINE 完全相同的 14 个双类别验证 source、83 个窗口；三 seed 先平均窗口 logit，再计算 source-macro AUROC。训练使用 200 epochs、Adam、`lr=1e-3`、`weight_decay=1e-4`、原 source/class weighted BCE 和 fold 内标准化。source bootstrap 为 10,000 次、seed=20260909。
 
 该 pilot 不是 sealed test，不证明未知 generator 泛化或空间定位能力。未访问旧 R7/V5，不改变正式 `src` 检测链。
-

@@ -26,4 +26,3 @@ def test_source_bootstrap_uses_paired_sources_and_fixed_seed() -> None:
 def test_atomic_json_rejects_nonfinite(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         atomic_json(tmp_path / "bad.json", {"value": float("nan")})
-
