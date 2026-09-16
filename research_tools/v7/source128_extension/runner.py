@@ -471,6 +471,29 @@ def _load_split_for_extension(root: Path) -> tuple[list[dict[str, Any]], dict[st
 def build_and_prepare(root: Path) -> dict[str, Any]:
     curve = _set_curve_roots(root)
     summary = curve.build_windows(root)
+    # The extension adds sources to the lexicographic population, which can
+    # otherwise renumber the legacy pair IDs even though the source/video,
+    # frame and PTS identities are unchanged.  Preserve the old pair IDs for
+    # the 80 legacy sources so their validated particle caches remain
+    # reusable; new source IDs keep the extension-generated IDs.
+    legacy_pairs_path = SOURCE_ROOT / STAGING_NAME / "manifests/selected_pairs.json"
+    current_pairs_path = curve.STAGING_ROOT / "manifests/selected_pairs.json"
+    if legacy_pairs_path.is_file() and current_pairs_path.is_file():
+        legacy_pairs = {str(item["source_id"]): str(item["pair_id"]) for item in json.loads(legacy_pairs_path.read_text(encoding="utf-8"))}
+        current_pairs = json.loads(current_pairs_path.read_text(encoding="utf-8"))
+        pair_aliases = {str(item["source_id"]): legacy_pairs[str(item["source_id"])] for item in current_pairs if str(item["source_id"]) in legacy_pairs}
+        for item in current_pairs:
+            if str(item["source_id"]) in pair_aliases:
+                item["pair_id"] = pair_aliases[str(item["source_id"])]
+        atomic_json(current_pairs_path, current_pairs)
+        current_windows_path = curve.STAGING_ROOT / "manifests/window_manifest.json"
+        current_windows = json.loads(current_windows_path.read_text(encoding="utf-8"))
+        for item in current_windows:
+            if str(item["source_id"]) in pair_aliases:
+                item["pair_id"] = pair_aliases[str(item["source_id"])]
+        atomic_json(current_windows_path, current_windows)
+        atomic_json(root / "manifests/input_pairs.json", current_pairs)
+        atomic_json(root / "state/legacy_pair_id_aliases.json", pair_aliases)
     prepared = curve.prepare_periodic(root)
     # periodic.prepare writes its own generic protocol; restore the extension
     # protocol as the authoritative identity after the manifest is expanded.
