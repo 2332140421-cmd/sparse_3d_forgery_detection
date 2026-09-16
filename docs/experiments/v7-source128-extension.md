@@ -14,3 +14,11 @@
 正式比较使用与固定 64-source MEAN_BASELINE 完全相同的 14 个双类别验证 source、83 个窗口；三 seed 先平均窗口 logit，再计算 source-macro AUROC。训练使用 200 epochs、Adam、`lr=1e-3`、`weight_decay=1e-4`、原 source/class weighted BCE 和 fold 内标准化。source bootstrap 为 10,000 次、seed=20260909。
 
 该 pilot 不是 sealed test，不证明未知 generator 泛化或空间定位能力。未访问旧 R7/V5，不改变正式 `src` 检测链。
+
+## 当前执行状态（2026-09-16）
+
+冻结清单已写入数据盘；新增 64 个 source 的选择未依据分数或前端成功率。一次有界下载恢复后，媒体 manifest 实际为 209/288 条有效（180 `REUSED_EXISTING`、20 `MATERIALIZED`、9 `DOWNLOADED`），新增 source 中 10 个 real/fake 成对可用；其余条目保留 77 个下载失败和 2 个校验失败，未被当作可训练数据。S3 Charades 中央目录后续三次 SSL EOF，`run_all --resume` 因媒体不完整写入 `MEDIA_INCOMPLETE` 并停止，未启动正式 128-source 前端或训练。
+
+新增 source `VG94P` 的 real/fake 两个父片段已通过真实 CUDA 前端和 R 特征 smoke（6 个窗口），并以 1 source、6 窗口完成独立 200 epoch 双类别 CUDA 训练；smoke 模型不进入正式比较。正式模型数为 0/3，验证指标尚未生成。
+
+恢复方式：网络可用后，在仓库根目录执行 `.venv/bin/python -u -m research_tools.v7.source128_extension.runner all --resume --output-root /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v7_activityforensics_source128_extension_v1 --device cuda`。脚本会先重试并严格校验媒体；只有 288/288 条媒体有效时才继续 128-source 窗口、前端、特征和正式训练，部分训练池会被硬门禁拒绝。
