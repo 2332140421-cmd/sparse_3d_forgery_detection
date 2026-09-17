@@ -215,7 +215,7 @@ def build_report(case: Mapping[str, Any], validation: Mapping[str, Any], rows: S
              "## 当前模型读出", "",
              "- 当前 observation_support_pilot_v1 的 feature_manifest 共 %s 行，04LAX 行数为 %s，因此模型读出状态为 NOT_AVAILABLE。没有生成 unit logit、window logit 或窗口均值贡献。" % (model_status.get("feature_manifest_row_count", "NA"), model_status.get("feature_rows_for_source", "NA")),
              "- 已确认 ROI 仅用于解释观测与结构支撑，未修改分组、pair、历史尺度、S/Q、模型或训练数据。",
-             "- R 五时刻 H 结构来自 frame 503/506/509/512/515 的保存 triplet；这是结构证据，不等于冻结模型已经消费了该案例。",
+             "- R 缓存覆盖 frame 503/506/509/512/515 五个目标帧，并保存了跨这些帧的滑动三时刻 H triplet；这是旧案例结构证据，不能直接当作当前五时刻模型输入，也不等于冻结模型已经消费了该案例。",
              "", "## 结果表", "",
              "| condition | frame | pts(s) | model target | ROI visible | ROI geometry | ROI common members | groups | valid pairs | both endpoints | one endpoint | unknown UV |",
              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
