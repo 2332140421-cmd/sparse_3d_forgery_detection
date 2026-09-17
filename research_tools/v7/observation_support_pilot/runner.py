@@ -186,7 +186,7 @@ def _build_features(root: Path, train_rows: Sequence[Mapping[str, Any]], validat
     summary_path = root / "support/summary.json"
     if resume and manifest_path.is_file() and summary_path.is_file():
         old = json.loads(manifest_path.read_text(encoding="utf-8")); old_by_id = {str(item["window_id"]): item for item in old}; old_summary = json.loads(summary_path.read_text(encoding="utf-8"))
-        if old_summary.get("feature_version") == "v1" and set(old_by_id) == selected_ids and all((root / str(item["input_path"])).is_file() for item in old):
+        if old_summary.get("feature_version") == "v1" and "raw_common_member_difference_unit_count" in old_summary and set(old_by_id) == selected_ids and all((root / str(item["input_path"])).is_file() for item in old):
             by_window = {str(item["window_id"]): item for item in old}
             train_kept = [{**dict(row), "matched_unit_count": int(by_window[str(row["window_id"])] ["matched_unit_count"])} for row in train_rows]
             val_kept = [{**dict(row), "matched_unit_count": int(by_window[str(row["window_id"])] ["matched_unit_count"])} for row in validation_rows]
