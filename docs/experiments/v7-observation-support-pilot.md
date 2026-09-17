@@ -18,7 +18,7 @@ Q(t) = [v, g, v-v(history_ref), g-g(history_ref)]
 
 历史参照是 `history_array_indices` 中严格早于第一个实际目标 PTS 的最后一帧。`visibility` 和 `geometry_validity` 是保存的前端判断，不是真实遮挡或几何真值；Q 的差值不是速度、加速度或物理形变。
 
-共同集合未改变：训练/验证仍为 718/83 窗口，23,767/3,148 unit；无支撑或未形成结构的组没有填 0，也未进入分类器。原始组与共同组成员、track ID、目标帧/PTS、查询年龄和历史参照保存在产物 `inputs/feature_manifest.json`。
+共同集合未改变：训练/验证仍为 718/83 窗口，23,767/3,148 unit；其中 2,328/26,915 个有效 unit 的原始成员与共同成员不同。无支撑或未形成结构的组没有填 0，也未进入分类器。原始组与共同组成员、track ID、目标帧/PTS、查询年龄和历史参照保存在产物 `inputs/feature_manifest.json`。
 
 ## 条件与训练
 
