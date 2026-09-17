@@ -471,7 +471,11 @@ def analyze(root: Path, output: Path) -> dict[str, Any]:
         for role in ("real", "fake"):
             subset = [row for row in window_stats if (row["window_id"] in (train_ids if split == "train" else validation_ids)) and row["role"] == role]
             ages = [row["query_age_mean_s"] for row in subset]
-            age_rows.append((split, role, min(ages) if ages else None, max(ages) if ages else None, float(np.mean(ages)) if ages else None, len(subset)))
+        age_rows.append((split, role, min(ages) if ages else None, max(ages) if ages else None, float(np.mean(ages)) if ages else None, len(subset)))
+    geometry_difference_windows = {
+        split: [row["window_id"] for row in window_stats if row["window_id"] in (train_ids if split == "train" else validation_ids) and row["visibility_geometry_diff_units"] > 0]
+        for split in ("train", "validation")
+    }
 
     # A compact report keeps all source rows in the CSV while exposing the
     # decision-relevant numbers and the requested limitations in prose.
@@ -527,7 +531,7 @@ def analyze(root: Path, output: Path) -> dict[str, Any]:
     lines += ["", "查询年龄按角色（实际 target PTS 减 query 初始化 PTS）如下；real/fake 的动作时间并未被假设逐帧对应：", "", "| split | role | windows | age min | age max | age mean |", "|---|---|---:|---:|---:|---:|"]
     for split, role, minimum, maximum, mean, count in age_rows:
         lines.append(f"| {split} | {role} | {count} | {_fmt(minimum)} | {_fmt(maximum)} | {_fmt(mean)} |")
-    lines += ["", "现有年龄范围在 real/fake 间相近；本分析没有证据显示明显的角色-查询年龄混淆。visibility 与 geometry 的逐成员差异极少（原 summary 相等比例约 0.99999），但它们仍只是前端保存的判断，不是真实遮挡/几何真值。", ""]
+    lines += ["", f"现有年龄范围在 real/fake 间相近；本分析没有证据显示明显的角色-查询年龄混淆。按整数 mask 计数，validation 没有 visibility/geometry 差异 unit；train 有 5 个差异 unit，出现在 {', '.join(geometry_difference_windows['train'])}。它们仍只是前端保存的判断，不是真实遮挡/几何真值。", ""]
 
     lines += ["## 预测改变与错误转移", "", "| comparison | transition | count | real | fake |", "|---|---|---:|---:|---:|"]
     for row in transition_summary:
