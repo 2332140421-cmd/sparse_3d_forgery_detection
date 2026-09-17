@@ -162,6 +162,31 @@ def _load_sequence(prefix: str) -> Any:
     return load_particle_sequence(prefix)
 
 
+def _sequence_identity_matches_row(sequence: Any, row: Mapping[str, Any]) -> bool:
+    """Validate the R sequence immediately before relation reconstruction."""
+    expected_video_id = f"{row['source_id']}::{row['role']}"
+    if str(sequence.source_video_id) != expected_video_id or int(sequence.num_tracks) != 289:
+        return False
+    lineage = sequence.lineage
+    expected_parent = str(row.get("parent_id") or row.get("pair_id", ""))
+    for key, value in (("source_id", row.get("source_id", "")), ("role", row.get("role", "")), ("pair_id", row.get("pair_id", ""))):
+        if str(lineage.get(key, "")) != str(value):
+            return False
+    if str(lineage.get("parent_id", "")) != expected_parent:
+        return False
+    offset = float(row.get("offset_s", 0.0))
+    cohort = str(sequence.provenance.get("query_cohort", ""))
+    if abs(offset) < 1e-9:
+        if cohort not in {"O", "R"}:
+            return False
+        expected_window = expected_parent
+    else:
+        if cohort != "R":
+            return False
+        expected_window = str(row.get("window_id", ""))
+    return str(lineage.get("window_id", "")) == expected_window
+
+
 def _stable_permutation(length: int, *parts: Any, seed: int) -> np.ndarray:
     token = "v7-pair-trajectory|" + "|".join(str(item) for item in parts) + f"|seed={seed}"
     digest = hashlib.sha256(token.encode("utf-8")).digest()
@@ -221,7 +246,7 @@ def _reconstruct_unit(row: Mapping[str, Any], unit: Mapping[str, Any], sequence:
         "unit_id": f"{row['window_id']}::R::local_{int(unit['local_group_id'])}",
         "window_id": str(row["window_id"]),
         "source_id": str(row["source_id"]),
-        "parent_id": str(row.get("pair_id", "")),
+        "parent_id": str(row.get("parent_id") or row.get("pair_id", "")),
         "query_cohort": "R",
         "local_group_id": int(unit["local_group_id"]),
         "member_slots": [int(x) for x in unit.get("member_slots", [])],
@@ -251,6 +276,8 @@ def _build_relation_dataset(root: Path) -> dict[str, Any]:
     reconstruction_diffs: list[float] = []
     for window_index, row in enumerate(sorted(rows, key=lambda item: str(item["window_id"]))):
         sequence = _load_sequence(str(row["particle_prefix"]))
+        if not _sequence_identity_matches_row(sequence, row):
+            raise ValueError(f"R_SEQUENCE_IDENTITY_MISMATCH:{row['window_id']}:{row['particle_prefix']}")
         valid_units = [unit for unit in row.get("support", {}).get("units", []) if unit.get("status") == "VALID"]
         stored_states = np.asarray(row["features"]["SET_A"], dtype=np.float64)
         if stored_states.shape[0] != len(valid_units):
@@ -349,6 +376,29 @@ def _condition_features(data: Mapping[str, Any], condition: str) -> tuple[np.nda
     if features.shape[1] != 9 or not np.all(np.isfinite(features)):
         raise ValueError(f"invalid {condition} relation features")
     return features, permutation_log
+
+
+def _window_ids_sha256(windows: Sequence[Mapping[str, Any]]) -> str:
+    return hashlib.sha256("\n".join(sorted(str(row["window_id"]) for row in windows)).encode("utf-8")).hexdigest()
+
+
+def _model_input_identity(root: Path, data: Mapping[str, Any], condition: str, held_out_source: str, train_indices: Sequence[int], transform_log: Mapping[str, Any]) -> dict[str, Any]:
+    transform_sha = hashlib.sha256(json.dumps(transform_log, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    training_windows = [data["windows"][index] for index in train_indices]
+    return {
+        "condition": str(condition),
+        "held_out_source": str(held_out_source),
+        "relation_features_sha256": _sha256(root / "relations/relation_features.npz"),
+        "relation_windows_sha256": _sha256(root / "relations/windows.json"),
+        "relation_units_sha256": _sha256(root / "relations/units.json"),
+        "condition_transform_sha256": transform_sha,
+        "training_window_ids_sha256": _window_ids_sha256(training_windows),
+    }
+
+
+def _model_record_identity_matches(record: Mapping[str, Any], expected: Mapping[str, Any]) -> bool:
+    actual = record.get("input_identity")
+    return isinstance(actual, Mapping) and all(actual.get(key) == value for key, value in expected.items())
 
 
 def _validate_transforms(data: Mapping[str, Any]) -> dict[str, Any]:
@@ -652,8 +702,24 @@ def _train_formal(root: Path, data: Mapping[str, Any], budget: Budget, device: s
     source_list = sorted({str(row["source_id"]) for row in data["windows"]})
     records_path = root / "models/fold_models.json"
     existing = json.loads(records_path.read_text(encoding="utf-8")).get("records", []) if resume and records_path.is_file() else []
-    records = list(existing)
-    completed = {(str(row["condition"]), str(row["held_out_source"]), int(row["seed"])) for row in records}
+    # Only identity-verified records are active.  Legacy key-only records are
+    # retained in the unverified sidecar and are never mixed into scoring.
+    records: list[dict[str, Any]] = []
+    completed: set[tuple[str, str, int]] = set()
+    unverified = []
+    for old in existing:
+        condition = str(old.get("condition", "")); heldout = str(old.get("held_out_source", "")); seed = int(old.get("seed", -1))
+        if condition not in CONDITIONS or heldout not in source_list:
+            unverified.append({key: old.get(key) for key in ("condition", "held_out_source", "seed")})
+            continue
+        train_indices_old = [index for index, row in enumerate(data["windows"]) if str(row["source_id"]) != heldout]
+        expected_old = _model_input_identity(root, data, condition, heldout, train_indices_old, condition_logs[condition])
+        if _model_record_identity_matches(old, expected_old):
+            completed.add((condition, heldout, seed))
+        else:
+            unverified.append({key: old.get(key) for key in ("condition", "held_out_source", "seed", "training_window_count")})
+    if unverified:
+        _atomic_json(root / "state/unverified_model_records.json", {"reason": "missing_or_mismatched_input_identity", "records": unverified})
     total = len(source_list) * len(CONDITIONS) * len(SEEDS)
     root.joinpath("models").mkdir(parents=True, exist_ok=True)
     _progress(root, "train", "RUNNING", len(completed), total, model_total=total, device=device)
@@ -680,7 +746,7 @@ def _train_formal(root: Path, data: Mapping[str, Any], budget: Budget, device: s
                     batch["window_weights"] = weights
                     started = time.perf_counter()
                     model, fit = _train_one(batch, int(seed), device, EPOCHS, callback=(lambda epoch, metrics, c=condition, h=heldout, s=seed: print(f"pair condition={c} held_out={h} seed={s} epoch={epoch}/{EPOCHS} loss={metrics['loss']:.6f} elapsed={budget.elapsed():.1f}s remaining={budget.remaining():.1f}s", flush=True)))
-                    record = {"condition": condition, "held_out_source": heldout, "seed": int(seed), "parameter_count": _parameter_count(), "training_source_count": len({str(data["windows"][index]["source_id"]) for index in train_indices}), "training_window_count": len(train_indices), "training_real_count": sum(int(data["windows"][index]["label"]) == 0 for index in train_indices), "training_fake_count": sum(int(data["windows"][index]["label"]) == 1 for index in train_indices), "training_window_ids": [str(data["windows"][index]["window_id"]) for index in train_indices], "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "state_dict": _model_state(model), "device": device}
+                    record = {"condition": condition, "held_out_source": heldout, "seed": int(seed), "parameter_count": _parameter_count(), "training_source_count": len({str(data["windows"][index]["source_id"]) for index in train_indices}), "training_window_count": len(train_indices), "training_real_count": sum(int(data["windows"][index]["label"]) == 0 for index in train_indices), "training_fake_count": sum(int(data["windows"][index]["label"]) == 1 for index in train_indices), "training_window_ids": [str(data["windows"][index]["window_id"]) for index in train_indices], "input_identity": _model_input_identity(root, data, condition, heldout, train_indices, condition_logs[condition]), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "state_dict": _model_state(model), "device": device}
                     records.append(record); completed.add(key)
                     _atomic_json(records_path, {"conditions": list(CONDITIONS), "seeds": list(SEEDS), "epochs": EPOCHS, "learning_rate": LEARNING_RATE, "weight_decay": WEIGHT_DECAY, "parameter_count": _parameter_count(), "records": records})
                     for history in fit["loss_history"]:

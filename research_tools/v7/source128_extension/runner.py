@@ -718,7 +718,7 @@ def _feature_artifacts_complete(root: Path) -> bool:
             window_id = str(row["window_id"])
             source = expected[window_id]
             frontend = frontend_by_id[window_id]
-            for field in ("source_id", "role", "pair_id", "kind", "offset_s", "interval_start_s", "interval_end_s", "label", "annotation_category"):
+            for field in ("source_id", "role", "parent_id", "pair_id", "kind", "offset_s", "interval_start_s", "interval_end_s", "label", "annotation_category"):
                 if row.get(field) != source.get(field):
                     return False
             if str(row.get("support_status")) in {"MISSING_FRONTEND", "FEATURE_FAILED"}:
@@ -792,6 +792,36 @@ def _effective_training_rows(rows: Sequence[Mapping[str, Any]], planned_sources:
     return selected, effective, sorted(planned - effective)
 
 
+def _training_window_ids_sha256(rows: Sequence[Mapping[str, Any]]) -> str:
+    return hashlib.sha256("\n".join(sorted(str(row["window_id"]) for row in rows)).encode("utf-8")).hexdigest()
+
+
+def _training_feature_sha256(rows: Sequence[Mapping[str, Any]]) -> str:
+    digest = hashlib.sha256()
+    for row in sorted(rows, key=lambda item: str(item["window_id"])):
+        values = np.asarray(row["features"]["SET_A"], dtype=np.float64)
+        digest.update(str(row["window_id"]).encode("utf-8"))
+        digest.update(str(values.shape).encode("ascii"))
+        digest.update(values.tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _model_input_identity(root: Path, rows: Sequence[Mapping[str, Any]], train_sources: Sequence[str], source_count: int) -> dict[str, Any]:
+    return {
+        "condition": "SUMMARY_SET",
+        "source_count": int(source_count),
+        "training_source_ids": sorted(str(source) for source in train_sources),
+        "training_window_ids_sha256": _training_window_ids_sha256(rows),
+        "training_feature_sha256": _training_feature_sha256(rows),
+        "protocol_sha256": sha256(root / "protocol.json"),
+    }
+
+
+def _model_record_identity_matches(record: Mapping[str, Any], expected: Mapping[str, Any]) -> bool:
+    actual = record.get("input_identity")
+    return isinstance(actual, Mapping) and all(actual.get(key) == value for key, value in expected.items())
+
+
 def _load_parents(root: Path) -> list[dict[str, Any]]:
     return [dict(row) for row in json.loads((root / "manifests/parents.json").read_text(encoding="utf-8"))]
 
@@ -839,8 +869,21 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
         for source in train_sources
     ])
     model_path = root / "models/fold_models.json"
-    records = json.loads(model_path.read_text(encoding="utf-8")).get("records", []) if resume and model_path.is_file() else []
-    done = {(int(item["seed"]), int(item.get("source_count", 0))) for item in records if item.get("status") == "TRAIN_COMPLETE"}
+    existing_records = json.loads(model_path.read_text(encoding="utf-8")).get("records", []) if resume and model_path.is_file() else []
+    # Only identity-verified records are active.  Legacy key-only records are
+    # retained in the unverified sidecar and are never mixed into scoring.
+    records: list[dict[str, Any]] = []
+    expected_identity = _model_input_identity(root, train_rows, train_sources, TOTAL_SOURCE_COUNT)
+    done: set[tuple[int, int]] = set()
+    unverified = []
+    for item in existing_records:
+        key = (int(item.get("seed", -1)), int(item.get("source_count", 0)))
+        if item.get("status") == "TRAIN_COMPLETE" and key[1] == TOTAL_SOURCE_COUNT and _model_record_identity_matches(item, expected_identity):
+            done.add(key)
+        elif item:
+            unverified.append({name: item.get(name) for name in ("seed", "source_count", "status")})
+    if unverified:
+        atomic_json(root / "state/unverified_model_records.json", {"reason": "missing_or_mismatched_input_identity", "records": unverified})
     root.joinpath("models").mkdir(parents=True, exist_ok=True)
     total = len(MODEL_SEEDS)
     progress(root, "train", "RUNNING", len(done), total, planned_source_count=TOTAL_SOURCE_COUNT, effective_training_source_count=len(observed_sources), missing_training_source_count=len(missing_sources), missing_training_sources=missing_sources, training_window_count=len(train_rows), training_real_count=counts[0], training_fake_count=counts[1], cumulative_elapsed_s=budget.elapsed())
@@ -853,7 +896,7 @@ def train(root: Path, budget_s: float = TRAINING_BUDGET_S, device: str = "cuda",
             return {"status": "TRAINING_BUDGET_EXHAUSTED", "completed_models": len(done), "total_models": total}
         started = time.perf_counter()
         model, fit = periodic.train_one("SET_A", batch, seed=int(seed), device=device, epochs=EPOCHS)
-        record = {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "planned_source_count": TOTAL_SOURCE_COUNT, "effective_training_source_count": len(observed_sources), "missing_training_source_count": len(missing_sources), "missing_training_sources": missing_sources, "seed": int(seed), "status": "TRAIN_COMPLETE", "training_sources": train_sources, "effective_training_sources": sorted(observed_sources), "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1], "parameter_count": periodic.parameter_count("SET_A"), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "device": str(torch.device(device)), "state_dict": periodic.model_state(model)}
+        record = {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "planned_source_count": TOTAL_SOURCE_COUNT, "effective_training_source_count": len(observed_sources), "missing_training_source_count": len(missing_sources), "missing_training_sources": missing_sources, "seed": int(seed), "status": "TRAIN_COMPLETE", "training_sources": train_sources, "effective_training_sources": sorted(observed_sources), "training_window_count": len(train_rows), "training_real_count": counts[0], "training_fake_count": counts[1], "input_identity": expected_identity, "parameter_count": periodic.parameter_count("SET_A"), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "device": str(torch.device(device)), "state_dict": periodic.model_state(model)}
         records.append(record)
         atomic_json(model_path, {"condition": "SUMMARY_SET", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "source_count": TOTAL_SOURCE_COUNT, "epochs": EPOCHS, "seeds": list(MODEL_SEEDS), "records": records})
         done.add((int(seed), TOTAL_SOURCE_COUNT))

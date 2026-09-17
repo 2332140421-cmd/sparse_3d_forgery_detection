@@ -18,7 +18,7 @@ Video
 → Particle/frame/video anomaly evidence
 ```
 
-当前状态：已建立独立设计基线并冻结 `ParticleSequence` 逻辑契约；当前实现仅包含内存 schema 和严格 validation，尚未实现 artifact、Dataset、provider、模型、训练或实验。
+当前状态：正式 `src` 主链仍保持最小 schema/validation 契约；V7 的研究工具另行提供了已审计的周期重查询、五时刻序列、点对轨迹、局部聚合和 source 扩容 pilot 入口（`research_tools/v7/`）。这些工具读取数据盘上的视频、粒子数组、外部深度/跟踪权重与模型产物，clone 后不能在没有这些外部资产的情况下直接复现实验；它们不等同于正式检测链，也不代表设计契约已冻结为某个模型。
 
 运行单元测试：
 
@@ -26,4 +26,4 @@ Video
 .venv/bin/python -m pytest -q
 ```
 
-权威方法契约见 [`docs/design_contract.md`](docs/design_contract.md)。旧仓库不是本项目的依赖或代码基线。
+权威方法契约见 [`docs/v7/design_contract.md`](docs/v7/design_contract.md)。V6/历史说明与当前 V7 研究工具分开维护；旧仓库不是本项目的依赖或代码基线。

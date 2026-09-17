@@ -296,6 +296,30 @@ def _load_inputs() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str
     return train_rows, validation_rows, subsets, {"expected": expected, "old_record": old_record}
 
 
+def _window_ids_sha256(rows: Sequence[Mapping[str, Any]]) -> str:
+    return hashlib.sha256("\n".join(sorted(str(row["window_id"]) for row in rows)).encode("utf-8")).hexdigest()
+
+
+def _model_input_identity(train_rows: Sequence[Mapping[str, Any]], validation_rows: Sequence[Mapping[str, Any]], condition: str, seed: int) -> dict[str, Any]:
+    return {
+        "condition": str(condition),
+        "seed": int(seed),
+        "ordering_seed": int(ORDERING_SEED),
+        "source_protocol_sha256": _sha256(SOURCE_ROOT / "protocol.json"),
+        "source_subsets_sha256": _sha256(SOURCE_ROOT / "manifests/training_subsets.json"),
+        "source_support_sha256": _sha256(SOURCE_ROOT / "support/window_support.json"),
+        "source_model_sha256": _sha256(SOURCE_ROOT / "models/fold_models.json"),
+        "source_validation_score_sha256": _sha256(SOURCE_ROOT / "scores/validation_window_scores.csv"),
+        "train_window_ids_sha256": _window_ids_sha256(train_rows),
+        "validation_window_ids_sha256": _window_ids_sha256(validation_rows),
+    }
+
+
+def _model_record_identity_matches(record: Mapping[str, Any], expected: Mapping[str, Any]) -> bool:
+    actual = record.get("input_identity")
+    return isinstance(actual, Mapping) and all(actual.get(key) == value for key, value in expected.items())
+
+
 def _old_loader_check(validation_rows: Sequence[Mapping[str, Any]], old_record: Mapping[str, Any]) -> dict[str, Any]:
     old_model = curve._model_from_record(old_record, "cpu")
     standardizer = periodic._standardizer(old_record)
@@ -487,7 +511,22 @@ def run(root: Path = OUTPUT_ROOT, *, device: str = "cuda", resume: bool = True) 
     expected_records = {("MEAN_BASELINE", seed) for seed in MODEL_SEEDS} | {("ATTENTION_POOL", seed) for seed in MODEL_SEEDS}
     record_path = root / "models/fold_models.json"
     old_records = json.loads(record_path.read_text(encoding="utf-8")).get("records", []) if resume and record_path.is_file() else []
-    records = [record for record in old_records if (str(record.get("condition")), int(record.get("seed", -1))) in expected_records and record.get("status") == "TRAIN_COMPLETE"]
+    # Keep stale historical records in the on-disk file for provenance, but
+    # never treat them as resumable or feed them to scoring below.  Older
+    # records predate input_identity and therefore cannot safely be reused.
+    records = []
+    stale_records: list[dict[str, Any]] = []
+    unverified_records = []
+    for record in old_records:
+        key = (str(record.get("condition")), int(record.get("seed", -1)))
+        expected_identity = _model_input_identity(train_rows, validation_rows, key[0], key[1]) if key in expected_records else None
+        if key in expected_records and record.get("status") == "TRAIN_COMPLETE" and expected_identity and _model_record_identity_matches(record, expected_identity):
+            records.append(record)
+        elif record:
+            stale_records.append(dict(record))
+            unverified_records.append({key_name: record.get(key_name) for key_name in ("condition", "seed", "status")})
+    if unverified_records:
+        _atomic_json(root / "state/unverified_model_records.json", {"reason": "missing_or_mismatched_input_identity", "records": unverified_records})
     complete = {(str(record["condition"]), int(record["seed"])) for record in records}
     _atomic_json(root / "protocol.json", {"protocol_id": "v7-attention-pooling-pilot-v1", "source_learning_curve_root": str(SOURCE_ROOT), "source_learning_curve_git_head": "c814abb23f367adc82499fa262948c444fbad024", "git_head": launch["git_head"], "ordering_seed": ORDERING_SEED, "training_window_count": len(train_rows), "training_real_count": sum(int(row["label"]) == 0 for row in train_rows), "training_fake_count": sum(int(row["label"]) == 1 for row in train_rows), "validation_source_count": len({str(row["source_id"]) for row in validation_rows}), "validation_window_count": len(validation_rows), "validation_real_count": sum(int(row["label"]) == 0 for row in validation_rows), "validation_fake_count": sum(int(row["label"]) == 1 for row in validation_rows), "conditions": {"MEAN_BASELINE": "existing SET_A local logit then equal mean over local units", "ATTENTION_POOL": "same local representation/logit, one-head 8D softmax local pooling, temperature=1"}, "attention": {"hidden_dim": 8, "v_init_seed": AttentionPoolModel.ATTENTION_INIT_SEED, "bias_init": "zeros", "weight_init": "zeros", "padding_masked": True}, "model": {"epochs": EPOCHS, "optimizer": "Adam", "learning_rate": LEARNING_RATE, "weight_decay": WEIGHT_DECAY, "seeds": list(MODEL_SEEDS), "weighted_bce": "existing source/class window weights", "standardization": "training rows only"}, "evaluation": {"threshold": "logit >= 0", "bootstrap_seed": BOOTSTRAP_SEED, "bootstrap_replicates": BOOTSTRAP_REPLICATES, "main": "source-macro AUROC on fixed validation rows"}, "boundaries": ["no frontend rerun", "no formal src changes", "no old R7/V5", "attention weights are not localization truth"]})
     _atomic_json(root / "input_manifest.json", {"git_head": launch["git_head"], "source_protocol_sha256": _sha256(SOURCE_ROOT / "protocol.json"), "source_subsets_sha256": _sha256(SOURCE_ROOT / "manifests/training_subsets.json"), "source_support_sha256": _sha256(SOURCE_ROOT / "support/window_support.json"), "source_model_sha256": _sha256(SOURCE_ROOT / "models/fold_models.json"), "source_validation_score_sha256": _sha256(SOURCE_ROOT / "scores/validation_window_scores.csv"), "train_source_ids": input_info["expected"]["train_sources"], "validation_source_ids": input_info["expected"]["validation_sources"], "train_window_ids": [str(row["window_id"]) for row in train_rows], "validation_window_ids": [str(row["window_id"]) for row in validation_rows], "expected_counts": input_info["expected"]})
@@ -514,8 +553,8 @@ def run(root: Path = OUTPUT_ROOT, *, device: str = "cuda", resume: bool = True) 
         model = baseline if condition == "MEAN_BASELINE" else attention
         batch = train_batch
         fit = _train_one(model, batch, seed=seed, condition=condition, device=device, epoch_callback=lambda epoch, metrics, c=condition, s=seed: print(f"attention-pooling condition={c} seed={s} epoch={epoch}/{EPOCHS} loss={metrics['loss']:.6f} elapsed={_elapsed(state):.1f}s", flush=True))
-        record = {"condition": condition, "seed": int(seed), "status": "TRAIN_COMPLETE", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "parameter_count": fit["parameter_count"], "training_window_count": len(train_rows), "training_real_count": sum(int(row["label"]) == 0 for row in train_rows), "training_fake_count": sum(int(row["label"]) == 1 for row in train_rows), "training_source_count": len(input_info["expected"]["train_sources"]), "validation_source_count": len(input_info["expected"]["validation_sources"]), "shared_initial_state_hash": shared_hash, "baseline_initial_state_hash": baseline_hash, "attention_v_init_seed": AttentionPoolModel.ATTENTION_INIT_SEED, "fit": fit, "standardization": standardizer.as_dict(), "state_dict": _model_state(model)}
-        records.append(record); complete.add((condition, seed)); _records_save(record_path, records)
+        record = {"condition": condition, "seed": int(seed), "status": "TRAIN_COMPLETE", "base_condition": "SET_A", "ordering_seed": ORDERING_SEED, "parameter_count": fit["parameter_count"], "training_window_count": len(train_rows), "training_real_count": sum(int(row["label"]) == 0 for row in train_rows), "training_fake_count": sum(int(row["label"]) == 1 for row in train_rows), "training_source_count": len(input_info["expected"]["train_sources"]), "validation_source_count": len(input_info["expected"]["validation_sources"]), "input_identity": _model_input_identity(train_rows, validation_rows, condition, int(seed)), "shared_initial_state_hash": shared_hash, "baseline_initial_state_hash": baseline_hash, "attention_v_init_seed": AttentionPoolModel.ATTENTION_INIT_SEED, "fit": fit, "standardization": standardizer.as_dict(), "state_dict": _model_state(model)}
+        records.append(record); complete.add((condition, seed)); _records_save(record_path, [*stale_records, *records])
         train_scores, train_aux = _window_outputs(model, train_batch, device) if condition == "MEAN_BASELINE" else _score_attention_weights(model, train_batch, device)
         validation_scores, validation_aux = _window_outputs(model, validation_batch, device) if condition == "MEAN_BASELINE" else _score_attention_weights(model, validation_batch, device)
         score_store[("train", condition, seed)] = {str(row["window_id"]): float(score) for row, score in zip(train_rows, train_scores)}

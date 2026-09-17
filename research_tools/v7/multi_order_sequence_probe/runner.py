@@ -217,6 +217,29 @@ def _load_feature_rows(root: Path, *, include_control: bool = True) -> list[dict
     return rows
 
 
+def _window_ids_sha256(rows: Sequence[Mapping[str, Any]]) -> str:
+    payload = "\n".join(sorted(str(row["window_id"]) for row in rows)).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _model_input_identity(root: Path, condition: str, held_out_source: str, training_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    manifest_path = root / "features_manifest.json"
+    support_path = root / "support/window_support.json"
+    return {
+        "condition": str(condition),
+        "held_out_source": str(held_out_source),
+        "source_support_sha256": _sha256(support_path),
+        "features_manifest_sha256": _sha256(manifest_path),
+        "training_window_ids_sha256": _window_ids_sha256(training_rows),
+        "training_source_ids": sorted({str(row["source_id"]) for row in training_rows}),
+    }
+
+
+def _model_record_identity_matches(record: Mapping[str, Any], expected: Mapping[str, Any]) -> bool:
+    actual = record.get("input_identity")
+    return isinstance(actual, Mapping) and all(actual.get(key) == value for key, value in expected.items())
+
+
 def _standardizer_record(value: Mapping[str, Any]) -> FeatureStandardizer:
     return FeatureStandardizer(str(value["condition"]), np.asarray(value["mean"], dtype=np.float64), np.asarray(value["scale"], dtype=np.float64), tuple(int(x) for x in value.get("zero_variance_dimensions", [])))
 
@@ -236,8 +259,23 @@ def train(root: Path, budget: Budget, *, device: str, resume: bool) -> dict[str,
     rows = _load_feature_rows(root, include_control=False)
     sources = sorted({str(row["source_id"]) for row in rows})
     model_path = root / "models/fold_models.json"
-    records = json.loads(model_path.read_text(encoding="utf-8")).get("records", []) if resume and model_path.is_file() else []
-    completed = {(str(item["condition"]), str(item["held_out_source"]), int(item["seed"])) for item in records}
+    existing_records = json.loads(model_path.read_text(encoding="utf-8")).get("records", []) if resume and model_path.is_file() else []
+    # Keep only identity-verified records in the active model list.  Legacy
+    # key-only records are reported separately and must not create duplicate
+    # keys when a replacement model is saved.
+    records: list[dict[str, Any]] = []
+    completed: set[tuple[str, str, int]] = set()
+    unverified = []
+    for item in existing_records:
+        condition = str(item.get("condition", "")); held_out = str(item.get("held_out_source", "")); seed = int(item.get("seed", -1))
+        training_rows = [row for row in rows if str(row["source_id"]) != held_out]
+        expected = _model_input_identity(root, condition, held_out, training_rows) if condition in CONDITIONS and training_rows else None
+        if item.get("status", "TRAIN_COMPLETE") == "TRAIN_COMPLETE" and expected and _model_record_identity_matches(item, expected):
+            completed.add((condition, held_out, seed))
+        elif item:
+            unverified.append({key: item.get(key) for key in ("condition", "held_out_source", "seed", "status", "training_window_count")})
+    if unverified:
+        _write_json(root / "state/unverified_model_records.json", {"reason": "missing_or_mismatched_input_identity", "records": unverified})
     total = len(sources) * len(CONDITIONS) * len(SEEDS)
     _progress(root, stage="train", status="RUNNING", completed=len(completed), total=total, budget=budget, device=device)
     for held_out in sources:
@@ -268,7 +306,7 @@ def train(root: Path, budget: Budget, *, device: str, resume: bool) -> dict[str,
                 def _epoch_line(epoch: int, metrics: Mapping[str, Any]) -> None:
                     print(f"multi-order condition={condition} held_out={held_out} seed={seed} epoch={epoch}/{EPOCHS} weighted_bce={float(metrics['loss']):.6f} train_auroc={metrics.get('train_auroc')} train_ap={metrics.get('train_ap')} train_f1={metrics.get('train_f1')} elapsed={budget.elapsed():.1f}s remaining={budget.remaining():.1f}s", flush=True)
                 model, fit = train_one(condition, batch, seed=int(seed), device=device, epochs=EPOCHS, epoch_callback=_epoch_line)
-                record = {"condition": condition, "held_out_source": held_out, "seed": int(seed), "parameter_count": parameter_count(condition), "training_source_count": len({str(row["source_id"]) for row in training}), "training_real_count": sum(int(row["label"]) == 0 for row in training), "training_fake_count": sum(int(row["label"]) == 1 for row in training), "training_window_count": len(training), "training_unit_count": int(batch["unit_count"]), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "state_dict": model_state(model)}
+                record = {"condition": condition, "held_out_source": held_out, "seed": int(seed), "parameter_count": parameter_count(condition), "training_source_count": len({str(row["source_id"]) for row in training}), "training_real_count": sum(int(row["label"]) == 0 for row in training), "training_fake_count": sum(int(row["label"]) == 1 for row in training), "training_window_count": len(training), "training_unit_count": int(batch["unit_count"]), "input_identity": _model_input_identity(root, condition, held_out, training), "standardization": standardizer.as_dict(), "fit": fit, "elapsed_s": time.perf_counter() - started, "state_dict": model_state(model)}
                 records.append(record); completed.add(key); _save_model_records(root, records)
                 with (root / "models/loss_history.jsonl").open("a", encoding="utf-8") as handle:
                     for epoch_row in fit["loss_history"]:

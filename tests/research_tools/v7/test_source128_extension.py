@@ -115,7 +115,7 @@ def test_feature_cache_identity_accepts_parent_sequence_covering_window(tmp_path
     }
     atomic_json(tmp_path / "frontend/results.json", [frontend])
     support_rows = [
-        {**{key: value for key, value in window.items() if key not in {"parent_id", "video_path", "frame_indices", "timestamps_s"}},
+        {**{key: value for key, value in window.items() if key not in {"video_path", "frame_indices", "timestamps_s"}},
          "mode": mode, "support_status": "VALID", "valid_unit_count": 1,
          "particle_prefix": prefix, "frame_indices": frames, "timestamps_s": times,
          "features": {"SET_A": [[1.0, 2.0]]}}

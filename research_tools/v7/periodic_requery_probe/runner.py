@@ -437,6 +437,21 @@ def _sequence_identity_ok(prefix: Path, row: Mapping[str, Any], mode: str) -> bo
             return False
         if not np.allclose(sequence.timestamps_s, np.asarray(row["timestamps_s"], dtype=np.float64), atol=1e-7, rtol=0):
             return False
+        expected_video_id = f"{row['source_id']}::{row['role']}"
+        if str(sequence.source_video_id) != expected_video_id:
+            return False
+        lineage = sequence.lineage
+        expected_parent_id = str(row.get("parent_id", ""))
+        if expected_parent_id and str(lineage.get("parent_id", "")) != expected_parent_id:
+            return False
+        if str(lineage.get("source_id", "")) != str(row["source_id"]):
+            return False
+        if str(lineage.get("role", "")) != str(row["role"]):
+            return False
+        if str(lineage.get("pair_id", "")) != str(row.get("pair_id", "")):
+            return False
+        if str(lineage.get("window_id", "")) != str(row.get("window_id", "")):
+            return False
         provenance = sequence.provenance
         return str(provenance.get("query_cohort", "")) == mode and int(sequence.num_tracks) == 289
     except (OSError, ValueError, KeyError, TypeError):
@@ -784,6 +799,7 @@ def _support_for_sequence(prefix: Path, row: Mapping[str, Any], mode: str) -> di
         "window_id": str(row["window_id"]),
         "source_id": str(row["source_id"]),
         "pair_id": str(row["pair_id"]),
+        "parent_id": str(row.get("parent_id", "")),
         "role": str(row["role"]),
         "kind": str(row["kind"]),
         "label": row.get("label"),
@@ -889,16 +905,49 @@ def _fit_rows(rows: Sequence[Mapping[str, Any]], base: str) -> tuple[list[dict[s
     return values, batch, standardizer
 
 
+def _window_ids_sha256(rows: Sequence[Mapping[str, Any]]) -> str:
+    return hashlib.sha256("\n".join(sorted(str(row["window_id"]) for row in rows)).encode("utf-8")).hexdigest()
+
+
+def _model_input_identity(root: Path, condition: str, held_out_source: str, train_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    return {
+        "condition": str(condition),
+        "held_out_source": str(held_out_source),
+        "support_sha256": _sha256(root / "support/window_support.json"),
+        "training_window_ids_sha256": _window_ids_sha256(train_rows),
+        "training_source_ids": sorted({str(row["source_id"]) for row in train_rows}),
+    }
+
+
+def _model_record_identity_matches(record: Mapping[str, Any], expected: Mapping[str, Any]) -> bool:
+    actual = record.get("input_identity")
+    return isinstance(actual, Mapping) and all(actual.get(key) == value for key, value in expected.items())
+
+
 def train(root: Path, budget_s: float, device: str, resume: bool) -> dict[str, Any]:
     global STOP_REQUESTED
     budget = Budget(root, "training", budget_s)
     records_path = root / "models/fold_models.json"
     existing = json.loads(records_path.read_text(encoding="utf-8")).get("records", []) if resume and records_path.is_file() else []
-    records = list(existing)
-    completed = {(str(item["condition"]), str(item["held_out_source"]), int(item["seed"])) for item in records}
+    # Only identity-verified records are active.  Legacy key-only records are
+    # retained in the unverified sidecar and are never mixed into scoring.
+    records: list[dict[str, Any]] = []
     rows = json.loads((root / "support/window_support.json").read_text(encoding="utf-8"))
     eligible = [row for row in rows if bool(row.get("paired_eligible")) and row.get("label") in (0, 1)]
     sources = sorted({str(row["source_id"]) for row in eligible})
+    completed: set[tuple[str, str, int]] = set()
+    unverified = []
+    for old in existing:
+        condition = str(old.get("condition", "")); heldout = str(old.get("held_out_source", "")); seed = int(old.get("seed", -1))
+        mode = condition[0] if condition in CONDITIONS else ""
+        train_rows_old = [row for row in eligible if str(row["source_id"]) != heldout and str(row.get("mode")) == mode]
+        expected_old = _model_input_identity(root, condition, heldout, train_rows_old) if condition in CONDITIONS and train_rows_old else None
+        if old.get("status", "TRAIN_COMPLETE") == "TRAIN_COMPLETE" and expected_old and _model_record_identity_matches(old, expected_old):
+            completed.add((condition, heldout, seed))
+        elif old:
+            unverified.append({key: old.get(key) for key in ("condition", "held_out_source", "seed", "status")})
+    if unverified:
+        _atomic_json(root / "state/unverified_model_records.json", {"reason": "missing_or_mismatched_input_identity", "records": unverified})
     total = len(sources) * len(CONDITIONS) * len(SEEDS)
     root.joinpath("models").mkdir(parents=True, exist_ok=True)
     _progress(root, "train", "RUNNING", len(completed), total, budget=budget, source_count=len(sources), eligibility="paired_common_support_only")
@@ -925,7 +974,7 @@ def train(root: Path, budget_s: float, device: str, resume: bool) -> dict[str, A
                     def epoch_callback(epoch: int, metrics: Mapping[str, Any]) -> None:
                         print(f"periodic condition={condition} held_out={held_out} seed={seed} epoch={epoch}/{EPOCHS} weighted_bce={float(metrics['loss']):.6f} elapsed={budget.elapsed():.1f}s remaining={budget.remaining():.1f}s", flush=True)
                     model, fit = train_one(base, batch, seed=int(seed), device=device, epochs=EPOCHS, epoch_callback=epoch_callback)
-                    record = {"condition": condition, "base_condition": base, "mode": mode, "held_out_source": held_out, "seed": int(seed), "parameter_count": parameter_count(base), "training_source_count": len({str(row["source_id"]) for row in train_rows}), "training_real_count": sum(int(row["label"]) == 0 for row in train_rows), "training_fake_count": sum(int(row["label"]) == 1 for row in train_rows), "training_window_count": len(train_rows), "fit": fit, "standardization": standardizer.as_dict(), "elapsed_s": time.perf_counter() - started, "state_dict": model_state(model)}
+                    record = {"condition": condition, "base_condition": base, "mode": mode, "held_out_source": held_out, "seed": int(seed), "parameter_count": parameter_count(base), "training_source_count": len({str(row["source_id"]) for row in train_rows}), "training_real_count": sum(int(row["label"]) == 0 for row in train_rows), "training_fake_count": sum(int(row["label"]) == 1 for row in train_rows), "training_window_count": len(train_rows), "input_identity": _model_input_identity(root, condition, held_out, train_rows), "fit": fit, "standardization": standardizer.as_dict(), "elapsed_s": time.perf_counter() - started, "state_dict": model_state(model)}
                     records.append(record)
                     completed.add(key)
                     _atomic_json(records_path, {"conditions": list(CONDITIONS), "seeds": list(SEEDS), "epochs": EPOCHS, "learning_rate": LEARNING_RATE, "weight_decay": WEIGHT_DECAY, "records": records})
