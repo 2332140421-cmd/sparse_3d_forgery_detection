@@ -425,16 +425,33 @@ def run_features(out: Path, rows: list[dict[str, Any]], device: str = "cuda") ->
 
 
 class WindowDataset(torch.utils.data.Dataset):
-    def __init__(self, out: Path, rows: list[dict[str, Any]], condition: str, mean: np.ndarray | None = None, scale: np.ndarray | None = None):
+    def __init__(self, out: Path, rows: list[dict[str, Any]], condition: str, mean: np.ndarray | None = None, scale: np.ndarray | None = None, preload: bool = True):
         self.out, self.rows, self.condition = out, rows, condition
         self.mean, self.scale = mean, scale
+        self.preload = bool(preload)
+        self._cache: list[dict[str, Any]] | None = None
+        if self.preload:
+            self._cache = []
+            key = "x_full" if condition == "FULL" else "x_rgb2d"
+            arr_keys = ["component_ids", "predecessor", "association_weight", "history_available", "area", "delta_t"]
+            for r in rows:
+                with np.load(self.out / "features" / f"{_safe_name(r['window_id'])}.npz", allow_pickle=False) as z:
+                    x = z[key].astype(np.float32)
+                    arr = {k: z[k].copy() for k in arr_keys}
+                if self.mean is not None:
+                    x = ((x - self.mean) / self.scale).astype(np.float32)
+                self._cache.append({"x": x, "arrays": arr})
     def __len__(self): return len(self.rows)
     def __getitem__(self, i: int):
         r = self.rows[i]
-        with np.load(self.out / "features" / f"{_safe_name(r['window_id'])}.npz", allow_pickle=False) as z:
-            x = z["x_full" if self.condition == "FULL" else "x_rgb2d"].astype(np.float32)
-            arr = {k: z[k] for k in ["component_ids", "predecessor", "association_weight", "history_available", "area", "delta_t"]}
-        if self.mean is not None: x = (x - self.mean) / self.scale
+        if self._cache is not None:
+            cached = self._cache[i]
+            x, arr = cached["x"], cached["arrays"]
+        else:
+            with np.load(self.out / "features" / f"{_safe_name(r['window_id'])}.npz", allow_pickle=False) as z:
+                x = z["x_full" if self.condition == "FULL" else "x_rgb2d"].astype(np.float32)
+                arr = {k: z[k] for k in ["component_ids", "predecessor", "association_weight", "history_available", "area", "delta_t"]}
+            if self.mean is not None: x = ((x - self.mean) / self.scale).astype(np.float32)
         return {"x": torch.from_numpy(x), "label": torch.tensor(float(r["label"])), "source": r["source_id"], "window_id": r["window_id"], **{k: torch.from_numpy(v) for k, v in arr.items()}}
 
 
@@ -445,6 +462,14 @@ def _collate(items: list[dict[str, Any]]) -> dict[str, Any]:
         elif k == "label": out[k] = torch.stack([x[k] for x in items])
         else: out[k] = torch.stack([x[k] for x in items])
     return out
+
+
+def _move_batch(batch: dict[str, Any], device: str) -> dict[str, Any]:
+    """Move the complete numeric batch once, using pinned memory when enabled."""
+    for k, value in list(batch.items()):
+        if isinstance(value, torch.Tensor):
+            batch[k] = value.to(device, non_blocking=True)
+    return batch
 
 
 def _standardizer(out: Path, rows: list[dict[str, Any]], condition: str) -> tuple[np.ndarray, np.ndarray]:
@@ -471,7 +496,8 @@ def _predict(model: FullCoverageModel, loader: torch.utils.data.DataLoader, devi
     model.eval(); scores=[]; labels=[]; ids=[]; sources=[]
     with torch.no_grad():
         for b in loader:
-            x=b["x"].to(device); out=model(x,b["component_ids"].to(device),b["predecessor"].to(device),b["association_weight"].to(device),b["history_available"].to(device),b["delta_t"].to(device),b["area"].to(device))
+            b = _move_batch(b, device)
+            out=model(b["x"],b["component_ids"],b["predecessor"],b["association_weight"],b["history_available"],b["delta_t"],b["area"])
             scores.extend(out.detach().cpu().numpy().tolist()); labels.extend(b["label"].numpy().tolist()); ids.extend(b["window_id"]); sources.extend(b["source"])
     return np.asarray(scores,float), ids, sources, np.asarray(labels,int)
 
@@ -481,11 +507,18 @@ def run_train(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> No
     model_dir = out / "models"; model_dir.mkdir(exist_ok=True)
     train_rows = [r for r in rows if r["split"] == "train"]
     val_rows = [r for r in rows if r["split"] == "validation"]
+    try:
+        torch.set_num_threads(int(os.environ.get("V8_TORCH_THREADS", "4")))
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass
     completed = failed = 0; records=[]
     for condition in ["FULL", "RGB_2D"]:
         mean, scale = _standardizer(out, train_rows, condition)
         write_json_atomic(model_dir / f"standardizer_{condition}.json", {"condition": condition, "mean": mean.tolist(), "scale": scale.tolist(), "fit_windows": len(train_rows)})
         weights = _source_class_weights(train_rows)
+        ds = WindowDataset(out, train_rows, condition, mean, scale, preload=True)
+        val_ds = WindowDataset(out, val_rows, condition, mean, scale, preload=True)
         for seed in SEEDS:
             torch.manual_seed(seed); np.random.seed(seed)
             key = "x_full" if condition == "FULL" else "x_rgb2d"
@@ -493,25 +526,29 @@ def run_train(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> No
                 input_dim = int(z[key].shape[-1])
             model = FullCoverageModel(condition, input_dim).to(device)
             opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
-            ds = WindowDataset(out, train_rows, condition, mean, scale)
-            val_ds = WindowDataset(out, val_rows, condition, mean, scale)
             gen = torch.Generator().manual_seed(seed)
-            loader = torch.utils.data.DataLoader(ds, batch_size=8, shuffle=True, generator=gen, collate_fn=_collate, num_workers=0)
-            vloader = torch.utils.data.DataLoader(val_ds, batch_size=8, shuffle=False, collate_fn=_collate, num_workers=0)
+            pin = str(device).startswith("cuda") and torch.cuda.is_available()
+            loader = torch.utils.data.DataLoader(ds, batch_size=8, shuffle=True, generator=gen, collate_fn=_collate, num_workers=0, pin_memory=pin)
+            vloader = torch.utils.data.DataLoader(val_ds, batch_size=8, shuffle=False, collate_fn=_collate, num_workers=0, pin_memory=pin)
             history=[]; started=_now()
             for epoch in range(100):
                 model.train(); losses=[]
                 for b in loader:
+                    b = _move_batch(b, device)
                     opt.zero_grad(set_to_none=True)
-                    z=model(b["x"].to(device),b["component_ids"].to(device),b["predecessor"].to(device),b["association_weight"].to(device),b["history_available"].to(device),b["delta_t"].to(device),b["area"].to(device))
+                    z=model(b["x"],b["component_ids"],b["predecessor"],b["association_weight"],b["history_available"],b["delta_t"],b["area"])
                     w=torch.as_tensor([weights[i] for i in b["window_id"]],device=device,dtype=z.dtype)
-                    loss=torch.nn.functional.binary_cross_entropy_with_logits(z,b["label"].to(device),weight=w)
+                    loss=torch.nn.functional.binary_cross_entropy_with_logits(z,b["label"],weight=w)
                     if not torch.isfinite(loss): raise FloatingPointError(f"nonfinite loss {condition} seed {seed} epoch {epoch}")
-                    loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(),1.0); opt.step(); losses.append(float(loss.detach().cpu()))
-                history.append(float(np.mean(losses)))
+                    loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(),1.0); opt.step(); losses.append(loss.detach())
+                epoch_loss = torch.stack(losses).mean().item()
+                history.append(float(epoch_loss))
+                _stage(out,"train","RUNNING",planned=6,completed=completed,failed=failed,condition=condition,seed=seed,epoch=epoch+1,elapsed_s=_now()-started)
+                if (epoch + 1) % 10 == 0:
+                    torch.save({"condition":condition,"seed":seed,"input_dim":input_dim,"model":model.state_dict(),"optimizer":opt.state_dict(),"epoch":epoch+1,"mean":mean,"scale":scale,"parameter_count":parameter_count(model),"loss_history":history,"checkpoint_kind":"epoch_resume"}, model_dir / f"{condition}__seed{seed}.last.pt")
             ckpt=model_dir / f"{condition}__seed{seed}.pt"
             torch.save({"condition":condition,"seed":seed,"input_dim":input_dim,"model":model.state_dict(),"optimizer":opt.state_dict(),"epoch":100,"mean":mean,"scale":scale,"parameter_count":parameter_count(model),"loss_history":history},ckpt)
-            train_scores, train_ids, train_sources, train_labels = _predict(model, torch.utils.data.DataLoader(ds,batch_size=8,shuffle=False,collate_fn=_collate), device)
+            train_scores, train_ids, train_sources, train_labels = _predict(model, torch.utils.data.DataLoader(ds,batch_size=8,shuffle=False,collate_fn=_collate,pin_memory=pin), device)
             val_scores, val_ids, val_sources, val_labels = _predict(model, vloader, device)
             np.savez_compressed(model_dir / f"scores__{condition}__seed{seed}.npz", train_scores=train_scores, train_labels=train_labels, val_scores=val_scores, val_labels=val_labels)
             records.append({"condition":condition,"seed":seed,"status":"COMPLETE","epoch":100,"parameter_count":parameter_count(model),"trainable_parameter_count":sum(p.numel() for p in model.parameters() if p.requires_grad),"rgb_backbone":"precomputed frozen ResNet18 layer1","input_dim":input_dim,"train_windows":len(train_rows),"validation_windows":len(val_rows),"elapsed_s":_now()-started,"checkpoint":str(ckpt),"loss_first":history[0],"loss_last":history[-1]})

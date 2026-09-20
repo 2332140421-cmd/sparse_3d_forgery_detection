@@ -35,20 +35,23 @@ class FullCoverageModel(nn.Module):
         self.register_buffer("edge_index", torch.from_numpy(cell_neighbors()), persistent=False)
 
     def _pool_components(self, h: torch.Tensor, comp: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Mean pool by per-frame component labels and broadcast back."""
+        """Mean pool by labels with one batched scatter, then broadcast back.
+
+        Component IDs are local integer labels only.  The scatter formulation
+        preserves the old mean/broadcast definition while avoiding a Python
+        loop over every component in every time step.
+        """
         b, n, d = h.shape
-        pooled = torch.zeros_like(h)
-        comp_counts = []
-        for bi in range(b):
-            ids = comp[bi].long()
-            unique = torch.unique(ids, sorted=True)
-            means = []
-            for uid in unique:
-                m = ids == uid
-                means.append(h[bi, m].mean(dim=0))
-                pooled[bi, m] = means[-1]
-            comp_counts.append(unique.numel())
-        return pooled, torch.as_tensor(comp_counts, device=h.device, dtype=torch.float32)
+        ids = comp.long().clamp(0, n - 1)
+        index = ids.unsqueeze(-1).expand(-1, -1, d)
+        sums = torch.zeros_like(h)
+        sums.scatter_add_(1, index, h)
+        counts = torch.zeros((b, n, 1), device=h.device, dtype=h.dtype)
+        counts.scatter_add_(1, ids.unsqueeze(-1), torch.ones_like(counts))
+        means = sums / counts.clamp_min(1.0)
+        pooled = torch.gather(means, 1, index)
+        comp_counts = (counts[..., 0] > 0).sum(dim=1).to(torch.float32)
+        return pooled, comp_counts
 
     def _spatial(self, h: torch.Tensor, comp: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         src, dst = self.edge_index[:, 0], self.edge_index[:, 1]

@@ -78,3 +78,22 @@ def test_multi_to_multi_association_and_no_history_are_finite():
     b["history_available"].zero_()
     y = m(**b)
     assert torch.isfinite(y).all()
+
+
+def test_vectorized_component_pool_matches_reference():
+    torch.manual_seed(17)
+    m = FullCoverageModel("FULL", 13)
+    h = torch.randn(2, CELL_COUNT, 16)
+    comp = torch.randint(0, 32, (2, CELL_COUNT))
+    pooled, counts = m._pool_components(h, comp)
+    reference = torch.zeros_like(h)
+    ref_counts = []
+    for bi in range(h.shape[0]):
+        ids = comp[bi]
+        unique = torch.unique(ids, sorted=True)
+        ref_counts.append(unique.numel())
+        for uid in unique:
+            mask = ids == uid
+            reference[bi, mask] = h[bi, mask].mean(dim=0)
+    assert torch.allclose(pooled, reference, atol=1e-6, rtol=1e-6)
+    assert torch.equal(counts, torch.tensor(ref_counts, dtype=torch.float32))
