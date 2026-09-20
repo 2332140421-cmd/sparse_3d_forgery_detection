@@ -54,6 +54,16 @@ def test_component_and_predecessor_permutation_is_explicitly_synchronized():
         assert torch.allclose(m(**b), m(**b2), atol=1e-5, rtol=1e-5)
 
 
+def test_rgb_control_does_not_consume_geometry_component_labels():
+    torch.manual_seed(11)
+    m = FullCoverageModel("RGB_2D", 7).eval()
+    b = _batch(7, 1)
+    b2 = {k: v.clone() for k, v in b.items()}
+    b2["component_ids"].fill_(0)
+    with torch.no_grad():
+        assert torch.allclose(m(**b), m(**b2), atol=1e-5, rtol=1e-5)
+
+
 def test_rgb_control_has_no_geometry_input_dimension():
     assert FullCoverageModel("RGB_2D", 7).input_dim == 7
     assert FullCoverageModel("FULL", 13).input_dim == 13

@@ -60,6 +60,12 @@ class FullCoverageModel(nn.Module):
         deg.index_add_(1, src, torch.ones_like(deg[:, src]))
         deg.index_add_(1, dst, torch.ones_like(deg[:, dst]))
         h = h + agg / deg.clamp_min(1.0)
+        # The RGB_2D control deliberately has no geometry-derived component
+        # labels or geometry mask.  It still uses the fixed base-cell grid
+        # above, but must not pool or broadcast by the FULL condition's
+        # geometry/motion components.
+        if self.condition == "RGB_2D":
+            return h, torch.ones((h.shape[0],), device=h.device, dtype=torch.float32)
         comp_h, counts = self._pool_components(h, comp)
         h = h + self.component_residual(torch.cat([h, comp_h], dim=-1))
         return h, counts
