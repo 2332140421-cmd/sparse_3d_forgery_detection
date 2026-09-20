@@ -552,26 +552,38 @@ def _bootstrap_diff(a: dict[str,float], b: dict[str,float], reps: int=10000, see
 
 def run_evaluate(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> dict[str, Any]:
     _stage(out,"evaluate","RUNNING")
+    (out / "evaluation").mkdir(exist_ok=True)
     val_rows=[r for r in rows if r["split"]=="validation"]
+    train_rows=[r for r in rows if r["split"]=="train"]
     all_scores=[]; metrics=[]; per_source=[]
     for condition in ["FULL","RGB_2D"]:
         m=read_json(out / "models" / f"standardizer_{condition}.json"); mean=np.asarray(m["mean"],np.float32); scale=np.asarray(m["scale"],np.float32)
+        train_ds=WindowDataset(out,train_rows,condition,mean,scale)
+        train_loader=torch.utils.data.DataLoader(train_ds,batch_size=8,shuffle=False,collate_fn=_collate)
         ds=WindowDataset(out,val_rows,condition,mean,scale); loader=torch.utils.data.DataLoader(ds,batch_size=8,shuffle=False,collate_fn=_collate)
         seed_scores=[]
         for seed in SEEDS:
             rec=torch.load(out / "models" / f"{condition}__seed{seed}.pt",map_location=device,weights_only=False)
             model=FullCoverageModel(condition,int(rec["input_dim"])).to(device); model.load_state_dict(rec["model"])
+            tz,tids,tsources,ty=_predict(model,train_loader,device)
+            tm=_metric(ty,tz); tsm=_source_macro(train_rows,tz,ty,tids)
+            metrics.append({"condition":condition,"seed":seed,"split":"train",**tm,"source_macro_auroc":tsm["mean"],"source_count":tsm["source_count"]})
             z,ids,sources,y=_predict(model,loader,device); seed_scores.append(z)
             mm=_metric(y,z); sm=_source_macro(val_rows,z,y,ids); metrics.append({"condition":condition,"seed":seed,"split":"validation",**mm,"source_macro_auroc":sm["mean"],"source_count":sm["source_count"]})
+            for source_id, value in sm["per_source"].items():
+                per_source.append({"condition":condition,"seed":seed,"split":"validation","source_id":source_id,"auroc":value})
         avg=np.mean(np.stack(seed_scores),axis=0); mm=_metric(y,avg); sm=_source_macro(val_rows,avg,y,ids); metrics.append({"condition":condition,"seed":"MEAN_LOGIT","split":"validation",**mm,"source_macro_auroc":sm["mean"],"source_count":sm["source_count"]})
+        for source_id, value in sm["per_source"].items():
+            per_source.append({"condition":condition,"seed":"MEAN_LOGIT","split":"validation","source_id":source_id,"auroc":value})
         all_scores.append((condition,avg,y,ids,sm["per_source"]))
     base=all_scores[0][4]; ctrl=all_scores[1][4]
     comparison=_bootstrap_diff(base,ctrl)
-    summary={"conditions":metrics,"comparison_FULL_minus_RGB_2D":comparison,"validation_windows":len(val_rows),"validation_sources":sorted({r["source_id"] for r in val_rows})}
+    summary={"conditions":metrics,"comparison_FULL_minus_RGB_2D":comparison,"train_windows":len(train_rows),"validation_windows":len(val_rows),"train_sources":sorted({r["source_id"] for r in train_rows}),"validation_sources":sorted({r["source_id"] for r in val_rows}),"input_scope":"all metrics use window-level labels; source macro excludes single-class sources"}
     write_json_atomic(out / "evaluation" / "summary.json",summary)
-    (out/"evaluation").mkdir(exist_ok=True)
     with open(out/"evaluation"/"metrics.csv","w",newline="",encoding="utf-8") as f:
         fields=sorted({k for r in metrics for k in r}); w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(metrics)
+    with open(out/"evaluation"/"per_source_metrics.csv","w",newline="",encoding="utf-8") as f:
+        w=csv.DictWriter(f,fieldnames=["condition","seed","split","source_id","auroc"]); w.writeheader(); w.writerows(per_source)
     with open(out/"evaluation"/"per_source_differences.csv","w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=["source_id","full_auroc","rgb2d_auroc","difference"]); w.writeheader()
         for s in sorted(set(base)&set(ctrl)): w.writerow({"source_id":s,"full_auroc":base[s],"rgb2d_auroc":ctrl[s],"difference":base[s]-ctrl[s]})
@@ -585,19 +597,49 @@ def run_evaluate(out: Path, rows: list[dict[str, Any]], device: str = "cuda") ->
 def run_visualizations(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> None:
     val=[r for r in rows if r["split"]=="validation"]
     vdir=out/"visualizations"; vdir.mkdir(exist_ok=True)
+    records=[]
+    case_index=0
     for r in val:
         if r["role"] != "fake": continue
-        if len(list(vdir.glob("*.png"))) >= 8: break
-        with np.load(out/"features"/f"{_safe_name(r['window_id'])}.npz",allow_pickle=False) as z: comp=z["component_ids"][-1].reshape(GRID_H,GRID_W)
-        with np.load(_frontend_npz(out, r), allow_pickle=False) as z: geo=z["cell_geometry_valid"][-1].reshape(GRID_H,GRID_W)
-        rgb=np.zeros((GRID_H,GRID_W,3),dtype=np.uint8); rgb[...,0]=np.where(geo>0,80,200); rgb[...,1]=np.where(geo>0,190,100); rgb[...,2]=60
-        Image.fromarray(rgb).resize((256,256),Image.Resampling.NEAREST).save(vdir/f"{_safe_name(r['window_id'])}.png")
-    write_json_atomic(vdir/"manifest.json", {"status":"COMPLETE","note":"Grid-level diagnostic maps; color is state/component aid, not a pixel GT."})
+        if case_index >= 8: break
+        with np.load(out/"features"/f"{_safe_name(r['window_id'])}.npz",allow_pickle=False) as z:
+            comp=z["component_ids"][-1].reshape(GRID_H,GRID_W)
+            assoc=z["association_weight"][-1].sum(axis=-1).reshape(GRID_H,GRID_W)
+        with np.load(_frontend_npz(out, r), allow_pickle=False) as z:
+            geo=z["cell_geometry_valid"][-1].reshape(GRID_H,GRID_W)
+            cov=z["track_coverage"][-1].reshape(GRID_H,GRID_W)
+        rgb_frames=_load_frontend_rgb(out,r)
+        rgb=Image.fromarray(rgb_frames[-1]).resize((256,256),Image.Resampling.BILINEAR)
+        def grid_color(values: np.ndarray, palette: str) -> Image.Image:
+            a=np.asarray(values)
+            if palette == "component":
+                out_rgb=np.zeros((GRID_H,GRID_W,3),dtype=np.uint8)
+                for yy in range(GRID_H):
+                    for xx in range(GRID_W):
+                        h=stable_hash(int(a[yy,xx]))
+                        out_rgb[yy,xx]=[(h>>0)&255,(h>>8)&255,(h>>16)&255]
+            else:
+                q=np.clip(a,0,1)
+                out_rgb=np.stack([q*255, q*255, q*255],axis=-1).astype(np.uint8)
+            return Image.fromarray(out_rgb).resize((256,256),Image.Resampling.NEAREST)
+        geo_img=Image.fromarray(np.repeat(np.repeat((geo.astype(np.uint8)*255)[...,None],3,axis=-1),16,axis=0).repeat(16,axis=1))
+        cov_img=grid_color(cov,"gray")
+        comp_img=grid_color(comp,"component")
+        # 2x2 evidence sheet: raw RGB, geometry-validity, short-prefix
+        # coverage, and current-frame component identity.  These colors are
+        # diagnostic state, never pixel-level forgery truth.
+        sheet=Image.new("RGB",(512,512),(20,20,20))
+        sheet.paste(rgb,(0,0)); sheet.paste(geo_img,(256,0)); sheet.paste(cov_img,(0,256)); sheet.paste(comp_img,(256,256))
+        name=f"case_{case_index:02d}_{_safe_name(r['window_id'])}.png"
+        sheet.save(vdir/name)
+        records.append({"window_id":r["window_id"],"source_id":r["source_id"],"role":r["role"],"frame_index":int(r.get("v8_frame_indices",r["frame_indices"])[-1]),"panels":{"rgb":"top-left","geometry_valid":"top-right","tracking_coverage":"bottom-left","component_id":"bottom-right"},"path":str(vdir/name)})
+        case_index += 1
+    write_json_atomic(vdir/"manifest.json", {"status":"COMPLETE","records":records,"note":"Grid-level diagnostic maps; geometry/coverage/component colors are observation aids, not pixel GT."})
 
 
 def run_report(out: Path, rows: list[dict[str, Any]]) -> None:
     status=_load_status(out); eval_path=out/"evaluation"/"summary.json"; summary=read_json(eval_path) if eval_path.exists() else {}
-    lines=["# V8 Full-Coverage 3D Observation Field v1", "", f"- protocol: `{PROTOCOL_VERSION}`", f"- branch: `v8-full-coverage-observation-field`", f"- windows: {len(rows)} (train={sum(r['split']=='train' for r in rows)}, validation={sum(r['split']=='validation' for r in rows)})", "- queue: reused only window identity and raw-video paths; V7 frontend/features/models were not read.", "", "## Status", "", "```json", json.dumps(status,ensure_ascii=False,indent=2), "```", "", "## Evaluation", "", "```json", json.dumps(summary,ensure_ascii=False,indent=2), "```", "", "## Interpretation boundary", "", "V8 的全覆盖指 256×256 处理画面中的非 padding 基础格始终有输出；它不是原始像素级真值。MoGe/CoTracker 的几何和对应质量未在本实验中证明，缺失状态不是伪造标签。FULL−RGB_2D 同时改变了几何观测、动态分组与观测状态，不能单独归因于 XYZ。", ""]
+    lines=["# V8 Full-Coverage 3D Observation Field v1", "", f"- protocol: `{PROTOCOL_VERSION}`", f"- branch: `v8-full-coverage-observation-field`", f"- windows: {len(rows)} (train={sum(r['split']=='train' for r in rows)}, validation={sum(r['split']=='validation' for r in rows)})", "- queue: reused only window identity and raw-video paths; V7 frontend/features/models were not read.", "- RGB feature: frozen ImageNet ResNet18 layer1 spatial map, sampled to the 16×16 base-cell grid from V8 raw letterboxed frames.", "", "## Status", "", "```json", json.dumps(status,ensure_ascii=False,indent=2), "```", "", "## Evaluation", "", "```json", json.dumps(summary,ensure_ascii=False,indent=2), "```", "", "## Interpretation boundary", "", "V8 的全覆盖指 256×256 处理画面中的非 padding 基础格始终有输出；它不是原始像素级真值。MoGe/CoTracker 的几何和对应质量未在本实验中证明，缺失状态不是伪造标签。FULL−RGB_2D 同时改变了几何观测、动态分组与观测状态，不能单独归因于 XYZ；RGB_2D 不读取几何 component 标签、XYZ 或几何 mask。证据图是处理分辨率下的观测/模型辅助显示，不是像素级检测结果。", ""]
     (out/"report.md").write_text("\n".join(lines),encoding="utf-8")
     stages = status.get("stages", {})
     required = ["plan", "frontend", "features", "train", "evaluate", "report"]
@@ -612,6 +654,7 @@ def run_all(args: Any) -> None:
     out.mkdir(parents=True,exist_ok=True)
     rows = manifest_rows(out/"data_manifest.json") if (out/"data_manifest.json").exists() else run_plan(out,geometry_root,source_root,args.moge_checkpoint,args.tracker_checkpoint)
     try:
+        _stage(out, "all", "RUNNING", command=" ".join(sys.argv))
         # Refresh the protocol metadata after code changes while preserving the
         # frozen identity rows.  This does not regenerate or alter the plan.
         write_protocol(out, rows, geometry_root, args.moge_checkpoint, args.tracker_checkpoint)
@@ -631,5 +674,7 @@ def run_all(args: Any) -> None:
                 run_evaluate(out,rows,args.device)
         if args.stage in {"all","report"}:
             run_visualizations(out,rows,args.device); run_report(out,rows)
+        if args.stage == "all":
+            _stage(out, "all", "COMPLETE")
     except Exception as exc:
         _failure(out,args.stage,exc); raise
