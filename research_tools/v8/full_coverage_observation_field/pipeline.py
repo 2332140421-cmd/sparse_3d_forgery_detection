@@ -532,7 +532,8 @@ def run_visualizations(out: Path, rows: list[dict[str, Any]], device: str = "cud
     for r in val:
         if r["role"] != "fake": continue
         if len(list(vdir.glob("*.png"))) >= 8: break
-        with np.load(out/"features"/f"{_safe_name(r['window_id'])}.npz",allow_pickle=False) as z: comp=z["component_ids"][-1].reshape(GRID_H,GRID_W); geo=z["x_full"][-1,:,6].reshape(GRID_H,GRID_W)
+        with np.load(out/"features"/f"{_safe_name(r['window_id'])}.npz",allow_pickle=False) as z: comp=z["component_ids"][-1].reshape(GRID_H,GRID_W)
+        with np.load(_frontend_npz(out, r), allow_pickle=False) as z: geo=z["cell_geometry_valid"][-1].reshape(GRID_H,GRID_W)
         rgb=np.zeros((GRID_H,GRID_W,3),dtype=np.uint8); rgb[...,0]=np.where(geo>0,80,200); rgb[...,1]=np.where(geo>0,190,100); rgb[...,2]=60
         Image.fromarray(rgb).resize((256,256),Image.Resampling.NEAREST).save(vdir/f"{_safe_name(r['window_id'])}.png")
     write_json_atomic(vdir/"manifest.json", {"status":"COMPLETE","note":"Grid-level diagnostic maps; color is state/component aid, not a pixel GT."})
