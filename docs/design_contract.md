@@ -436,3 +436,14 @@ $$
 - calibration 和 threshold；
 - 数据集与 split；
 - 训练超参数。
+
+## 14. V8 Full-Coverage Observation Field 的隔离边界
+
+V8 是当前项目内用户明确授权的独立方法分支，不修改或替换 V7 稀疏
+ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和模型合同以
+`docs/v8/design_contract.md` 及其 ADR 为准；V7 的固定粒子、固定 component、
+查询 cohort、S/Q 特征和模型缓存不得作为 V8 输入。V8 只可复用原始视频、官方
+标签、source/split 身份以及无旧方法语义的窗口定位信息。
+
+该段明确的是工程隔离和版本优先级，不把 V8 的全覆盖区域解释为物理部位，也
+不把其前端 mask 或模型热图解释为像素级伪造真值。
