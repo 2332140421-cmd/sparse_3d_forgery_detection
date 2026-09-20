@@ -670,10 +670,11 @@ def run_all(args: Any) -> None:
             if not (_load_status(out).get("stages",{}).get("train",{}).get("status")=="COMPLETE"):
                 run_train(out,rows,args.device)
         if args.stage in {"all","evaluate"}:
-            if not (_load_status(out).get("stages",{}).get("evaluate",{}).get("status")=="COMPLETE"):
+            if args.stage == "evaluate" or not (_load_status(out).get("stages",{}).get("evaluate",{}).get("status")=="COMPLETE"):
                 run_evaluate(out,rows,args.device)
         if args.stage in {"all","report"}:
-            run_visualizations(out,rows,args.device); run_report(out,rows)
+            if args.stage == "report" or _load_status(out).get("stages",{}).get("report",{}).get("status") != "COMPLETE":
+                run_visualizations(out,rows,args.device); run_report(out,rows)
         if args.stage == "all":
             _stage(out, "all", "COMPLETE")
     except Exception as exc:
