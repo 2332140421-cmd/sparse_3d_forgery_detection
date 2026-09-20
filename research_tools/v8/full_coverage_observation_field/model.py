@@ -31,6 +31,7 @@ class FullCoverageModel(nn.Module):
         self.temporal_in = nn.Sequential(nn.Linear(hidden + 4, hidden), nn.ReLU())
         self.gru = nn.GRUCell(hidden, hidden)
         self.cell_head = nn.Sequential(nn.Linear(hidden, hidden // 2), nn.ReLU(), nn.Linear(hidden // 2, 1))
+        self.no_history = nn.Parameter(torch.zeros(hidden))
         self.register_buffer("edge_index", torch.from_numpy(cell_neighbors()), persistent=False)
 
     def _pool_components(self, h: torch.Tensor, comp: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -91,12 +92,28 @@ class FullCoverageModel(nn.Module):
             h = self.cell_encoder(x[:, ti])
             h, cc = self._spatial(h, component_ids[:, ti])
             if ti > 0:
-                # predecessor stores the source component's representative cell;
-                # association_weight is an explicit coverage, not a label feature.
+                # V8 stores up to four prior-cell candidates per current cell.
+                # The weighted sum is a compact multi-to-multi association; a
+                # legacy [B,T,N] cache remains readable for smoke tests.
                 pi = predecessor[:, ti].long().clamp(0, n - 1)
-                prev = h_prev.gather(1, pi[..., None].expand(-1, -1, self.hidden))
+                if pi.ndim == 2:
+                    pi = pi.unsqueeze(-1)
+                raw_aw = association_weight[:, ti]
+                aw = raw_aw
+                if aw.ndim == 2:
+                    aw = aw.unsqueeze(-1)
+                aw = aw.to(h_prev.dtype)
+                aw = aw / aw.sum(dim=-1, keepdim=True).clamp_min(1e-8)
+                index = pi[..., None].expand(-1, -1, -1, self.hidden)
+                cand = torch.gather(
+                    h_prev.unsqueeze(2).expand(-1, -1, pi.shape[2], -1), 1, index
+                )
+                prev = (cand * aw[..., None]).sum(dim=2)
+                has_prev = raw_aw.sum(dim=-1) > 0 if raw_aw.ndim == 3 else raw_aw > 0
+                prev = torch.where(has_prev[..., None], prev, self.no_history.view(1, 1, -1))
                 dt = delta_t[:, ti].unsqueeze(-1).unsqueeze(-1).expand(-1, n, 1)
-                aux = torch.cat([dt, association_weight[:, ti, :, None], history_available[:, ti, :, None].float(), (1.0 - association_weight[:, ti, :, None])], dim=-1)
+                coverage = raw_aw.sum(dim=-1) if raw_aw.ndim == 3 else raw_aw
+                aux = torch.cat([dt, coverage[..., None], history_available[:, ti, :, None].float(), (1.0 - coverage[..., None])], dim=-1)
                 temporal_input = torch.cat([h, aux], dim=-1).reshape(b * n, self.hidden + 4)
                 h = self.gru(self.temporal_in(temporal_input), prev.reshape(b * n, self.hidden)).reshape(b, n, self.hidden)
             else:

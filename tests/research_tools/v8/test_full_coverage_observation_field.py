@@ -67,3 +67,14 @@ def test_rgb_control_does_not_consume_geometry_component_labels():
 def test_rgb_control_has_no_geometry_input_dimension():
     assert FullCoverageModel("RGB_2D", 7).input_dim == 7
     assert FullCoverageModel("FULL", 13).input_dim == 13
+
+
+def test_multi_to_multi_association_and_no_history_are_finite():
+    torch.manual_seed(13)
+    m = FullCoverageModel("FULL", 13)
+    b = _batch(13, 1)
+    b["predecessor"] = b["predecessor"].unsqueeze(-1).expand(-1, -1, -1, 4).clone()
+    b["association_weight"] = torch.zeros(1, 16, CELL_COUNT, 4)
+    b["history_available"].zero_()
+    y = m(**b)
+    assert torch.isfinite(y).all()

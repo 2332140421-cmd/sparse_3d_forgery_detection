@@ -19,6 +19,7 @@ from PIL import Image
 
 from .common import (
     CELL_COUNT,
+    CELL_SIZE,
     FRAME_COUNT,
     GRID_H,
     GRID_W,
@@ -321,7 +322,15 @@ def _build_feature_arrays(
         motion = z["motion_xy"].astype(np.float32)
         mv = z["motion_valid"].astype(bool)
         hist = z["history_available"].astype(bool)
+        tracker_tracks = z["tracker_tracks"].astype(np.float32)
+        tracker_visibility = z["tracker_visibility"].astype(bool)
     comps, prev, assoc = [], np.zeros((FRAME_COUNT, CELL_COUNT), np.int64), np.zeros((FRAME_COUNT, CELL_COUNT), np.float32)
+    assoc_candidates = np.zeros((FRAME_COUNT, CELL_COUNT, 4), np.int64)
+    assoc_weights = np.zeros((FRAME_COUNT, CELL_COUNT, 4), np.float32)
+    assoc_matches = np.zeros((FRAME_COUNT, CELL_COUNT), np.int16)
+    assoc_queries = np.full((FRAME_COUNT, CELL_COUNT), 4, np.int16)
+    assoc_oob = np.zeros((FRAME_COUNT, CELL_COUNT), np.int16)
+    assoc_queries[0] = 0
     deltas = np.zeros(FRAME_COUNT, np.float32)
     for t in range(FRAME_COUNT):
         comps.append(_components(xyz[t], gv[t], motion[t], mv[t], scales))
@@ -336,6 +345,36 @@ def _build_feature_arrays(
                     px, py = max(0, min(GRID_W - 1, px)), max(0, min(GRID_H - 1, py))
                     prev[t, ci] = py * GRID_W + px
                     assoc[t, ci] = cov[t, ci]
+            # Reconstruct compact multi-to-multi current-cell -> prior-cell
+            # counts from the raw short-prefix query arrays.  This is only a
+            # correspondence summary; no permanent query identity is made.
+            tr = tracker_tracks[t]
+            vis = tracker_visibility[t]
+            counts: list[dict[int, int]] = [dict() for _ in range(CELL_COUNT)]
+            for qy in range(32):
+                for qx in range(32):
+                    qi = qy * 32 + qx
+                    ci = min(GRID_H - 1, qy // 2) * GRID_W + min(GRID_W - 1, qx // 2)
+                    if not (vis[-1, qi] and vis[-2, qi]):
+                        continue
+                    px = int(np.floor(float(tr[-2, qi, 0]) / CELL_SIZE))
+                    py = int(np.floor(float(tr[-2, qi, 1]) / CELL_SIZE))
+                    if px < 0 or px >= GRID_W or py < 0 or py >= GRID_H:
+                        assoc_oob[t, ci] += 1
+                        continue
+                    pi = py * GRID_W + px
+                    counts[ci][pi] = counts[ci].get(pi, 0) + 1
+            for ci, cm in enumerate(counts):
+                assoc_matches[t, ci] = min(sum(cm.values()), 32767)
+                ordered = sorted(cm.items(), key=lambda kv: (-kv[1], kv[0]))[:4]
+                total = float(sum(v for _, v in ordered))
+                for ki, (pi, count) in enumerate(ordered):
+                    assoc_candidates[t, ci, ki] = pi
+                    assoc_weights[t, ci, ki] = count / total if total else 0.0
+            # The first candidate retains the historical single-predecessor
+            # view for compact diagnostics; the model consumes all candidates.
+            prev[t] = assoc_candidates[t, :, 0]
+            assoc[t] = assoc_weights[t, :, 0]
     comps = np.asarray(comps, dtype=np.int64)
     # Frozen ImageNet spatial features are generated from the new frontend's
     # letterboxed RGB frames.  They are shared by FULL and RGB_2D; only the
@@ -343,7 +382,19 @@ def _build_feature_arrays(
     rgb_map = rgb_backbone.encode(_load_frontend_rgb(out, row))
     x_full = np.concatenate([rgb_map, rgb, xyz, gv[..., None].astype(np.float32), cov[..., None], motion, mv[..., None].astype(np.float32), hist[..., None].astype(np.float32), (1.0 - gv[..., None].astype(np.float32))], axis=-1)
     x_rgb = np.concatenate([rgb_map, rgb, cov[..., None], motion, mv[..., None].astype(np.float32)], axis=-1)
-    return {"x_full": x_full.astype(np.float32), "x_rgb2d": x_rgb.astype(np.float32), "component_ids": comps, "predecessor": prev, "association_weight": assoc, "history_available": hist, "area": area, "delta_t": deltas}
+    component_sizes = np.zeros((FRAME_COUNT, CELL_COUNT), dtype=np.int16)
+    for t in range(FRAME_COUNT):
+        ids, counts = np.unique(comps[t], return_counts=True)
+        for uid, count in zip(ids, counts):
+            component_sizes[t, comps[t] == uid] = min(int(count), 32767)
+    return {
+        "x_full": x_full.astype(np.float32), "x_rgb2d": x_rgb.astype(np.float32),
+        "component_ids": comps, "component_sizes": component_sizes,
+        "predecessor": assoc_candidates, "association_weight": assoc_weights,
+        "association_match_count": assoc_matches, "association_query_count": assoc_queries,
+        "association_out_of_bounds": assoc_oob,
+        "history_available": hist, "area": area, "delta_t": deltas,
+    }
 
 
 def run_features(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> None:
@@ -363,7 +414,7 @@ def run_features(out: Path, rows: list[dict[str, Any]], device: str = "cuda") ->
         except Exception as exc:
             fail += 1; reasons.append({"window_id": row["window_id"], "error": f"{type(exc).__name__}: {exc}"})
         _stage(out, "features", "RUNNING", planned=len(rows), completed=done, failed=fail)
-    write_json_atomic(out / "feature_schema.json", {"version": "v8-feature-v2", "rgb_backbone": "torchvision ResNet18 ImageNet layer1 (frozen)", "rgb_backbone_checkpoint": "/root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth", "rgb_backbone_feature_dim": 64, "full_dim": 77, "rgb_2d_dim": 71, "shapes": {"x": [FRAME_COUNT, CELL_COUNT, "D"], "component_ids": [FRAME_COUNT, CELL_COUNT], "predecessor": [FRAME_COUNT, CELL_COUNT]}, "mask_semantics": "all non-padding cells retained; geometry validity is state, not row filtering"})
+    write_json_atomic(out / "feature_schema.json", {"version": "v8-feature-v3", "rgb_backbone": "torchvision ResNet18 ImageNet layer1 (frozen)", "rgb_backbone_checkpoint": "/root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth", "rgb_backbone_feature_dim": 64, "full_dim": 77, "rgb_2d_dim": 71, "shapes": {"x": [FRAME_COUNT, CELL_COUNT, "D"], "component_ids": [FRAME_COUNT, CELL_COUNT], "predecessor": [FRAME_COUNT, CELL_COUNT, 4], "association_weight": [FRAME_COUNT, CELL_COUNT, 4], "association_match_count": [FRAME_COUNT, CELL_COUNT]}, "mask_semantics": "all non-padding cells retained; geometry validity is state, not row filtering"})
     write_json_atomic(out / "feature_manifest.json", {"planned": len(rows), "completed": done, "failed": fail, "failures": reasons})
     _stage(out, "features", "COMPLETE" if done == len(rows) and fail == 0 else ("PARTIAL" if done else "FAILED"), planned=len(rows), completed=done, failed=fail)
 
