@@ -477,7 +477,9 @@ def run_all(args: Any) -> None:
     rows = manifest_rows(out/"data_manifest.json") if (out/"data_manifest.json").exists() else run_plan(out,geometry_root,source_root,args.moge_checkpoint,args.tracker_checkpoint)
     try:
         if args.stage in {"all","frontend"}:
-            if not (_load_status(out).get("stages",{}).get("frontend",{}).get("status")=="COMPLETE"):
+            frontend_state = _load_status(out).get("stages", {}).get("frontend", {})
+            # A two-window smoke is intentionally not a formal completion mark.
+            if not (frontend_state.get("status") == "COMPLETE" and int(frontend_state.get("planned", -1)) == len(rows)):
                 run_frontend(out,rows,args.moge_checkpoint,args.tracker_checkpoint,args.device,args.limit_windows)
         if args.stage in {"all","features"}:
             if not (_load_status(out).get("stages",{}).get("features",{}).get("status")=="COMPLETE"):
