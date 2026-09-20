@@ -313,6 +313,10 @@ def _build_feature_arrays(
     scales: dict[str, float],
     rgb_backbone: FrozenResNet18Spatial,
 ) -> dict[str, np.ndarray]:
+    frontend_meta = read_json(out / "frontend" / f"{_safe_name(row['window_id'])}.json")
+    actual_pts = np.asarray(frontend_meta.get("pts_s", []), dtype=np.float64)
+    if actual_pts.shape != (FRAME_COUNT,):
+        raise ValueError(f"ACTUAL_PTS_MISSING:{row['window_id']}:{actual_pts.shape}")
     with np.load(_frontend_npz(out, row), allow_pickle=False) as z:
         rgb = z["cell_rgb"].astype(np.float32)
         xyz = z["cell_xyz"].astype(np.float32)
@@ -335,7 +339,7 @@ def _build_feature_arrays(
     for t in range(FRAME_COUNT):
         comps.append(_components(xyz[t], gv[t], motion[t], mv[t], scales))
         if t > 0:
-            d = float(row["timestamps_s"][t] - row["timestamps_s"][t - 1])
+            d = float(actual_pts[t] - actual_pts[t - 1])
             deltas[t] = d if np.isfinite(d) and d >= 0 else 0.0
             for ci in range(CELL_COUNT):
                 if hist[t, ci]:
@@ -394,6 +398,7 @@ def _build_feature_arrays(
         "association_match_count": assoc_matches, "association_query_count": assoc_queries,
         "association_out_of_bounds": assoc_oob,
         "history_available": hist, "area": area, "delta_t": deltas,
+        "actual_pts_s": actual_pts.astype(np.float32),
     }
 
 
