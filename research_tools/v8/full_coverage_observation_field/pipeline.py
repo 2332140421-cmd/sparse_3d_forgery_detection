@@ -738,6 +738,8 @@ def run_report(out: Path, rows: list[dict[str, Any]]) -> None:
     _stage(out, "report", "COMPLETE", stages_complete=complete)
     status = _load_status(out)
     status["status"] = final
+    if status.get("stages", {}).get("all", {}).get("status") == "RUNNING":
+        status["stages"]["all"]["status"] = final
     status["updated_unix"] = _now()
     write_json_atomic(_status_path(out), status)
     write_json_atomic(out/"final_status.json", {"status":final,"protocol_version":PROTOCOL_VERSION,"updated_unix":_now(),"note":"COMPLETE means pipeline stages completed; it does not establish the scientific hypothesis."})
