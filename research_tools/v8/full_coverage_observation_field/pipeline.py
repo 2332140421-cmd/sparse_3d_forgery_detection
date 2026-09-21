@@ -642,6 +642,7 @@ def _bootstrap_diff(a: dict[str,float], b: dict[str,float], reps: int=10000, see
 def run_evaluate(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> dict[str, Any]:
     _stage(out,"evaluate","RUNNING")
     (out / "evaluation").mkdir(exist_ok=True)
+    (out / "scores").mkdir(exist_ok=True)
     val_rows=[r for r in rows if r["split"]=="validation"]
     train_rows=[r for r in rows if r["split"]=="train"]
     all_scores=[]; metrics=[]; per_source=[]
