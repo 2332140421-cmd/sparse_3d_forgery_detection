@@ -251,6 +251,15 @@ def main() -> None:
     write_json = lambda path, value: Path(path).write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     write_json(out / "evaluation" / "mean_logit_train_metrics.json", {"new": new_train_mean, "old": old_train_mean, "source": "saved per-seed train score arrays; no model forward"})
     audit["identity_fix"] = identity
+    standardizer_diff = {}
+    for condition in ["FULL", "RGB_2D"]:
+        old_std = read(old / "models" / f"standardizer_{condition}.json")
+        new_std = read(out / "models" / f"standardizer_{condition}.json")
+        standardizer_diff[condition] = {
+            "mean_max_abs_difference": float(np.max(np.abs(np.asarray(old_std["mean"], dtype=float) - np.asarray(new_std["mean"], dtype=float)))),
+            "scale_max_abs_difference": float(np.max(np.abs(np.asarray(old_std["scale"], dtype=float) - np.asarray(new_std["scale"], dtype=float)))),
+        }
+    audit["standardizer_vs_pre_fix_max_abs_difference"] = standardizer_diff
     (out / "structure_audit.json").write_text(json.dumps(audit, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     with (out / "structure_audit_windows.csv").open("w", newline="", encoding="utf-8") as fcsv:
         w = csv.DictWriter(fcsv, fieldnames=list(win_rows[0].keys())); w.writeheader(); w.writerows(win_rows)
@@ -266,7 +275,7 @@ def main() -> None:
         "身份错配已按 `(pair_id, source_id, role)` 修复并验证；全量801窗口中796个身份一致缓存复用、5个5H1P1窗口按正确视频重提。依赖链随后从修复后的全部前端重新拟合分组尺度、生成801份派生特征，并从初始状态完成FULL/RGB_2D各3个100 epoch模型。旧结果保留为受污染历史，不再作为干净训练结果。", "",
         f"运行状态：`{read(out / 'final_status.json').get('status')}`；run_id `{runtime.get('run_id')}`；本次墙钟约 `{elapsed:.1f}` 秒；正式模型 `{len([r for r in records if r.get('status') == 'COMPLETE'])}/6`。", "",
         "## 修复证据", "",
-        f"- 复合身份索引：`{identity.get('policy')}`；冲突键不允许 last-write-wins 或 pair-only fallback。\n- 全量身份核对：{identity.get('window_count')} windows，`identity_changed={identity.get('changed_count')}`。\n- 重提窗口：`{', '.join(identity.get('changed_windows', []))}`。\n- 新目录前端：801/801，失败0；特征：801/801，失败0；原始5个错误窗口之外未发现新身份变更。\n- 新分组统计：spatial rows {read(out/'grouping_config.json').get('spatial_rows')}，motion rows {read(out/'grouping_config.json').get('motion_rows')}，阈值 {f(read(out/'grouping_config.json').get('merge_threshold'))}；标准化由修复后718个训练窗口重新拟合。\n- 原训练source/class窗口数量未因身份修复改变；权重按新训练清单重新计算。", "",
+        f"- 复合身份索引：`{identity.get('policy')}`；冲突键不允许 last-write-wins 或 pair-only fallback。\n- 全量身份核对：{identity.get('window_count')} windows，`identity_changed={identity.get('changed_count')}`。\n- 重提窗口：`{', '.join(identity.get('changed_windows', []))}`。\n- 新目录前端：801/801，失败0；特征：801/801，失败0；原始5个错误窗口之外未发现新身份变更。\n- 新分组统计：spatial rows {read(out/'grouping_config.json').get('spatial_rows')}，motion rows {read(out/'grouping_config.json').get('motion_rows')}，阈值 {f(read(out/'grouping_config.json').get('merge_threshold'))}；标准化由修复后718个训练窗口重新拟合，和旧统计最大绝对差 FULL mean/scale={f(standardizer_diff['FULL']['mean_max_abs_difference'])}/{f(standardizer_diff['FULL']['scale_max_abs_difference'])}、RGB_2D mean/scale={f(standardizer_diff['RGB_2D']['mean_max_abs_difference'])}/{f(standardizer_diff['RGB_2D']['scale_max_abs_difference'])}。\n- 原训练source/class窗口数量未因身份修复改变；权重按新训练清单重新计算。", "",
         "## 修复前后指标", "", table, "", "训练集三seed平均logit（从已保存score数组复算，旧/新训练集合均为718窗口）：", "", "| condition | old train macro AUROC | new train macro AUROC | old train pooled AUROC | new train pooled AUROC | old AP | new AP |", "|---|---:|---:|---:|---:|---:|---:|", *[f"| {c} | {f(old_train_mean[c].get('source_macro_auroc'))} | {f(new_train_mean[c].get('source_macro_auroc'))} | {f(old_train_mean[c].get('auroc'))} | {f(new_train_mean[c].get('auroc'))} | {f(old_train_mean[c].get('ap'))} | {f(new_train_mean[c].get('ap'))} |" for c in ["FULL", "RGB_2D"]], "",
         f"新结果按三个seed平均logit后计算，阈值固定 `logit >= 0`，验证83窗口、14 source；新FULL−RGB_2D source-macro差 `{f(comp.get('mean'))}`，bootstrap 95% CI `[{f(comp.get('ci95',[None,None])[0])}, {f(comp.get('ci95',[None,None])[1])}]`，source方向 {signs['up']}上升/{signs['tie']}持平/{signs['down']}下降。", "",
         "## 结构与信息路径审计", "",
