@@ -97,10 +97,67 @@ def _safe_name(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()[:24]
 
 
+class PairIdentityConflict(ValueError):
+    """The source manifest contains conflicting records for one composite key."""
+
+
+def _pair_record_signature(record: dict[str, Any]) -> tuple[Any, ...]:
+    """Fields that must agree when duplicate composite records are deduplicated."""
+    return (
+        record.get("pair_id"),
+        record.get("source_id"),
+        record.get("real_video_path"),
+        record.get("fake_video_path"),
+        record.get("generator"),
+        record.get("manipulation_operation"),
+        record.get("official_split"),
+    )
+
+
+def build_pair_index(records: Iterable[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
+    """Index source pair records by the full source-aware identity.
+
+    A pair_id is not globally unique in the frozen source manifest.  Exact
+    duplicate records are harmless and are retained once; different paths or
+    lineage under the same ``(pair_id, source_id)`` are a hard error.  There is
+    deliberately no pair_id-only fallback.
+    """
+    index: dict[tuple[str, str], dict[str, Any]] = {}
+    signatures: dict[tuple[str, str], tuple[Any, ...]] = {}
+    for record in records:
+        pair_id = str(record.get("pair_id", ""))
+        source_id = str(record.get("source_id", ""))
+        if not pair_id or not source_id:
+            raise ValueError("PAIR_IDENTITY_FIELDS_MISSING")
+        key = (pair_id, source_id)
+        signature = _pair_record_signature(record)
+        if key in index:
+            if signatures[key] != signature:
+                raise PairIdentityConflict(f"PAIR_IDENTITY_CONFLICT:{pair_id}:{source_id}")
+            continue
+        index[key] = dict(record)
+        signatures[key] = signature
+    return index
+
+
+def resolve_pair_video(index: dict[tuple[str, str], dict[str, Any]], pair_id: str, source_id: str, role: str) -> str:
+    """Resolve one real/fake path without a lossy pair_id fallback."""
+    key = (str(pair_id), str(source_id))
+    if key not in index:
+        raise KeyError(f"PAIR_SOURCE_NOT_FOUND:{key[0]}:{key[1]}")
+    if role not in {"real", "fake"}:
+        raise ValueError(f"ROLE_UNSUPPORTED:{role}")
+    path = index[key].get("real_video_path" if role == "real" else "fake_video_path")
+    if not path:
+        raise FileNotFoundError(f"PAIR_VIDEO_PATH_MISSING:{key[0]}:{key[1]}:{role}")
+    return str(path)
+
+
 def build_manifest(out: Path, geometry_root: Path, source_root: Path) -> list[dict[str, Any]]:
     feature_rows = manifest_rows(geometry_root / "inputs" / "feature_manifest.json")
     old_rows = {r["window_id"]: r for r in manifest_rows(source_root / "manifests" / "input_manifest.json")}
-    pairs = {r["pair_id"]: r for r in read_json(source_root / "manifests" / "input_pairs.json")}
+    pair_records = read_json(source_root / "manifests" / "input_pairs.json")
+    pairs = build_pair_index(pair_records)
     split = read_json(geometry_root / "protocol.json")["input"]
     val_sources = set(split["validation_sources"])
     rows: list[dict[str, Any]] = []
@@ -111,17 +168,23 @@ def build_manifest(out: Path, geometry_root: Path, source_root: Path) -> list[di
         if base is None:
             missing.append(wid)
             continue
-        pair = pairs.get(base["pair_id"])
-        if pair is None:
+        try:
+            video_path = resolve_pair_video(pairs, base["pair_id"], base["source_id"], base["role"])
+        except (KeyError, ValueError, FileNotFoundError):
             missing.append(wid)
             continue
-        video_path = pair["real_video_path"] if base["role"] == "real" else pair["fake_video_path"]
         row = dict(base)
         row.update({
             "split": "validation" if base["source_id"] in val_sources else "train",
             "video_path": video_path,
             "video_sha256": sha256_file(video_path) if Path(video_path).exists() else None,
             "v7_feature_row_present": True,
+            "video_identity": {
+                "pair_id": str(base["pair_id"]),
+                "source_id": str(base["source_id"]),
+                "role": str(base["role"]),
+                "video_path": str(video_path),
+            },
         })
         source_frames = [int(x) for x in base.get("frame_indices", [])]
         source_pts = [float(x) for x in base.get("timestamps_s", [])]

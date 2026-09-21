@@ -10,7 +10,13 @@ if str(ROOT) not in sys.path:
 
 from research_tools.v8.full_coverage_observation_field.common import CELL_COUNT, GRID_H, GRID_W, cell_neighbors
 from research_tools.v8.full_coverage_observation_field.model import FullCoverageModel
-from research_tools.v8.full_coverage_observation_field.pipeline import _predict
+from research_tools.v8.full_coverage_observation_field.frontend import _frame_cache_key
+from research_tools.v8.full_coverage_observation_field.pipeline import (
+    PairIdentityConflict,
+    _predict,
+    build_pair_index,
+    resolve_pair_video,
+)
 
 
 def _batch(dim=13, b=2):
@@ -109,3 +115,58 @@ def test_predict_moves_metric_labels_back_to_cpu():
     assert scores.shape == (1,)
     assert ids == ["W"] and sources == ["S"]
     assert labels.tolist() == [1]
+
+
+def _pair(pair_id: str, source_id: str, real: str, fake: str) -> dict:
+    return {
+        "pair_id": pair_id,
+        "source_id": source_id,
+        "real_video_path": real,
+        "fake_video_path": fake,
+        "generator": "g",
+        "manipulation_operation": "op",
+        "official_split": "train",
+    }
+
+
+def test_pair_index_keeps_same_pair_id_separate_by_source_and_role():
+    index = build_pair_index([
+        _pair("P", "A", "a-real.mp4", "a-fake.mp4"),
+        _pair("P", "B", "b-real.mp4", "b-fake.mp4"),
+    ])
+    assert resolve_pair_video(index, "P", "A", "real") == "a-real.mp4"
+    assert resolve_pair_video(index, "P", "A", "fake") == "a-fake.mp4"
+    assert resolve_pair_video(index, "P", "B", "real") == "b-real.mp4"
+
+
+def test_pair_index_rejects_conflicting_composite_identity():
+    records = [_pair("P", "A", "a-real.mp4", "a-fake.mp4"), _pair("P", "A", "other.mp4", "a-fake.mp4")]
+    try:
+        build_pair_index(records)
+    except PairIdentityConflict:
+        pass
+    else:
+        raise AssertionError("conflicting composite identity was accepted")
+
+
+def test_pair_index_does_not_fallback_to_pair_id_for_missing_source():
+    index = build_pair_index([_pair("P", "A", "a-real.mp4", "a-fake.mp4")])
+    try:
+        resolve_pair_video(index, "P", "MISSING", "real")
+    except KeyError:
+        pass
+    else:
+        raise AssertionError("missing source unexpectedly used pair_id fallback")
+
+
+def test_pair_index_exact_duplicate_is_deduplicated():
+    index = build_pair_index([_pair("P", "A", "a-real.mp4", "a-fake.mp4")] * 2)
+    assert len(index) == 1
+
+
+def test_frame_cache_key_includes_video_content_identity(tmp_path):
+    a = tmp_path / "a.mp4"
+    b = tmp_path / "b.mp4"
+    a.write_bytes(b"video-a")
+    b.write_bytes(b"video-b")
+    assert _frame_cache_key(str(a), 12) != _frame_cache_key(str(b), 12)

@@ -172,7 +172,19 @@ def extract_window(
     out_npz = output / "frontend" / f"{safe}.npz"
     out_json = output / "frontend" / f"{safe}.json"
     if out_npz.exists() and out_json.exists() and not overwrite:
-        return read_json(out_json)
+        cached = read_json(out_json)
+        expected_frames = [int(x) for x in row.get("v8_frame_indices", row["frame_indices"][:FRAME_COUNT])]
+        expected_sha = sha256_file(str(row["video_path"]))
+        if (
+            cached.get("status") == "FRONTEND_COMPLETE"
+            and cached.get("window_id") == wid
+            and cached.get("source_id") == row.get("source_id")
+            and cached.get("role") == row.get("role")
+            and cached.get("video_sha256") == expected_sha
+            and [int(x) for x in cached.get("frame_indices", [])] == expected_frames
+        ):
+            return cached
+        raise RuntimeError(f"FRONTEND_CACHE_IDENTITY_MISMATCH:{wid}")
 
     video_path = str(row["video_path"])
     cap = cv2.VideoCapture(video_path)
@@ -278,6 +290,7 @@ def extract_window(
         "status": "FRONTEND_COMPLETE",
         "window_id": wid,
         "source_id": row["source_id"],
+        "pair_id": row.get("pair_id"),
         "role": row["role"],
         "label": int(row["label"]),
         "video_path": video_path,
