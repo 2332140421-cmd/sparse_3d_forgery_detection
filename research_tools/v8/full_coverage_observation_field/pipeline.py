@@ -189,7 +189,18 @@ def run_plan(out: Path, geometry_root: Path, source_root: Path, moge_checkpoint:
 
 
 def _failure(out: Path, stage: str, exc: BaseException) -> None:
-    _stage(out, stage, "FAILED", error=f"{type(exc).__name__}: {exc}", traceback=traceback.format_exc())
+    error = f"{type(exc).__name__}: {exc}"
+    tb = traceback.format_exc()
+    # An exception raised inside an all-stage call used to leave the nested
+    # stage marked RUNNING forever.  Preserve the traceback, but close every
+    # stage that was actually in flight so a resume decision is unambiguous.
+    status = _load_status(out)
+    for name, info in status.get("stages", {}).items():
+        if info.get("status") == "RUNNING":
+            info.update(status="FAILED", error=error, traceback=tb)
+    status["status"] = "FAILED"
+    status["updated_unix"] = _now()
+    write_json_atomic(_status_path(out), status)
     write_json_atomic(out / "final_status.json", {"status": "FAILED", "failed_stage": stage, "error": f"{type(exc).__name__}: {exc}", "updated_unix": _now()})
 
 
@@ -498,7 +509,11 @@ def _predict(model: FullCoverageModel, loader: torch.utils.data.DataLoader, devi
         for b in loader:
             b = _move_batch(b, device)
             out=model(b["x"],b["component_ids"],b["predecessor"],b["association_weight"],b["history_available"],b["delta_t"],b["area"])
-            scores.extend(out.detach().cpu().numpy().tolist()); labels.extend(b["label"].numpy().tolist()); ids.extend(b["window_id"]); sources.extend(b["source"])
+            # The complete numeric batch is intentionally on CUDA for the
+            # forward pass.  Only the small metric arrays cross back to CPU.
+            scores.extend(out.detach().cpu().numpy().tolist())
+            labels.extend(b["label"].detach().cpu().numpy().tolist())
+            ids.extend(b["window_id"]); sources.extend(b["source"])
     return np.asarray(scores,float), ids, sources, np.asarray(labels,int)
 
 
@@ -525,11 +540,49 @@ def run_train(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> No
             with np.load(out / "features" / f"{_safe_name(train_rows[0]['window_id'])}.npz", allow_pickle=False) as z:
                 input_dim = int(z[key].shape[-1])
             model = FullCoverageModel(condition, input_dim).to(device)
-            opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
             gen = torch.Generator().manual_seed(seed)
             pin = str(device).startswith("cuda") and torch.cuda.is_available()
             loader = torch.utils.data.DataLoader(ds, batch_size=8, shuffle=True, generator=gen, collate_fn=_collate, num_workers=0, pin_memory=pin)
             vloader = torch.utils.data.DataLoader(val_ds, batch_size=8, shuffle=False, collate_fn=_collate, num_workers=0, pin_memory=pin)
+            ckpt = model_dir / f"{condition}__seed{seed}.pt"
+
+            # A prior run can fail after saving a complete model but before
+            # writing its score arrays.  Reuse only a checkpoint whose method,
+            # seed, input shape, epoch and fitted standardizer all match this
+            # invocation; otherwise train normally and leave the old file as
+            # evidence rather than silently treating it as compatible.
+            resumed = False
+            resumed_payload: dict[str, Any] | None = None
+            if ckpt.exists():
+                try:
+                    payload = torch.load(ckpt, map_location="cpu")
+                    saved_mean = np.asarray(payload["mean"], dtype=np.float32)
+                    saved_scale = np.asarray(payload["scale"], dtype=np.float32)
+                    if (payload.get("condition") != condition or int(payload.get("seed", -1)) != int(seed)
+                            or int(payload.get("input_dim", -1)) != input_dim
+                            or int(payload.get("epoch", 0)) < 100
+                            or not np.array_equal(saved_mean, mean)
+                            or not np.array_equal(saved_scale, scale)):
+                        raise ValueError("checkpoint identity or fitted standardizer mismatch")
+                    model.load_state_dict(payload["model"], strict=True)
+                    resumed = True
+                    resumed_payload = payload
+                except Exception as exc:
+                    print(f"[V8] not reusing {ckpt.name}: {type(exc).__name__}: {exc}", flush=True)
+
+            if resumed:
+                history = [float(x) for x in (resumed_payload or {}).get("loss_history", [])]
+                train_eval_loader = torch.utils.data.DataLoader(ds, batch_size=8, shuffle=False, collate_fn=_collate, pin_memory=pin)
+                train_scores, train_ids, train_sources, train_labels = _predict(model, train_eval_loader, device)
+                val_scores, val_ids, val_sources, val_labels = _predict(model, vloader, device)
+                np.savez_compressed(model_dir / f"scores__{condition}__seed{seed}.npz", train_scores=train_scores, train_labels=train_labels, val_scores=val_scores, val_labels=val_labels)
+                records.append({"condition":condition,"seed":seed,"status":"COMPLETE","epoch":100,"parameter_count":parameter_count(model),"trainable_parameter_count":sum(p.numel() for p in model.parameters() if p.requires_grad),"rgb_backbone":"precomputed frozen ResNet18 layer1","input_dim":input_dim,"train_windows":len(train_rows),"validation_windows":len(val_rows),"elapsed_s":None,"checkpoint":str(ckpt),"loss_first":history[0] if history else None,"loss_last":history[-1] if history else None,"resumed_from_checkpoint":True})
+                completed += 1
+                write_json_atomic(model_dir / "fold_models.json", {"planned":6,"completed":completed,"failed":failed,"records":records})
+                _stage(out,"train","RUNNING",planned=6,completed=completed,failed=failed,condition=condition,seed=seed,epoch=100,resumed_from_checkpoint=True)
+                continue
+
+            opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
             history=[]; started=_now()
             for epoch in range(100):
                 model.train(); losses=[]
@@ -546,7 +599,6 @@ def run_train(out: Path, rows: list[dict[str, Any]], device: str = "cuda") -> No
                 _stage(out,"train","RUNNING",planned=6,completed=completed,failed=failed,condition=condition,seed=seed,epoch=epoch+1,elapsed_s=_now()-started)
                 if (epoch + 1) % 10 == 0:
                     torch.save({"condition":condition,"seed":seed,"input_dim":input_dim,"model":model.state_dict(),"optimizer":opt.state_dict(),"epoch":epoch+1,"mean":mean,"scale":scale,"parameter_count":parameter_count(model),"loss_history":history,"checkpoint_kind":"epoch_resume"}, model_dir / f"{condition}__seed{seed}.last.pt")
-            ckpt=model_dir / f"{condition}__seed{seed}.pt"
             torch.save({"condition":condition,"seed":seed,"input_dim":input_dim,"model":model.state_dict(),"optimizer":opt.state_dict(),"epoch":100,"mean":mean,"scale":scale,"parameter_count":parameter_count(model),"loss_history":history},ckpt)
             train_scores, train_ids, train_sources, train_labels = _predict(model, torch.utils.data.DataLoader(ds,batch_size=8,shuffle=False,collate_fn=_collate,pin_memory=pin), device)
             val_scores, val_ids, val_sources, val_labels = _predict(model, vloader, device)

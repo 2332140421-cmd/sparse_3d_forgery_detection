@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 
 from research_tools.v8.full_coverage_observation_field.common import CELL_COUNT, GRID_H, GRID_W, cell_neighbors
 from research_tools.v8.full_coverage_observation_field.model import FullCoverageModel
+from research_tools.v8.full_coverage_observation_field.pipeline import _predict
 
 
 def _batch(dim=13, b=2):
@@ -97,3 +98,14 @@ def test_vectorized_component_pool_matches_reference():
             reference[bi, mask] = h[bi, mask].mean(dim=0)
     assert torch.allclose(pooled, reference, atol=1e-6, rtol=1e-6)
     assert torch.equal(counts, torch.tensor(ref_counts, dtype=torch.float32))
+
+
+def test_predict_moves_metric_labels_back_to_cpu():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = FullCoverageModel("RGB_2D", 7).to(device).eval()
+    batch = _batch(7, 1)
+    batch.update({"label": torch.tensor([1.0]), "source": ["S"], "window_id": ["W"]})
+    scores, ids, sources, labels = _predict(model, [batch], device)
+    assert scores.shape == (1,)
+    assert ids == ["W"] and sources == ["S"]
+    assert labels.tolist() == [1]
