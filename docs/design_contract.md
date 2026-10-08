@@ -447,3 +447,11 @@ ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和
 
 该段明确的是工程隔离和版本优先级，不把 V8 的全覆盖区域解释为物理部位，也
 不把其前端 mask 或模型热图解释为像素级伪造真值。
+
+### 14.1 V8 局部几何匹配 pilot
+
+在用户授权的 `v8-local-geometry-encoding` 分支中，独立执行真实格内XYZ与
+格均值复制的两条件对照。该分支新增可学习patch编码和公共padding隔离，以
+`docs/v8/local_geometry_contract.md`、ADR-0014为准；不改变identity-fix六模型
+的实现、产物或历史结果。V8范围内显式geometry状态是已授权的模型输入，
+不套用V7稀疏ParticleSequence主链的mask输入限制。

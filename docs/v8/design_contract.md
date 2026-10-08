@@ -42,3 +42,9 @@ FULL 使用冻结 ImageNet ResNet18 feature map 的格级 RGB 特征、dense 几
 报告仅使用窗口级分类指标和统一尺度证据图。热图是弱监督模型响应，不能称像素
 级检测或伪造 mask；相机坐标 apparent motion 不是世界物理速度。V8 队列沿用开发
 实验窗口，不能称独立 sealed test。
+
+## 局部几何匹配 pilot 的独立扩展
+
+`v8-local-geometry-encoding` 分支按 `local_geometry_contract.md` 和ADR-0014
+执行两个等容量条件，并共同修正padding路径。上述identity-fix原基准仍保持原样；
+新条件不称为对原模型的无条件替换，差异以新独立protocol记录。
