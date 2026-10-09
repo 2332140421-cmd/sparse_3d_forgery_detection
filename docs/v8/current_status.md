@@ -27,3 +27,7 @@ V8 的目标是面向全视频连续帧：每个约定处理帧的全部真实�
 ## 下一步边界
 
 下一次只应先验证“格内mean之前的轻量局部XYZ编码”是否提供增量，并与mean-replicated等容量控制匹配。独立全视频连续帧接口应作为另一项后续工作，不能与局部几何改造同时进入一个正式比较。
+
+## 后续独立工程验收记录
+
+`v8-full-video-streaming`分支已完成独立的一对1LARL real/fake连续帧工程pilot，共1828帧，跨块保持hidden，冻结MEAN_REPLICATED模型，无训练或新性能评价。该范围不替换上述窗口正式基准，也不代表272视频全量完成。详见`docs/experiments/v8-full-video-streaming-pilot.md`。

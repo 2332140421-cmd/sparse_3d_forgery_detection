@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -13,7 +14,8 @@ from research_tools.v8.local_geometry_pilot.model import LocalGeometryModel
 from research_tools.v8.full_video_streaming.model import frame_at,StreamingModel
 from research_tools.v8.full_video_streaming.validation import validate_window,validate_continuous
 from research_tools.v8.full_video_streaming.inputs import tracker_summary,patch,decode,Frontend
-from research_tools.v8.full_video_streaming.runner import checkpoint_block
+from research_tools.v8.full_video_streaming.runner import checkpoint_block,process_video
+from research_tools.v8.full_video_streaming.completion import finalize
 
 torch.set_num_threads(2)
 STATS={'absolute_mean':[0.,0.,0.],'absolute_scale':[1.,1.,1.],'relative_scale':[1.,1.,1.]}
@@ -81,3 +83,25 @@ def test_provider_numeric_flags_restore_detector(monkeypatch):
         assert f.clock('geometry_s',lambda:torch.backends.cudnn.allow_tf32) is True
         assert torch.backends.cudnn.allow_tf32 is False
     finally: torch.backends.cudnn.allow_tf32=old
+
+
+def test_resume_rejects_wrong_statistics_or_video(tmp_path):
+    row={'video_id':'expected','video_sha256':'sha'}
+    path=tmp_path/'responses'/'expected';path.mkdir(parents=True)
+    for fields in ({'identity':'wrong-stat-config','video_id':'expected','video_sha256':'sha'},
+                   {'identity':'id','video_id':'other-video','video_sha256':'sha'},
+                   {'identity':'id','video_id':'expected','video_sha256':'wrong-sha'}):
+        torch.save(fields,path/'state.pt')
+        with pytest.raises(ValueError,match='STATE_IDENTITY_MISMATCH'):
+            process_video(row,tmp_path,None,None,'id')
+
+
+def test_completion_closes_progress_without_false_success(tmp_path):
+    p=tmp_path/'final_status.json'
+    s={'status':'RUNNING'};p.write_text(json.dumps(s))
+    with pytest.raises(ValueError,match='INCOMPLETE'):finalize(tmp_path)
+    s={'status':'COMPLETE','completion_scope':'two_video_engineering_pilot','completed_video_count':2,
+       'decoded_frame_count':1828,'frontend_frame_count':1828,'response_frame_count':1828}
+    p.write_text(json.dumps(s));finalize(tmp_path)
+    assert json.loads(p.read_text())['training_started'] is False
+    assert json.loads((tmp_path/'progress.json').read_text())['status']=='COMPLETE'
