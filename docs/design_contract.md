@@ -455,3 +455,9 @@ ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和
 `docs/v8/local_geometry_contract.md`、ADR-0014为准；不改变identity-fix六模型
 的实现、产物或历史结果。V8范围内显式geometry状态是已授权的模型输入，
 不套用V7稀疏ParticleSequence主链的mask输入限制。
+
+### 14.2 V8 全视频流式工程 pilot
+
+用户授权的 `v8-full-video-streaming` 分支按ADR-0015建立全部原始解码帧队列与
+冻结V8模型的逐帧状态接口，仅完整处理一对开发训练视频。不改变模型参数、旧训练
+协议或旧结果；不将连续帧工程响应宣称为经验证的全视频检测或帧/像素定位性能。

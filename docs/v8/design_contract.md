@@ -48,3 +48,12 @@ FULL 使用冻结 ImageNet ResNet18 feature map 的格级 RGB 特征、dense 几
 `v8-local-geometry-encoding` 分支按 `local_geometry_contract.md` 和ADR-0014
 执行两个等容量条件，并共同修正padding路径。上述identity-fix原基准仍保持原样；
 新条件不称为对原模型的无条件替换，差异以新独立protocol记录。
+
+## 全视频连续帧工程接口
+
+`v8-full-video-streaming` / ADR-0015 将旧窗口之外的全部正常解码帧作为处理队列。
+独立入口复用冻结MEAN_REPLICATED seed20260909权重、统计与分组规则；仅真正视频首帧
+初始化hidden，计算块跨边界保留hidden、前驱active、前两帧上下文和log域视频累计量。
+frame/video响应均为beta=1面积加权LSE。无未来统计拟合，无正式训练，无全量视频提取。
+帧间隔、历史长度和聚合范围分布已变化，因此这里只验证工程合同，不能沿用窗口指标
+作为全视频分类或定位证据。原窗口和identityfix结果不修改。
