@@ -31,3 +31,12 @@ V8 的目标是面向全视频连续帧：每个约定处理帧的全部真实�
 ## 后续独立工程验收记录
 
 `v8-full-video-streaming`分支已完成独立的一对1LARL real/fake连续帧工程pilot，共1828帧，跨块保持hidden，冻结MEAN_REPLICATED模型，无训练或新性能评价。该范围不替换上述窗口正式基准，也不代表272视频全量完成。详见`docs/experiments/v8-full-video-streaming-pilot.md`。
+
+## 后续全帧区域关系匹配对照
+
+`v8-component-global-context`已完成同801窗口的6模型/100 epochs对照。动态component
+与singleton格共享同层全帧attention及MEAN_REPLICATED、cell时间路径；只改变区域分区。
+集成验证macro为0.896825/0.904762，主差−0.007937，95% CI [−0.150794,0.126984]；
+pooled为0.856562/0.721835，辅助AP/F1亦改善。当前没有稳定macro分组增益证据，不否认
+辅助正向信号；不将历史差值归因于attention。旧结果与streaming接口未改。
+完整记录见`docs/experiments/v8-component-global-context-pilot.md`，本轮已结束。
