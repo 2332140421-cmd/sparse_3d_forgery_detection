@@ -461,3 +461,10 @@ ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和
 用户授权的 `v8-full-video-streaming` 分支按ADR-0015建立全部原始解码帧队列与
 冻结V8模型的逐帧状态接口，仅完整处理一对开发训练视频。不改变模型参数、旧训练
 协议或旧结果；不将连续帧工程响应宣称为经验证的全视频检测或帧/像素定位性能。
+
+### 14.3 V8 全帧区域关系匹配对照
+
+用户授权的 `v8-component-global-context` 按ADR-0016与
+`docs/v8/component_global_context_contract.md`，在同MEAN_REPLICATED输入和cell时间路径下，
+以共用单层同帧attention比较动态component与singleton格分区。仅扩展独立V8实验；
+不改旧方法、全视频接口或正式src，不恢复V7数值资产。

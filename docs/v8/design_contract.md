@@ -57,3 +57,10 @@ FULL 使用冻结 ImageNet ResNet18 feature map 的格级 RGB 特征、dense 几
 frame/video响应均为beta=1面积加权LSE。无未来统计拟合，无正式训练，无全量视频提取。
 帧间隔、历史长度和聚合范围分布已变化，因此这里只验证工程合同，不能沿用窗口指标
 作为全视频分类或定位证据。原窗口和identityfix结果不修改。
+
+## 全帧区域关系匹配对照
+
+`v8-component-global-context` / ADR-0016 在同MEAN_REPLICATED格输入上，以同区域
+投影、单层4头attention、区域广播和原cell时间路径比较动态component与singleton格。
+具体以`component_global_context_contract.md`为准。本扩展替换新条件中的旧component
+residual路径，不叠加两次；不修改旧基准行为，亦不把历史差值解释为独立attention收益。
