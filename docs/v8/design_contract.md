@@ -64,3 +64,10 @@ frame/video响应均为beta=1面积加权LSE。无未来统计拟合，无正式
 投影、单层4头attention、区域广播和原cell时间路径比较动态component与singleton格。
 具体以`component_global_context_contract.md`为准。本扩展替换新条件中的旧component
 residual路径，不叠加两次；不修改旧基准行为，亦不把历史差值解释为独立attention收益。
+
+## 全视频全帧关系冻结评价
+
+`v8-full-video-global-context` / ADR-0017使用六个epoch100模型和原统计，覆盖冻结272
+视频全部正常解码帧。真实attention保留，hidden跨64帧块延续；各seed独立视频LSE后
+平均最终logit。主指标validation pooled video AUROC；无训练、拟合或阈值修改。
+紧凑mean/mask/shared缓存不改变MEAN_REPLICATED语义。

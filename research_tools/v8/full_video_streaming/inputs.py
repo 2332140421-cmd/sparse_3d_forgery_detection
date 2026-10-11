@@ -109,9 +109,10 @@ def tracker_summary(result, context_indices, previous_active, active):
 
 
 class Frontend:
-    def __init__(self, base, out, moge, tracker, rgb, statistics, grouping, config_id):
+    def __init__(self, base, out, moge, tracker, rgb, statistics, grouping, config_id, persist_raw=True):
         self.base,self.out,self.moge,self.tracker,self.rgb=base,out,moge,tracker,rgb
         self.stats,self.grouping,self.config_id=statistics,grouping,config_id
+        self.persist_raw=persist_raw
         self.cost={'geometry_s':0.,'rgb_s':0.,'tracking_s':0.,'features_s':0.,'write_s':0.,'cache_hit':0,'new_geometry':0,'cache_rejected':0}
 
     def clock(self, name, fn):
@@ -129,7 +130,8 @@ class Frontend:
         content=np.zeros((256,256),bool); left,top=mapping['pad_xy']; h,w=mapping['content_hw']; content[top:top+h,left:left+w]=True
         key=hashlib.sha256(f"{row['video_sha256']}:{fi}:v8-canvas256".encode()).hexdigest()[:24]
         old=self.base/'raw_frontend'/'frames'/f'{key}.npz'
-        new=self.out/'frames'/row['video_id']/f'{fi:06d}.npz'; new.parent.mkdir(parents=True,exist_ok=True)
+        new=self.out/'frames'/row['video_id']/f'{fi:06d}.npz'
+        if self.persist_raw: new.parent.mkdir(parents=True,exist_ok=True)
         points=valid=None; origin=None
         if new.exists():
             meta=read_json(new.with_suffix('.json'))
@@ -151,12 +153,13 @@ class Frontend:
                 r=self.clock('geometry_s',lambda:self.moge.infer(canvas))
                 points,valid,depth=r['points_raw'],r['validity'],r['depth_raw'];self.cost['new_geometry']+=1
             rgb_map=self.clock('rgb_s',lambda:self.rgb.encode(canvas[None,:,:,::-1].copy()))[0]
-            ts=time.monotonic()
-            write_npz_atomic(new,rgb=canvas,points_raw=points,validity=valid,depth_raw=depth,rgb_map=rgb_map)
-            write_json_atomic(new.with_suffix('.json'),{**frame_info,'video_sha256':row['video_sha256'],'mapping':mapping,
+            if self.persist_raw:
+                ts=time.monotonic()
+                write_npz_atomic(new,rgb=canvas,points_raw=points,validity=valid,depth_raw=depth,rgb_map=rgb_map)
+                write_json_atomic(new.with_suffix('.json'),{**frame_info,'video_sha256':row['video_sha256'],'mapping':mapping,
                                 'config_id':self.config_id,'old_geometry_source':origin,'old_geometry_sha256':sha256_file(origin) if origin else None,
                                 'canvas_sha256':hashlib.sha256(canvas.tobytes()).hexdigest(),'npz_sha256':sha256_file(new)})
-            self.cost['write_s']+=time.monotonic()-ts
+                self.cost['write_s']+=time.monotonic()-ts
         prefix=(context+[(fi,canvas[:,:,::-1].copy())])[-3:]
         tr=self.clock('tracking_s',lambda:self.tracker.query([x[1] for x in prefix],len(prefix)-1))
         ts=time.monotonic(); cp=patch(content); area=cp.sum((1,2)).astype(np.float32); active=area>0

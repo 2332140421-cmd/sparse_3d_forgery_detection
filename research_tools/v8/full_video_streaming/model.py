@@ -10,12 +10,9 @@ class StreamingModel:
     def __init__(self, model):
         self.model = model.eval()
 
-    @torch.inference_mode()
-    def forward_step(self, frame, state=None):
+    def encode_spatial(self, frame):
         m = self.model
         x = frame['x']; b, n, _ = x.shape
-        if b != 1 or n != 256:
-            raise ValueError('STREAM_REQUIRES_ONE_FRAME_256_CELLS')
         active = frame['area'] > 0
         patches = geometry_input(frame['xyz'][:, None], frame['valid'][:, None], frame['content'][:, None],
                                  frame['mu'][:, None], m.absolute_mean, m.absolute_scale, m.relative_scale, m.pilot_condition)
@@ -25,7 +22,16 @@ class StreamingModel:
         if selected.any():
             geom[selected] = m.patch_encoder(patches[selected], cm[selected])
         h = m.cell_encoder(torch.cat((torch.where(active[..., None], x, 0.), geom[None]), -1))
-        h = m._spatial_content(h, frame['component_ids'], active)
+        return m._spatial_content(h, frame['component_ids'], active)
+
+    @torch.inference_mode()
+    def forward_step(self, frame, state=None):
+        m = self.model
+        x = frame['x']; b, n, _ = x.shape
+        if b != 1 or n != 256:
+            raise ValueError('STREAM_REQUIRES_ONE_FRAME_256_CELLS')
+        active = frame['area'] > 0
+        h = self.encode_spatial(frame)
         if state is None:
             prev = torch.zeros((b, n, 128), device=x.device, dtype=x.dtype)
             aux = torch.zeros((b, n, 4), device=x.device, dtype=x.dtype)

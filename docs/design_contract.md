@@ -468,3 +468,9 @@ ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和
 `docs/v8/component_global_context_contract.md`，在同MEAN_REPLICATED输入和cell时间路径下，
 以共用单层同帧attention比较动态component与singleton格分区。仅扩展独立V8实验；
 不改旧方法、全视频接口或正式src，不恢复V7数值资产。
+
+### 14.4 V8 全视频全帧关系冻结评价
+
+用户授权的`v8-full-video-global-context`按ADR-0017，将六个已完成全帧关系模型应用
+于272视频全部解码帧。复用真实attention与原因果GRU，独立紧凑缓存；无训练或统计
+修改。新视频级评价不替代旧窗口主指标，不展开帧/像素标签。
