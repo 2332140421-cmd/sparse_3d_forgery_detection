@@ -48,11 +48,13 @@ checkpoint开关loss/梯度一致、跨块hidden梯度、直接LSE和optimizer/R
 独立启动（只能存在一个任务，内部运行锁防重）：
 
 ```bash
-nohup bash scripts/run_v8_full_video_training.sh > /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_v1/run.log 2>&1 < /dev/null &
+screen -dmS v8_full_video_training bash -c 'cd /root/autodl-tmp/projects/sparse_3d_forgery_detection && exec bash scripts/run_v8_full_video_training.sh >> /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_v1/run.log 2>&1'
 ```
 
 安全停止向`progress.json`中本轮真实PID发送TERM，完成当前source pair并原子保存后退出。
 恢复执行同一脚本。恢复模型/optimizer/RNG/source顺序和pair索引，不重做已提交pair。
+本服务器已验证screen独立运行，恢复日志从pair=2开始，并继续推进到pair=3。
+未采用未能存活的nohup启动。查看：`screen -ls`及输出目录`progress.json`/`run.log`。
 
 产物根：`/root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_v1/`。
 `final_status.json`才表示整轮状态；`report.md`及`evaluation/summary.json`由六模型及
