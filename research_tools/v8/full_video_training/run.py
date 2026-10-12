@@ -17,6 +17,7 @@ from research_tools.v8.component_global_context_pilot.model import GlobalContext
 from research_tools.v8.component_global_context_pilot.run import save_json
 from research_tools.v8.full_coverage_observation_field.common import read_json, sha256_file
 from research_tools.v8.full_video_global_context.evaluate import evaluate, paired_pooled, SEEDS
+from research_tools.v8.full_coverage_observation_field.pipeline import _metric
 from research_tools.v8.local_geometry_pilot.data import digest
 from research_tools.v8.local_geometry_pilot.runner import atomic_torch, seed_all, rng_state, restore_rng, csv_rows
 from .data import audit, load_video
@@ -147,11 +148,13 @@ def reproduce(out,base,cache,rows,identity,chunk,progress):
               'max_absolute_error':max(r['absolute_error'] for r in records),'tolerance':2e-5})
 
 
-def train(out,base,rows,identity,chunk,run_identity,progress,resume):
+def train(out,base,rows,identity,chunk,run_identity,progress,resume,conditions=None,epochs=20):
+    conditions=CONDITIONS if conditions is None else tuple(conditions)
+    planned=len(conditions)*len(SEEDS)
     sources=sorted({r['source_id'] for r in rows if r['split']=='train'})
     pairs={s:sorted([r for r in rows if r['split']=='train' and r['source_id']==s],key=lambda r:r['role']) for s in sources}
     directory=out/'models';directory.mkdir(exist_ok=True);records=[]
-    for c in CONDITIONS:
+    for c in conditions:
         for seed in SEEDS:
             key=f'{c}__seed{seed}';final=directory/f'{key}.pt';recovery=directory/f'{key}.recovery.pt'
             model,initial=load_model(base,c,seed);model.train();seed_all(seed)
@@ -167,12 +170,13 @@ def train(out,base,rows,identity,chunk,run_identity,progress,resume):
                 restore_rng(cp['rng']);order_rng.set_state(cp['order_rng']);start_epoch=cp['epoch'];pair_index=cp['pair_index']
                 order=cp['order'];loss_history=cp['loss_history'];epoch_loss=cp['epoch_loss'];elapsed=cp['training_elapsed_s']
             clock=time.monotonic()
-            for epoch in range(start_epoch,20):
+            if start_epoch>epochs or (start_epoch==epochs and pair_index):raise ValueError('CHECKPOINT_EXCEEDS_TARGET_EPOCH')
+            for epoch in range(start_epoch,epochs):
                 if pair_index==0:order=torch.randperm(len(sources),generator=order_rng).tolist()
                 for j in range(pair_index,len(sources)):
                     source=sources[order[j]];optimizer.zero_grad(set_to_none=True);loss=0.
                     for row in pairs[source]:
-                        progress('train',len(records),6,condition=c,seed=seed,epoch=epoch+1,pair=j+1,pairs=122,video=row['video_id'])
+                        progress('train',len(records),planned,condition=c,seed=seed,epoch=epoch+1,target_epochs=epochs,pair=j+1,pairs=len(sources),video=row['video_id'])
                         detail=step_video(model,row,identity,chunk);loss+=detail['loss']
                     torch.nn.utils.clip_grad_norm_(model.parameters(),1.);optimizer.step();epoch_loss+=loss
                     next_epoch=epoch;next_pair=j+1
@@ -187,10 +191,10 @@ def train(out,base,rows,identity,chunk,run_identity,progress,resume):
                     if STOP:raise InterruptedError('SAFE_TERM_AFTER_SOURCE_PAIR')
                 pair_index=0
             payload=torch.load(final if final.exists() else recovery,map_location='cpu',weights_only=False)
-            if payload['epoch']!=20 or payload['pair_index']!=0 or len(payload['loss_history'])!=20:
+            if payload['epoch']!=epochs or payload['pair_index']!=0 or len(payload['loss_history'])!=epochs:
                 raise ValueError('FINAL_EPOCH_INCOMPLETE')
             atomic_torch(final,payload)
-            records.append({'condition':c,'seed':seed,'status':'COMPLETE','epoch':20,'checkpoint':str(final),
+            records.append({'condition':c,'seed':seed,'status':'COMPLETE','epoch':epochs,'checkpoint':str(final),
                             'checkpoint_sha256':sha256_file(final),'training_elapsed_s':payload['training_elapsed_s'],
                             'loss_history':payload['loss_history'],'parameter_count':319969,'identity':expected})
             save_json(directory/'fold_models.json',{'records':records})
@@ -199,6 +203,9 @@ def train(out,base,rows,identity,chunk,run_identity,progress,resume):
 
 
 def score(out,base,cache,rows,identity,chunk,records,progress):
+    conditions=tuple(dict.fromkeys(r['condition'] for r in records))
+    if {(r['condition'],r['seed']) for r in records}!={(c,s) for c in conditions for s in SEEDS}:
+        raise ValueError('INCOMPLETE_SCORING_MODEL_SET')
     path=out/'scores.json';saved=read_json(path) if path.exists() else {r['video_id']:{'video_logits':{}} for r in rows}
     for record in records:
         c,seed=record['condition'],record['seed'];key=f'{c}__seed{seed}'
@@ -211,24 +218,100 @@ def score(out,base,cache,rows,identity,chunk,records,progress):
                 saved[r['video_id']]['video_logits'][key]=z;save_json(path,saved);del cpu
             progress('score',i+1,len(rows),condition=c,seed=seed)
         del model
-    result=evaluate(out,rows,[saved[r['video_id']] for r in rows])
-    result['primary']='pooled video AUROC; epoch20 complete-video fine-tuning after window pretraining'
+    result=evaluate(out,rows,[saved[r['video_id']] for r in rows],conditions=conditions)
+    result['primary']=('pooled video AUROC; fine-tuned COMPONENT minus frozen COMPONENT' if len(conditions)==1 else
+                       'pooled video AUROC; fine-tuned COMPONENT minus fine-tuned CELL')
     with (cache/'evaluation/video_scores.csv').open() as f:
-        old={(r['condition'],r['video_id']):float(r['logit']) for r in csv.DictReader(f) if r['seed']=='MEAN_VIDEO_LOGIT'}
+        old_rows=list(csv.DictReader(f))
+    old={(r['condition'],r['video_id']):float(r['logit']) for r in old_rows if r['seed']=='MEAN_VIDEO_LOGIT'}
+    original={(r['condition'],r['seed'],r['video_id']):r for r in old_rows}
+    for r in rows:
+        for c in conditions:
+            for seed in [*map(str,SEEDS),'MEAN_VIDEO_LOGIT']:
+                old_row=original[(c,seed,r['video_id'])]
+                if old_row['source']!=r['source_id'] or int(old_row['label'])!=r['video_label'] or old_row['split']!=r['split']:
+                    raise ValueError('FROZEN_SCORE_VIDEO_IDENTITY')
     val=[r for r in rows if r['split']=='validation'];vv=[{**r,'label':r['video_label']} for r in val]
     result['post_minus_frozen']={c:paired_pooled(vv,np.array([np.mean([saved[r['video_id']]['video_logits'][f'{c}__seed{s}'] for s in SEEDS]) for r in val]),
-                                                   np.array([old[(c,r['video_id'])] for r in val])) for c in CONDITIONS}
+                                                   np.array([old[(c,r['video_id'])] for r in val])) for c in conditions}
+    result['frozen_metrics']=[]
+    for c in conditions:
+        for split in ('train','validation'):
+            rr=[r for r in rows if r['split']==split];yy=np.array([r['video_label'] for r in rr])
+            for seed in [*map(str,SEEDS),'MEAN_VIDEO_LOGIT']:
+                zz=np.array([float(original[(c,seed,r['video_id'])]['logit']) for r in rr])
+                result['frozen_metrics'].append({'condition':c,'split':split,'seed':seed,**_metric(yy,zz)})
     result['seed_differences']=[]
     for seed in SEEDS:
         mm={r['condition']:r for r in result['metrics'] if r['split']=='validation' and r['seed']==seed}
-        result['seed_differences'].append({'seed':seed,**{k:mm[CONDITIONS[0]][k]-mm[CONDITIONS[1]][k] for k in ('auroc','ap','f1','accuracy')}})
+        comparator=(mm[conditions[1]] if len(conditions)==2 else next(r for r in result['frozen_metrics'] if
+                    r['condition']==conditions[0] and r['split']=='validation' and r['seed']==str(seed)))
+        result['seed_differences'].append({'seed':seed,**{k:mm[conditions[0]][k]-comparator[k] for k in ('auroc','ap','f1','accuracy')}})
+    if len(conditions)==1:
+        result['paired_comparison']=result['post_minus_frozen'][conditions[0]]
+        per_source=[]
+        for source in sorted({r['source_id'] for r in val}):
+            pair=sorted([r for r in val if r['source_id']==source],key=lambda r:r['video_label'])
+            z=np.array([np.mean([saved[r['video_id']]['video_logits'][f'{conditions[0]}__seed{s}'] for s in SEEDS]) for r in pair])
+            oz=np.array([old[(conditions[0],r['video_id'])] for r in pair])
+            a=float((z[1]>z[0])+.5*(z[1]==z[0]));b=float((oz[1]>oz[0])+.5*(oz[1]==oz[0]))
+            per_source.append({'source':source,'fine_tuned_pair_auroc':a,'frozen_pair_auroc':b,'difference':a-b,'n_real':1,'n_fake':1})
+        csv_rows(out/'evaluation/per_source_differences.csv',per_source)
+        result['source_directions']={k:sum((r['difference']>0 if k=='positive' else r['difference']<0 if k=='negative' else r['difference']==0) for r in per_source) for k in ('positive','tie','negative')}
     save_json(out/'evaluation/summary.json',result)
     return result
 
 
+def migrate_scope(source,out,protocol,base,conditions,epochs):
+    """Explicitly change only model scope/target epochs, keeping committed training state."""
+    previous=read_json(source/'protocol.json')
+    if {k:v for k,v in previous.items() if k not in ('conditions','epochs')}!={k:v for k,v in protocol.items() if k not in ('conditions','epochs')}:
+        raise ValueError('SCOPE_MIGRATION_CHANGED_COMPUTATION_OR_INPUT')
+    if read_json(source/'execution_config.json')['chunk']!=64:raise ValueError('SCOPE_MIGRATION_CHUNK')
+    if read_json(source/'final_status.json')['status']!='PAUSED_SCOPE_CHANGE':raise ValueError('SOURCE_NOT_PAUSED_FOR_SCOPE_CHANGE')
+    directory=out/'models';directory.mkdir(exist_ok=True)
+    if (out/'scope_migration.json').exists():
+        saved=read_json(out/'scope_migration.json')
+        if saved['old_protocol_sha256']!=sha256_file(source/'protocol.json') or saved['new_protocol_sha256']!=sha256_file(out/'protocol.json'):
+            raise ValueError('MIGRATION_PROVENANCE_CHANGED')
+        return
+    migrated=[]
+    for c in conditions:
+        for seed in SEEDS:
+            path=source/'models'/f'{c}__seed{seed}.recovery.pt'
+            if not path.exists():continue
+            old_hash=sha256_file(path);cp=torch.load(path,map_location='cpu',weights_only=False)
+            _,initial=load_model(base,c,seed,device='cpu')
+            expected={'run_identity':digest(previous),'condition':c,'seed':seed,'initial_sha256':initial['checkpoint_sha256']}
+            if cp['identity']!=expected or cp['chunk']!=64 or cp['parameters']!=319969:
+                raise ValueError('MIGRATION_CHECKPOINT_IDENTITY')
+            if cp['epoch']>epochs or (cp['epoch']==epochs and cp['pair_index']):raise ValueError('MIGRATION_PROGRESS_EXCEEDS_TARGET')
+            if len(cp['loss_history'])!=cp['epoch'] or not 0<=cp['pair_index']<122:raise ValueError('MIGRATION_PROGRESS_FIELDS')
+            if sorted(cp['order'])!=list(range(122)) or not np.isfinite(cp['loss_history']+[cp['epoch_loss'],cp['training_elapsed_s']]).all():
+                raise ValueError('MIGRATION_ORDER_OR_LOSS')
+            for group in cp['optimizer']['param_groups']:
+                if group['lr']!=protocol['lr'] or group['weight_decay']!=protocol['weight_decay'] or tuple(group['betas'])!=(.9,.999):
+                    raise ValueError('MIGRATION_OPTIMIZER')
+            cp['identity']={**expected,'run_identity':digest(protocol)}
+            target=directory/path.name
+            if target.exists():raise ValueError('UNRECORDED_MIGRATION_TARGET_EXISTS')
+            atomic_torch(target,cp)
+            migrated.append({'source':str(path),'source_sha256':old_hash,'target':str(target),'target_sha256':sha256_file(target),
+                             'epoch':cp['epoch'],'next_pair_index':cp['pair_index'],'training_elapsed_s':cp['training_elapsed_s'],
+                             'preserved':'model, optimizer, RNG, order_rng, order, loss_history, epoch_loss, epoch, pair_index, elapsed'})
+    save_json(out/'scope_migration.json',{'source_directory':str(source),'old_protocol_sha256':sha256_file(source/'protocol.json'),
+              'new_protocol_sha256':sha256_file(out/'protocol.json'),'changes':{'conditions':[previous['conditions'],list(conditions)],'epochs':[previous['epochs'],epochs]},
+              'checkpoints':migrated,'migrated_training_elapsed_s':sum(r['training_elapsed_s'] for r in migrated)})
+
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--cache',type=Path,required=True);parser.add_argument('--pretrained',type=Path,required=True)
-    parser.add_argument('--output',type=Path,required=True);parser.add_argument('--resume',action='store_true');args=parser.parse_args()
+    parser.add_argument('--output',type=Path,required=True);parser.add_argument('--resume',action='store_true')
+    parser.add_argument('--conditions',nargs='+',choices=CONDITIONS,default=list(CONDITIONS));parser.add_argument('--epochs',type=int,default=20)
+    parser.add_argument('--migrate-from',type=Path);args=parser.parse_args()
+    if (tuple(args.conditions),args.epochs) not in ((CONDITIONS,20),(('GLOBAL_COMPONENT',),5)):
+        raise ValueError('ONLY_AUTHORIZED_ORIGINAL_OR_BUDGET5_SCOPE')
+    planned=len(args.conditions)*len(SEEDS)
     out=args.output;out.mkdir(parents=True,exist_ok=True)
     lock=(out/'run.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
@@ -244,6 +327,10 @@ def main():
             history.append(read_json(out/'final_status.json'));save_json(out/'run_history.json',history)
         save_json(out/'final_status.json',{'status':'RUNNING','pid':os.getpid(),'started_unix':started})
         print('CUDA',torch.cuda.get_device_name(),flush=True)
+        if args.migrate_from and not (out/'input_manifest.json').exists():
+            save_json(out/'input_manifest.json',read_json(args.migrate_from/'input_manifest.json'))
+            if sha256_file(out/'input_manifest.json')!=sha256_file(args.migrate_from/'input_manifest.json'):
+                raise ValueError('MIGRATION_MANIFEST_CONTENT')
         if (out/'input_manifest.json').exists() and args.resume:
             saved=read_json(out/'input_manifest.json');rows=saved['rows'];cache_protocol=read_json(args.cache/'protocol.json')
             if saved['cache_protocol_sha256']!=sha256_file(args.cache/'protocol.json'):raise ValueError('CACHE_PROTOCOL_CHANGED')
@@ -253,7 +340,7 @@ def main():
         protocol={'cache_identity':cache_protocol['identity'],'input_manifest_sha256':sha256_file(out/'input_manifest.json'),
                   'standardizer_sha256':sha256_file(args.pretrained/'standardizer.json'),'grouping_sha256':sha256_file(args.pretrained/'grouping_config.json'),
                   'pretrained_models_sha256':sha256_file(args.pretrained/'models/fold_models.json'),
-                  'conditions':list(CONDITIONS),'seeds':list(SEEDS),'epochs':20,'optimizer':'AdamW','lr':1e-4,'weight_decay':1e-4,
+                  'conditions':args.conditions,'seeds':list(SEEDS),'epochs':args.epochs,'optimizer':'AdamW','lr':1e-4,'weight_decay':1e-4,
                   'clip':1.,'effective_batch':2,'checkpoint':'non-reentrant; full cross-chunk gradients','threshold':0,'precision':'FP32; TF32 disabled',
                   'loss':'one full-video BCE per video; half real plus half fake per source pair; area LSE beta1'}
         if (out/'protocol.json').exists() and read_json(out/'protocol.json')!=protocol:raise ValueError('PROTOCOL_CHANGED')
@@ -263,18 +350,30 @@ def main():
             p=Path(filename)
             if p.is_relative_to(args.pretrained) and sha256_file(p)!=expected_hash:
                 raise ValueError(f'FROZEN_PRETRAINED_ASSET_CHANGED:{p}')
+        if args.migrate_from:
+            migrate_scope(args.migrate_from,out,protocol,args.pretrained,args.conditions,args.epochs)
+            for name in ('execution_config.json','initial_reproduction.json'):
+                if not (out/name).exists():
+                    original=read_json(args.migrate_from/name)
+                    if name=='execution_config.json':
+                        original={**original,'original_projected_training_s':original.get('projected_training_s'),
+                                  'projected_training_s':original['projected_training_s']*planned*args.epochs/(6*20)}
+                    save_json(out/name,{**original,'reused_from':str(args.migrate_from/name),'reference_sha256':sha256_file(args.migrate_from/name),'rerun':False})
         chunk=read_json(out/'execution_config.json')['chunk'] if (out/'execution_config.json').exists() else smoke(out,args.pretrained,rows,identity,progress)
         if not (out/'initial_reproduction.json').exists():reproduce(out,args.pretrained,args.cache,rows,identity,chunk,progress)
-        records=train(out,args.pretrained,rows,identity,chunk,run_identity,progress,args.resume)
+        train_start=time.monotonic()
+        records=train(out,args.pretrained,rows,identity,chunk,run_identity,progress,args.resume,conditions=args.conditions,epochs=args.epochs)
+        training_call_s=time.monotonic()-train_start;evaluation_start=time.monotonic()
         result=score(out,args.pretrained,args.cache,rows,identity,chunk,records,progress)
-        lines=['# V8 全视频级弱监督微调','', '两阶段训练：匹配窗口预训练 epoch100 → 完整连续视频微调 epoch20。',
-               '',f'训练244视频/122 source；验证28视频/14 source；共234284实际连续帧。6/6正式模型完成，参数各319969。chunk={chunk}。',
+        evaluation_s=time.monotonic()-evaluation_start
+        lines=['# V8 全视频级弱监督微调','', f'两阶段训练：匹配窗口预训练 epoch100 → 完整连续视频微调 epoch{args.epochs}。',
+               '',f'训练244视频/122 source；验证28视频/14 source；共234284实际连续帧。{len(records)}/{planned}正式模型完成，参数各319969。chunk={chunk}。',
                '', '三个 seed 先各自全视频面积 LSE，再平均视频 logit；阈值固定0。', '',
                '|集合|条件|AUROC|AP|Precision|Recall|F1|ACC|TN/FP/FN/TP|','|---|---|---|---|---|---|---|---|---|']
         for m in result['metrics']:
             if m['seed']=='MEAN_VIDEO_LOGIT':lines.append('|'+ '|'.join(str(m[k]) for k in ('split','condition','auroc','ap','precision','recall','f1','accuracy'))+f"|{m['tn']}/{m['fp']}/{m['fn']}/{m['tp']}|")
         lines+=['','主要配对（source bootstrap 10000次，seed20260909）：',str(result['paired_comparison']),
-                '', '逐seed验证差值（COMPONENT−CELL）：',str(result['seed_differences']),
+                '', '逐seed验证主要比较差值：',str(result['seed_differences']),
                 '', '逐source真假排序方向：',str(result['source_directions']),
                 '', '相对冻结模型：',str(result['post_minus_frozen']), '',
                 '冻结验证参照：COMPONENT AUROC 0.826530612244898，AP 0.8579976104660978，TN/FP/FN/TP=4/10/1/13；'
@@ -286,7 +385,27 @@ def main():
                 '', '初始化复现：',str(read_json(out/'initial_reproduction.json')),
                 '', '完整逐seed指标见evaluation/metrics.csv，逐source见evaluation/per_source_metrics.csv。模型loss与恢复记录保留models/。']
         (out/'report.md').write_text('\n'.join(lines)+'\n')
-        save_json(out/'final_status.json',{'status':'COMPLETE','models':len(records),'epochs':20,'videos':272,'frames':234284,'elapsed_s':time.time()-started,'updated_unix':time.time()})
+        if len(records)!=planned or any(r['epoch']!=args.epochs for r in records):raise ValueError('FINAL_MODEL_SCOPE_INCOMPLETE')
+        if args.epochs==5:
+            migration=read_json(out/'scope_migration.json')
+            lines+=['','## 范围收缩与进度复用',
+                    '为降低时间成本，按用户预先指定范围仅适配主方法三个seed、固定5轮，不根据验证表现选择。原六模型20轮任务已暂停并保留。',
+                    '未改变全部视频/帧、模型、视频BCE、source pair等权、跨块完整梯度、统计或数值设置。CELL未微调，只能列为历史冻结参考，不是匹配消融。',
+                    str(migration),
+                    f'总训练实测含迁入：{sum(r["training_elapsed_s"] for r in records):.3f}秒；迁入已用：{migration["migrated_training_elapsed_s"]:.3f}秒；'
+                    f'迁移后新增训练：{sum(r["training_elapsed_s"] for r in records)-migration["migrated_training_elapsed_s"]:.3f}秒。',
+                    '', '冻结与微调逐seed/训练验证指标：',str(result['frozen_metrics'])]
+            post=next(m for m in result['metrics'] if m['split']=='validation' and m['seed']=='MEAN_VIDEO_LOGIT')
+            old=next(m for m in result['frozen_metrics'] if m['split']=='validation' and m['seed']=='MEAN_VIDEO_LOGIT')
+            lines+=['',f'固定阈值误报FP：{old["fp"]}→{post["fp"]}；漏报FN：{old["fn"]}→{post["fn"]}；Recall：{old["recall"]}→{post["recall"]}。',
+                    '低成本适配是否值得保留需同时考虑排序、AP和FP/FN；性能下降也不延长训练。完整视频处理/微调不等于独立泛化验证。']
+            lines+=['',f'本次训练调用墙钟：{training_call_s:.3f}秒；评分/评价：{evaluation_s:.3f}秒；'
+                    f'本次进程GPU峰值allocated：{torch.cuda.max_memory_allocated()/2**30:.6f}GiB；reserved：{torch.cuda.max_memory_reserved()/2**30:.6f}GiB。',
+                    f'本目录新增存储（报告生成时）：{sum(p.stat().st_size for p in out.rglob("*") if p.is_file())}字节；旧连续帧缓存只读引用，没有复制。']
+            (out/'report.md').write_text('\n'.join(lines)+'\n')
+        save_json(out/'final_status.json',{'status':'COMPLETE','models':len(records),'planned_models':planned,'epochs':args.epochs,'videos':272,'frames':234284,
+                  'training_elapsed_s':sum(r['training_elapsed_s'] for r in records),'training_call_s':training_call_s,'evaluation_s':evaluation_s,
+                  'elapsed_s':time.time()-started,'updated_unix':time.time()})
         progress('report',1,1);save_json(out/'progress.json',{'status':'COMPLETE','stage':'report','completed':1,'total':1,'updated_unix':time.time()})
     except BaseException as e:
         status='STOPPED_SAFE' if isinstance(e,InterruptedError) else 'RESOURCE_BLOCKED' if 'RESOURCE_BLOCKED' in str(e) else 'FAILED'

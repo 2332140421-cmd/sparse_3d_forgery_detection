@@ -47,12 +47,12 @@ def window_addendum(reference,out):
               'windows':len(ids),'sources':14,'comparison':'GLOBAL_COMPONENT-GLOBAL_CELL',**paired_pooled(rows,*z)})
 
 
-def evaluate(out,manifest,summaries):
+def evaluate(out,manifest,summaries,conditions=CONDITIONS):
     directory=out/'evaluation';directory.mkdir(exist_ok=True)
     metrics=[];scores=[];per_source=[];ensemble={}
     y=np.array([r['video_label'] for r in manifest]); rows=[{**r,'label':r['video_label']} for r in manifest]
     val=np.array([r['split']=='validation' for r in rows])
-    for condition in CONDITIONS:
+    for condition in conditions:
         zz=np.array([[s['video_logits'][f'{condition}__seed{seed}'] for s in summaries] for seed in SEEDS])
         if not np.isfinite(zz).all(): raise ValueError('NONFINITE_VIDEO_SCORE')
         ensemble[condition]=zz.mean(0)
@@ -69,12 +69,13 @@ def evaluate(out,manifest,summaries):
                                        'n_real':int((y[jj]==0).sum()),'n_fake':int((y[jj]==1).sum())})
                 metrics.append({'split':split,'condition':condition,'seed':seed,'videos':len(ii),'sources':len(aucs),
                                 'source_pair_ordering_mean':float(np.mean(aucs)),**_metric(y[ii],z[ii])})
-    comparison=paired_pooled([r for r in rows if r['split']=='validation'],ensemble[CONDITIONS[0]][val],ensemble[CONDITIONS[1]][val])
+    comparison=(paired_pooled([r for r in rows if r['split']=='validation'],ensemble[conditions[0]][val],ensemble[conditions[1]][val])
+                if len(conditions)==2 else None)
     directions=[]
-    for source in sorted({r['source_id'] for r in rows if r['split']=='validation'}):
+    for source in sorted({r['source_id'] for r in rows if r['split']=='validation'}) if len(conditions)==2 else []:
         ss=[r for r in per_source if r['split']=='validation' and r['source']==source and r['seed']=='MEAN_VIDEO_LOGIT']
         a={r['condition']:r['auroc'] for r in ss}
-        directions.append({'source':source,'difference':a[CONDITIONS[0]]-a[CONDITIONS[1]],**a})
+        directions.append({'source':source,'difference':a[conditions[0]]-a[conditions[1]],**a})
     result={'status':'COMPLETE','primary':'pooled video AUROC; frozen window models, not full-video training',
             'ensemble':'each seed full-video area LSE then mean final video logits','threshold':0,
             'bootstrap':{'replicates':10000,'seed':20260909,'paired_unit':'source'},
@@ -82,6 +83,7 @@ def evaluate(out,manifest,summaries):
                 name:sum((r['difference']>0 if name=='positive' else r['difference']<0 if name=='negative' else r['difference']==0) for r in directions)
                 for name in ('positive','tie','negative')}}
     csv_rows(directory/'metrics.csv',metrics);csv_rows(directory/'video_scores.csv',scores)
-    csv_rows(directory/'per_source_metrics.csv',per_source);csv_rows(directory/'per_source_differences.csv',directions)
+    csv_rows(directory/'per_source_metrics.csv',per_source)
+    if directions:csv_rows(directory/'per_source_differences.csv',directions)
     save_json(directory/'summary.json',result)
     return result

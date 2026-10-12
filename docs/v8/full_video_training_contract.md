@@ -24,3 +24,12 @@ z=logsumexp(cell_logit+log(area))−log(sum(area))，跨所有帧/真实内容�
 主比较微调COMPONENT−CELL的pooled video AUROC；辅助各条件微调−冻结。
 每seed先完整视频LSE，随后平均三个video logit。阈值0；source配对bootstrap
 10000次/seed20260909。训练/验证及各seed指标分别报告，不作帧或空间定位结论。
+
+## 用户授权的固定5轮范围调整（ADR-0019）
+
+原六模型20轮目录暂停保留；新目录`v8_full_video_training_budget5_v1`仅包含
+GLOBAL_COMPONENT、原三seed各5epochs，最后epoch5。上文全部数据与计算路径不变，
+chunk固定64。原合法checkpoint在5轮以内可显式迁移，保留optimizer/RNG/顺序/
+epoch/pair/loss/耗时，记录原hash和新protocol身份，不能绕过身份检查。
+主比较改为微调COMPONENT−冻结COMPONENT；旧CELL只作历史冻结参考。
+已有资源和168分数复现记录只读引用，不重复执行。没有验证选轮或追加训练。

@@ -62,3 +62,20 @@ screen -dmS v8_full_video_training bash -c 'cd /root/autodl-tmp/projects/sparse_
 source配对bootstrap10000次，seed20260909；阈值0；三seed先各自全视频LSE再均值。
 
 仅视频级弱监督开发评价。未验证帧/像素定位、独立source泛化；不会自动追加实验。
+
+## 固定5轮主方法范围调整
+
+用户要求优先降低时间成本。旧任务已安全TERM：最终checkpoint实际为完整epoch1、
+epoch2前44个source pair，累计训练实测1226.2690557092428秒（含此前迁入首pair）。
+旧目录标为PAUSED_SCOPE_CHANGE，20轮六模型protocol及checkpoint不变。
+
+新目录`v8_full_video_training_budget5_v1`只训练GLOBAL_COMPONENT三seed各5轮，
+迁移后从epoch2第45个pair继续，完整数据/帧、跨块梯度和全部数值协议不变。
+不是两条件匹配微调；主要比较微调COMPONENT−原冻结COMPONENT。
+代码只参数化已有runner与评价条件，显式保存scope_migration.json，已有验证不重跑。
+
+```bash
+bash scripts/run_v8_full_video_training.sh --output /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_budget5_v1 --conditions GLOBAL_COMPONENT --epochs 5 --migrate-from /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_v1
+```
+
+训练中不预填最终指标；三模型各5轮、全部评分、bootstrap及report.md完成才为COMPLETE。
