@@ -42,7 +42,7 @@ checkpoint开关loss/梯度一致、跨块hidden梯度、直接LSE和optimizer/R
 安全TERM后退出；随后用同一恢复入口继续，不丢弃或重复该pair。
 实际训练循环的定向恢复测试确认分段恢复与不中断的最终参数及loss一致。
 
-当前为RUNNING交付记录，不是6/6完成报告。完整六模型训练、评分及CI仍需实际执行，
+以上为旧20轮任务的RUNNING交付历史；该任务现为PAUSED_SCOPE_CHANGE，不是6/6完成报告。完整六模型训练、评分及CI未执行，
 不能将资源smoke或168分数复现算作本轮微调结果。
 
 独立启动（只能存在一个任务，内部运行锁防重）：
@@ -78,4 +78,40 @@ epoch2前44个source pair，累计训练实测1226.2690557092428秒（含此前�
 bash scripts/run_v8_full_video_training.sh --output /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_budget5_v1 --conditions GLOBAL_COMPONENT --epochs 5 --migrate-from /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_training_v1
 ```
 
-训练中不预填最终指标；三模型各5轮、全部评分、bootstrap及report.md完成才为COMPLETE。
+三模型各5轮、全部评分、bootstrap及report.md均已完成，最终状态COMPLETE。
+
+### 固定5轮实际结果
+
+244训练视频/122 source、28验证视频/14 source，共234284实际连续帧不变。
+三个seed各610次source pair更新（5×122），checkpoint均为epoch5、pair_index=0，
+保存optimizer、RNG与5条有限loss。共816条seed视频分数及272条均值分数，无重复键。
+阈值0，三个seed先分别完成全视频面积LSE，再平均最终video logit。
+
+|集合|COMPONENT版本|pooled video AUROC|AP|Precision|Recall|F1|Accuracy|TN/FP/FN/TP|
+|---|---|---:|---:|---:|---:|---:|---:|---|
+|train|原冻结|0.971446|0.962609|0.567442|1.000000|0.724036|0.618852|29/93/0/122|
+|train|5轮适配|0.993617|0.992842|0.960630|1.000000|0.979920|0.979508|117/5/0/122|
+|validation|原冻结|0.826531|0.857998|0.565217|0.928571|0.702703|0.607143|4/10/1/13|
+|validation|5轮适配|0.872449|0.904242|0.833333|0.714286|0.769231|0.785714|12/2/4/10|
+
+主要差值为验证pooled video AUROC +0.04591836734693877，source配对bootstrap
+10000次、seed20260909，95%CI [-0.010204081632653184, 0.11224489795918369]。
+AP差+0.046244，F1差+0.066528。三个seed的AUROC（冻结→适配）分别为
+0.714286→0.846939、0.816327→0.882653、0.826531→0.836735，方向均正。
+每source仅一real/一fake：三seed均值后的source内排序两版均14/14正确，
+故逐source pair AUROC提高/持平/下降=0/14/0；这与pooled跨source排序改善并不矛盾，
+不能描述成14个source均获排序提升。
+
+固定阈值FP减少8个，但FN增加3个；Precision提高而Recall从0.928571降至0.714286。
+支持保留为固定低成本适配的初步证据，不支持宣称稳定泛化收益或无代价减少误报。
+不追加轮数、CELL或其他候选。训练集拟合提升不是独立泛化证据。
+
+实测总训练13319.505秒（3.70小时），含迁入1226.269秒；本次新增训练12093.236秒，
+评分/评价1046.475秒。本次进程墙钟13141.220秒，不能与含迁入的训练时间直接相加。
+GPU峰值allocated 2.689249 GiB、reserved 3.013672 GiB；报告生成时新增存储25097497字节，
+旧连续帧缓存未复制。原恢复checkpoint SHA迁移前后保持不变。
+本轮新增范围测试3项通过；旧5项关键测试、168分数复现和资源smoke只读复用，未重跑。
+
+完整中文报告及小表位于`v8_full_video_training_budget5_v1/report.md`、
+`evaluation/summary.json`、`evaluation/metrics.csv`、`evaluation/per_source_differences.csv`；
+模型、视频与缓存未提交Git。实验进程及screen均已正常结束。
