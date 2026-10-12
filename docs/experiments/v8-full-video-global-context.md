@@ -1,54 +1,44 @@
-# V8 全视频全帧关系冻结评价
+# V8 全视频连续帧冻结评价
 
-本轮是**窗口训练模型的全视频连续帧冻结评价**，不是全视频训练。
-合同ADR-0017；起始HEAD abce88ae440d13509d46ff272adbd9fbe149b0fd。
+**窗口训练模型的全视频连续帧冻结评价，不是全视频训练完成。**
 
-独立分支v8-full-video-global-context，冻结六个GLOBAL_COMPONENT/GLOBAL_CELL epoch100
-模型。272视频/136 source、预计234284元数据帧；实际数量以顺序解码EOF为准。
-validation 14 source；主指标video pooled AUROC，source配对bootstrap10000/20260909，
-阈值0。每seed独立完成视频面积LSE后平均video logit，不平均cell再LSE。
+状态COMPLETE；272视频、136 source、234284实际解码帧；六模型每帧评分完整。
+全部正常解码帧顺序处理，原生PTS与估计来源逐帧保存。无训练、统计重拟合或阈值调整。
 
-64帧NPZ无损保存float32格输入/mu/关联/状态及packbits原像素mask；不持久化新dense
-XYZ/RGB/depth。调用原GlobalContextModel.spatial/region_context，因果GRU跨块延续。
-旧两视频合法输入只读复用，其他视频共享一次前端供六模型评分。
+| split | condition | seed | pooled video AUROC | AP | P | R | F1 | ACC | TN/FP/FN/TP |
+|---|---|---|---:|---:|---:|---:|---:|---:|---|
+| train | GLOBAL_COMPONENT | 20260909 | 0.911314 | 0.896117 | 0.547085 | 1.000000 | 0.707246 | 0.586066 | 21/101/0/122 |
+| validation | GLOBAL_COMPONENT | 20260909 | 0.714286 | 0.694530 | 0.541667 | 0.928571 | 0.684211 | 0.571429 | 3/11/1/13 |
+| train | GLOBAL_COMPONENT | 20260910 | 0.954045 | 0.942316 | 0.554545 | 1.000000 | 0.713450 | 0.598361 | 24/98/0/122 |
+| validation | GLOBAL_COMPONENT | 20260910 | 0.816327 | 0.826304 | 0.565217 | 0.928571 | 0.702703 | 0.607143 | 4/10/1/13 |
+| train | GLOBAL_COMPONENT | 20260911 | 0.956531 | 0.938300 | 0.728916 | 0.991803 | 0.840278 | 0.811475 | 77/45/1/121 |
+| validation | GLOBAL_COMPONENT | 20260911 | 0.826531 | 0.886417 | 0.687500 | 0.785714 | 0.733333 | 0.714286 | 9/5/3/11 |
+| train | GLOBAL_COMPONENT | MEAN_VIDEO_LOGIT | 0.971446 | 0.962609 | 0.567442 | 1.000000 | 0.724036 | 0.618852 | 29/93/0/122 |
+| validation | GLOBAL_COMPONENT | MEAN_VIDEO_LOGIT | 0.826531 | 0.857998 | 0.565217 | 0.928571 | 0.702703 | 0.607143 | 4/10/1/13 |
+| train | GLOBAL_CELL | 20260909 | 0.909970 | 0.875351 | 0.552995 | 0.983607 | 0.707965 | 0.594262 | 25/97/2/120 |
+| validation | GLOBAL_CELL | 20260909 | 0.658163 | 0.658115 | 0.541667 | 0.928571 | 0.684211 | 0.571429 | 3/11/1/13 |
+| train | GLOBAL_CELL | 20260910 | 0.955321 | 0.951209 | 0.570093 | 1.000000 | 0.726190 | 0.622951 | 30/92/0/122 |
+| validation | GLOBAL_CELL | 20260910 | 0.719388 | 0.772120 | 0.521739 | 0.857143 | 0.648649 | 0.535714 | 3/11/2/12 |
+| train | GLOBAL_CELL | 20260911 | 0.929253 | 0.916327 | 0.610000 | 1.000000 | 0.757764 | 0.680328 | 44/78/0/122 |
+| validation | GLOBAL_CELL | 20260911 | 0.734694 | 0.671717 | 0.590909 | 0.928571 | 0.722222 | 0.642857 | 5/9/1/13 |
+| train | GLOBAL_CELL | MEAN_VIDEO_LOGIT | 0.961502 | 0.963967 | 0.580952 | 1.000000 | 0.734940 | 0.639344 | 34/88/0/122 |
+| validation | GLOBAL_CELL | MEAN_VIDEO_LOGIT | 0.714286 | 0.707924 | 0.571429 | 0.857143 | 0.685714 | 0.607143 | 5/9/2/12 |
 
-输出：`/root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_global_context_v1/`。
-`progress.json`及`final_status.json`记录真实状态，仅全量评分/评价/报告完成后COMPLETE。
-`window_auxiliary_bootstrap.json`补充旧窗口辅助指标，不修改旧macro主结论。
+## 主要比较
+{'pooled_auroc': {'difference': 0.11224489795918369, 'ci95': [0.015306122448979553, 0.20408163265306123]}, 'ap': {'difference': 0.1500738166453366, 'ci95': [0.025129237799585497, 0.21891306907378336]}, 'f1': {'difference': 0.01698841698841702, 'ci95': [-0.043010752688172116, 0.08685855263157864]}, 'accuracy': {'difference': 0.0, 'ci95': [-0.1071428571428572, 0.1071428571428572]}}
+{'positive': 2, 'tie': 12, 'negative': 0}
+每seed独立完成整视频面积LSE后平均最终video logit；主要指标pooled video AUROC。source配对bootstrap10000次/20260909；逐source一真一假AUROC仅0/.5/1，是配对排序。
 
-```bash
-cd /root/autodl-tmp/projects/sparse_3d_forgery_detection
-bash research_tools/v8/full_video_global_context/run_all.sh --resume \
- --baseline /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_coverage_observation_field_identityfix_v1 \
- --reference /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_local_geometry_encoding_pilot_v1 \
- --models /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_component_global_context_pilot_v1 \
- --legacy /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_streaming_pilot_v1 \
- --output /root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_global_context_v1
-```
+## 与窗口实验的关系
+旧窗口macro为COMPONENT 0.896825、CELL 0.904762；不是同一输入/历史/聚合单位，不能直接作提升差。旧窗口辅助CI另存window_auxiliary_bootstrap.json，不改变旧主指标。
+验证source已多轮开发使用，不是sealed test；未提供帧/像素真值，不计算定位准确率。
 
-运行锁防重复；TERM在当前块原子保存后停止。恢复核对输入/模型/统计hash、视频身份与
-PTS，不重算合法块；不使用V7数值资产。完整结果和实测资源由数据目录report.md生成，
-本页不预填未完成的指标。
+## 输入与资源
+{'decoded_frames': 234284, 'cache_bytes': 11986210941, 'available_bytes': 330679234560, 'evaluation_s': 55.938354106619954, 'gpu_peak_allocated_bytes': 2112614400, 'gpu_peak_reserved_bytes': 3386900480, 'costs': {'decode_s': 515.7793447636068, 'model_s': 4505.3758342619985, 'write_s': 818.6330139581114, 'wall_s': 77724.89452856034, 'legacy_reused_frames': 1828, 'compact_reused_frames': 0, 'new_frontend_frames': 232456, 'frontend': {'geometry_s': 4774.212934359908, 'tracking_s': 59749.080704512075, 'rgb_s': 433.16296218521893, 'features_s': 4741.12979224883, 'write_s': 0.0, 'new_geometry': 223512, 'cache_hit': 8944}}, 'coverage': {'content_pixels': 9379351040, 'geometry_valid_pixels': 9375057910, 'active_cell_times': 39552352, 'no_predecessor_cell_times': 65034, 'estimated_timestamp_frames': 0, 'component_count_histogram': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 7, 44, 222, 620, 1158, 1350, 1244, 1022, 895, 817, 721, 676, 677, 680, 747, 787, 751, 693, 757, 706, 721, 745, 727, 722, 768, 701, 744, 691, 697, 734, 776, 824, 813, 830, 991, 1041, 1099, 1164, 1283, 1390, 1472, 1478, 1572, 1575, 1644, 1666, 1678, 1730, 1727, 1777, 1789, 1788, 1830, 1793, 1798, 1824, 1968, 2039, 2127, 2200, 2133, 2234, 2181, 2171, 2184, 2257, 2028, 2066, 2149, 2029, 2061, 2054, 2120, 2149, 2120, 2100, 2099, 1995, 2079, 2147, 1978, 2137, 2178, 2144, 2271, 2374, 2404, 2463, 2566, 2579, 2574, 2678, 2669, 2758, 2815, 2825, 2781, 2869, 2843, 2764, 2818, 2883, 2964, 2940, 3112, 3134, 3089, 3186, 3195, 3277, 3420, 3424, 2912, 2806, 2555, 2282, 1825, 1327, 583, 634, 637, 645, 657, 646, 667, 678, 764, 737, 734, 773, 779, 762, 824, 840, 848, 857, 809, 761, 766, 704, 690, 655, 669, 637, 655, 687, 631, 488, 363, 213, 12, 14, 4, 6, 7, 8, 8, 13, 9, 5, 9, 12, 6, 5, 4, 8, 11, 3, 4, 8, 11, 8, 12, 7, 9, 7, 12, 9, 8, 11, 9, 13, 11, 16, 10, 13, 11, 14, 13, 23, 17, 19, 15, 23, 12, 18, 14, 26, 25, 23, 23, 30, 26, 28, 26, 21, 19, 17, 10, 12, 7, 7, 1, 0], 'component_size_counts': [0, 22810420, 2575557, 1290202, 1930053], 'content_assignment_coverage': 1.0}}
+一次共享前端；新帧不长期保存dense XYZ/depth/RGB。每64帧NPZ保存float32 cell输入/mu/状态/关联及无损packbits像素mask，可重新训练patch encoder。六模型hidden分别保存，块边界不重置。
+模型调用真实GlobalContextModel.spatial/region_context，不调用旧_spatial_content；GLOBAL_CELL使用singleton，COMPONENT使用动态分区。
 
-## 本轮实际验收
+## 下一阶段（未执行）
+应先冻结视频级弱监督训练及长序列梯度截断方案；所需训练存储可复用本轮紧凑输入。推理成本不是训练成本，需另测梯度显存与吞吐；不自动训练或改架构。
 
-11项直接相关测试通过。两条件冻结权重原16时刻forward/连续接口比较最大cell误差
-1.90735e-6；真实原生连续64帧、chunk7/16/31、序列化恢复、未来扰动、面积LSE及
-紧凑缓存重建均通过既有atol/rtol=2e-5。真实attention调用已核验。
-1LARL两视频1828帧六模型完整评分；紧凑输入84,331,303 bytes，约46,133 bytes/帧。
-按该样本估算全队列输入及响应约12.78GB（11.91GiB），不是最终实测。
-已继续00ZCA新增真实前端，未在两视频阶段停止；全部结果仍在运行，不预填最终指标。
-
-上一轮窗口辅助source配对bootstrap（10000/20260909）补充：
-
-| 指标差 COMPONENT−CELL | 点估计 | 95% CI |
-|---|---:|---|
-| pooled AUROC | +0.134727 | [-0.006240, 0.248548] |
-| AP | +0.197246 | [0.029463, 0.293576] |
-| F1 | +0.137769 | [0.031254, 0.252348] |
-| Accuracy | +0.156627 | [0.047619, 0.273810] |
-
-这些是旧窗口辅助结果，不替换原macro主比较−0.007937。新视频结果另算。
-run_all成功后仅发布本轮小型报告：核对272视频/六模型/帧数与冻结资产不变，保护
-用户工作区及暂存区，仅暂存指定实验文档、普通commit/push。失败不重启计算；
-交付状态另存git_delivery.json，不能用代码已推送冒充实验完成。
+完整产物：`/root/autodl-tmp/data/sparse_3d_forgery_detection/derived/v8_full_video_global_context_v1`。必要测试与原窗口/连续输入数值验证见validation.json及native_continuous_validation.json。
