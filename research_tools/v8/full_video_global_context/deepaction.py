@@ -170,7 +170,10 @@ def finish(out,rows,summaries,records,identity,started):
     costs=processing_costs(out,summaries,evaluation_s)
     downloads=[read_json(p) for p in (DATA/'media').rglob('*.acquisition.json')]
     failed=[read_json(p) for p in (DATA/'media').rglob('*.failure*.json')]
-    costs.update(download_s_known_lower_bound=sum(r['elapsed_s'] for r in downloads+failed),
+    # The shared local-source summary has zero acquisition defaults; these are
+    # unknown for this download run, not measured zero-cost transfers.
+    costs.update(download_s=None, download_bytes=None,
+                 download_s_known_lower_bound=sum(r['elapsed_s'] for r in downloads+failed),
                  verified_media_bytes=sum(r['bytes'] for r in downloads),acquired_media_files=len(downloads),
                  download_cost_complete=False,
                  download_timing='sum recorded per-file attempts, parallel transfers overlap; first Pexels/17 failure timing was overwritten before unique failure logging, total wall/traffic UNKNOWN',

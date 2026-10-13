@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+import json
+import time
 
 from research_tools.v8.full_video_global_context.deepaction import REVISION, ordered_actions, prefix_within_budget, validate_manifest
 from research_tools.v8.full_video_global_context.independent_test import GROUPS, bootstrap
@@ -28,3 +30,20 @@ def test_manifest_semantic_cluster_not_shared_source_and_labels():
     with pytest.raises(ValueError,match='IDENTITY_NOT_UNIQUE'):validate_manifest(rows)
     rows[1]['source_id']='1';rows[1]['video_label']=0
     with pytest.raises(ValueError,match='LABEL_IDENTITY'):validate_manifest(rows)
+
+
+def test_report_unknown_download_cost_not_local_source_zero(tmp_path, monkeypatch):
+    from research_tools.v8.full_video_global_context import deepaction as d
+    monkeypatch.setattr(d, 'DATA', tmp_path)
+    monkeypatch.setattr(d, 'evaluate_scores', lambda *a, **k: {'metrics': [], 'auroc_intervals': {}, 'paired_auroc': {}})
+    monkeypatch.setattr(d, 'processing_costs', lambda *a: {'download_s': 0, 'download_bytes': 0, 'decoded_frames': 2})
+    monkeypatch.setattr(d, 'metrics', lambda *a: {})
+    monkeypatch.setattr(d, 'csv_rows', lambda *a: None)
+    rows = [{'role': role, 'action_id': '7', 'generator': gen, 'source_id': role,
+             'fps': 24, 'duration_s': 1, 'metadata_frame_count': 1, 'source_hw': [360, 480],
+             'video_label': label} for label, (role, gen) in enumerate([('real', 'Pexels'), ('fake', 'RunwayML')])]
+    summaries = [{'video_logits': {f'{g}__seed{s}': 0.1 for g in GROUPS for s in d.SEEDS}} for _ in rows]
+    d.finish(tmp_path, rows, summaries, [], 'test-only', time.monotonic())
+    costs = json.loads((tmp_path / 'costs.json').read_text(), parse_constant=lambda x: pytest.fail(x))
+    assert costs['download_s'] is None and costs['download_bytes'] is None
+    assert costs['download_cost_complete'] is False
