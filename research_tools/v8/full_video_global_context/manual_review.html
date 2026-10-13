@@ -1,0 +1,65 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>原视频人工观看</title><style>
+body{font:16px system-ui;margin:20px auto;max-width:1050px;padding:0 16px;background:#141820;color:#eee}
+video{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain;background:black;margin:12px 0}
+button,select,input,textarea{font:inherit;margin:5px;padding:6px}textarea{width:90%}label{display:inline-block;margin:4px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}#status{color:#ffda84} [hidden]{display:none!important}
+</style>
+<h1>原视频人工观看</h1><p>材料已准备；人工审核待您完成。异常描述不覆盖官方来源标签，不自动筛除视频。</p>
+<select id="section"><option value="test">40条实际测试视频</option><option value="training_comparison">训练数据比较示例（独立计数）</option></select>
+<h2 id="heading"></h2><p id="progress"></p><button id="prev">上一条</button><button id="next">下一条</button>
+<video id="player" controls preload="metadata" playsinline></video>
+<button id="reveal">显示官方来源（第二遍）</button><pre id="official" hidden></pre>
+<p id="comparison" hidden>训练样例为原视频及派生版本；DeepAction仅动作语义匹配，非同人物同场景真假对照。</p>
+<div id="form"></div><label>可选异常时间点/区间 <input id="anomaly_times" placeholder="例：2.1–3.4s"></label><br>
+<label>备注<br><textarea id="notes" rows="3"></textarea></label>
+<p id="status"></p><button id="exportJSON">导出审核JSON</button><button id="exportCSV">导出审核CSV</button>
+<label>导入已保存CSV/JSON <input id="import" type="file" accept=".json,.csv"></label>
+<p>浏览器临时保存不是唯一备份。填写后请导出；网页不会自动写服务器文件。完整看过需自己确认。</p>
+<script>
+const DATA=/*PAYLOAD*/null;
+const choices={reviewed:['','完整看过','尚未完整看过'],indoor_scene:['','室内','室外','混合','不确定'],
+continuous_shot:['','连续镜头','存在切镜','不确定'],camera_motion:['','基本稳定','轻微运动','明显运动'],
+subject_visibility:['','主体清楚','经常被遮挡或离开画面','不确定'],
+observed_anomaly:['','未观察到明显异常','空间形态异常','时间运动异常','两者都有','不确定'],
+playback_problem:['','无','无法播放','疑似截断','其他']};
+const names={reviewed:'是否完整看过',indoor_scene:'场景',continuous_shot:'镜头',camera_motion:'相机运动',subject_visibility:'主体可见性',observed_anomaly:'观察到的异常',playback_problem:'播放问题'};
+const fields=[...Object.keys(choices),'anomaly_times','notes'];
+const columns=['review_id','video_id','video_sha256','section',...fields];
+function csvEncode(rows){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\ufeff'+[columns,...rows.map(r=>columns.map(k=>r[k]??''))].map(a=>a.map(q).join(',')).join('\r\n');}
+function csvDecode(text){text=text.replace(/^\ufeff/,'');let rows=[],row=[],cell='',quoted=false;
+for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}
+else if(c===','&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';}else cell+=c;}
+if(quoted)throw Error('CSV引号未闭合');if(cell||row.length){row.push(cell);rows.push(row);}const keys=rows.shift()||[];
+return rows.filter(a=>a.some(Boolean)).map(a=>{if(a.length!==keys.length)throw Error('CSV列数不符');return Object.fromEntries(keys.map((k,i)=>[k,a[i]]));});}
+function acceptRecords(incoming){let result={},seen=new Set();for(const r of incoming){const m=DATA.rows.find(x=>x.review_id===r.review_id);
+if(!m||m.video_id!==r.video_id||m.video_sha256!==r.video_sha256||m.section!==r.section||seen.has(r.review_id))throw Error('编号/视频/SHA/分区不匹配或记录重复');seen.add(r.review_id);
+let v={};for(const k of fields){v[k]=r[k]??'';if(typeof v[k]!=='string'||(choices[k]&&!choices[k].includes(v[k])))throw Error('审核字段无效');}result[r.review_id]=v;}return result;}
+// Pure serialization functions above also run in a no-DOM check; no model code.
+if(typeof document!=='undefined'){
+const $=id=>document.getElementById(id),storeKey='v8-manual-'+DATA.package_id;let records={},pos=0;
+try{const old=JSON.parse(localStorage.getItem(storeKey)||'null');if(old)records=acceptRecords(old);}catch(e){$('status').textContent='本地记录不可用，请导入备份：'+e.message;}
+function allRecords(){return DATA.rows.map(r=>({review_id:r.review_id,video_id:r.video_id,video_sha256:r.video_sha256,section:r.section,...Object.fromEntries(fields.map(k=>[k,records[r.review_id]?.[k]??'']))}));}
+function save(){try{localStorage.setItem(storeKey,JSON.stringify(allRecords()));$('status').textContent='已临时保存到此浏览器；请导出备份。';}catch(e){$('status').textContent='本地保存不可用，请立即导出备份。';}}
+function subset(){return DATA.rows.filter(r=>r.section===$('section').value);}
+function capture(){const r=subset()[pos];if(!r)return;records[r.review_id]=Object.fromEntries(fields.map(k=>[k,$(k).value]));save();}
+function render(){const a=subset(),r=a[pos];$('official').hidden=true;$('reveal').textContent='显示官方来源（第二遍）';$('comparison').hidden=$('section').value==='test';
+if(!r){$('heading').textContent='没有可用训练比较样例';$('player').removeAttribute('src');return;}
+$('heading').textContent=r.review_id+' — '+r.prompt;$('progress').textContent=`${pos+1}/${a.length}；已标完整看过 ${a.filter(x=>records[x.review_id]?.reviewed==='完整看过').length}/${a.length}`;
+$('player').pause();$('player').src=r.preview_path||r.local_path;$('player').playbackRate=1;$('player').load();
+for(const k of fields)$(k).value=records[r.review_id]?.[k]??'';
+$('official').textContent=JSON.stringify(r,null,2);$('prev').disabled=pos===0;$('next').disabled=pos===a.length-1;}
+for(const [k,values] of Object.entries(choices)){let label=document.createElement('label');label.textContent=names[k]+' ';let select=document.createElement('select');select.id=k;
+for(const v of values){let op=document.createElement('option');op.value=v;op.textContent=v||'待填写';select.append(op);}label.append(select);$('form').append(label);}
+for(const k of fields)$(k).addEventListener('change',capture);
+$('prev').onclick=()=>{capture();pos--;render();};$('next').onclick=()=>{capture();pos++;render();};
+$('section').onchange=()=>{pos=0;render();};$('reveal').onclick=()=>{$('official').hidden=!$('official').hidden;$('reveal').textContent=$('official').hidden?'显示官方来源（第二遍）':'隐藏官方来源';};
+function download(text,ext,type){const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download='manual_review.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('exportJSON').onclick=()=>{capture();download(JSON.stringify({package_id:DATA.package_id,records:allRecords()},null,2),'json','application/json');};
+$('exportCSV').onclick=()=>{capture();download(csvEncode(allRecords()),'csv','text/csv;charset=utf-8');};
+$('import').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const text=await f.text();let incoming;
+if(f.name.toLowerCase().endsWith('.json')){const x=JSON.parse(text);if(x.package_id!==DATA.package_id)throw Error('观看包身份不同');incoming=x.records;}else incoming=csvDecode(text);
+const checked=acceptRecords(incoming);records={...records,...checked};save();render();$('status').textContent='导入成功，请继续查看并导出备份。';}catch(err){$('status').textContent='未导入：'+err.message;}};
+render();
+}
+</script></html>
