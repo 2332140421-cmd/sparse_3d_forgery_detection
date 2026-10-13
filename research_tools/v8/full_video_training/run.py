@@ -148,14 +148,16 @@ def reproduce(out,base,cache,rows,identity,chunk,progress):
               'max_absolute_error':max(r['absolute_error'] for r in records),'tolerance':2e-5})
 
 
-def train(out,base,rows,identity,chunk,run_identity,progress,resume,conditions=None,epochs=20):
+def train(out,base,rows,identity,chunk,run_identity,progress,resume,conditions=None,epochs=20,seeds=None,train_step=None):
     conditions=CONDITIONS if conditions is None else tuple(conditions)
-    planned=len(conditions)*len(SEEDS)
+    seeds=SEEDS if seeds is None else tuple(seeds)
+    train_step=step_video if train_step is None else train_step
+    planned=len(conditions)*len(seeds)
     sources=sorted({r['source_id'] for r in rows if r['split']=='train'})
     pairs={s:sorted([r for r in rows if r['split']=='train' and r['source_id']==s],key=lambda r:r['role']) for s in sources}
     directory=out/'models';directory.mkdir(exist_ok=True);records=[]
     for c in conditions:
-        for seed in SEEDS:
+        for seed in seeds:
             key=f'{c}__seed{seed}';final=directory/f'{key}.pt';recovery=directory/f'{key}.recovery.pt'
             model,initial=load_model(base,c,seed);model.train();seed_all(seed)
             optimizer=torch.optim.AdamW(model.parameters(),lr=1e-4,weight_decay=1e-4)
@@ -177,7 +179,7 @@ def train(out,base,rows,identity,chunk,run_identity,progress,resume,conditions=N
                     source=sources[order[j]];optimizer.zero_grad(set_to_none=True);loss=0.
                     for row in pairs[source]:
                         progress('train',len(records),planned,condition=c,seed=seed,epoch=epoch+1,target_epochs=epochs,pair=j+1,pairs=len(sources),video=row['video_id'])
-                        detail=step_video(model,row,identity,chunk);loss+=detail['loss']
+                        detail=train_step(model,row,identity,chunk);loss+=detail['loss']
                     torch.nn.utils.clip_grad_norm_(model.parameters(),1.);optimizer.step();epoch_loss+=loss
                     next_epoch=epoch;next_pair=j+1
                     if next_pair==len(sources):

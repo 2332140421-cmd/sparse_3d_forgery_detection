@@ -485,3 +485,9 @@ ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和
 用户随后按ADR-0019收缩为主方法GLOBAL_COMPONENT三seed、固定5轮适配，
 只改计划范围和主要比较，保留原20轮六模型协议及暂停checkpoint。全部视频、
 完整跨块梯度、统计、模型和训练数值不变；不称两条件同样微调的匹配消融。
+
+### 14.6 V8 官方时间区间辅助监督探索
+
+用户授权`v8-temporal-supervision-pilot`按ADR-0020，在固定GLOBAL_COMPONENT、
+seed20260909、5轮完整视频适配中，仅增加聚合frame logit的时间区间辅助BCE。
+原视频BCE/模型/缓存/统计不变；不提供逐格空间标签，不替换旧视频弱监督结果。

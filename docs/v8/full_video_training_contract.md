@@ -33,3 +33,12 @@ chunk固定64。原合法checkpoint在5轮以内可显式迁移，保留optimize
 epoch/pair/loss/耗时，记录原hash和新protocol身份，不能绕过身份检查。
 主比较改为微调COMPONENT−冻结COMPONENT；旧CELL只作历史冻结参考。
 已有资源和168分数复现记录只读引用，不重复执行。没有验证选轮或追加训练。
+
+## 单seed官方时间区间辅助监督（ADR-0020）
+
+仅独立pilot：GLOBAL_COMPONENT seed20260909，从同窗口epoch100初始化、固定5轮。
+新增 L_video+0.5 L_frame；frame是原beta1面积LSE，非逐格标签。
+官方区间按source+完整视频路径+EXACT匹配，闭区间并集、缓存原生相对PTS；real全负，
+fake区间外为负。帧BCE在视频内按存在的正负类均衡，source real/fake各半。
+全部帧/内容格、跨块梯度、chunk64、模型/统计和原优化设置不变。原仅视频监督合同
+及历史结果不改写；单seed开发探索不宣称稳定收益、空间定位或独立三维贡献。
