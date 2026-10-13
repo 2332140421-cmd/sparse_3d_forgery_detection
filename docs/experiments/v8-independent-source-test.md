@@ -51,4 +51,60 @@ PYTHONPATH=/root/autodl-tmp/data/sparse_3d_forgery_detection/external/v8_full_co
 
 唯一任务，输出目录flock防重；TERM在当前64帧块保存后停止。成功视频不重复处理。
 实际结果以全部30视频、九权重评分、评价及report完成后的final_status为准。
-当前仅冻结与实现完成，尚不标实验COMPLETE；执行结果随后补入本文。
+本轮已完成，最终状态COMPLETE，退出码0，无残留实验进程或screen。
+
+## 实际结果
+
+15 source、30视频（15 real/15 fake）、19607实际连续帧；九份已有权重全部评分。
+全部原生PTS，估算时间戳0，实际帧数与元数据一致；前端19607帧各执行一次。
+270条seed分数加90条集成分数，360个唯一键全部有限。30份视频内容SHA均唯一，
+与当前训练/验证SHA无重叠。无新训练、统计拟合、下载或阈值调整。
+
+|三seed最终视频logit均值|video AUROC|AP|FPR|Recall|Balanced Accuracy|Precision|F1|Accuracy|TN/FP/FN/TP|
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+|COMPONENT_ADAPTED|0.791111|0.830258|0.266667|0.600000|0.666667|0.692308|0.642857|0.666667|11/4/6/9|
+|COMPONENT_WINDOW|0.817778|0.833092|0.600000|1.000000|0.700000|0.625000|0.769231|0.700000|6/9/0/15|
+|CELL_WINDOW|0.720000|0.714443|0.400000|0.800000|0.700000|0.666667|0.727273|0.700000|9/6/3/12|
+
+主方法自身source簇bootstrap95%CI为[0.6666666666666666, 0.9067777777777762]。
+两个预声明AUROC配对差（10000次/seed20260909，同次source采样保留真假）：
+
+- ADAPTED−COMPONENT_WINDOW：−0.026666666666666616，CI
+  [−0.13333333333333341, 0.053333333333333344]；三个seed差
+  +0.053333、−0.044444、−0.013333，方向不一致。
+- COMPONENT_WINDOW−CELL_WINDOW：+0.09777777777777774，CI
+  [−0.0444444444444444, 0.20000000000000007]；三个seed差
+  +0.075556、+0.022222、+0.075556，均正但CI跨0。
+
+每seed测试AUROC（按20260909/10/11）：适配0.813333/0.728889/0.764444；
+窗口COMPONENT 0.760000/0.773333/0.777778；窗口CELL 0.684444/0.751111/0.702222。
+各seed的全部辅助指标见数据目录report.md与evaluation/metrics.csv，不挑最好seed。
+
+适配FP由9降至4，但FN由0增至6，Recall与F1下降；不支持适配带来稳定额外收益。
+逐source单对真假排序：适配−窗口提高/平/降=0/14/1（55NRK下降），窗口COMPONENT−
+CELL=0/14/1（0HV07下降）。pooled排序增量不等于逐source普遍改善；可能涉及跨source
+分数排序，不能独立分辨尺度与表示因素。保留全部不利样本，不事后删除0HV07。
+可保留当前架构作为初步迁移候选，但不称5轮适配已经验证有效，也不根据本测试
+切换模型/seed。值得另行决策有限的真正跨数据集冻结验证，本轮不执行。
+
+测试fake均为官方Vidu（15/15在test@vidu.txt中匹配），属于训练未见生成方法；
+场景6类：Bedroom6、Closet3、Living room2、Pantry2、Kitchen1、Home Office/Study1。
+只代表这个小子集；source与生成器同时变化、历史准备性接触及元数据审核不等于
+严格盲测，不能宣称跨数据集泛化或时空定位性能。
+
+## 实际成本与交付
+
+运行墙钟6869.164秒（1.908小时）；前端阶段计时之和5939.510秒，九模型推理墙钟
+598.369秒，评价24.754秒；provider初始化2.753秒另有记录。分组CUDA events区间
+累计适配206.960秒、窗口COMPONENT193.044秒、窗口CELL193.072秒，不作为额外墙钟相加。
+本轮下载0秒/0字节；紧凑缓存984920179字节（0.917GiB），新增目录生成时快照
+1117440299字节（1.041GiB）；GPU峰值allocated1.973GiB、reserved2.996GiB。
+约0.350秒/帧，较旧估计略高（九而非六权重），未明显超出约20对预算预期。
+
+3项定向测试通过；两帧九权重连续/块输出最大误差2.773147400603193e-8，容差2e-5。
+未重跑旧大smoke、梯度测试或前端可靠性评测。代码数值路径运行中固定。
+
+数据目录保留`report.md`、`video_manifest.json`、`eligibility_audit.csv`、
+`eligibility_evidence.json`、`protocol.json`、`loading_check.json`、`costs.json`、
+`evaluation/{summary.json,metrics.csv,video_scores.csv,per_source_metrics.csv}`及final_status。
+模型/缓存/视频/长日志均不进入Git，不生成ZIP，不自动启动后续实验。
