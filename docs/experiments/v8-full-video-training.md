@@ -115,3 +115,113 @@ GPU峰值allocated 2.689249 GiB、reserved 3.013672 GiB；报告生成时新增�
 完整中文报告及小表位于`v8_full_video_training_budget5_v1/report.md`、
 `evaluation/summary.json`、`evaluation/metrics.csv`、`evaluation/per_source_differences.csv`；
 模型、视频与缓存未提交Git。实验进程及screen均已正常结束。
+
+## 下一阶段独立验证准备（只读清点，未启动）
+
+核查起点`b250813a2a4757eb72898aab6855521d042146d9`，分支仍为
+`v8-full-video-training`，起始工作区干净、与origin同步。主方法固定为
+GLOBAL_COMPONENT、三seed、窗口epoch100后完整视频epoch5。以下不改变模型或旧结果。
+
+### 实际数据范围
+
+依据`v8_full_video_training_budget5_v1/input_manifest.json`中唯一video_id与
+`actual_frames`，不是初始video_manifest中的pending字段；不重复计算窗口和seed。
+
+|用途|唯一视频|real/fake视频|source|real帧|fake帧|总实际帧|
+|---|---:|---|---:|---:|---:|---:|
+|训练|244|122/122|122|103365|103414|206779|
+|验证|28|14/14|14|13748|13757|27505|
+|合计|272|136/136|136|117113|117171|234284|
+
+与窗口预训练`v8_component_global_context_pilot_v1/input_manifest.json`逐split
+比较(source_id, role, video_path, video_sha256)集合完全一致：训练244、验证28视频。
+窗口预训练实际718训练窗口、83验证窗口；微调改变时间覆盖与监督聚合，不增加来源。
+帧数是唯一缓存帧数，不是训练5轮累计呈现次数。
+
+### 是否明显训练不足
+
+|seed|五轮已保存loss|train/validation AUROC|差距|train/validation AP|train/validation F1|
+|---|---|---|---:|---|---|
+|20260909|0.664323→0.278223→0.228391→0.177287→0.180735|0.985555/0.846939|0.138616|0.984991/0.881556|0.960317/0.740741|
+|20260910|0.961491→0.454920→0.305887→0.230287→0.197647|0.993013/0.882653|0.110360|0.991845/0.910964|0.979920/0.800000|
+|20260911|0.442349→0.312114→0.245433→0.227857→0.211170|0.984547/0.836735|0.147812|0.981243/0.892152|0.952756/0.733333|
+|三seed均值logit|不平均loss冒充新训练曲线|0.993617/0.872449|0.121168|0.992842/0.904242|0.979920/0.769231|
+
+三seed的训练拟合较好，未发现明显欠拟合证据；不能据此证明充分收敛或独立泛化。
+两个seed末轮loss仍下降，一个略回升，不据此追加epochs。现有记录不能唯一分辨
+source覆盖、表示局限、前端分布与泛化问题；目前优先冻结方法做独立验证，而非
+默认训练数据已足够或立即扩训练集。
+
+### 能确认的来源多样性
+
+使用本地官方Charades_v1_train/test.csv的scene/actions/subject字段；生成方法除
+已有source mapping外，核对官方`annot.zip`内train@wan.txt、train@fcvg.txt的精确
+文件记录（136个fake均匹配），不从文件名猜测。仅报告metadata粒度：
+
+|用途|生成方法与fake视频数|官方scene类别数|官方action ID覆盖|subject ID数|
+|---|---|---:|---:|---:|
+|训练|wan 46、fcvg 76（2种）|16|136|53|
+|验证|wan 8、fcvg 6（2种）|10|53|14|
+
+训练scene分布：Kitchen26、Living room16、Bedroom13、Bathroom13、Laundry room11、
+Home Office/Study8、Hallway7、Entryway6、Stairs5、Recreation room5、Dining room4、
+Closet2、Garage2、Pantry2、Basement1、Other1。
+scene是场景类别，不是独立物理地点；122 source不是122种场景。独立房屋/拍摄地点数量
+未知。action ID是原真实视频标注覆盖，不表示每个生成修改均准确实现该动作。
+subject ID不是已验证的不同家庭或摄像设备身份；没有这些额外字段的可靠统计。
+
+### 本地独立测试资格
+
+数据根datasets当前只有ActivityForensics/Charades这一已登记配对数据族。
+本地官方mapping共5389条，逐项只检查媒体文件存在性：174个source具备174份fake及
+对应174份real；其中136 source属于当前队列，额外38 source/76视频。
+额外30 source已在`review/review_manifest.json`；另外8 source中，0S9KN/1E1VE为
+旧source-learning-curve验证source，2544C/54XD1/7FNZZ为旧训练池，
+869NM/AYXFY/DU7H1为旧source128扩容训练计划。计划或review接触不等于证实每个都
+完成训练，但足以禁止宣称“从未参与历史开发”。本次未清点所有历史数值产物。
+
+额外38个中19 source/38视频属于官方test（vidu17、wan1、fcvg1），全部已有review
+记录；可作已接触数据的描述性冻结评价，不能作为本轮推荐的严格独立验证。
+未确认有本地可直接使用、且可证明未开发使用的成对source。
+raw/extracted另有deeptrace_reward目录，但未发现本任务范围内的独立双类视频/
+source/split/lineage清单证据，不读取旧路线内容，不把目录名或孤立视频算作可用测试集。
+没有已核验的跨数据集双类测试集；不跨数据集拼real与fake。
+
+### 唯一优先方案：官方test中未接触source的冻结视频级验证
+
+优先使用已有官方ActivityForensics test metadata及对应Charades真实来源，回答
+同数据族内独立source泛化，不称跨数据集验证。官方test映射的Charades子集为429
+fake记录、351 source；排除当前来源、已查review与历史训练计划后剩332 source，
+均能匹配官方Charades test metadata。这只是metadata候选数，不是已下载或已证实
+从未使用的数量。不得直接将332标作sealed test。
+
+建议下一次授权后仅选20 source、每source一real/一fake，共40视频（计划额度，不是
+实际冻结清单）。先用现有历史使用记录核对source及全部派生lineage，未能排除开发
+接触的身份不称独立；匹配双方视频级标签、官方split、来源和可用路径。以固定
+selection seed20260909的稳定source哈希排序，fake变体以官方记录稳定排序选一份，
+不看模型分数、前端成功率或伪造观感。场景范围依据官方室内日常活动scene定义预先
+确定；不按结构异常筛掉fake。若无法确认20个合法身份，先报告缺口，不凑数。
+本轮没有生成最终清单、下载或查看候选模型分数。
+
+尚缺：候选20对的最终身份及完整历史使用声明、实际媒体/内容hash、完整解码帧数、
+真实文件字节数。已有官方metadata支持真假/来源核对，但不能代替这些使用历史证据。
+外部数据集另需同一数据集内真假两类、source/原始来源/生成方法、标签及许可、
+split与派生lineage；当前不足以选定具体跨数据集数据。
+
+成本按旧同硬件实测估算：234284帧完整流水线墙钟77724.895秒（约0.332秒/帧，
+含旧六模型及I/O，不是纯GPU前端时间）；紧凑缓存11986210941字节（约51161字节/帧）。
+本次三模型已缓存评分/统计1046.475秒，约0.00447秒/帧。若40视频长度接近当前
+272视频均值，预计34454帧：完整处理约3.18小时、紧凑缓存约1.64GiB，
+三模型评分/统计约154秒。上述均为估计，视频长度、解码和缓存策略会改变成本；
+不重新跑资源smoke。原视频下载时间/空间和临时dense前端存储未知，不能把1.64GiB
+当总磁盘需求。可按实际计划总帧数F用0.332F秒与51161F字节更新。
+
+冻结当前三个epoch5 checkpoint及各自初始化/标准化/grouping hash，chunk64、FP32、
+阈值0和全视频面积LSE不变。无训练、统计拟合、阈值搜索、best选择。各seed先完整
+视频LSE，再平均最终video logit。只评价video AUROC、classification AP、阈值0的
+FPR=FP/(FP+TN)、Recall及Balanced Accuracy=(Recall+TNR)/2；同时列混淆矩阵及
+逐seed结果。CI以source为簇配对重采样10000次、seed20260909，保留同源真假及派生
+视频，不把帧当独立样本。任何执行缺失单列，不填0或按效果换source。
+
+下一步仅此验证；不扩大训练池、不恢复旧20轮/CELL、不新增候选。本轮仅更新本文，
+未运行模型前向、前端或GPU实验，也未改动既有模型与评分。
