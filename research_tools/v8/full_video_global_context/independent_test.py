@@ -129,9 +129,9 @@ def metrics(y,z):
     return m
 
 
-def bootstrap(rows,z):
-    sources=sorted({r['source_id'] for r in rows});y=np.array([r['video_label'] for r in rows])
-    indices=[np.array([i for i,r in enumerate(rows) if r['source_id']==s]) for s in sources]
+def bootstrap(rows,z,cluster_key='source_id'):
+    sources=sorted({r[cluster_key] for r in rows});y=np.array([r['video_label'] for r in rows])
+    indices=[np.array([i for i,r in enumerate(rows) if r[cluster_key]==s]) for s in sources]
     rng=np.random.default_rng(20260909);draws=[]
     for _ in range(10000):
         ii=np.concatenate([indices[i] for i in rng.integers(0,len(sources),len(sources))])
@@ -143,8 +143,8 @@ def bootstrap(rows,z):
     return own,pairs
 
 
-def finish(out,rows,summaries,records,identity,started):
-    ts=time.monotonic();y=np.array([r['video_label'] for r in rows]);scores=[];mm=[];z={}
+def evaluate_scores(out,rows,summaries,cluster_key='source_id'):
+    y=np.array([r['video_label'] for r in rows]);scores=[];mm=[];z={}
     for group in GROUPS:
         zz=np.array([[s['video_logits'][f'{group}__seed{seed}'] for s in summaries] for seed in SEEDS])
         if not np.isfinite(zz).all():raise ValueError('NONFINITE_SCORES')
@@ -152,26 +152,37 @@ def finish(out,rows,summaries,records,identity,started):
         for seed,values in list(zip(SEEDS,zz))+[('MEAN_VIDEO_LOGIT',z[group])]:
             mm.append({'group':group,'seed':seed,**metrics(y,values)})
             scores.extend({'group':group,'seed':seed,'source':r['source_id'],'video_id':r['video_id'],'role':r['role'],
-                           'label':r['video_label'],'generator':r['generator'],'logit':float(v)} for r,v in zip(rows,values))
-    own,pairs=bootstrap(rows,z);ev=out/'evaluation';ev.mkdir(exist_ok=True)
+                           'label':r['video_label'],'generator':r['generator'],'logit':float(v),
+                           **({'action_id':r['action_id']} if cluster_key=='action_id' else {})} for r,v in zip(rows,values))
+    own,pairs=bootstrap(rows,z,cluster_key);ev=out/'evaluation';ev.mkdir(exist_ok=True)
     csv_rows(ev/'video_scores.csv',scores);csv_rows(ev/'metrics.csv',mm)
     per=[]
-    for source in sorted({r['source_id'] for r in rows}):
-        ii=np.array([i for i,r in enumerate(rows) if r['source_id']==source])
-        per.append({'source':source,**{g:float(roc_auc_score(y[ii],z[g][ii])) for g in GROUPS}})
-    csv_rows(ev/'per_source_metrics.csv',per)
-    result={'metrics':mm,'auroc_intervals':own,'paired_auroc':pairs,'bootstrap':{'unit':'source, real/fake kept together',
+    for source in sorted({r[cluster_key] for r in rows}):
+        ii=np.array([i for i,r in enumerate(rows) if r[cluster_key]==source])
+        per.append({('source' if cluster_key=='source_id' else 'action_id'):source,**{g:float(roc_auc_score(y[ii],z[g][ii])) for g in GROUPS}})
+    csv_rows(ev/('per_source_metrics.csv' if cluster_key=='source_id' else 'per_action_metrics.csv'),per)
+    result={'metrics':mm,'auroc_intervals':own,'paired_auroc':pairs,'bootstrap':{'unit':('source' if cluster_key=='source_id' else 'action-cluster')+', real/fake kept together',
             'replicates':10000,'seed':20260909,'same_draws_all_groups':True},'threshold':0,'ensemble':'mean final independent-seed full-video area LSE logits'}
     save_json(ev/'summary.json',result)
+    return result
+
+
+def processing_costs(out,summaries,evaluation_s):
     timing={g:sum(sum(v for k,v in s['costs'].get('model_cuda_s_by_key',{}).items() if k.startswith(g+'__')) for s in summaries) for g in GROUPS}
     costs={'download_s':0,'download_bytes':0,'reason':'all selected originals available locally',
         'decoded_frames':sum(s['decoded_frames'] for s in summaries),'frontend':{k:sum(s['costs'].get('frontend',{}).get(k,0) for s in summaries) for k in ('geometry_s','tracking_s','rgb_s','features_s','cache_hit','new_geometry')},
         'group_cuda_inference_s':timing,'model_wall_s':sum(s['costs']['model_s'] for s in summaries),
-        'video_processing_wall_s':sum(s['costs']['wall_s'] for s in summaries),'evaluation_s':time.monotonic()-ts,
+        'video_processing_wall_s':sum(s['costs']['wall_s'] for s in summaries),'evaluation_s':evaluation_s,
         'cache_bytes':sum(p.stat().st_size for p in (out/'inputs').rglob('*') if p.is_file()),
         'new_storage_bytes':sum(p.stat().st_size for p in out.rglob('*') if p.is_file()),
         'gpu_peak_allocated_bytes':torch.cuda.max_memory_allocated(),'gpu_peak_reserved_bytes':torch.cuda.max_memory_reserved()}
-    save_json(out/'costs.json',costs)
+    return costs
+
+
+def finish(out,rows,summaries,records,identity,started):
+    ts=time.monotonic();result=evaluate_scores(out,rows,summaries)
+    mm,own,pairs=result['metrics'],result['auroc_intervals'],result['paired_auroc']
+    costs=processing_costs(out,summaries,time.monotonic()-ts);save_json(out/'costs.json',costs)
     lines=['# V8 按source隔离的冻结测试','',f'COMPLETE；{len(rows)//2} source、{len(rows)}视频、{costs["decoded_frames"]}实际解码帧，九份冻结权重评分完整；无训练。',
        f'未发现参与既往训练或性能调参的记录；并非严格从未接触的测试。历史review仅媒体准备且人工作业字段为空。4个有历史测量/评分的source排除，全部合格本地{len(rows)//2}对入选，不为凑20额外下载。0HV07曾尝试前端但无有效结构，无训练/检测分数，不将其失败占位误判为性能使用。',
        '纠正此前准备报告：review登记或未执行计划不自动构成开发污染；本轮按实际评分/训练证据判断。核对范围与排除证据见eligibility_audit.csv及eligibility_evidence.json。',
@@ -195,12 +206,15 @@ def finish(out,rows,summaries,records,identity,started):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--prepare',action='store_true');p.add_argument('--resume',action='store_true');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--prepare',action='store_true');p.add_argument('--resume',action='store_true');p.add_argument('--deepaction',action='store_true');args=p.parse_args()
     out=args.output.resolve();out.mkdir(parents=True,exist_ok=True);lock=(out/'run.lock').open('w');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     if args.prepare:
+        if args.deepaction:raise ValueError('USE_DEEPACTION_ACQUISITION_ENTRY')
         if (out/'video_manifest.json').exists():raise ValueError('MANIFEST_ALREADY_FROZEN')
         prepare(out);return
-    rows=read_json(out/'video_manifest.json')['rows'];records=model_records();root=DERIVED/'v8_component_global_context_pilot_v1'
+    manifest=read_json(out/'video_manifest.json')
+    if bool(manifest.get('dataset')=='faridlab/deepaction_v1')!=args.deepaction:raise ValueError('DATASET_ENTRY_FLAG_MISMATCH')
+    rows=manifest['rows'];records=model_records();root=DERIVED/'v8_component_global_context_pilot_v1'
     stats=read_json(root/'standardizer.json');group=read_json(root/'grouping_config.json');base=DERIVED/'v8_full_coverage_observation_field_identityfix_v1'
     adapted_protocol=read_json(DERIVED/'v8_full_video_training_budget5_v1/protocol.json')
     if adapted_protocol['standardizer_sha256']!=sha256_file(root/'standardizer.json') or adapted_protocol['grouping_sha256']!=sha256_file(root/'grouping_config.json'):
@@ -215,6 +229,15 @@ def main():
         'models':[{k:r[k] for k in ('group','condition','seed','checkpoint','checkpoint_sha256','expected_epoch')} for r in records],
         'frontend_protocol_sha256':sha256_file(base/'protocol.json'),'entry_sha256':sha256_file(__file__),
         'processor_sha256':sha256_file(runner.__file__),'threshold':0,'frames':'all native decode frames','block':64}
+    finish_fn=finish
+    if args.deepaction:
+        from . import deepaction
+        selection=read_json(out/'selection_protocol.json')
+        if selection['revision']!=deepaction.REVISION or read_json(out/'video_manifest.json')['cluster_key']!='action_id':raise ValueError('DEEPACTION_MANIFEST')
+        deepaction.validate_manifest(rows)
+        config.update(dataset='DeepAction',cluster='action_id, NOT original-video source',deepaction_entry_sha256=sha256_file(deepaction.__file__),
+                      selection_protocol_sha256=sha256_file(out/'selection_protocol.json'))
+        finish_fn=deepaction.finish
     identity=digest(config)
     if (out/'protocol.json').exists():
         if not args.resume or read_json(out/'protocol.json')['identity']!=identity:raise ValueError('RESUME_IDENTITY')
@@ -246,7 +269,7 @@ def main():
                 total_videos=len(rows),validate_first_block=False,model_timings=True))
         for path,sha in frozen.items():
             if sha256_file(path)!=sha:raise ValueError('FROZEN_ASSET_CHANGED')
-        phase='evaluate_report';finish(out,rows,summaries,records,identity,started)
+        phase='evaluate_report';finish_fn(out,rows,summaries,records,identity,started)
     except BaseException as e:
         save_json(out/'final_status.json',{'status':'STOPPED_SAFE' if isinstance(e,InterruptedError) else 'FAILED','phase':phase,
                   'error':str(e),'traceback':traceback.format_exc(),'training_started':False,'elapsed_this_invocation_s':time.monotonic()-started})
