@@ -102,7 +102,9 @@ def temporal_step(model,row,identity,chunk,labels):
     frames=frame_logits(cells,cpu['area']);lv=F.binary_cross_entropy_with_logits(z,z.new_tensor(float(row['video_label'])))
     lf=frame_loss(frames,labels[row['video_id']]);loss=.5*(lv+.5*lf);loss.backward()
     if not torch.isfinite(loss) or any(p.grad is not None and not torch.isfinite(p.grad).all() for p in model.parameters()):raise ValueError('NONFINITE_LOSS_OR_GRADIENT')
-    return {'loss':float(loss.detach()),'video_loss':float(lv.detach()),'frame_loss':float(lf.detach()),'read_s':read_s}
+    return {'loss':float(loss.detach()),'video_loss':float(lv.detach()),'frame_loss':float(lf.detach()),'read_s':read_s,
+            'peak_allocated_gib':torch.cuda.max_memory_allocated()/2**30,
+            'peak_reserved_gib':torch.cuda.max_memory_reserved()/2**30}
 
 
 def smoke(out,rows,labels,config):
@@ -146,6 +148,7 @@ def metrics(rows,predictions,labels):
 
 
 def evaluate(out,rows,labels,timing,config,new_record,old_record,progress):
+    (out/'evaluation').mkdir(parents=True,exist_ok=True)
     val=[r for r in rows if r['split']=='validation'];results={};all_scores=[]
     for name,record in [('VIDEO_ONLY',old_record),('TEMPORAL',new_record)]:
         model,_=training.load_model(BASE,'GLOBAL_COMPONENT',SEED)
@@ -223,6 +226,8 @@ def main():
             loss.append({'epoch':epoch,'video_loss':float(np.mean([r['video_loss'] for r in rr])),
                          'frame_loss':float(np.mean([r['frame_loss'] for r in rr]))})
         csv_rows(out/'loss_components.csv',loss)
+        allocated=max((r['peak_allocated_gib'] for r in terms.values() if 'peak_allocated_gib' in r),default=None)
+        reserved=max((r['peak_reserved_gib'] for r in terms.values() if 'peak_reserved_gib' in r),default=None)
         lines=['# V8 官方时间区间辅助监督单seed pilot','', 'GLOBAL_COMPONENT seed20260909，窗口epoch100初始化，固定5轮，最后权重；仅新增0.5帧BCE，无新增参数。',
             '训练244视频/122source/206779帧；验证28视频/14source/27505帧。闭区间并集、原生PTS，real全负；监督仅frame面积LSE，不给cell逐格标签。',
             '正帧训练32181、验证4046，无全正fake；全部帧/内容格参与。完整跨chunk梯度，FP32参数，原双精度LSE，chunk64，AdamW1e-4/wd1e-4、clip1。',
@@ -231,7 +236,7 @@ def main():
             '','## 边界与决策','帧AP不是视频AP或时间检测mAP；无空间监督/评价，不独立证明三维或component贡献。开发验证反复使用，单seed机制探索，不称稳定增益。',
             '是否补另外两seed在真实结果验收后讨论，本轮不执行追加训练。',
             f'训练本次调用{train_s:.3f}s；模型累计{records[0]["training_elapsed_s"]:.3f}s；评分评价{evaluation_s:.3f}s；调用总耗时{time.monotonic()-started:.3f}s。',
-            f'GPU峰值allocated {torch.cuda.max_memory_allocated()/2**30:.4f}GiB，reserved {torch.cuda.max_memory_reserved()/2**30:.4f}GiB；新增存储{sum(p.stat().st_size for p in out.rglob("*") if p.is_file())}bytes。']
+            f'训练GPU峰值allocated {allocated}GiB，reserved {reserved}GiB（None表示旧记录未持久化，不能用收尾恢复进程峰值代替）；新增存储{sum(p.stat().st_size for p in out.rglob("*") if p.is_file())}bytes。']
         (out/'report.md').write_text('\n'.join(lines)+'\n')
         save_json(out/'final_status.json',{'status':'COMPLETE','models':1,'seed':SEED,'epochs':5,'training_s':records[0]['training_elapsed_s'],'evaluation_s':evaluation_s,'elapsed_s':time.monotonic()-started})
         save_json(out/'progress.json',{'status':'COMPLETE','stage':'report','completed':1,'total':1})

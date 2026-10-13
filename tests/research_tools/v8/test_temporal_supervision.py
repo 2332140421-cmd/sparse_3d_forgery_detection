@@ -40,3 +40,32 @@ def test_one_seed_reuses_source_pair_loop_and_last_epoch(tmp_path,monkeypatch):
     r=run.train(tmp_path,tmp_path,rows,'cache',64,'id',lambda *a,**k:None,False,
                 conditions=('GLOBAL_COMPONENT',),epochs=5,seeds=(20260909,),train_step=step)
     assert len(r)==1 and r[0]['epoch']==5 and len(called)==10 and len(r[0]['loss_history'])==5
+
+
+def test_cached_evaluation_creates_missing_directory_without_forward(tmp_path,monkeypatch):
+    from research_tools.v8.full_video_training import temporal as t
+    model=torch.nn.Linear(1,1)
+    cp={'epoch':5,'identity':{'seed':20260909},'model':model.state_dict()}
+    checkpoint=tmp_path/'model.pt';torch.save(cp,checkpoint)
+    record={'checkpoint':str(checkpoint),'checkpoint_sha256':t.sha256_file(checkpoint),'identity':cp['identity']}
+    rows=[{'video_id':role,'source_id':'sample','split':'validation','role':role,'video_label':int(role=='fake'),
+           'video_sha256':role*8} for role in ('real','fake')]
+    labels={'real':np.array([False,False]),'fake':np.array([False,True])}
+    timing={r['video_id']:np.array([0.,1.]) for r in rows}
+    for name in ('VIDEO_ONLY','TEMPORAL'):
+        directory=tmp_path/'responses'/name;directory.mkdir(parents=True)
+        for row in rows:
+            p=directory/f'{row["video_id"]}.npz'
+            np.savez(p,video_logit=np.array(1. if row['role']=='fake' else -1.),frame_logits=np.array([-1.,1.] if row['role']=='fake' else [-2.,-1.]),
+                     pts_s=timing[row['video_id']],labels=labels[row['video_id']])
+            t.save_json(p.with_suffix('.json'),{'checkpoint_sha256':record['checkpoint_sha256'],'video_sha256':row['video_sha256'],'sha256':t.sha256_file(p)})
+    t.save_json(tmp_path/'annotation_details.json',{'fake':{'intervals':[{'start_s':1.,'end_s':1.}]}})
+    read=t.read_json
+    old_scores={r['video_id']:{'video_logits':{'GLOBAL_COMPONENT__seed20260909':1. if r['role']=='fake' else -1.}} for r in rows}
+    monkeypatch.setattr(t,'read_json',lambda p:old_scores if p==t.OLD/'scores.json' else read(p))
+    monkeypatch.setattr(t.training,'load_model',lambda *a:(torch.nn.Linear(1,1),None))
+    monkeypatch.setattr(t,'load_video',lambda *a:pytest.fail('legal cached response must not run forward'))
+    assert not (tmp_path/'evaluation').exists()
+    result=t.evaluate(tmp_path,rows,labels,timing,{'cache_identity':'unused'},record,record,lambda *a,**k:None)
+    assert (tmp_path/'evaluation/summary.json').is_file()
+    assert result['TEMPORAL']['frame']['eligible_fake_videos']==1
