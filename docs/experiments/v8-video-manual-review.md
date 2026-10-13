@@ -67,3 +67,23 @@ V019“不是全生成式”为人工观感原文，官方Cog身份保留。逆�
 ```bash
 .venv/bin/python -m research_tools.v8.full_video_global_context.manual_diagnosis --review <原始人工导出JSON或CSV路径>
 ```
+
+## 固定9条的已有空间/时间响应图
+
+`derived/v8_deepaction_response_visualization_v1/index.html`提供27张四栏SVG对照图及9张时间曲线。
+原画面、ADAPTED/WINDOW/CELL各三seed平均格响应；每视频按人工区间与原生PTS交集均匀选3时刻，
+最近实际保存帧，不按峰值选图。编号固定不增删。帧号/PTS/备注及原保存frame/video logit见图。
+根据summary.models索引，不硬编码模型轴；格按行优先16×16，用content/area排除padding，
+按缓存letterbox实际content_hw/pad_xy裁回原比例。热格最近邻显示，无像素级平滑或相对排名替代。
+27图共用绝对色阶[-19,+19]，0中点，蓝负红正；三seed逐帧细线/平均粗线，人工区间明确非GT。
+
+8/9视频的所选三个时刻，ADAPTED所有内容格均为负；V021所选格最大约+0.474。
+这是固定时刻结果，不等于整视频没有正响应。V002等的正式视频集成可以为正，而所选格均值为负：
+视频先每seed整视频LSE再平均，不等于显示用先平均seed格/帧响应再聚合，不能相互替代。
+已查看9条中间固定时刻的缩略对照：多个主体和背景同时呈负色，V021的WINDOW/CELL有较大片暖色；
+没有空间bbox，无法可靠判定是否准确对应备注中的手/物体，不能把暖色或相对较高负值称准确定位。
+没有定位AP/IoU、重评分或模型前向。原清单/分数/汇总/report hash未变。
+
+CPU生成墙钟8.28s、累计CPU12.08s（含有限多线程），GPU未使用；三项定向映射/模型轴/全负色阶检查。
+生成脚本为`response_visualization.py`，不导入训练/前端入口。SVG含内嵌画面，整个输出目录可离线查看。
+这是事后定性材料，不替代原40视频结果，不证明因果或精确空间依据。
