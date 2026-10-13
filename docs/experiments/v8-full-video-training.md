@@ -118,6 +118,9 @@ GPU峰值allocated 2.689249 GiB、reserved 3.013672 GiB；报告生成时新增�
 
 ## 下一阶段独立验证准备（只读清点，未启动）
 
+后续资格核对修正见`v8-independent-source-test.md`：准备性review登记不自动排除，
+缺失分数占位不等于已性能使用。下文保留当时保守准备记录，不作为最终测试资格结论。
+
 核查起点`b250813a2a4757eb72898aab6855521d042146d9`，分支仍为
 `v8-full-video-training`，起始工作区干净、与origin同步。主方法固定为
 GLOBAL_COMPONENT、三seed、窗口epoch100后完整视频epoch5。以下不改变模型或旧结果。

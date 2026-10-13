@@ -66,7 +66,7 @@ def legacy_frame(old,row,fi,info,canvas):
     return {k:arrays[k] for k in FIELDS},{**meta,'reused_input_path':str(p),'reused_input_sha256':sha256_file(p)},ctx
 
 
-def process(row,out,old,providers,models,identity,completed_videos):
+def process(row,out,old,providers,models,identity,completed_videos,*,total_videos=272,validate_first_block=True,model_timings=False):
     directory=out/'responses'/row['video_id'];directory.mkdir(parents=True,exist_ok=True)
     sp=directory/'summary.json';state_path=directory/'state.pt'
     if sp.exists():
@@ -113,10 +113,10 @@ def process(row,out,old,providers,models,identity,completed_videos):
         save_pt(state_path,{'identity':identity,'video_sha256':row['video_sha256'],
                 'states':{k:state_to(v,'cpu') for k,v in states.items()},'next_frame':last+1,
                 'blocks':records,'costs':costs,'coverage':coverage,'past_context_indices':[c[0] for c in context]})
-        progress(out,stage='continuous_frontend_and_six_models',completed_videos=completed_videos,total_videos=272,
+        progress(out,stage='continuous_frontend_and_frozen_models',completed_videos=completed_videos,total_videos=total_videos,
                  source=row['source_id'],role=row['role'],video_id=row['video_id'],completed_frames=last+1,
                  metadata_frames=row['metadata_frame_count'],elapsed_video_this_invocation_s=time.monotonic()-start)
-        print(f"BLOCK {row['source_id']} {row['role']} {last+1}/{row['metadata_frame_count']} videos={completed_videos}/272 elapsed_s={time.monotonic()-start:.1f}",flush=True)
+        print(f"BLOCK {row['source_id']} {row['role']} {last+1}/{row['metadata_frame_count']} videos={completed_videos}/{total_videos} elapsed_s={time.monotonic()-start:.1f}",flush=True)
         buf=[];metas=[];cell=[];fl=[]
         if STOP: raise InterruptedError('SAFE_TERM_AFTER_COMMITTED_BLOCK')
 
@@ -149,9 +149,15 @@ def process(row,out,old,providers,models,identity,completed_videos):
                 a,meta,ctx,_=frontend.build(row,bgr,info,context,previous_active)
                 a={k:a[k] for k in FIELDS};costs['new_frontend_frames']+=1
         f=tensors(a);torch.cuda.synchronize();ts=time.monotonic();rr=[]
+        events=[]
         for key,stream in models.items():
+            if model_timings:
+                begin,end=torch.cuda.Event(enable_timing=True),torch.cuda.Event(enable_timing=True);begin.record()
             result=stream.forward_step(f,states[key]);states[key]=result['state'];rr.append(result)
+            if model_timings:end.record();events.append((key,begin,end))
         torch.cuda.synchronize();costs['model_s']+=time.monotonic()-ts
+        for key,begin,end in events:
+            timing=costs.setdefault('model_cuda_s_by_key',{});timing[key]=timing.get(key,0.)+begin.elapsed_time(end)/1000
         cell.append(np.stack([r['cell_logits'][0].cpu().numpy() for r in rr]))
         fl.append(np.array([float(r['frame_logit']) for r in rr]))
         context=(context+[ctx])[-2:];buf.append(a);metas.append({**meta,'video_sha256':row['video_sha256']})
@@ -167,7 +173,7 @@ def process(row,out,old,providers,models,identity,completed_videos):
             import cv2
             display=out/'display';display.mkdir(exist_ok=True);cv2.imwrite(str(display/f"{row['video_id']}__first.png"),canvas)
         if len(buf)==BLOCK:
-            if not (out/'native_continuous_validation.json').exists():
+            if validate_first_block and not (out/'native_continuous_validation.json').exists():
                 batch={k:torch.from_numpy(np.stack([a[k] for a in buf]))[None].cuda() for k in FIELDS}
                 checks={key:validate(stream.model,batch) for key,stream in models.items() if key.endswith(str(SEEDS[0]))}
                 save_json(out/'native_continuous_validation.json',{'status':'PASS','video_id':row['video_id'],
