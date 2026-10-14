@@ -45,6 +45,10 @@ results, or inconsistency between the paper and implementation.
 
 ## Method boundaries
 
+These historical sparse-particle restrictions apply to V7. Explicitly authorized
+V8/V9 isolated pilots follow sections 14/15 of the design contract and their ADRs;
+do not impose the V7 numeric boundary on dense V9 observations or import V7 assets.
+
 - Do not restore old models, detection logic, residuals, feature schemas, fusion, or training routes.
 - Do not introduce explicit or implicit Part, Block, Region, or Surface hierarchies or discovery.
 - Do not use handcrafted motion inputs such as velocity, acceleration, jerk, direction, curvature, or motion classes.
