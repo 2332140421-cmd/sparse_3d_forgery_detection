@@ -38,6 +38,8 @@ python -m scripts.prepare_v8_assets charades-extract --root "$V8_DATA"
   python -m scripts.prepare_v8_assets activitynet-download --root "$V8_DATA"
   python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset acnet --workers 2
   python -m scripts.prepare_v8_assets activitynet-tar --archive-workers 4 --root "$V8_DATA"
+  python -m scripts.prepare_v8_assets activitynet-tar --archive-name v1-2_val --archive-workers 4 --root "$V8_DATA"
+  python -m scripts.prepare_v8_assets activitynet-tar --archive-name v1-2_train --archive-workers 4 --root "$V8_DATA"
 )
 python -m scripts.prepare_v8_assets index --root "$V8_DATA"
 ```
@@ -59,7 +61,7 @@ push URL使用该专用身份，fetch仍为原HTTPS。未更改全局Git/SSH配�
 `/home/njupt/.local/share/chenyh/github/v8_deploy_key`，实际权限600、父目录700。
 本轮生成后发现权限不可收紧的工作盘私钥副本已删除。公钥/独立known_hosts在个人工作区credentials目录。
 GitHub主机Ed25519指纹与官方文档一致。实际普通push已成功并确认远端HEAD为8c3ba1e；
-本轮收尾还需提交修改并再次push，最终以远端完整hash为准。
+此前资产准备代码已普通push至f156b59；本轮收尾还需提交新增修改并再次push，最终以远端完整hash为准。
 
 ## 官方资产目标与状态
 
@@ -92,7 +94,7 @@ feat.zip保留为官方发布资产，不能替代V8原始媒体前端。
 |来源|fake数量|唯一real目标|入口与边界|
 |---|---:|---:|---|
 |Charades-STA/Charades|1438|976|官方Charades_v1_480.zip；只解出关联source，包中额外媒体不作为实验队列|
-|ActivityNet Captions|1832|842|842/842精确匹配官方ID；直链镜像覆盖675，旧missing-files ZIP另覆盖83，84仍无可取媒体|
+|ActivityNet Captions|1832|842|842/842精确匹配官方ID；直链镜像已取676，旧missing-files ZIP已取83，v1.3 TAR已取39，余44继续检查v1.2包|
 |HC-STVG v1|2119|1912|官方补充材料1.4节确认；不是Hollywood，原v1 OneDrive访问失败|
 
 同source多fake共享一份real。索引保留(dataset,source)、完整fake相对路径、generator、
@@ -103,12 +105,13 @@ ActivityNet下载实试：`v_---9CpRcKoU`与`v_cyXWvxVt8qE`要求Sign in确认�
 `v_mSyfGQigb8U`报告unavailable。仅这3个是逐视频实测，其余不能声称已逐一失效。
 进一步核查公开镜像：TornadoLabs/activitynet revision
 `bc9c567ea67be43daf443cddb832ed983e5ccae5`的metadata.jsonl按video_id和youtube_url
-逐一匹配675个目标（17,303,875,891字节）；下载核对其size_bytes并记录HTTP ETag和本地SHA。
+最初匹配675个目标（17,303,875,891字节）；按youtube_url的精确ID复查后，
+纠正原始YouTube ID本身以v_开头的一条前缀遗漏，实际下载676个目标；下载核对其size_bytes并记录HTTP ETag和本地SHA。
 YimuWang/ActivityNet revision `1a20776262cc1fe3761588843cad26b62c2b7125`的
 missing_files.zip目录另精确匹配83个目标（1,929,017,817字节），只Range提取相关成员并核CRC。
 这两组来源互不重复；原生MKV保留，不改后缀冒充MP4。镜像metadata固定revision不意味着
 外部bucket媒体具有官方不可变SHA，因此必须保留下载当时本地SHA与来源，不声称逐位复现旧机。
-剩余84个ID未在这些直链/ZIP镜像找到，继续检查同镜像219,976,627,189字节的
+剩余初始84个ID未在这些直链/ZIP镜像找到，继续检查同镜像219,976,627,189字节的
 `v1-3_train_val.tar.gz.*`历史分段包。只用固定revision取得这些段。初次代理路径遇CDN超时；普通snapshot还可能在API失败时
 返回已有不完整local_dir，本轮清单校验明确拒绝了该结果。TAR段改用官方hf_hub_download
 逐目标枚举，HF_HUB_DOWNLOAD_TIMEOUT=120。直连huggingface.co测试失败，而直连hf-mirror.com
@@ -117,7 +120,10 @@ missing_files.zip目录另精确匹配83个目标（1,929,017,817字节），只
 官方Xet测试未观察到payload进展，停止专用测试，未填0耗时。逐段LFS SHA
 通过后用cat管道+stdlib tarfile流式扫描，只写目标84个source，不生成220GB合并副本，
 不解出原库其他视频、不解码成图。段下载和扫描均有独立RUNNING/PARTIAL/完成状态；
-包内实际视频数与最终命中数待实际扫描，不把包头或目标数当作已恢复。
+53段219,976,627,189字节已全部取得并逐段通过LFS SHA；实际扫描7732个视频成员，
+恢复39/84目标。新增直链1个后总计798/842，余44仍缺。该镜像另分发v1.2原库train/val包，
+不能把v1.3 train_val包解释为整个历史原库。继续按官方subset仅检查相关v1.2 train/val包，
+对应独立状态文件activitynet_tar_v1-2_{train,val}_status.json；不下载无关test包。
 不将全部842个都写成已失败或全部恢复。
 官方恢复途径是[数据访问申请](https://docs.google.com/forms/d/e/1FAIpQLSeKaFq9ZfcmZ7W0B0PbEhfbTHY41GeEgwsa7WobJgGUhn4DTQ/viewform)，
 由用户填写后取得7天访问的官方Drive/Baidu目录；不索取聊天密码、token或cookies。
@@ -166,3 +172,12 @@ Git分支历史中的JSON/JSONL/manifest路径及V8实验文档；没有提交�
 需要旧V8 `v8_full_video_training_budget5_v1/input_manifest.json`、
 `v8_component_global_context_pilot_v1/input_manifest.json`，或等价video/data manifest。
 完整缺口与候选列表见`historical_probe_recovery.json`。下载全库不会生成新的替代训练队列。
+
+## 已记录阶段成本（并行阶段不可相加为墙钟总时长）
+
+官方首次下载4801.7秒、修复长文件名后续传2597.4秒；完整官方验收292.1秒。
+Charades包16,339,546,533字节，下载3804.1秒；976目标提取13.2秒，包内9848视频。
+ActivityNet直链675目标最终完成阶段3455.8秒（含复用此前部分文件）；ZIP83目标269.2秒。
+ActivityNet v1.3历史包下载6928.1秒，逐段SHA309.7秒，流式扫描528.5秒。
+这些阶段存在并行、重试及已完成文件复用，不能当作全新下载吞吐或相加作为总墙钟。
+未持久记录的早期失败尝试耗时为未知，不填0。最终存储与全real核验另以最终索引记录。

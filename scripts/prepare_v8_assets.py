@@ -193,13 +193,20 @@ def download_activitynet(root):
 
 
 
-def recover_activitynet_tar(root, workers=1):
+def recover_activitynet_tar(root, workers=1, archive_name='v1-3_train_val'):
     audit=root/'asset_preparation';refs=audit/'references'
     meta=json.loads((refs/'YimuWang_ActivityNet-files.json').read_text())
     targets=set(json.loads((refs/'activitynet-archive-targets.json').read_text())['unmatched_sources'])
-    entries=sorted((e for e in meta['files'] if e['path'].startswith('v1-3_train_val.tar.gz.')),key=lambda e:e['path'])
+    if archive_name not in {'v1-3_train_val','v1-2_train','v1-2_val'}:raise ValueError('UNSUPPORTED_ACTIVITYNET_ARCHIVE')
+    if archive_name!='v1-3_train_val':
+        ids=json.loads((audit/'activitynet_sources.json').read_text())
+        subset='training' if archive_name=='v1-2_train' else 'validation'
+        targets={s for s in targets if ids[s]['subset']==subset and not real_path(root,'acnet',s).exists()}
+    entries=sorted((e for e in meta['files'] if e['path'].startswith(archive_name+'.tar.gz.')),key=lambda e:e['path'])
+    if not entries:raise ValueError('ACTIVITYNET_ARCHIVE_PARTS_MISSING')
     dest=root/'real_archives/activitynet_train_val'/meta['revision'];started=time.time()
-    status=audit/'activitynet_tar_status.json'
+    suffix='' if archive_name=='v1-3_train_val' else '_'+archive_name
+    status=audit/('activitynet_tar'+suffix+'_status.json')
     save(status,{'status':'RUNNING','stage':'DOWNLOAD','target':len(targets),'started_unix':started,
                  'archive_bytes_target':sum(e['size'] for e in entries),'parts_target':len(entries),'workers':workers})
     try:
@@ -245,7 +252,7 @@ def recover_activitynet_tar(root, workers=1):
             if process.wait()!=0:raise ValueError('ARCHIVE_CAT_FAILED')
         finally:
             if process.poll() is None:process.terminate();process.wait()
-        save(audit/'activitynet_tar_parts_verified.json',{'revision':meta['revision'],'parts':checks})
+        save(audit/('activitynet_tar'+suffix+'_parts_verified.json'),{'revision':meta['revision'],'parts':checks})
         save(status,{'status':'COMPLETE_SCAN','target':len(targets),'recovered':len(found),'unmatched_sources':sorted(targets-set(found)),
             'started_unix':started,'download_s':download_s,'verify_parts_s':verified_at-started-download_s,
             'scan_s':time.time()-verified_at,'total_s':time.time()-started,'archive_video_members':archive_videos,
@@ -350,15 +357,22 @@ def index(root):
         'official_verified_bytes':sum(r.get('bytes',0) for r in checks.values() if r['status']=='VERIFIED'),
         'real_bytes':sum(r.get('bytes',0) for r in real.values()),'verification_s':time.time()-started,
         'sample_decodes':{':'.join(k):v for k,v in samples.items()}}
-    save(audit/'asset_summary.json',summary);print(json.dumps(summary,ensure_ascii=False,indent=2))
+    save(audit/'asset_summary.json',summary)
+    if summary['official_status']=='COMPLETE':
+        state_path=audit/'download_status.json'
+        state=json.loads(state_path.read_text()) if state_path.exists() else {}
+        state.update(status='COMPLETE',revision=manifest['revision'],files_verified=len(checks),verified_bytes=summary['official_verified_bytes'])
+        save(state_path,state)
+    print(json.dumps(summary,ensure_ascii=False,indent=2))
 
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('action',choices=['official','charades-download','charades-extract','activitynet-download','activitynet-tar','index']);p.add_argument('--root',type=Path,required=True)
     p.add_argument('--revision',help='Official revision on first download; existing manifest always stays pinned')
     p.add_argument('--archive-workers',type=int,choices=[1,2,4],default=1)
+    p.add_argument('--archive-name',choices=['v1-3_train_val','v1-2_train','v1-2_val'],default='v1-3_train_val')
     a=p.parse_args()
-    if a.action=='activitynet-tar':recover_activitynet_tar(a.root,a.archive_workers)
+    if a.action=='activitynet-tar':recover_activitynet_tar(a.root,a.archive_workers,a.archive_name)
     elif a.action=='official':official(a.root,a.revision)
     else:{'charades-download':download_charades,'charades-extract':extract_charades,'activitynet-download':download_activitynet,'activitynet-tar':recover_activitynet_tar,'index':index}[a.action](a.root)
 

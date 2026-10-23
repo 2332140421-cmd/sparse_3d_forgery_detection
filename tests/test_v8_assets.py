@@ -26,6 +26,29 @@ def test_git_blob_checksum_is_not_plain_sha(tmp_path):
     assert blob!=digest(p,'sha1')
 
 
+def test_download_complete_requires_index_integrity(tmp_path,monkeypatch):
+    import json
+    import scripts.prepare_v8_assets as assets
+    audit=tmp_path/'asset_preparation';audit.mkdir()
+    media=tmp_path/'official/fixed/S.mp4';media.parent.mkdir(parents=True);media.write_bytes(b'media')
+    entry={'path':'S.mp4','size':5,'lfs':{'sha256':digest(media)}}
+    (audit/'official_files.json').write_text(json.dumps({'revision':'fixed','files':[entry]}))
+    row={'source_id':'charades:S','media_path':'S.mp4','generator':'wan','official_split':'train'}
+    monkeypatch.setattr(assets,'identities',lambda root:[row])
+    monkeypatch.setattr(assets,'container_info',lambda path:{'readable':True})
+    monkeypatch.setattr(assets,'sample_decode',lambda path:[{'pts':0}])
+    state=audit/'download_status.json'
+    state.write_text(json.dumps({'status':'DOWNLOADED_PENDING_VERIFICATION','download_s':12}))
+    media.write_bytes(b'wrong')
+    assets.index(tmp_path)
+    assert json.loads(state.read_text())['status']=='DOWNLOADED_PENDING_VERIFICATION'
+    media.write_bytes(b'media')
+    assets.index(tmp_path)
+    result=json.loads(state.read_text())
+    assert result['status']=='COMPLETE' and result['files_verified']==1 and result['download_s']==12
+    assert json.loads((audit/'asset_summary.json').read_text())['real_status']=='PARTIAL'
+
+
 def test_source_namespace_and_existing_real_reuse(tmp_path):
     old=tmp_path/'media/charades/Charades_v1_480/S.mp4';old.parent.mkdir(parents=True);old.write_bytes(b'existing')
     assert real_path(tmp_path,'charades','S')==old
@@ -142,7 +165,8 @@ def test_activitynet_direct_identity_and_provenance(tmp_path,monkeypatch):
     assert result['status']=='PARTIAL' and result['downloaded']==0
 
 
-def test_activitynet_tar_extracts_only_exact_targets_and_resumes(tmp_path,monkeypatch):
+@pytest.mark.parametrize('archive_name',['v1-3_train_val','v1-2_train','v1-2_val'])
+def test_activitynet_tar_extracts_only_exact_targets_and_resumes(tmp_path,monkeypatch,archive_name):
     import io
     import json
     import tarfile
@@ -156,16 +180,20 @@ def test_activitynet_tar_extracts_only_exact_targets_and_resumes(tmp_path,monkey
     payload=buffer.getvalue();entries=[];dest=tmp_path/'real_archives/activitynet_train_val/fixed';dest.mkdir(parents=True)
     split=len(payload)//2
     for suffix,data in [('00',payload[:split]),('01',payload[split:])]:
-        p=dest/('v1-3_train_val.tar.gz.'+suffix);p.write_bytes(data)
+        p=dest/(archive_name+'.tar.gz.'+suffix);p.write_bytes(data)
         entries.append({'path':p.name,'size':len(data),'lfs':{'sha256':digest(p)}})
     (refs/'YimuWang_ActivityNet-files.json').write_text(json.dumps({'repo':'mirror','revision':'fixed','files':entries}))
     (refs/'activitynet-archive-targets.json').write_text(json.dumps({'unmatched_sources':['v_OLD','v_TARGET']}))
+    (tmp_path/'asset_preparation/activitynet_sources.json').write_text(json.dumps({
+        'v_OLD':{'subset':'training' if archive_name=='v1-2_train' else 'validation'},
+        'v_TARGET':{'subset':'training' if archive_name=='v1-2_train' else 'validation'}}))
     old=tmp_path/'real/acnet/v_OLD.mp4';old.parent.mkdir(parents=True);old.write_bytes(b'existing')
     old.with_suffix('.mp4.json').write_text(json.dumps({'source_id':'acnet:v_OLD','revision':'fixed',
         'member':'v1-3/train_val/v_OLD.mp4','sha256':digest(old)}))
     monkeypatch.setattr(assets,'hf_hub_download',lambda *a,**k:str(k['local_dir']/a[1]))
-    assets.recover_activitynet_tar(tmp_path)
+    assets.recover_activitynet_tar(tmp_path,archive_name=archive_name)
     assert (tmp_path/'real/acnet/v_TARGET.mp4').read_bytes()==b'wanted'
     assert not (tmp_path/'real/acnet/v_UNRELATED.mp4').exists()
-    status=json.loads((tmp_path/'asset_preparation/activitynet_tar_status.json').read_text())
-    assert status['status']=='COMPLETE_SCAN' and status['recovered']==2 and status['archive_video_members']==3
+    suffix='' if archive_name=='v1-3_train_val' else '_'+archive_name
+    status=json.loads((tmp_path/('asset_preparation/activitynet_tar'+suffix+'_status.json')).read_text())
+    assert status['status']=='COMPLETE_SCAN' and status['recovered']==(2 if not suffix else 1) and status['archive_video_members']==3
