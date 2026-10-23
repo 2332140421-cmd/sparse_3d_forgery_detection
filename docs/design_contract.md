@@ -491,3 +491,11 @@ ParticleSequence 主链。V8 的输入、前端、区域定义、缺失语义和
 用户授权`v8-temporal-supervision-pilot`按ADR-0020，在固定GLOBAL_COMPONENT、
 seed20260909、5轮完整视频适配中，仅增加聚合frame logit的时间区间辅助BCE。
 原视频BCE/模型/缓存/统计不变；不提供逐格空间标签，不替换旧视频弱监督结果。
+
+### 14.7 V8 新服务器定位准备
+
+用户授权`v8-spatial-localization`按ADR-0021建立独立环境与小规模原始媒体入口，
+审计官方空间真值，并验证现有V8前端、随机模型接口和坐标映射。
+人工标注入口的目标为可见伪造异常区域；没有空间真值时不生成占位负类。
+本轮不启动全量前端、骨干重训或空间定位训练；后续两条件设计仅是提案，见
+`docs/v8/spatial_localization_plan.md`，不改变既有V8模型或V7边界。

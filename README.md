@@ -1,5 +1,7 @@
 # Sparse 3D Forgery Detection
 
+当前 **V8** 入口：[当前状态](docs/v8/current_status.md)、[新服务器运行与实测](docs/v8/new_server_setup.md)、[空间定位准备方案](docs/v8/spatial_localization_plan.md)。实现位于 `research_tools/v8`。新机已完成预训练前端和少量真实媒体接口验证；空间定位训练尚未开始。以下保留早期V7项目说明，不能据此判断V8尚未实现。
+
 本项目面向通用生成视频的伪造检测与时空定位，研究基于稀疏三维粒子的正常时空演化学习。目标是从三维运动与空间关系的正常演化偏差中形成异常证据，而不是构建完整三维世界模型。
 
 冻结主链：

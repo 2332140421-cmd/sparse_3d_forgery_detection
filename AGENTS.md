@@ -65,3 +65,15 @@ results, or inconsistency between the paper and implementation.
   - state which earlier wording or decision is superseded.
 - Never delete an accepted ADR. Supersede it with a new numbered ADR.
 - Do not download weights, install large dependencies, or run long GPU jobs without explicit user authorization.
+
+## V8 scope and entry points
+
+- For V8 work, start at `docs/v8/current_status.md` and `docs/v8/design_contract.md`,
+  together with the applicable experiment contract/ADR. Implementations live in
+  `research_tools/v8`; the early V7 restrictions above do not override the explicit
+  V8 exceptions in root design contract section 14 (dense fields, components,
+  motion observations and validity state inputs).
+- New-server setup and localization preparation: `docs/v8/new_server_setup.md`;
+  proposed spatial supervision: `docs/v8/spatial_localization_plan.md`, ADR-0021.
+- Distinguish historical results from local trained assets and new execution evidence.
+  A random interface model must never be called COMPONENT_ADAPTED.

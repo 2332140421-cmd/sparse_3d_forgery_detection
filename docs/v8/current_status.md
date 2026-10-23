@@ -1,42 +1,75 @@
 # V8 当前状态与边界
 
-## 用户最终目标
+更新2026-10-23。当前工作分支`v8-spatial-localization`，基线为远端
+`v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
+本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
+以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-V8 的目标是面向全视频连续帧：每个约定处理帧的全部真实内容都有区域归属；动态 components 利用当前三维结构和近期运动形成；模型学习局部结构、整帧组织及连续演化；观测缺失保留而不删除。
+## 当前方法与实现
 
-此目标没有因当前 pilot 范围而缩减。
+纯V8主方法为GLOBAL_COMPONENT：全视频真实解码帧/原生PTS→256×256 letterbox→
+MoGe-2 dense XYZ与CoTracker3 online短历史对应→16×16基础格→几何/近期运动规则驱动
+动态component→冻结ImageNet ResNet18格RGB及MEAN_REPLICATED几何编码→同帧全域
+attention→多前驱因果cell GRU→格响应→面积加权LSE帧/视频分数。
+实现位于`research_tools/v8`，不是只看`src`或早期README。
 
-## 当前已实现范围
+component是四邻接规则分区，每个最多4格、可逐帧重组；不是网络学习的任意像素边界，
+不是物理部位。主方法在学习前已经压缩格内XYZ均值，不能宣称保留了完整稠密表面细节。
+几何缺失格保留，RGB与输出不删除；纯padding排除。既有格热图是弱监督响应，不是伪造mask。
+V8授权范围以根契约第14节及V8合同/ADR为准，不套用早期V7粒子输入限制。
 
-当前实现处理 256×256 letterbox 画布上的16×16基础格。每个被选中的窗口含16个时刻；每帧从原视频重新生成MoGe dense geometry、CoTracker短历史状态和冻结ResNet18空间特征。FULL使用格级XYZ mean、观测状态、逐帧动态component、固定格消息、cell级多对多关联和GRU；RGB_2D不读取XYZ、geometry mask或geometry-derived component pooling。监督与正式评价均为窗口级。
+## 旧服务器已完成的历史结果
 
-当前仍是继承的801窗口队列，不是独立全视频帧队列；GRU hidden每窗口重置；没有经帧级监督/评价的正式frame detector；dense XYZ在可学习编码前已压为每格mean。
+这些不是新机复现，也不意味着新机拥有对应checkpoint。
 
-## 正式基准
+|实验|主要开发验证结果|边界|
+|---|---|---|
+|identityfix窗口FULL/RGB_2D三seed|source-macro AUROC 0.785714/0.761905|718训练/83验证窗口；旧修复前身份错配结果排除|
+|同阶段全帧关系窗口COMPONENT/CELL|macro 0.896825/0.904762；pooled 0.856562/0.721835|801窗口，分区匹配对照，不能单凭macro宣称稳定增益|
+|窗口模型的全视频冻结COMPONENT/CELL|AUROC 0.826531/0.714286；AP 0.857998/0.707924|同阶段对照，272视频全解码帧|
+|COMPONENT_ADAPTED三seed，固定5轮|AUROC 0.872449，AP 0.904242，P 0.833333，R 0.714286，F1 0.769231，ACC 0.785714|只有COMPONENT适配，不与未适配CELL作因果归因|
 
-唯一干净正式基准为数据目录 `v8_full_coverage_observation_field_identityfix_v1`：718 train windows/122 sources，83 validation windows/14 sources，FULL与RGB_2D各3 seed、100 epochs。三seed平均logit的validation source-macro AUROC分别为0.785714和0.761905。
+历史全视频数据：244训练视频/122source/206779帧；28开发验证视频/14source/27505帧。
+COMPONENT适配相对冻结AUROC差+0.045918，95%CI[-0.010204,0.112245]；
+同一14source开发验证反复使用，不是全新独立test。视频弱监督和热图不证明空间定位。
+原六模型20轮协议已暂停，不能写成6/6完成；三seed COMPONENT固定5轮已完成。
 
-修复前 `v8_full_coverage_observation_field_v1` 含训练输入身份错配，状态为 `PRE_FIX_TRAIN_INPUT_IDENTITY_MISMATCH`，仅作历史记录，不参与正式模型选择或结论。
+时间区间辅助监督pilot仅seed20260909、5轮：帧AUROC从0.764115到0.836800，
+real平均帧FPR从0.004863到0.084656；视频AUROC均0.846939。它是时间BCE，
+不是空间mask监督，也不是无代价提高。独立source/未见Vidu及DeepAction迁移评价已有
+下降记录，不能声称已证明稳定跨数据集泛化。V9稠密/query路线历史约0.59—0.64且
+query集中，本轮不恢复或修复V9。
 
-## 旧路线边界
+历史细节：[全帧关系](../experiments/v8-component-global-context-pilot.md)、
+[全视频冻结](../experiments/v8-full-video-global-context.md)、
+[固定5轮适配](../experiments/v8-full-video-training.md)、
+[时间pilot](../experiments/v8-temporal-supervision-pilot.md)、
+[独立source](../experiments/v8-independent-source-test.md)、
+[DeepAction](../experiments/v8-deepaction-cross-dataset.md)。
+历史视频身份曾错配：新接口使用source+role+完整媒体路径及SHA；pair_id不能单独索引。
 
-允许继承原始视频、官方标签、source/split/window身份，以及通过视频SHA、source、role与frame identity核验的V8 raw frontend cache。当前V8未读取V7的XYZ、轨迹、component、S/Q、视觉特征、standardizer或检测模型，也未用修复前V8 checkpoint、训练统计或分数形成当前正式结果。
+## 新机本轮实际完成
 
-当前队列的window IDs、源帧身份和原视频映射仍来自旧开发实验 manifests；这是明确的样本范围依赖，而不是数值特征复用。因此当前结果不是独立全视频队列，也不是sealed test。
+- 新建独立Python3.12.7环境，torch2.5.1+cu124/torchvision0.20.1；RTX4090 24GB。
+- 下载固定MoGe-2代码、CoTracker3 online代码及utils3d，三个预训练工具权重记录完整SHA。
+- 下载官方metadata/时间标注，核对5389 fake/3730source/6生成器/3来源数据族；未发现公开空间mask/框。
+- 仅下载1LARL real/fake各1个；CPU完整解码各914帧，保留原生PTS，未提取完整视频前端。
+- 固定4秒开始各4个连续帧：实际前端、动态component、两种随机模型前反向、padding与原图映射通过。
+- 导出8张原尺寸图和身份/PTS/标注状态JSON；未标注显式null。10项定向测试通过。
+- 提交小型执行证据及新机运行说明，不提交媒体/权重/环境/大型缓存。
 
-## 下一步边界
+环境与精确命令、下载身份、吞吐和成本见[new_server_setup.md](new_server_setup.md)及
+[evidence/new_server_smoke.json](evidence/new_server_smoke.json)。
+新机没有历史训练好的V8模型、旧standardizer/grouping、旧前端缓存或历史source划分清单；
+随机smoke明确使用identity scaling与1/1/1 grouping常量，不能叫COMPONENT_ADAPTED或正式复现。
 
-下一次只应先验证“格内mean之前的轻量局部XYZ编码”是否提供增量，并与mean-replicated等容量控制匹配。独立全视频连续帧接口应作为另一项后续工作，不能与局部几何改造同时进入一个正式比较。
+## 尚未完成及下一阶段
 
-## 后续独立工程验收记录
-
-`v8-full-video-streaming`分支已完成独立的一对1LARL real/fake连续帧工程pilot，共1828帧，跨块保持hidden，冻结MEAN_REPLICATED模型，无训练或新性能评价。该范围不替换上述窗口正式基准，也不代表272视频全量完成。详见`docs/experiments/v8-full-video-streaming-pilot.md`。
-
-## 后续全帧区域关系匹配对照
-
-`v8-component-global-context`已完成同801窗口的6模型/100 epochs对照。动态component
-与singleton格共享同层全帧attention及MEAN_REPLICATED、cell时间路径；只改变区域分区。
-集成验证macro为0.896825/0.904762，主差−0.007937，95% CI [−0.150794,0.126984]；
-pooled为0.856562/0.721835，辅助AP/F1亦改善。当前没有稳定macro分组增益证据，不否认
-辅助正向信号；不将历史差值归因于attention。旧结果与streaming接口未改。
-完整记录见`docs/experiments/v8-component-global-context-pilot.md`，本轮已结束。
+**本轮环境和真实数据接口准备完成；空间定位训练尚未开始。** 没有空间真值或空间性能。
+正式CELL_LOC/COMPONENT_LOC拟共享格均值压缩前的局部像素RGB/XYZ编码器与非整格常值
+解码器，仅改变cell/component上下文；公平初始化和预算见
+[spatial_localization_plan.md](spatial_localization_plan.md)。
+先人工完成“可见异常区域”8帧接口标注/状态检查，再冻结source隔离的正式标注集、
+训练/开发/测试清单和完整初始化协议。需要重训时，两条件共同拟合训练统计、同阶段同预算
+重新训练骨干，不能只适配COMPONENT。后续正式网络/超参尚未冻结。
+本轮结束后不自动启动全库下载、全量前端、正式训练或历史全实验重跑。

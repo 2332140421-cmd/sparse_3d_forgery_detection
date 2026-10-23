@@ -1,0 +1,805 @@
+{
+  "status": "INTERFACE_SMOKE_ONLY",
+  "device": "NVIDIA GeForce RTX 4090",
+  "torch": "2.5.1+cu124",
+  "cuda_runtime": "12.4",
+  "frame_selection": {
+    "start_s": 4.0,
+    "consecutive_frames": 4
+  },
+  "scaling": "IDENTITY_UNFITTED_SMOKE_ONLY",
+  "grouping": {
+    "spatial_scale": 1.0,
+    "motion_scale": 1.0,
+    "merge_threshold": 1.0
+  },
+  "videos": [
+    {
+      "source_id": "charades:1LARL",
+      "role": "real",
+      "media_path": "charades/Charades_v1_480/1LARL.mp4",
+      "video_id": "7f61c3f06e0012642f3bf8ed",
+      "video_sha256": "012a535ff9dfdf9996904158d892af23cef853db6c905116bcf7fa8911551434",
+      "frames": [
+        {
+          "frame_index": 120,
+          "pts_ticks": 120120,
+          "time_base": "1/30000",
+          "absolute_pts_s": 4.004,
+          "pts_s": 4.004,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              270,
+              480
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.5333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              120
+            ],
+            "output_axis_frame_indices": [
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120
+            ],
+            "current_output_index": 15,
+            "previous_output_index": null,
+            "endpoint_padding_count": 15,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/7f61c3f06e0012642f3bf8ed/000120.npz",
+          "component_count": 48,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 160
+        },
+        {
+          "frame_index": 121,
+          "pts_ticks": 121121,
+          "time_base": "1/30000",
+          "absolute_pts_s": 4.037366666666666,
+          "pts_s": 4.037366666666666,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              270,
+              480
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.5333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              120,
+              121
+            ],
+            "output_axis_frame_indices": [
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              121
+            ],
+            "current_output_index": 15,
+            "previous_output_index": 14,
+            "endpoint_padding_count": 14,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/7f61c3f06e0012642f3bf8ed/000121.npz",
+          "component_count": 48,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 0
+        },
+        {
+          "frame_index": 122,
+          "pts_ticks": 122122,
+          "time_base": "1/30000",
+          "absolute_pts_s": 4.070733333333333,
+          "pts_s": 4.070733333333333,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              270,
+              480
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.5333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              120,
+              121,
+              122
+            ],
+            "output_axis_frame_indices": [
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              121,
+              122
+            ],
+            "current_output_index": 15,
+            "previous_output_index": 14,
+            "endpoint_padding_count": 13,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/7f61c3f06e0012642f3bf8ed/000122.npz",
+          "component_count": 45,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 0
+        },
+        {
+          "frame_index": 123,
+          "pts_ticks": 123123,
+          "time_base": "1/30000",
+          "absolute_pts_s": 4.1041,
+          "pts_s": 4.1041,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              270,
+              480
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.5333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              121,
+              122,
+              123
+            ],
+            "output_axis_frame_indices": [
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              122,
+              123
+            ],
+            "current_output_index": 15,
+            "previous_output_index": 14,
+            "endpoint_padding_count": 13,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/7f61c3f06e0012642f3bf8ed/000123.npz",
+          "component_count": 46,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 0
+        }
+      ],
+      "frontend_cost_s": {
+        "geometry_s": 0.3130628759972751,
+        "rgb_s": 0.0126842032186687,
+        "tracking_s": 1.0530489478260279,
+        "features_s": 0.02983544347807765,
+        "write_s": 0.1317003103904426,
+        "cache_hit": 0,
+        "new_geometry": 4,
+        "cache_rejected": 0
+      },
+      "models": [
+        {
+          "condition": "GLOBAL_CELL",
+          "initialization": "RANDOM_INTERFACE_ONLY",
+          "forward_backward_padding_check_s": 0.11043595289811492,
+          "finite_gradients": 1,
+          "parameter_count": 319969
+        },
+        {
+          "condition": "GLOBAL_COMPONENT",
+          "initialization": "RANDOM_INTERFACE_ONLY",
+          "forward_backward_padding_check_s": 0.008653792086988688,
+          "finite_gradients": 1,
+          "parameter_count": 319969
+        }
+      ],
+      "input_shapes": {
+        "x": [
+          1,
+          4,
+          256,
+          77
+        ],
+        "xyz": [
+          1,
+          4,
+          256,
+          16,
+          16,
+          3
+        ],
+        "valid": [
+          1,
+          4,
+          256,
+          16,
+          16
+        ],
+        "content": [
+          1,
+          4,
+          256,
+          16,
+          16
+        ],
+        "mu": [
+          1,
+          4,
+          256,
+          3
+        ],
+        "area": [
+          1,
+          4,
+          256
+        ],
+        "component_ids": [
+          1,
+          4,
+          256
+        ],
+        "predecessor": [
+          1,
+          4,
+          256,
+          4
+        ],
+        "association_weight": [
+          1,
+          4,
+          256,
+          4
+        ],
+        "history_available": [
+          1,
+          4,
+          256
+        ],
+        "delta_t": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "source_id": "charades:1LARL",
+      "role": "fake",
+      "media_path": "video/02_wan/1LARL+3.60=10.20=charades@train_delete@1LARL@214@wan.mp4",
+      "video_id": "9cdf2bd29739b6f1e0241227",
+      "video_sha256": "51586e79cd8bc5cfba29345a861cc9e5f68f858f8f6a06c7c8c35f8e1a7ad55c",
+      "frames": [
+        {
+          "frame_index": 120,
+          "pts_ticks": 48000,
+          "time_base": "1/11988",
+          "absolute_pts_s": 4.004004004004004,
+          "pts_s": 4.004004004004004,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              1080,
+              1920
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.13333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              120
+            ],
+            "output_axis_frame_indices": [
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120
+            ],
+            "current_output_index": 15,
+            "previous_output_index": null,
+            "endpoint_padding_count": 15,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/9cdf2bd29739b6f1e0241227/000120.npz",
+          "component_count": 52,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 160
+        },
+        {
+          "frame_index": 121,
+          "pts_ticks": 48400,
+          "time_base": "1/11988",
+          "absolute_pts_s": 4.037370704037371,
+          "pts_s": 4.037370704037371,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              1080,
+              1920
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.13333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              120,
+              121
+            ],
+            "output_axis_frame_indices": [
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              121
+            ],
+            "current_output_index": 15,
+            "previous_output_index": 14,
+            "endpoint_padding_count": 14,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/9cdf2bd29739b6f1e0241227/000121.npz",
+          "component_count": 51,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 0
+        },
+        {
+          "frame_index": 122,
+          "pts_ticks": 48800,
+          "time_base": "1/11988",
+          "absolute_pts_s": 4.070737404070737,
+          "pts_s": 4.070737404070737,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              1080,
+              1920
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.13333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              120,
+              121,
+              122
+            ],
+            "output_axis_frame_indices": [
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              120,
+              121,
+              122
+            ],
+            "current_output_index": 15,
+            "previous_output_index": 14,
+            "endpoint_padding_count": 13,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/9cdf2bd29739b6f1e0241227/000122.npz",
+          "component_count": 48,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 0
+        },
+        {
+          "frame_index": 123,
+          "pts_ticks": 49200,
+          "time_base": "1/11988",
+          "absolute_pts_s": 4.104104104104104,
+          "pts_s": 4.104104104104104,
+          "time_origin_s": 0.0,
+          "timestamp_source": "NATIVE_PTS",
+          "mapping": {
+            "source_hw": [
+              1080,
+              1920
+            ],
+            "canvas_hw": [
+              256,
+              256
+            ],
+            "scale": 0.13333333333333333,
+            "pad_xy": [
+              0,
+              56
+            ],
+            "content_hw": [
+              144,
+              256
+            ]
+          },
+          "tracker_time": {
+            "input_frame_indices": [
+              121,
+              122,
+              123
+            ],
+            "output_axis_frame_indices": [
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              121,
+              122,
+              123
+            ],
+            "current_output_index": 15,
+            "previous_output_index": 14,
+            "endpoint_padding_count": 13,
+            "query_output_index": 15
+          },
+          "geometry_source": "<WORKSPACE>/data/sparse_3d_forgery_detection/smoke/localization_final/frames/9cdf2bd29739b6f1e0241227/000123.npz",
+          "component_count": 46,
+          "active_cells": 160,
+          "content_area": 36864,
+          "geometry_valid_content_pixels": 36864,
+          "no_history_cells": 0
+        }
+      ],
+      "frontend_cost_s": {
+        "geometry_s": 0.06386603973805904,
+        "rgb_s": 0.0030755149200558662,
+        "tracking_s": 0.997905823867768,
+        "features_s": 0.029732230585068464,
+        "write_s": 0.13381220819428563,
+        "cache_hit": 0,
+        "new_geometry": 4,
+        "cache_rejected": 0
+      },
+      "models": [
+        {
+          "condition": "GLOBAL_CELL",
+          "initialization": "RANDOM_INTERFACE_ONLY",
+          "forward_backward_padding_check_s": 0.011791223660111427,
+          "finite_gradients": 1,
+          "parameter_count": 319969
+        },
+        {
+          "condition": "GLOBAL_COMPONENT",
+          "initialization": "RANDOM_INTERFACE_ONLY",
+          "forward_backward_padding_check_s": 0.010689779184758663,
+          "finite_gradients": 1,
+          "parameter_count": 319969
+        }
+      ],
+      "input_shapes": {
+        "x": [
+          1,
+          4,
+          256,
+          77
+        ],
+        "xyz": [
+          1,
+          4,
+          256,
+          16,
+          16,
+          3
+        ],
+        "valid": [
+          1,
+          4,
+          256,
+          16,
+          16
+        ],
+        "content": [
+          1,
+          4,
+          256,
+          16,
+          16
+        ],
+        "mu": [
+          1,
+          4,
+          256,
+          3
+        ],
+        "area": [
+          1,
+          4,
+          256
+        ],
+        "component_ids": [
+          1,
+          4,
+          256
+        ],
+        "predecessor": [
+          1,
+          4,
+          256,
+          4
+        ],
+        "association_weight": [
+          1,
+          4,
+          256,
+          4
+        ],
+        "history_available": [
+          1,
+          4,
+          256
+        ],
+        "delta_t": [
+          1,
+          4
+        ]
+      }
+    }
+  ],
+  "weights": {
+    "checkpoints/moge-2-vits-normal.pt": "79a16621928c2bf0ed04659218c55c01075e950507f40bb3332fb4c873d3e1dc",
+    "checkpoints/scaled_online.pth": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+    "cache/torch/hub/checkpoints/resnet18-f37072fd.pth": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
+  },
+  "wall_s": 5.598075610119849,
+  "gpu_peak_allocated_bytes": 2117948928,
+  "output_bytes_before_report": 14605912,
+  "code_sha256": {
+    "research_tools/v8/spatial_localization/data.py": "8c8ab85264307eff6cdf83bd56f02ad9a9c2fd856daea92bd08a38025d1ac72c",
+    "research_tools/v8/spatial_localization/prepare.py": "ee89d526ddc3f71567a07d656977349b39e5fd4740a5e342cc7b2e0aacdde1d2",
+    "research_tools/v8/spatial_localization/smoke.py": "215e3d992d67f87a4ec8def8e1d7df66337a87d27cc92a7ebc8b4846e83c2d87",
+    "research_tools/v8/spatial_localization/__init__.py": "8076b1a6ab502b37c86106ca83c0a7ea363c7634f2dded0f8f9bbc341395392a"
+  },
+  "tool_code_revisions": {
+    "MoGe": "07444410f1e33f402353b99d6ccd26bd31e469e8",
+    "co-tracker": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "utils3d": "3fab839f0be9931dac7c8488eb0e1600c236e183"
+  },
+  "weight_repository_revisions_at_audit": {
+    "Ruicheng/moge-2-vits-normal": {
+      "revision": "26b477f41595707c5db6770294c0d1721e8ed4ed"
+    },
+    "facebook/cotracker3": {
+      "revision": "bf55ea50d4390e1820a267f131cd6587240fb2c5"
+    }
+  },
+  "metadata_sha256": {
+    "annot.zip": "3b7ff129199ac306f90d324eb352edcec704508f9d6d98877044b15949851fd5",
+    "train.csv": "eeff29e89299cb1eee48b7f815c5d4df774186fa9361b17be88fa58aebb6f762",
+    "test.csv": "89eac982acf09817d42e30229c3a850738910af6719bf3517e80efeae30993de",
+    "Charades.zip": "c616913ef79c2ddde06d9c562eae57bb8901d459d7568a0d27bf09cbf33ae866"
+  },
+  "local_decode": [
+    {
+      "media_path": "charades/Charades_v1_480/1LARL.mp4",
+      "metadata": {
+        "metadata_frame_count": 914,
+        "fps": 29.97002997002997,
+        "time_base": "1/30000",
+        "stream_start_time": 0,
+        "duration_s": 30.497133333333334,
+        "source_hw": [
+          270,
+          480
+        ]
+      },
+      "actual_frames": 914,
+      "last_pts": {
+        "frame_index": 913,
+        "pts_ticks": 913913,
+        "time_base": "1/30000",
+        "absolute_pts_s": 30.463766666666668,
+        "pts_s": 30.463766666666668,
+        "time_origin_s": 0.0,
+        "timestamp_source": "NATIVE_PTS"
+      },
+      "decode_s": 0.16933339182287455
+    },
+    {
+      "media_path": "video/02_wan/1LARL+3.60=10.20=charades@train_delete@1LARL@214@wan.mp4",
+      "metadata": {
+        "metadata_frame_count": 914,
+        "fps": 29.97,
+        "time_base": "1/11988",
+        "stream_start_time": 0,
+        "duration_s": 30.497163830497165,
+        "source_hw": [
+          1080,
+          1920
+        ]
+      },
+      "actual_frames": 914,
+      "last_pts": {
+        "frame_index": 913,
+        "pts_ticks": 365200,
+        "time_base": "1/11988",
+        "absolute_pts_s": 30.463797130463796,
+        "pts_s": 30.463797130463796,
+        "time_origin_s": 0.0,
+        "timestamp_source": "NATIVE_PTS"
+      },
+      "decode_s": 1.472789668943733
+    }
+  ]
+}

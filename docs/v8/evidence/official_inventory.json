@@ -1,0 +1,35 @@
+{
+  "revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+  "summary": {
+    "fake_videos": 5389,
+    "unique_sources": 3730,
+    "split": {
+      "test": 1565,
+      "train": 3824
+    },
+    "generator": {
+      "fcvg": 1166,
+      "ltx": 1058,
+      "scifi": 780,
+      "vace-1.3B": 1061,
+      "vidu": 265,
+      "wan": 1059
+    },
+    "scene_source": {
+      "acnet": 1832,
+      "charades": 1438,
+      "hcv1": 2119
+    },
+    "real_videos_in_AF_repository": 0,
+    "published_spatial_annotations_found": 0,
+    "annotation_semantics": "Temporal manipulated-activity intervals in seconds; no spatial coordinates.",
+    "nonmedia_files": [
+      ".gitattributes",
+      "README.md",
+      "annot.zip",
+      "feat.zip",
+      "metadata/test.csv",
+      "metadata/train.csv"
+    ]
+  }
+}
