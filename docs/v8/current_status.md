@@ -70,8 +70,8 @@ query集中，本轮不恢复或修复V9。
 `8c3ba1e`已实际push并核对远端一致；本轮最终提交另行记录。
 完整官方HF发布集固定revision已实际验收：5395文件、5389 fake全部通过。
 关联real尚在恢复，不能把官方发布集COMPLETE写成配对数据COMPLETE。
-关联real目标3730：Charades976、ActivityNet842、HC-STVG v1 1912；Charades齐全，后两者通过精确ID镜像恢复，
-另扫描历史ActivityNet压缩包；真实计数以最终索引为准。
+关联real目标3730：Charades976、ActivityNet842、HC-STVG v1 1912；Charades976和HC-STVG1912均齐全；ActivityNet798/842已通过容器核验，余44继续扫描历史v1.2包。
+本次统一核验3686 real、5389 fake，完整性失败0；该计数是当前检查点，待剩余恢复后再次验收。
 精确进度、完整性及人工缺口见[data_assets.md](data_assets.md)。
 历史仅恢复14个开发验证source名称，缺完整V8视频身份manifest，未重新抽样替代244/28队列。
 

@@ -181,3 +181,8 @@ ActivityNet直链675目标最终完成阶段3455.8秒（含复用此前部分文
 ActivityNet v1.3历史包下载6928.1秒，逐段SHA309.7秒，流式扫描528.5秒。
 这些阶段存在并行、重试及已完成文件复用，不能当作全新下载吞吐或相加作为总墙钟。
 未持久记录的早期失败尝试耗时为未知，不填0。最终存储与全real核验另以最终索引记录。
+
+当前检查点：统一索引实际核验3686/3730 real（Charades976、HC-STVG1912、ActivityNet798），
+35,128,010,257字节；44个缺失source均为ActivityNet。5389 fake和现有real容器均通过，
+分层首/中/尾解码无失败，核验345.4秒。小型证据见[evidence/asset_preparation.json](evidence/asset_preparation.json)。
+历史14个开发source的real与23个fake候选均有新机路径；仍不等于恢复精确28视频或244训练视频。
