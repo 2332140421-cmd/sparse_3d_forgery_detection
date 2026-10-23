@@ -7,6 +7,7 @@ require absent old caches and cannot serve this raw-asset preparation task.
 from __future__ import annotations
 import argparse
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -96,7 +97,11 @@ def download_charades(root):
 
 def real_path(root, dataset, source):
     old=root/'media/charades/Charades_v1_480'/f'{source}.mp4'
-    return old if dataset=='charades' and old.exists() else root/'real'/dataset/f'{source}.mp4'
+    if dataset=='charades' and old.exists():return old
+    candidates=[root/'real'/dataset/f'{source}{ext}' for ext in ('.mp4','.mkv','.avi')]
+    existing=[p for p in candidates if p.is_file()]
+    if len(existing)>1:raise ValueError('AMBIGUOUS_REAL_CONTAINERS:'+dataset+':'+source)
+    return existing[0] if existing else candidates[0]
 
 
 def identities(root):
@@ -139,20 +144,66 @@ def extract_charades(root):
             'archive_video_count':sum(n.endswith('.mp4') for n in members),'extraction_s':time.time()-start,'rows':results})
 
 
+
+def download_activitynet(root):
+    audit=root/'asset_preparation'
+    target=json.loads((audit/'references/activitynet-mirror-targets.json').read_text())
+    official_ids=json.loads((audit/'activitynet_sources.json').read_text())
+    started=time.time();save(audit/'activitynet_download_status.json',{'status':'RUNNING','target':len(target['matches']),'started_unix':started})
+    def fetch(item):
+        source,record=item;out=root/'real/acnet'/(source+'.mp4');sidecar=out.with_suffix('.mp4.json')
+        row={'source_id':'acnet:'+source,'mirror':target['repo'],'revision':target['revision'],
+             'member':record['video_id'],'member_crc':None,'official_original_sha_verified':False}
+        try:
+            if source not in official_ids or record['youtube_url'].split('watch?v=')[-1]!=source.removeprefix('v_'):
+                raise ValueError('MIRROR_OFFICIAL_VIDEO_ID_MISMATCH')
+            out.parent.mkdir(parents=True,exist_ok=True)
+            if out.exists():
+                previous=json.loads(sidecar.read_text())
+                if previous['source_id']!=row['source_id'] or previous['revision']!=target['revision'] or previous['sha256']!=digest(out):
+                    raise ValueError('EXISTING_ACTIVITYNET_PROVENANCE_MISMATCH')
+                row.update(previous)
+            else:
+                for attempt in range(4):
+                    try:
+                        with requests.get(record['video_url'],stream=True,timeout=(20,90)) as response:
+                            response.raise_for_status();row['mirror_etag']=response.headers.get('ETag')
+                            tmp=out.with_suffix('.mp4.part')
+                            with tmp.open('wb') as f:
+                                for part in response.iter_content(1024*1024):f.write(part)
+                        if tmp.stat().st_size!=record['size_bytes']:raise ValueError('MIRROR_MEDIA_SIZE_MISMATCH')
+                        tmp.replace(out);break
+                    except requests.RequestException:
+                        if attempt==3:raise
+                        time.sleep(2)
+                row.update(bytes=out.stat().st_size,sha256=digest(out),status='DOWNLOADED_SIZE_VERIFIED')
+                save(sidecar,row)
+            row['status']='DOWNLOADED_SIZE_VERIFIED'
+        except Exception as e:row.update(status='FAILED',error_type=type(e).__name__)
+        return row
+    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(fetch,sorted(target['matches'].items())))
+    failed=[r for r in results if r['status']=='FAILED']
+    save(audit/'activitynet_download_status.json',{'status':'PARTIAL' if failed else 'COMPLETE_AVAILABLE_MIRROR_SUBSET',
+         'target':len(results),'downloaded':len(results)-len(failed),'started_unix':started,'download_s':time.time()-started,
+         'mirror':target['repo'],'revision':target['revision'],'not_in_mirror':target['unmatched_sources'],'failures':failed})
+
+
 def container_info(path):
     with av.open(str(path)) as c:
         s=c.streams.video[0]
         if s.width<=0 or s.height<=0:raise ValueError('INVALID_VIDEO_DIMENSIONS')
         return {'readable':True,'hw':[s.height,s.width],'frames_metadata':s.frames,
-                'time_base':str(s.time_base),'duration_s':float(s.duration*s.time_base) if s.duration else None}
+                'time_base':str(s.time_base),'duration_s':float(s.duration*s.time_base) if s.duration else float(c.duration/av.time_base) if c.duration else None}
 
 
 def sample_decode(path):
     results=[]
     with av.open(str(path)) as c:
-        s=c.streams.video[0]
+        s=c.streams.video[0];s.codec_context.thread_count=2
+        duration=s.duration if s.duration else int(c.duration/av.time_base/float(s.time_base)) if c.duration else None
+        if not duration:raise ValueError('NO_DURATION_FOR_STRATIFIED_DECODE')
         for fraction in (0.,.5,.98):
-            target=int((s.duration or 0)*fraction)
+            target=int((s.start_time or 0)+duration*fraction)
             c.seek(target,stream=s)
             frame=None
             for candidate in c.decode(s):
@@ -172,8 +223,15 @@ def index(root):
         if result['status']!='VERIFIED':failures.append({'path':e['path'],**result})
         if i%100==0:print('verified',i,'/',len(manifest['files']),flush=True)
     rows=identities(root);media=[];real={};samples={}
+    membership=audit/'references/hc-mirror-zip-members.json'
+    hc_members=json.loads(membership.read_text())['matches'] if membership.exists() else {}
+    ac_members_file=audit/'references/activitynet-archive-targets.json'
+    ac_members=json.loads(ac_members_file.read_text())['matches'] if ac_members_file.exists() else {}
     for r in rows:
         dataset,source=r['source_id'].split(':',1);path=base/r['media_path'];rp=real_path(root,dataset,source)
+        native_members=hc_members if dataset=='hcv1' else ac_members if dataset=='acnet' else {}
+        if source in native_members:
+            rp=root/'real'/dataset/(source+Path(native_members[source]['member']).suffix)
         row={**r,'local_path':str(path),'real_path':str(rp),'real_available':rp.is_file(),**checks[r['media_path']]}
         if row['status']=='VERIFIED':
             try:row['container']=container_info(path)
@@ -187,6 +245,12 @@ def index(root):
             realrow={'source_id':r['source_id'],'role':'real','local_path':str(rp),'available':rp.is_file()}
             if rp.is_file():
                 realrow.update(bytes=rp.stat().st_size,sha256=digest(rp),official_checksum_type=None)
+                provenance=rp.with_suffix(rp.suffix+'.json')
+                if dataset in {'hcv1','acnet'} and provenance.exists():
+                    origin=json.loads(provenance.read_text())
+                    if origin['source_id']!=r['source_id'] or origin['sha256']!=realrow['sha256']:
+                        raise ValueError('REAL_MIRROR_PROVENANCE_MISMATCH:'+r['source_id'])
+                    realrow['provenance']={k:origin[k] for k in ('mirror','revision','member','member_crc','official_original_sha_verified')}
                 try:realrow['container']=container_info(rp)
                 except Exception as e:realrow['container']={'readable':False,'error':str(e)}
             real[r['source_id']]=realrow
@@ -224,10 +288,10 @@ def index(root):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('action',choices=['official','charades-download','charades-extract','index']);p.add_argument('--root',type=Path,required=True)
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['official','charades-download','charades-extract','activitynet-download','index']);p.add_argument('--root',type=Path,required=True)
     p.add_argument('--revision',help='Official revision on first download; existing manifest always stays pinned')
     a=p.parse_args()
     if a.action=='official':official(a.root,a.revision)
-    else:{'charades-download':download_charades,'charades-extract':extract_charades,'index':index}[a.action](a.root)
+    else:{'charades-download':download_charades,'charades-extract':extract_charades,'activitynet-download':download_activitynet,'index':index}[a.action](a.root)
 
 if __name__=='__main__':main()

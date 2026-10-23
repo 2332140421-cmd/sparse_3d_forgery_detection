@@ -25,6 +25,9 @@ cd "$V8_WORK/projects/sparse_3d_forgery_detection"
 python -m scripts.prepare_v8_assets official --root "$V8_DATA" --revision a34d4b7b04b0f3f3e26ba900adc367218667c581
 python -m scripts.prepare_v8_assets charades-download --root "$V8_DATA"
 python -m scripts.prepare_v8_assets charades-extract --root "$V8_DATA"
+python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset hcv1 --workers 2
+python -m scripts.prepare_v8_assets activitynet-download --root "$V8_DATA"
+python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset acnet --workers 2
 python -m scripts.prepare_v8_assets index --root "$V8_DATA"
 ```
 
@@ -50,7 +53,7 @@ GitHub主机Ed25519指纹与官方文档一致。实际普通push已成功并确
 固定revision `a34d4b7b04b0f3f3e26ba900adc367218667c581`，5395正式文件，
 120480401906字节（120.48GB）；其中5389 fake，train3824/test1565。
 官方train/test有122个(dataset,source)交集；这是发布划分统计，不是历史探针训练/开发交集。
-后续研究必须另按source分组冻结划分，不能直接把官方split解释为source隔离。
+其中ActivityNet92、Charades30；后续研究必须另按source分组冻结划分，不能直接把官方split解释为source隔离。
 其余是.gitattributes、README、2份CSV、annot.zip、feat.zip（约1.93GB）。
 feat.zip保留为官方发布资产，不能替代V8原始媒体前端。
 初查可用磁盘约12TB，足以覆盖发布集、Charades16.34GB包与关联real；后两来源实际
@@ -75,7 +78,7 @@ feat.zip保留为官方发布资产，不能替代V8原始媒体前端。
 |来源|fake数量|唯一real目标|入口与边界|
 |---|---:|---:|---|
 |Charades-STA/Charades|1438|976|官方Charades_v1_480.zip；只解出关联source，包中额外媒体不作为实验队列|
-|ActivityNet Captions|1832|842|842/842精确匹配官方ActivityNet v1.3 metadata；原YouTube访问有验证/失效问题|
+|ActivityNet Captions|1832|842|842/842精确匹配官方ID；直链镜像覆盖675，旧missing-files ZIP另覆盖83，84仍无可取媒体|
 |HC-STVG v1|2119|1912|官方补充材料1.4节确认；不是Hollywood，原v1 OneDrive访问失败|
 
 同source多fake共享一份real。索引保留(dataset,source)、完整fake相对路径、generator、
@@ -84,20 +87,35 @@ feat.zip保留为官方发布资产，不能替代V8原始媒体前端。
 
 ActivityNet下载实试：`v_---9CpRcKoU`与`v_cyXWvxVt8qE`要求Sign in确认非机器人，
 `v_mSyfGQigb8U`报告unavailable。仅这3个是逐视频实测，其余不能声称已逐一失效。
+进一步核查公开镜像：TornadoLabs/activitynet revision
+`bc9c567ea67be43daf443cddb832ed983e5ccae5`的metadata.jsonl按video_id和youtube_url
+逐一匹配675个目标（17,303,875,891字节）；下载核对其size_bytes并记录HTTP ETag和本地SHA。
+YimuWang/ActivityNet revision `1a20776262cc1fe3761588843cad26b62c2b7125`的
+missing_files.zip目录另精确匹配83个目标（1,929,017,817字节），只Range提取相关成员并核CRC。
+这两组来源互不重复；原生MKV保留，不改后缀冒充MP4。镜像metadata固定revision不意味着
+外部bucket媒体具有官方不可变SHA，因此必须保留下载当时本地SHA与来源，不声称逐位复现旧机。
+剩余84个ID未在这些可访问镜像找到，不将全部842个都写成已失败或全部恢复。
 官方恢复途径是[数据访问申请](https://docs.google.com/forms/d/e/1FAIpQLSeKaFq9ZfcmZ7W0B0PbEhfbTHY41GeEgwsa7WobJgGUhn4DTQ/viewform)，
 由用户填写后取得7天访问的官方Drive/Baidu目录；不索取聊天密码、token或cookies。
 
 HC-STVG原v1入口为[官方README的v1 OneDrive](https://github.com/tzhhhh123/HC-STVG)。
 本机多次TLS失败，外部读取也502；不能据此断言链接已永久撤销。用户可在网页打开v1链接，
 若可访问则下载官方包到`real_archives`，再按source清单解出目标；不要用v2或相似视频替代。
-辅助公开镜像核查：k-nick/HC-STVG API返回401；CircleRadon/hc-stvg只有115GB的分割大包，
-没有足以确认v1对应关系的文件清单，本轮未将不明包当作已核实原视频。
-每个受影响source及预期文件在`real_access_issues.json`/`missing_real.json`，不以占位文件补齐。
+辅助镜像核查：k-nick/HC-STVG API返回401。CircleRadon/hc-stvg固定revision
+`4d26c230bbdba17e57a2e9965d15b584cb69a33e`的三个分段组成ZIP。通过HTTP Range
+只读central directory，1912/1912个AF source有唯一精确同名原生成员（1174 MP4、738 MKV）。
+仅提取这些13,072,940,637字节成员，不下载115GB全镜像或改容器后缀。每个文件由
+zipfile解压并校验成员CRC，计算本地SHA，并保存镜像revision/member/CRC/SHA sidecar。
+这是第三方镜像身份/完整性证据，不宣称匹配官方原始文件SHA；官方未提供逐文件SHA，
+整个分段包的LFS校验也不能冒充已下载子成员的官方原始校验。
+官方入口访问历史在`real_access_issues.json`，其中HC原入口错误不代表镜像最终缺失。
+最终尚缺source及预期文件以`missing_real.json`和`asset_summary.json`为准，不以占位文件补齐。
 
 ## 标注审计
 
 已下载并检查annot.zip全部11个TXT（5389行）、全部CSV、完整官方文件清单、
-官方GitHub代码/说明、项目页、论文及709769字节补充材料。GitHub审计HEAD
+官方GitHub代码/说明、项目页、论文及709769字节补充材料。AF另一个官方OneDrive入口
+本机TLS失败，无法清点其内部是否有额外资产；此访问限制也保留，不推断未查看内容。GitHub审计HEAD
 `8717fdbe20ef973c9ef079542a027cf15ef9773a`；标注读取器是video/duration/times、N×2区间。
 `annotation_audit.json`保存每个文件行数、完整样例和补充材料SHA。
 每行字段为fake完整basename、duration秒、一个或多个`start=end`区间。

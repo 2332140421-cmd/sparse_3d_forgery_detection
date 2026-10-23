@@ -71,11 +71,12 @@ def test_long_published_name_uses_official_blob_cache(tmp_path,monkeypatch):
     assert verify(tmp_path/'official/fixed'/name,entry)['status']=='VERIFIED'
 
 
-def test_sample_decode_checks_actual_middle_and_end(tmp_path):
+@pytest.mark.parametrize('suffix',['.mp4','.mkv'])
+def test_sample_decode_checks_actual_middle_and_end(tmp_path,suffix):
     import av
     import numpy as np
     from scripts.prepare_v8_assets import sample_decode
-    path=tmp_path/'short.mp4'
+    path=tmp_path/('short'+suffix)
     with av.open(str(path),'w') as c:
         s=c.add_stream('mpeg4',rate=10);s.width=32;s.height=32;s.pix_fmt='yuv420p'
         for i in range(20):
@@ -85,3 +86,55 @@ def test_sample_decode_checks_actual_middle_and_end(tmp_path):
     result=sample_decode(path)
     assert len(result)==3 and result[0]['pts']<result[1]['pts']<result[2]['pts']
     assert all(r['hw']==[32,32] for r in result)
+
+
+def test_segmented_remote_zip_range_and_crc(monkeypatch):
+    import io
+    from types import SimpleNamespace
+    from scripts.download_v8_archive_sources import SegmentedZip
+    b=io.BytesIO()
+    with zipfile.ZipFile(b,'w',compression=zipfile.ZIP_DEFLATED) as z:z.writestr('video_parts/0/S.mkv',b'source frames'*100)
+    payload=b.getvalue();cut=len(payload)//2;parts=[payload[:cut],payload[cut:]]
+    meta={'repo':'mirror','revision':'fixed','files':[{'path':'video_parts_part_'+suffix,'size':len(part)} for suffix,part in zip(('aa','ab'),parts)]}
+    reader=SegmentedZip(meta)
+    def get(url,headers,timeout):
+        i=0 if url.endswith('_aa') else 1;a,b=map(int,headers['Range'].removeprefix('bytes=').split('-'))
+        return SimpleNamespace(status_code=206,content=parts[i][a:b+1],url=url,raise_for_status=lambda:None)
+    reader.session=SimpleNamespace(get=get)
+    with zipfile.ZipFile(reader) as z:
+        reader.prefetch(z.getinfo('video_parts/0/S.mkv'))
+        assert z.read('video_parts/0/S.mkv')==b'source frames'*100
+
+
+def test_native_real_container_is_explicit(tmp_path):
+    p=tmp_path/'real/hcv1/S.mkv';p.parent.mkdir(parents=True);p.write_bytes(b'native container')
+    assert real_path(tmp_path,'hcv1','S')==p
+    p.with_suffix('.mp4').write_bytes(b'ambiguous second container')
+    with pytest.raises(ValueError,match='AMBIGUOUS_REAL_CONTAINERS'):real_path(tmp_path,'hcv1','S')
+
+
+def test_activitynet_direct_identity_and_provenance(tmp_path,monkeypatch):
+    import json
+    import scripts.prepare_v8_assets as assets
+    audit=tmp_path/'asset_preparation';refs=audit/'references';refs.mkdir(parents=True)
+    record={'video_id':'ABC','youtube_url':'https://www.youtube.com/watch?v=ABC',
+            'video_url':'https://public-mirror/ABC.mp4','size_bytes':5}
+    target={'repo':'mirror','revision':'fixed','matches':{'v_ABC':record},'unmatched_sources':[]}
+    (refs/'activitynet-mirror-targets.json').write_text(json.dumps(target))
+    (audit/'activitynet_sources.json').write_text(json.dumps({'v_ABC':{}}))
+    class Response:
+        headers={'ETag':'mirror-etag'}
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def raise_for_status(self):pass
+        def iter_content(self,n):yield b'media'
+    monkeypatch.setattr(assets.requests,'get',lambda *a,**k:Response())
+    assets.download_activitynet(tmp_path)
+    sidecar=json.loads((tmp_path/'real/acnet/v_ABC.mp4.json').read_text())
+    assert sidecar['official_original_sha_verified'] is False
+    assert sidecar['member_crc'] is None and sidecar['sha256']==digest(tmp_path/'real/acnet/v_ABC.mp4')
+    record['youtube_url']='https://www.youtube.com/watch?v=WRONG'
+    (refs/'activitynet-mirror-targets.json').write_text(json.dumps(target))
+    assets.download_activitynet(tmp_path)
+    result=json.loads((audit/'activitynet_download_status.json').read_text())
+    assert result['status']=='PARTIAL' and result['downloaded']==0
