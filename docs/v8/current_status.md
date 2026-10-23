@@ -68,8 +68,10 @@ query集中，本轮不恢复或修复V9。
 本轮仅完成Git认证、全量官方资产及关联real准备、标注核查和历史队列身份恢复。
 不进行试标、训练、全量前端或模型评分。Git专用Deploy key已获授权，上一轮提交
 `8c3ba1e`已实际push并核对远端一致；本轮最终提交另行记录。
-完整官方发布集固定revision下载中，不能把5389 metadata目标数称为已得媒体数。
-关联real目标3730：Charades976、ActivityNet842、HC-STVG v1 1912；后两者有访问缺口。
+完整官方HF发布集固定revision已实际验收：5395文件、5389 fake全部通过。
+关联real尚在恢复，不能把官方发布集COMPLETE写成配对数据COMPLETE。
+关联real目标3730：Charades976、ActivityNet842、HC-STVG v1 1912；Charades齐全，后两者通过精确ID镜像恢复，
+另扫描历史ActivityNet压缩包；真实计数以最终索引为准。
 精确进度、完整性及人工缺口见[data_assets.md](data_assets.md)。
 历史仅恢复14个开发验证source名称，缺完整V8视频身份manifest，未重新抽样替代244/28队列。
 

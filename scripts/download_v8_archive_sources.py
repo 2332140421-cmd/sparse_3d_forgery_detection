@@ -11,6 +11,7 @@ import bisect
 from concurrent.futures import ThreadPoolExecutor
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import time
@@ -28,7 +29,8 @@ class SegmentedZip(io.RawIOBase):
                     sorted((x for x in metadata['files'] if x['path'].startswith('video_parts_part_')),key=lambda x:x['path']))
         self.offsets=[0]
         for part in self.parts:self.offsets.append(self.offsets[-1]+part['size'])
-        self.urls=[f"https://huggingface.co/datasets/{metadata['repo']}/resolve/{metadata['revision']}/{x['path']}" for x in self.parts]
+        endpoint=os.environ.get('HF_ENDPOINT','https://huggingface.co').rstrip('/')
+        self.urls=[f"{endpoint}/datasets/{metadata['repo']}/resolve/{metadata['revision']}/{x['path']}" for x in self.parts]
         self.orig_urls=self.urls.copy()
         self.pos=0;self.cache_start=0;self.cache=b'';self.session=requests.Session()
 

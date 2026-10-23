@@ -25,12 +25,25 @@ cd "$V8_WORK/projects/sparse_3d_forgery_detection"
 python -m scripts.prepare_v8_assets official --root "$V8_DATA" --revision a34d4b7b04b0f3f3e26ba900adc367218667c581
 python -m scripts.prepare_v8_assets charades-download --root "$V8_DATA"
 python -m scripts.prepare_v8_assets charades-extract --root "$V8_DATA"
-python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset hcv1 --workers 2
-python -m scripts.prepare_v8_assets activitynet-download --root "$V8_DATA"
-python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset acnet --workers 2
+```
+
+本机后续原视频恢复需在独立子shell中使用已实测的传输路径，不写.bashrc或全局代理配置：
+
+```bash
+(
+  export HF_ENDPOINT=https://hf-mirror.com
+  export HF_HUB_DOWNLOAD_TIMEOUT=120
+  unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy
+  python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset hcv1 --workers 2
+  python -m scripts.prepare_v8_assets activitynet-download --root "$V8_DATA"
+  python -m scripts.download_v8_archive_sources --root "$V8_DATA" --dataset acnet --workers 2
+  python -m scripts.prepare_v8_assets activitynet-tar --archive-workers 4 --root "$V8_DATA"
+)
 python -m scripts.prepare_v8_assets index --root "$V8_DATA"
 ```
 
+只恢复未完成阶段；已经COMPLETE的阶段不重复运行。镜像原始清单与精确source映射保存在
+asset_preparation/references，重启无需临时调试文件，缺失时应报错，不能创建空manifest跳过。
 命令分别顺序执行，官方snapshot可复用已完成文件及官方incomplete缓存；Charades下载
 支持按实际部分字节恢复，必须服务器honor Range，否则拒绝追加。既有固定revision
 manifest不会随main更新。需要重试失败文件时先查看`integrity_failures.json`，仅对
@@ -59,7 +72,8 @@ feat.zip保留为官方发布资产，不能替代V8原始媒体前端。
 初查可用磁盘约12TB，足以覆盖发布集、Charades16.34GB包与关联real；后两来源实际
 可下载体量尚未确认，不以0计成本，也不以数据齐全为由扩大训练。
 
-状态当前为 **RUNNING**；最终已校验数量见`asset_preparation/asset_summary.json`。
+官方HF发布集已验收 **COMPLETE**：5395/5395文件、5389/5389 fake通过；
+对应real仍在恢复，不能据此写整个real/fake数据集COMPLETE。当前计数见`asset_preparation/asset_summary.json`。
 下载成功标志仅为DOWNLOADED_PENDING_VERIFICATION，所有目标通过官方大小/校验、
 媒体容器和分层抽样检查后才可写COMPLETE。`download_status.json`持久保存开始时间、
 实际下载耗时与失败；不是启动进程即完成。
@@ -94,7 +108,17 @@ YimuWang/ActivityNet revision `1a20776262cc1fe3761588843cad26b62c2b7125`的
 missing_files.zip目录另精确匹配83个目标（1,929,017,817字节），只Range提取相关成员并核CRC。
 这两组来源互不重复；原生MKV保留，不改后缀冒充MP4。镜像metadata固定revision不意味着
 外部bucket媒体具有官方不可变SHA，因此必须保留下载当时本地SHA与来源，不声称逐位复现旧机。
-剩余84个ID未在这些可访问镜像找到，不将全部842个都写成已失败或全部恢复。
+剩余84个ID未在这些直链/ZIP镜像找到，继续检查同镜像219,976,627,189字节的
+`v1-3_train_val.tar.gz.*`历史分段包。只用固定revision取得这些段。初次代理路径遇CDN超时；普通snapshot还可能在API失败时
+返回已有不完整local_dir，本轮清单校验明确拒绝了该结果。TAR段改用官方hf_hub_download
+逐目标枚举，HF_HUB_DOWNLOAD_TIMEOUT=120。直连huggingface.co测试失败，而直连hf-mirror.com
+的实际1,872,819,189字节分段在111.6秒完成，LFS SHA完全匹配；HC实际成员CRC也匹配。
+随后在本任务进程设置HF_ENDPOINT并清空代理变量，经专用tmux恢复，不改全局配置。
+官方Xet测试未观察到payload进展，停止专用测试，未填0耗时。逐段LFS SHA
+通过后用cat管道+stdlib tarfile流式扫描，只写目标84个source，不生成220GB合并副本，
+不解出原库其他视频、不解码成图。段下载和扫描均有独立RUNNING/PARTIAL/完成状态；
+包内实际视频数与最终命中数待实际扫描，不把包头或目标数当作已恢复。
+不将全部842个都写成已失败或全部恢复。
 官方恢复途径是[数据访问申请](https://docs.google.com/forms/d/e/1FAIpQLSeKaFq9ZfcmZ7W0B0PbEhfbTHY41GeEgwsa7WobJgGUhn4DTQ/viewform)，
 由用户填写后取得7天访问的官方Drive/Baidu目录；不索取聊天密码、token或cookies。
 

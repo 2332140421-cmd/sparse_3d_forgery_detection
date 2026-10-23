@@ -128,13 +128,44 @@ def test_activitynet_direct_identity_and_provenance(tmp_path,monkeypatch):
         def __exit__(self,*args):pass
         def raise_for_status(self):pass
         def iter_content(self,n):yield b'media'
-    monkeypatch.setattr(assets.requests,'get',lambda *a,**k:Response())
+    calls=[]
+    monkeypatch.setattr(assets.requests,'get',lambda *a,**k:(calls.append(k) or Response()))
     assets.download_activitynet(tmp_path)
     sidecar=json.loads((tmp_path/'real/acnet/v_ABC.mp4.json').read_text())
     assert sidecar['official_original_sha_verified'] is False
     assert sidecar['member_crc'] is None and sidecar['sha256']==digest(tmp_path/'real/acnet/v_ABC.mp4')
+    assert calls[0]['headers']=={'Range':'bytes=0-4'}
     record['youtube_url']='https://www.youtube.com/watch?v=WRONG'
     (refs/'activitynet-mirror-targets.json').write_text(json.dumps(target))
     assets.download_activitynet(tmp_path)
     result=json.loads((audit/'activitynet_download_status.json').read_text())
     assert result['status']=='PARTIAL' and result['downloaded']==0
+
+
+def test_activitynet_tar_extracts_only_exact_targets_and_resumes(tmp_path,monkeypatch):
+    import io
+    import json
+    import tarfile
+    import scripts.prepare_v8_assets as assets
+    refs=tmp_path/'asset_preparation/references';refs.mkdir(parents=True)
+    buffer=io.BytesIO()
+    with tarfile.open(fileobj=buffer,mode='w:gz') as archive:
+        for source,data in [('v_OLD',b'existing'),('v_TARGET',b'wanted'),('v_UNRELATED',b'excluded')]:
+            member=tarfile.TarInfo('v1-3/train_val/'+source+'.mp4');member.size=len(data)
+            archive.addfile(member,io.BytesIO(data))
+    payload=buffer.getvalue();entries=[];dest=tmp_path/'real_archives/activitynet_train_val/fixed';dest.mkdir(parents=True)
+    split=len(payload)//2
+    for suffix,data in [('00',payload[:split]),('01',payload[split:])]:
+        p=dest/('v1-3_train_val.tar.gz.'+suffix);p.write_bytes(data)
+        entries.append({'path':p.name,'size':len(data),'lfs':{'sha256':digest(p)}})
+    (refs/'YimuWang_ActivityNet-files.json').write_text(json.dumps({'repo':'mirror','revision':'fixed','files':entries}))
+    (refs/'activitynet-archive-targets.json').write_text(json.dumps({'unmatched_sources':['v_OLD','v_TARGET']}))
+    old=tmp_path/'real/acnet/v_OLD.mp4';old.parent.mkdir(parents=True);old.write_bytes(b'existing')
+    old.with_suffix('.mp4.json').write_text(json.dumps({'source_id':'acnet:v_OLD','revision':'fixed',
+        'member':'v1-3/train_val/v_OLD.mp4','sha256':digest(old)}))
+    monkeypatch.setattr(assets,'hf_hub_download',lambda *a,**k:str(k['local_dir']/a[1]))
+    assets.recover_activitynet_tar(tmp_path)
+    assert (tmp_path/'real/acnet/v_TARGET.mp4').read_bytes()==b'wanted'
+    assert not (tmp_path/'real/acnet/v_UNRELATED.mp4').exists()
+    status=json.loads((tmp_path/'asset_preparation/activitynet_tar_status.json').read_text())
+    assert status['status']=='COMPLETE_SCAN' and status['recovered']==2 and status['archive_video_members']==3

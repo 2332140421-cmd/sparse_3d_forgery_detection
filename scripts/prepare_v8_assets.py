@@ -13,6 +13,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
+import tarfile
 import time
 import zipfile
 
@@ -53,7 +55,7 @@ def official(root, revision=None):
         data=json.loads(manifest.read_text())
         if revision and data['revision']!=revision:raise ValueError('PINNED_REVISION_CONFLICT')
     else:
-        info=HfApi().dataset_info('ActivityForensics/ActivityForensics',revision=revision,files_metadata=True)
+        info=HfApi(token=False).dataset_info('ActivityForensics/ActivityForensics',revision=revision,files_metadata=True)
         data={'revision':info.sha,'files':[{'path':x.rfilename,'size':x.size,'blob_id':x.blob_id,
                 'lfs':dict(x.lfs) if x.lfs else None} for x in info.siblings]};save(manifest,data)
     start=time.time();dest=root/'official'/data['revision']
@@ -63,10 +65,10 @@ def official(root, revision=None):
         # Only these exceptional names use HF's hash-named blob cache.
         long_names=[e['path'] for e in data['files'] if len(Path(e['path']).name.encode())+len('.metadata')>255]
         snapshot_download('ActivityForensics/ActivityForensics',repo_type='dataset',revision=data['revision'],
-                          local_dir=dest,max_workers=4,ignore_patterns=long_names or None)
+                          local_dir=dest,max_workers=4,ignore_patterns=long_names or None,token=False)
         for name in long_names:
             cached=Path(hf_hub_download('ActivityForensics/ActivityForensics',name,repo_type='dataset',
-                                       revision=data['revision']))
+                                       revision=data['revision'],token=False))
             target=dest/name;target.parent.mkdir(parents=True,exist_ok=True)
             entry=next(e for e in data['files'] if e['path']==name)
             if target.exists():
@@ -166,7 +168,9 @@ def download_activitynet(root):
             else:
                 for attempt in range(4):
                     try:
-                        with requests.get(record['video_url'],stream=True,timeout=(20,90)) as response:
+                        endpoint=os.environ.get('HF_ENDPOINT','https://huggingface.co').rstrip('/')
+                        media_url=record['video_url'].replace('https://huggingface.co/',endpoint+'/',1)
+                        with requests.get(media_url,headers={'Range':f"bytes=0-{record['size_bytes']-1}"},stream=True,timeout=(20,90)) as response:
                             response.raise_for_status();row['mirror_etag']=response.headers.get('ETag')
                             tmp=out.with_suffix('.mp4.part')
                             with tmp.open('wb') as f:
@@ -186,6 +190,68 @@ def download_activitynet(root):
     save(audit/'activitynet_download_status.json',{'status':'PARTIAL' if failed else 'COMPLETE_AVAILABLE_MIRROR_SUBSET',
          'target':len(results),'downloaded':len(results)-len(failed),'started_unix':started,'download_s':time.time()-started,
          'mirror':target['repo'],'revision':target['revision'],'not_in_mirror':target['unmatched_sources'],'failures':failed})
+
+
+
+def recover_activitynet_tar(root, workers=1):
+    audit=root/'asset_preparation';refs=audit/'references'
+    meta=json.loads((refs/'YimuWang_ActivityNet-files.json').read_text())
+    targets=set(json.loads((refs/'activitynet-archive-targets.json').read_text())['unmatched_sources'])
+    entries=sorted((e for e in meta['files'] if e['path'].startswith('v1-3_train_val.tar.gz.')),key=lambda e:e['path'])
+    dest=root/'real_archives/activitynet_train_val'/meta['revision'];started=time.time()
+    status=audit/'activitynet_tar_status.json'
+    save(status,{'status':'RUNNING','stage':'DOWNLOAD','target':len(targets),'started_unix':started,
+                 'archive_bytes_target':sum(e['size'] for e in entries),'parts_target':len(entries),'workers':workers})
+    try:
+        # snapshot_download may return an existing partial local_dir after an API failure.
+        # Enumerate these fixed targets with the official per-file client instead.
+        def get_part(entry):
+            return hf_hub_download(meta['repo'],entry['path'],repo_type='dataset',revision=meta['revision'],local_dir=dest,token=False)
+        with ThreadPoolExecutor(max_workers=workers) as pool:list(pool.map(get_part,entries))
+        download_s=time.time()-started;checks=[]
+        save(status,{'status':'RUNNING','stage':'VERIFY_PARTS','target':len(targets),'started_unix':started,'download_s':download_s})
+        for e in entries:
+            check=verify(dest/e['path'],e);checks.append({'path':e['path'],**check})
+            if check['status']!='VERIFIED':raise ValueError('ARCHIVE_PART_CHECKSUM_FAILED:'+e['path'])
+        verified_at=time.time();found={};archive_videos=0
+        save(status,{'status':'RUNNING','stage':'SCAN_TARGETS','target':len(targets),'started_unix':started,
+                     'download_s':download_s,'verify_parts_s':verified_at-started-download_s})
+        # No combined 220GB copy; cat streams fixed verified paths into stdlib tarfile.
+        process=subprocess.Popen(['cat',*[str(dest/e['path']) for e in entries]],stdout=subprocess.PIPE)
+        try:
+            with tarfile.open(fileobj=process.stdout,mode='r|gz',bufsize=4*1024*1024) as archive:
+                for member in archive:
+                    if not member.isfile():continue
+                    path=Path(member.name)
+                    if path.suffix.lower() not in {'.mp4','.mkv','.avi'}:continue
+                    archive_videos+=1;source=path.stem
+                    if source not in targets:continue
+                    if source in found:raise ValueError('DUPLICATE_ACTIVITYNET_TAR_SOURCE')
+                    out=root/'real/acnet'/(source+path.suffix);out.parent.mkdir(parents=True,exist_ok=True)
+                    if out.exists():
+                        previous=json.loads(out.with_suffix(out.suffix+'.json').read_text())
+                        if previous['source_id']!='acnet:'+source or previous['revision']!=meta['revision'] or previous['member']!=member.name or previous['sha256']!=digest(out):
+                            raise ValueError('EXISTING_TAR_SOURCE_PROVENANCE_MISMATCH')
+                        found[source]=previous;continue
+                    tmp=out.with_suffix(out.suffix+'.part')
+                    with archive.extractfile(member) as src,tmp.open('wb') as dst:shutil.copyfileobj(src,dst,4*1024*1024)
+                    if tmp.stat().st_size!=member.size:raise ValueError('TAR_MEMBER_SIZE')
+                    tmp.replace(out)
+                    row={'source_id':'acnet:'+source,'mirror':meta['repo'],'revision':meta['revision'],'member':member.name,
+                         'member_crc':None,'official_original_sha_verified':False,'mirror_archive_parts_verified':True,
+                         'bytes':out.stat().st_size,'sha256':digest(out),'status':'RECOVERED_FROM_VERIFIED_TAR'}
+                    save(out.with_suffix(out.suffix+'.json'),row);found[source]=row
+            process.stdout.close()
+            if process.wait()!=0:raise ValueError('ARCHIVE_CAT_FAILED')
+        finally:
+            if process.poll() is None:process.terminate();process.wait()
+        save(audit/'activitynet_tar_parts_verified.json',{'revision':meta['revision'],'parts':checks})
+        save(status,{'status':'COMPLETE_SCAN','target':len(targets),'recovered':len(found),'unmatched_sources':sorted(targets-set(found)),
+            'started_unix':started,'download_s':download_s,'verify_parts_s':verified_at-started-download_s,
+            'scan_s':time.time()-verified_at,'total_s':time.time()-started,'archive_video_members':archive_videos,
+            'archive_bytes':sum(e['size'] for e in entries),'mirror':meta['repo'],'revision':meta['revision']})
+    except Exception as e:
+        current=json.loads(status.read_text());current.update(status='PARTIAL',error_type=type(e).__name__);save(status,current);raise
 
 
 def container_info(path):
@@ -288,10 +354,12 @@ def index(root):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('action',choices=['official','charades-download','charades-extract','activitynet-download','index']);p.add_argument('--root',type=Path,required=True)
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['official','charades-download','charades-extract','activitynet-download','activitynet-tar','index']);p.add_argument('--root',type=Path,required=True)
     p.add_argument('--revision',help='Official revision on first download; existing manifest always stays pinned')
+    p.add_argument('--archive-workers',type=int,choices=[1,2,4],default=1)
     a=p.parse_args()
-    if a.action=='official':official(a.root,a.revision)
-    else:{'charades-download':download_charades,'charades-extract':extract_charades,'activitynet-download':download_activitynet,'index':index}[a.action](a.root)
+    if a.action=='activitynet-tar':recover_activitynet_tar(a.root,a.archive_workers)
+    elif a.action=='official':official(a.root,a.revision)
+    else:{'charades-download':download_charades,'charades-extract':extract_charades,'activitynet-download':download_activitynet,'activitynet-tar':recover_activitynet_tar,'index':index}[a.action](a.root)
 
 if __name__=='__main__':main()
