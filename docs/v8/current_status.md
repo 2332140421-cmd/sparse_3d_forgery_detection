@@ -48,7 +48,7 @@ query集中，本轮不恢复或修复V9。
 [DeepAction](../experiments/v8-deepaction-cross-dataset.md)。
 历史视频身份曾错配：新接口使用source+role+完整媒体路径及SHA；pair_id不能单独索引。
 
-## 新机本轮实际完成
+## 上一轮新机接口准备（已完成）
 
 - 新建独立Python3.12.7环境，torch2.5.1+cu124/torchvision0.20.1；RTX4090 24GB。
 - 下载固定MoGe-2代码、CoTracker3 online代码及utils3d，三个预训练工具权重记录完整SHA。
@@ -63,13 +63,23 @@ query集中，本轮不恢复或修复V9。
 新机没有历史训练好的V8模型、旧standardizer/grouping、旧前端缓存或历史source划分清单；
 随机smoke明确使用identity scaling与1/1/1 grouping常量，不能叫COMPONENT_ADAPTED或正式复现。
 
-## 尚未完成及下一阶段
+## 当前资产准备任务
+
+本轮仅完成Git认证、全量官方资产及关联real准备、标注核查和历史队列身份恢复。
+不进行试标、训练、全量前端或模型评分。Git专用Deploy key已获授权，上一轮提交
+`8c3ba1e`已实际push并核对远端一致；本轮最终提交另行记录。
+完整官方发布集固定revision下载中，不能把5389 metadata目标数称为已得媒体数。
+关联real目标3730：Charades976、ActivityNet842、HC-STVG v1 1912；后两者有访问缺口。
+精确进度、完整性及人工缺口见[data_assets.md](data_assets.md)。
+历史仅恢复14个开发验证source名称，缺完整V8视频身份manifest，未重新抽样替代244/28队列。
+
+## 尚未完成及后续研究（本轮不执行）
 
 **本轮环境和真实数据接口准备完成；空间定位训练尚未开始。** 没有空间真值或空间性能。
 正式CELL_LOC/COMPONENT_LOC拟共享格均值压缩前的局部像素RGB/XYZ编码器与非整格常值
 解码器，仅改变cell/component上下文；公平初始化和预算见
 [spatial_localization_plan.md](spatial_localization_plan.md)。
-先人工完成“可见异常区域”8帧接口标注/状态检查，再冻结source隔离的正式标注集、
+前轮提出的“可见异常区域”8帧接口标注/状态检查及正式标注集准备均不在本轮执行。后续需冻结source隔离的
 训练/开发/测试清单和完整初始化协议。需要重训时，两条件共同拟合训练统计、同阶段同预算
 重新训练骨干，不能只适配COMPONENT。后续正式网络/超参尚未冻结。
 本轮结束后不自动启动全库下载、全量前端、正式训练或历史全实验重跑。

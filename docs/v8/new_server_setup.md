@@ -1,5 +1,7 @@
 # 新服务器 V8 准备与运行
 
+后续资产任务状态见[data_assets.md](data_assets.md)。以下环境和8帧验证是上一轮记录；本轮不重复GPU验证、不执行试标或训练。官方补充材料1.4节已确认hcv1为HC-STVG v1，取代上一版Hollywood误归因。
+
 2026-10-23实际验证；分支`v8-spatial-localization`，基线远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 fetch后该远端HEAD未变；原工作区干净。本轮不迁移旧服务器数值资产。
@@ -67,7 +69,7 @@ ResNet18保持conv1至layer1冻结，224预处理后插值16×16、64维输出�
 实际下载dataset信息/文件清单、README、train/test CSV、144584字节annot.zip，
 以及官方Charades小型标注包。全清单统计见[evidence/official_inventory.json](evidence/official_inventory.json)：
 5389 fake，3730唯一(dataset,source)；train3824/test1565；6生成器；
-Charades1438、ActivityNet(acnet)1832、Hollywood(hcv1)2119。这里是来源数据族，
+Charades1438、ActivityNet(acnet)1832、HC-STVG v1(hcv1)2119。这里是来源数据族，
 不是5389独立场景或3730拍摄地点。AF仓库本身没有real媒体；不能将fake当原视频。
 
 每条CSV精确匹配官方媒体路径，再与annot中的split/generator/完整文件名匹配。
