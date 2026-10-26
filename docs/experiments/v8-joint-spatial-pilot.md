@@ -1,6 +1,6 @@
 # V8 双数据集完整空间定位 pilot v1
 
-状态：实现与两真实完整pair资源smoke完成；正式运行待独立会话启动。
+状态：**RUNNING**。实现与两真实完整pair资源smoke完成；独立任务已启动，当前为完整前端准备阶段。
 协议：[joint_spatial_contract.md](../v8/joint_spatial_contract.md)、ADR-0022。
 
 ## 实际结构与队列
@@ -78,3 +78,21 @@ TORCH_HOME=/media/njupt/8FCD3869E2FAB06F/chenyh/cache/torch \
 
 尚无正式best epoch、dev Dice或其他训练结论。完成后对同一best epoch的全部任务指标、
 train_monitor/dev差距、两条件差异及编辑类别错误进行一次最终审阅，更新本页并普通push。
+
+## 启动核验快照
+
+代码提交`776174d6d4a97dfcf69411823217659708c653b8`已普通push后启动。
+真实Python PID **3433433**；tmux `v8_joint_spatial_pilot_v1`。
+一次启动核验为frontend阶段，video_index2，当前视频已处理401/704帧；这不是整个队列的完成计数。
+后续进度由Python自行写入，不持续轮询。完整启动记录见
+[joint_spatial_launch.json](../v8/evidence/joint_spatial_launch.json)。
+
+```bash
+tmux attach -t v8_joint_spatial_pilot_v1
+V8_OUT=/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1
+cat "$V8_OUT/progress.json"
+tail -n 20 "$V8_OUT/run.log"
+```
+
+本次交付为RUNNING，未把smoke损失当正式训练成绩。完成后`report_zh.md`、各条件
+`summary.json`与`history.csv`提供最终结果，再进行一次结果审阅和仓库摘要推送。

@@ -1,0 +1,28 @@
+{
+  "status": "RUNNING",
+  "pid": 3433433,
+  "session": "v8_joint_spatial_pilot_v1",
+  "code_commit": "776174d6d4a97dfcf69411823217659708c653b8",
+  "command": "/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/bin/python -u -m research_tools.v8.spatial_localization.run --config docs/v8/joint_spatial_config.json --resume",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
+  "log": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/run.log",
+  "progress": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/progress.json",
+  "startup_snapshot": {
+    "status": "RUNNING",
+    "stage": "frontend",
+    "pid": 3433433,
+    "unix_time": 1792992049.3162196,
+    "video": "603add9a4239118a745c87ca",
+    "video_index": 2,
+    "frames": 401,
+    "total_frames": 704
+  },
+  "train_videos": 96,
+  "dev_videos": 32,
+  "models": [
+    "CELL_LOC",
+    "COMPONENT_LOC"
+  ],
+  "parameters_per_model": 362658,
+  "followup": "Python completes remaining frontend, training, scheduled metrics, early stop, checkpoints, plots and report_zh.md; final human/agent result review and publication remain after completion"
+}
