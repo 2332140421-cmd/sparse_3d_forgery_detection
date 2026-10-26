@@ -14,6 +14,8 @@
 CELL_LOC最佳epoch6、末轮14；COMPONENT_LOC最佳epoch5、末轮13，均按patience8早停。
 ANAKIN最佳dev Dice为0.120542/0.114502，component差值−0.006039；未显示定位增益。
 固定阈值下两模型均漏检全部8个ANAKIN开发fake；当前应先审阅固定预测图与曲线，不自动重训。
+2026-10-27[离线诊断已完成](../experiments/v8-joint-spatial-diagnosis.md)：32条fake的3991帧mask/缓存GT对应通过；
+固定样例多见背景响应，monitor改善而dev退化。下一轮仅建议验证输出解耦，不自动实施。
 资源与启动说明见[联合定位pilot](../experiments/v8-joint-spatial-pilot.md)。
 用户已确认本批ANAKIN mask位置和像素细节，取代旧粗矩形概括。
 当前协议见[joint_spatial_contract.md](joint_spatial_contract.md)，旧结果保持原样。

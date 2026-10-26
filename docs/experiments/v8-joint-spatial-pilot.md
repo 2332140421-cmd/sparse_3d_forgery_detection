@@ -3,6 +3,9 @@
 状态：**COMPLETE**。两模型训练、最终best/last评价和自动报告均完成；按预注册规则早停。
 协议：[joint_spatial_contract.md](../v8/joint_spatial_contract.md)、ADR-0022。
 
+2026-10-27完成[离线错误分析](v8-joint-spatial-diagnosis.md)：已有训练改善/dev退化及背景误报，
+旧“差距未超过0.15”不排除过拟合。未发现核验范围内明确映射错误；下一轮优先验证检测/定位输出解耦，尚未执行。
+
 ## 实际结构与队列
 
 CELL_LOC / COMPONENT_LOC 均362,658个可训练参数；共享256结构、真实dense XYZ局部几何、
