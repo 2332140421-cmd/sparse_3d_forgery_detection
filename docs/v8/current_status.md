@@ -1,6 +1,6 @@
 # V8 当前状态与边界
 
-更新2026-10-23。当前工作分支`v8-spatial-localization`，基线为远端
+更新2026-10-26。当前工作分支`v8-spatial-localization`，基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
@@ -63,7 +63,7 @@ query集中，本轮不恢复或修复V9。
 新机没有历史训练好的V8模型、旧standardizer/grouping、旧前端缓存或历史source划分清单；
 随机smoke明确使用identity scaling与1/1/1 grouping常量，不能叫COMPONENT_ADAPTED或正式复现。
 
-## 当前资产准备任务
+## ActivityForensics资产准备检查点（2026-10-23）
 
 本轮仅完成Git认证、全量官方资产及关联real准备、标注核查和历史队列身份恢复。
 不进行试标、训练、全量前端或模型评分。Git专用Deploy key已获授权，上一轮提交
@@ -77,7 +77,7 @@ query集中，本轮不恢复或修复V9。
 
 ## 尚未完成及后续研究（本轮不执行）
 
-**本轮环境和真实数据接口准备完成；空间定位训练尚未开始。** 没有空间真值或空间性能。
+**此前环境和真实数据接口准备完成；空间定位训练尚未开始。** ActivityForensics仍无可直接使用的公开空间真值；ANAKIN候选的公开编辑mask核验见下节，尚无空间性能。
 正式CELL_LOC/COMPONENT_LOC拟共享格均值压缩前的局部像素RGB/XYZ编码器与非整格常值
 解码器，仅改变cell/component上下文；公平初始化和预算见
 [spatial_localization_plan.md](spatial_localization_plan.md)。
@@ -85,3 +85,12 @@ query集中，本轮不恢复或修复V9。
 训练/开发/测试清单和完整初始化协议。需要重训时，两条件共同拟合训练统计、同阶段同预算
 重新训练骨干，不能只适配COMPONENT。后续正式网络/超参尚未冻结。
 本轮结束后不自动启动全库下载、全量前端、正式训练或历史全实验重跑。
+
+## 第二数据集资产核验（2026-10-26）
+
+ANAKIN固定revision已取20对及mask，60文件通过校验；17对帧号/数量/尺寸可对应，
+3对保留alignment_unresolved。场景预审13符合、4待确认、3不符合；与空间可对应取交集为11对。
+标签是公开编辑区域，不能称可见异常GT；16对全程非空、1对空/非空混合，另3对未解决。
+TVIL官方网盘尚未清点，空间mask是否公开及其对应仍未核实。
+完整边界、场景逐项证据、成本和外部预览入口见[第二数据集核验](secondary_dataset_review.md)。
+本轮无训练、评分、前端提取或正式split冻结。旧ActivityNet恢复已自然结束，未改动其资产。

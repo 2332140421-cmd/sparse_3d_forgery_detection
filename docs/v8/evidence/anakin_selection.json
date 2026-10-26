@@ -1,0 +1,493 @@
+{
+  "repo": "AlexBlck/ANAKIN",
+  "revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+  "selection_seed": 20260909,
+  "rules": "has-masks official train (loader seed47, CSV order); description regex human/body/interaction; exclude text/graphic/color/background/water/smoke terms; 10 splicing + 10 inpainting using independent selection seed; no visual replacement",
+  "human_regex": "\\b(man|men|woman|women|person|people|guy|girl|boy|player|runners?|skateboard|bike|neck|head|ear|hat|shirt|chest|arm|hair|face|badge|brooch|necklace|glasses|tie)\\b",
+  "exclude_regex": "\\b(text|letters|inscription|poster|graph|print|pattern|logo|emblem|picture|smoke|water|floating|flyboard|color|colour|background replacement)\\b",
+  "split_config": "has-masks",
+  "metadata_sha256": "aacd0ee3b452aab50b35cdea692c11d0f3d13281613ec0919afb597852ee52e5",
+  "loader_sha256": "7c39157f24993c134dd0cc6a52976b1d8151ed67f798bc007e61f2af84772cb1",
+  "rows": [
+    {
+      "video-id": "4dvw24",
+      "start-time": "4",
+      "end-time": "10",
+      "url": "https://vimeo.com/103938384",
+      "has-masks": "TRUE",
+      "task": "add glasses to the face",
+      "manipulation-type": "splicing",
+      "editor-id": "l7x2rq",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4dvw24.mp4",
+        "edited": "edited/4dvw24.mp4",
+        "masks": "masks/4dvw24.zip"
+      }
+    },
+    {
+      "video-id": "4q26w4",
+      "start-time": "5",
+      "end-time": "10",
+      "url": "https://vimeo.com/8549501",
+      "has-masks": "TRUE",
+      "task": "remove all runners and moving camera",
+      "manipulation-type": "inpainting",
+      "editor-id": "2rmldy",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4q26w4.mp4",
+        "edited": "edited/4q26w4.mp4",
+        "masks": "masks/4q26w4.zip"
+      }
+    },
+    {
+      "video-id": "4qwdw4",
+      "start-time": "5",
+      "end-time": "10",
+      "url": "https://vimeo.com/63527459",
+      "has-masks": "TRUE",
+      "task": "remove the girl leaving her reflection on the floor",
+      "manipulation-type": "inpainting",
+      "editor-id": "w7nprx",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4qwdw4.mp4",
+        "edited": "edited/4qwdw4.mp4",
+        "masks": "masks/4qwdw4.zip"
+      }
+    },
+    {
+      "video-id": "4qwe54",
+      "start-time": "0",
+      "end-time": "5",
+      "url": "https://vimeo.com/150391648",
+      "has-masks": "TRUE",
+      "task": "Remove the person on the bike",
+      "manipulation-type": "inpainting",
+      "editor-id": "ldw3r9",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4qwe54.mp4",
+        "edited": "edited/4qwe54.mp4",
+        "masks": "masks/4qwe54.zip"
+      }
+    },
+    {
+      "video-id": "4qwgw4",
+      "start-time": "51",
+      "end-time": "54",
+      "url": "https://vimeo.com/67729134",
+      "has-masks": "TRUE",
+      "task": "Remove the man walking on the left side",
+      "manipulation-type": "inpainting",
+      "editor-id": "ldw3r9",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4qwgw4.mp4",
+        "edited": "edited/4qwgw4.mp4",
+        "masks": "masks/4qwgw4.zip"
+      }
+    },
+    {
+      "video-id": "4qwn54",
+      "start-time": "8",
+      "end-time": "11",
+      "url": "https://vimeo.com/33279774",
+      "has-masks": "TRUE",
+      "task": "remove the guy on the skateboard in the center",
+      "manipulation-type": "inpainting",
+      "editor-id": "gre97n",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4qwn54.mp4",
+        "edited": "edited/4qwn54.mp4",
+        "masks": "masks/4qwn54.zip"
+      }
+    },
+    {
+      "video-id": "4vge14",
+      "start-time": "0",
+      "end-time": "5",
+      "url": "https://vimeo.com/107895221",
+      "has-masks": "TRUE",
+      "task": "add a badge attached to the shirt pocket",
+      "manipulation-type": "splicing",
+      "editor-id": "w7nprx",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4vge14.mp4",
+        "edited": "edited/4vge14.mp4",
+        "masks": "masks/4vge14.zip"
+      }
+    },
+    {
+      "video-id": "4vo387",
+      "start-time": "0",
+      "end-time": "5",
+      "url": "https://vimeo.com/427138724",
+      "has-masks": "TRUE",
+      "task": "add a flying butterfly behind the person",
+      "manipulation-type": "splicing",
+      "editor-id": "l7x2rq",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4vo387.mp4",
+        "edited": "edited/4vo387.mp4",
+        "masks": "masks/4vo387.zip"
+      }
+    },
+    {
+      "video-id": "4wge37",
+      "start-time": "8",
+      "end-time": "12",
+      "url": "https://vimeo.com/371014977",
+      "has-masks": "TRUE",
+      "task": "Remove walking woman",
+      "manipulation-type": "inpainting",
+      "editor-id": "w7nprx",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "test",
+        "no-full": "test",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4wge37.mp4",
+        "edited": "edited/4wge37.mp4",
+        "masks": "masks/4wge37.zip"
+      }
+    },
+    {
+      "video-id": "4xeqd7",
+      "start-time": "4",
+      "end-time": "11",
+      "url": "https://vimeo.com/599791279",
+      "has-masks": "TRUE",
+      "task": "remove the man in the white shirt",
+      "manipulation-type": "inpainting",
+      "editor-id": "l7x2rq",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4xeqd7.mp4",
+        "edited": "edited/4xeqd7.mp4",
+        "masks": "masks/4xeqd7.zip"
+      }
+    },
+    {
+      "video-id": "4ymrn4",
+      "start-time": "5",
+      "end-time": "9",
+      "url": "https://vimeo.com/192376698",
+      "has-masks": "TRUE",
+      "task": "remove the woman",
+      "manipulation-type": "inpainting",
+      "editor-id": "w7nprx",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4ymrn4.mp4",
+        "edited": "edited/4ymrn4.mp4",
+        "masks": "masks/4ymrn4.zip"
+      }
+    },
+    {
+      "video-id": "4z1827",
+      "start-time": "16",
+      "end-time": "20",
+      "url": "https://vimeo.com/445264882",
+      "has-masks": "TRUE",
+      "task": "add a spider to the hat",
+      "manipulation-type": "splicing",
+      "editor-id": "l7x2rq",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4z1827.mp4",
+        "edited": "edited/4z1827.mp4",
+        "masks": "masks/4z1827.zip"
+      }
+    },
+    {
+      "video-id": "4z1q27",
+      "start-time": "12",
+      "end-time": "16",
+      "url": "https://vimeo.com/449732824",
+      "has-masks": "TRUE",
+      "task": "add a tattoo on the chest above the shirt",
+      "manipulation-type": "splicing",
+      "editor-id": "w7nprx",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/4z1q27.mp4",
+        "edited": "edited/4z1q27.mp4",
+        "masks": "masks/4z1q27.zip"
+      }
+    },
+    {
+      "video-id": "73rqr7",
+      "start-time": "0",
+      "end-time": "5",
+      "url": "https://vimeo.com/413587157",
+      "has-masks": "TRUE",
+      "task": "add a hat to your head",
+      "manipulation-type": "splicing",
+      "editor-id": "l7x2rq",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "validation",
+        "no-full": "validation",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/73rqr7.mp4",
+        "edited": "edited/73rqr7.mp4",
+        "masks": "masks/73rqr7.zip"
+      }
+    },
+    {
+      "video-id": "7e23j7",
+      "start-time": "20",
+      "end-time": "23",
+      "url": "https://vimeo.com/583045003",
+      "has-masks": "TRUE",
+      "task": "Add any brooch to the blouse on the right side",
+      "manipulation-type": "splicing",
+      "editor-id": "ldw3r9",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "validation",
+        "no-full": "validation",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/7e23j7.mp4",
+        "edited": "edited/7e23j7.mp4",
+        "masks": "masks/7e23j7.zip"
+      }
+    },
+    {
+      "video-id": "7e2557",
+      "start-time": "30",
+      "end-time": "34",
+      "url": "https://vimeo.com/44388058",
+      "has-masks": "TRUE",
+      "task": "add a brooch on top of a shirt pocket",
+      "manipulation-type": "splicing",
+      "editor-id": "w7nprx",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/7e2557.mp4",
+        "edited": "edited/7e2557.mp4",
+        "masks": "masks/7e2557.zip"
+      }
+    },
+    {
+      "video-id": "7p8l14",
+      "start-time": "25",
+      "end-time": "29",
+      "url": "https://vimeo.com/338166175",
+      "has-masks": "TRUE",
+      "task": "add a star badge to a guy's hat",
+      "manipulation-type": "splicing",
+      "editor-id": "gre97n",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/7p8l14.mp4",
+        "edited": "edited/7p8l14.mp4",
+        "masks": "masks/7p8l14.zip"
+      }
+    },
+    {
+      "video-id": "7p8r14",
+      "start-time": "10",
+      "end-time": "15",
+      "url": "https://vimeo.com/336385849",
+      "has-masks": "TRUE",
+      "task": "add panama hat",
+      "manipulation-type": "splicing",
+      "editor-id": "gre97n",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "test",
+        "no-full": "test",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/7p8r14.mp4",
+        "edited": "edited/7p8r14.mp4",
+        "masks": "masks/7p8r14.zip"
+      }
+    },
+    {
+      "video-id": "95qvg9",
+      "start-time": "30",
+      "end-time": "34",
+      "url": "https://vimeo.com/159805605",
+      "has-masks": "TRUE",
+      "task": "Remove a woman and a man walking on the background",
+      "manipulation-type": "inpainting",
+      "editor-id": "gre97n",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "validation",
+        "no-full": "validation",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/95qvg9.mp4",
+        "edited": "edited/95qvg9.mp4",
+        "masks": "masks/95qvg9.zip"
+      }
+    },
+    {
+      "video-id": "9g2gk7",
+      "start-time": "0",
+      "end-time": "5",
+      "url": "https://vimeo.com/3421541",
+      "has-masks": "TRUE",
+      "task": "remove the running man",
+      "manipulation-type": "inpainting",
+      "editor-id": "ldw3r9",
+      "full-available": "TRUE",
+      "official_split": "train",
+      "review_pool": "asset_review_pool",
+      "official_splits": {
+        "all": "train",
+        "no-full": "train",
+        "has-masks": "train",
+        "full-masks": "train"
+      },
+      "paths": {
+        "trimmed": "trimmed/9g2gk7.mp4",
+        "edited": "edited/9g2gk7.mp4",
+        "masks": "masks/9g2gk7.zip"
+      }
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-26",
+  "basis": "实际查看原始trimmed的固定时刻帧序列；另查看real/edited/GT对照以检查标签语义。稀疏预览不能证明整段绝无切镜；全部保留播放器复核。未按fake异常明显程度替换样本。",
+  "rows": [
+    {
+      "video_id": "4dvw24",
+      "scene_status": "preliminary_match",
+      "reason": "室内坐姿说话与手势；背景稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4q26w4",
+      "scene_status": "not_matching",
+      "reason": "体育场画面跨取样时刻明显平移，相机运动超轻微范围",
+      "human_activity": "visible",
+      "camera_motion": "large_pan",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4qwdw4",
+      "scene_status": "preliminary_match",
+      "reason": "室内舞蹈，背景位置稳定；正常肢体运动不排除",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4qwe54",
+      "scene_status": "not_matching",
+      "reason": "竖屏街景取样视角及建筑位置明显变化",
+      "human_activity": "visible",
+      "camera_motion": "strong_handheld_or_pan",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4qwgw4",
+      "scene_status": "preliminary_match",
+      "reason": "公园人物步行与站立，树木和长椅位置稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4qwn54",
+      "scene_status": "pending_confirmation",
+      "reason": "滑板人物接近，路面及房屋视角变化；需播放器确认跟随幅度",
+      "human_activity": "visible",
+      "camera_motion": "uncertain_following",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4vge14",
+      "scene_status": "preliminary_match",
+      "reason": "室内站立讲话和手势，书架背景基本稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4vo387",
+      "scene_status": "preliminary_match",
+      "reason": "室外持书讲话，背景基本稳定；但mask编号问题未解决",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4wge37",
+      "scene_status": "not_matching",
+      "reason": "瀑布占据画面大面积，动态水体主导背景",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4xeqd7",
+      "scene_status": "pending_confirmation",
+      "reason": "河岸人物活动；构图变化，需要确认手持平移及水体影响",
+      "human_activity": "visible",
+      "camera_motion": "uncertain_handheld",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4ymrn4",
+      "scene_status": "pending_confirmation",
+      "reason": "室内人犬互动；地平线与器材位置变化，需确认转动幅度",
+      "human_activity": "visible",
+      "camera_motion": "uncertain_handheld",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4z1827",
+      "scene_status": "pending_confirmation",
+      "reason": "近景人物与大量前景枝叶遮挡；需确认正常遮挡变化及相机运动",
+      "human_activity": "visible",
+      "camera_motion": "uncertain_handheld",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "4z1q27",
+      "scene_status": "preliminary_match",
+      "reason": "室内坐姿讲话、手势，背景稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "73rqr7",
+      "scene_status": "preliminary_match",
+      "reason": "室内坐姿头部活动，背景稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "7e23j7",
+      "scene_status": "preliminary_match",
+      "reason": "室内讲话、手势，背景稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "7e2557",
+      "scene_status": "preliminary_match",
+      "reason": "室外站立讲话、手势，背景稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "7p8l14",
+      "scene_status": "preliminary_match",
+      "reason": "站立人物，后方行人活动，建筑背景基本稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "7p8r14",
+      "scene_status": "preliminary_match",
+      "reason": "室内讲话和头部活动，背景稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "95qvg9",
+      "scene_status": "preliminary_match",
+      "reason": "街边人物讲话及后方行人，背景基本稳定",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    },
+    {
+      "video_id": "9g2gk7",
+      "scene_status": "preliminary_match",
+      "reason": "草地人物跑步，建筑背景稳定；mask帧数不符",
+      "human_activity": "visible",
+      "camera_motion": "fixed_or_mild",
+      "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+      "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+    }
+  ]
+}

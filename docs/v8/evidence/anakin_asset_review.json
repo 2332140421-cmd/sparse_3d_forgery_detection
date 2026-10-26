@@ -1,0 +1,2243 @@
+{
+  "date": "2026-10-26",
+  "revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+  "dataset_rows": 1023,
+  "mask_rows": 425,
+  "config_counts": {
+    "all": {
+      "train": 681,
+      "validation": 98,
+      "test": 195
+    },
+    "no-full": {
+      "train": 716,
+      "validation": 102,
+      "test": 205
+    },
+    "has-masks": {
+      "train": 297,
+      "validation": 43,
+      "test": 85
+    },
+    "full-masks": {
+      "train": 297,
+      "validation": 43,
+      "test": 85
+    }
+  },
+  "selected_pairs": 20,
+  "downloaded_files": 60,
+  "media_zip_bytes": 104507965,
+  "resumed_download_s": 14.548785209655762,
+  "initial_failed_download_s": null,
+  "verification_preview_rebuild_s": 21.557966470718384,
+  "initial_verification_preview_s": 21.40599012374878,
+  "external_directory_bytes": 111061736,
+  "scene_counts": {
+    "preliminary_match": 13,
+    "not_matching": 3,
+    "pending_confirmation": 4
+  },
+  "alignment_counts": {
+    "aligned": 17,
+    "alignment_unresolved": 3
+  },
+  "timing_profiles": {
+    "all_nonempty": 16,
+    "mixed_empty_nonempty": 1,
+    "unresolved": 3
+  },
+  "scene_and_alignment_preliminary": 11,
+  "preview_index": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/preview/index.html",
+  "rows": [
+    {
+      "video_id": "4dvw24",
+      "task": "add glasses to the face",
+      "source_url": "https://vimeo.com/103938384",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4dvw24",
+        "scene_status": "preliminary_match",
+        "reason": "室内坐姿说话与手势；背景稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 178,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 5.939266666666667
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 180,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/11988",
+        "average_rate": "2997/100",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 71600,
+          "seconds": 5.972639305972639
+        }
+      },
+      "edited": {
+        "frame_count": 179,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 178178,
+          "seconds": 5.939266666666667
+        }
+      },
+      "mask": {
+        "count": 179,
+        "number_min": 0,
+        "number_max": 178,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "4q26w4",
+      "task": "remove all runners and moving camera",
+      "source_url": "https://vimeo.com/8549501",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4q26w4",
+        "scene_status": "not_matching",
+        "reason": "体育场画面跨取样时刻明显平移，相机运动超轻微范围",
+        "human_activity": "visible",
+        "camera_motion": "large_pan",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "mixed_empty_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 2,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 0.08
+          },
+          {
+            "first_frame": 8,
+            "last_frame_inclusive": 124,
+            "first_pts_s": 0.32,
+            "last_positive_pts_s": 4.96
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 125,
+        "sizes_hw": [
+          [
+            480,
+            640
+          ]
+        ],
+        "time_base": "1/12800",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 63488,
+          "seconds": 4.96
+        }
+      },
+      "edited": {
+        "frame_count": 125,
+        "sizes_hw": [
+          [
+            480,
+            640
+          ]
+        ],
+        "time_base": "1/25000",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 124000,
+          "seconds": 4.96
+        }
+      },
+      "mask": {
+        "count": 125,
+        "number_min": 0,
+        "number_max": 124,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            480,
+            640
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 5,
+        "unique_value_count": 220
+      }
+    },
+    {
+      "video_id": "4qwdw4",
+      "task": "remove the girl leaving her reflection on the floor",
+      "source_url": "https://vimeo.com/63527459",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4qwdw4",
+        "scene_status": "preliminary_match",
+        "reason": "室内舞蹈，背景位置稳定；正常肢体运动不排除",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 149,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 4.971633333333333
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 150,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/11988",
+        "average_rate": "2997/100",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 59600,
+          "seconds": 4.971638304971639
+        }
+      },
+      "edited": {
+        "frame_count": 150,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 149149,
+          "seconds": 4.971633333333333
+        }
+      },
+      "mask": {
+        "count": 150,
+        "number_min": 0,
+        "number_max": 149,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 9
+      }
+    },
+    {
+      "video_id": "4qwe54",
+      "task": "Remove the person on the bike",
+      "source_url": "https://vimeo.com/150391648",
+      "type": "inpainting",
+      "alignment": {
+        "status": "alignment_unresolved",
+        "index_base": null,
+        "missing_annotation_not_normal": true
+      },
+      "scene_review": {
+        "video_id": "4qwe54",
+        "scene_status": "not_matching",
+        "reason": "竖屏街景取样视角及建筑位置明显变化",
+        "human_activity": "visible",
+        "camera_motion": "strong_handheld_or_pan",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "unresolved",
+        "positive_runs": null
+      },
+      "trimmed": {
+        "frame_count": 150,
+        "sizes_hw": [
+          [
+            640,
+            360
+          ]
+        ],
+        "time_base": "1/11988",
+        "average_rate": "2997/100",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 59600,
+          "seconds": 4.971638304971639
+        }
+      },
+      "edited": {
+        "frame_count": 149,
+        "sizes_hw": [
+          [
+            640,
+            360
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 148148,
+          "seconds": 4.938266666666666
+        }
+      },
+      "mask": {
+        "count": 150,
+        "number_min": 0,
+        "number_max": 149,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            640,
+            360
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "4qwgw4",
+      "task": "Remove the man walking on the left side",
+      "source_url": "https://vimeo.com/67729134",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4qwgw4",
+        "scene_status": "preliminary_match",
+        "reason": "公园人物步行与站立，树木和长椅位置稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 74,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 2.96
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 75,
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "time_base": "1/12800",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 37888,
+          "seconds": 2.96
+        }
+      },
+      "edited": {
+        "frame_count": 75,
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "time_base": "1/25000",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 74000,
+          "seconds": 2.96
+        }
+      },
+      "mask": {
+        "count": 75,
+        "number_min": 0,
+        "number_max": 74,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 183
+      }
+    },
+    {
+      "video_id": "4qwn54",
+      "task": "remove the guy on the skateboard in the center",
+      "source_url": "https://vimeo.com/33279774",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4qwn54",
+        "scene_status": "pending_confirmation",
+        "reason": "滑板人物接近，路面及房屋视角变化；需播放器确认跟随幅度",
+        "human_activity": "visible",
+        "camera_motion": "uncertain_following",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 89,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 2.966666666666667
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 90,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/15360",
+        "average_rate": "30",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 45568,
+          "seconds": 2.966666666666667
+        }
+      },
+      "edited": {
+        "frame_count": 90,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 89000,
+          "seconds": 2.966666666666667
+        }
+      },
+      "mask": {
+        "count": 90,
+        "number_min": 0,
+        "number_max": 89,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 88
+      }
+    },
+    {
+      "video_id": "4vge14",
+      "task": "add a badge attached to the shirt pocket",
+      "source_url": "https://vimeo.com/107895221",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4vge14",
+        "scene_status": "preliminary_match",
+        "reason": "室内站立讲话和手势，书架背景基本稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 124,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 4.96
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 125,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/12800",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 63488,
+          "seconds": 4.96
+        }
+      },
+      "edited": {
+        "frame_count": 125,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/25000",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 124000,
+          "seconds": 4.96
+        }
+      },
+      "mask": {
+        "count": 125,
+        "number_min": 0,
+        "number_max": 124,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "4vo387",
+      "task": "add a flying butterfly behind the person",
+      "source_url": "https://vimeo.com/427138724",
+      "type": "splicing",
+      "alignment": {
+        "status": "alignment_unresolved",
+        "index_base": null,
+        "missing_annotation_not_normal": true
+      },
+      "scene_review": {
+        "video_id": "4vo387",
+        "scene_status": "preliminary_match",
+        "reason": "室外持书讲话，背景基本稳定；但mask编号问题未解决",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "unresolved",
+        "positive_runs": null
+      },
+      "trimmed": {
+        "frame_count": 150,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/15360",
+        "average_rate": "30",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 76288,
+          "seconds": 4.966666666666667
+        }
+      },
+      "edited": {
+        "frame_count": 144,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 143000,
+          "seconds": 4.766666666666667
+        }
+      },
+      "mask": {
+        "count": 144,
+        "number_min": 6,
+        "number_max": 149,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 16,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "4wge37",
+      "task": "Remove walking woman",
+      "source_url": "https://vimeo.com/371014977",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4wge37",
+        "scene_status": "not_matching",
+        "reason": "瀑布占据画面大面积，动态水体主导背景",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 99,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.96
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 100,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/12800",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 50688,
+          "seconds": 3.96
+        }
+      },
+      "edited": {
+        "frame_count": 100,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/25000",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 99000,
+          "seconds": 3.96
+        }
+      },
+      "mask": {
+        "count": 100,
+        "number_min": 0,
+        "number_max": 99,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 14
+      }
+    },
+    {
+      "video_id": "4xeqd7",
+      "task": "remove the man in the white shirt",
+      "source_url": "https://vimeo.com/599791279",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4xeqd7",
+        "scene_status": "pending_confirmation",
+        "reason": "河岸人物活动；构图变化，需要确认手持平移及水体影响",
+        "human_activity": "visible",
+        "camera_motion": "uncertain_handheld",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 209,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 6.973633333333333
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 210,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/11988",
+        "average_rate": "2997/100",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 83600,
+          "seconds": 6.97364030697364
+        }
+      },
+      "edited": {
+        "frame_count": 210,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 209209,
+          "seconds": 6.973633333333333
+        }
+      },
+      "mask": {
+        "count": 210,
+        "number_min": 0,
+        "number_max": 209,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 2
+      }
+    },
+    {
+      "video_id": "4ymrn4",
+      "task": "remove the woman",
+      "source_url": "https://vimeo.com/192376698",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4ymrn4",
+        "scene_status": "pending_confirmation",
+        "reason": "室内人犬互动；地平线与器材位置变化，需确认转动幅度",
+        "human_activity": "visible",
+        "camera_motion": "uncertain_handheld",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 119,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.966666666666667
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/15360",
+        "average_rate": "30",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 60928,
+          "seconds": 3.966666666666667
+        }
+      },
+      "edited": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 119000,
+          "seconds": 3.966666666666667
+        }
+      },
+      "mask": {
+        "count": 120,
+        "number_min": 0,
+        "number_max": 119,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 53
+      }
+    },
+    {
+      "video_id": "4z1827",
+      "task": "add a spider to the hat",
+      "source_url": "https://vimeo.com/445264882",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4z1827",
+        "scene_status": "pending_confirmation",
+        "reason": "近景人物与大量前景枝叶遮挡；需确认正常遮挡变化及相机运动",
+        "human_activity": "visible",
+        "camera_motion": "uncertain_handheld",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 119,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.9706333333333332
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 119119,
+          "seconds": 3.9706333333333332
+        }
+      },
+      "edited": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 119119,
+          "seconds": 3.9706333333333332
+        }
+      },
+      "mask": {
+        "count": 120,
+        "number_min": 0,
+        "number_max": 119,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "4z1q27",
+      "task": "add a tattoo on the chest above the shirt",
+      "source_url": "https://vimeo.com/449732824",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "4z1q27",
+        "scene_status": "preliminary_match",
+        "reason": "室内坐姿讲话、手势，背景稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 99,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.96
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 100,
+        "sizes_hw": [
+          [
+            540,
+            738
+          ]
+        ],
+        "time_base": "1/12800",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 50688,
+          "seconds": 3.96
+        }
+      },
+      "edited": {
+        "frame_count": 100,
+        "sizes_hw": [
+          [
+            540,
+            738
+          ]
+        ],
+        "time_base": "1/25000",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 99000,
+          "seconds": 3.96
+        }
+      },
+      "mask": {
+        "count": 100,
+        "number_min": 0,
+        "number_max": 99,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            738
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "73rqr7",
+      "task": "add a hat to your head",
+      "source_url": "https://vimeo.com/413587157",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "73rqr7",
+        "scene_status": "preliminary_match",
+        "reason": "室内坐姿头部活动，背景稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 119,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 4.958333333333333
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/12288",
+        "average_rate": "24",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 60928,
+          "seconds": 4.958333333333333
+        }
+      },
+      "edited": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/24000",
+        "average_rate": "24",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 119000,
+          "seconds": 4.958333333333333
+        }
+      },
+      "mask": {
+        "count": 120,
+        "number_min": 0,
+        "number_max": 119,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "7e23j7",
+      "task": "Add any brooch to the blouse on the right side",
+      "source_url": "https://vimeo.com/583045003",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "7e23j7",
+        "scene_status": "preliminary_match",
+        "reason": "室内讲话、手势，背景稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 89,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 2.9696333333333333
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 90,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 89089,
+          "seconds": 2.9696333333333333
+        }
+      },
+      "edited": {
+        "frame_count": 90,
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 89089,
+          "seconds": 2.9696333333333333
+        }
+      },
+      "mask": {
+        "count": 90,
+        "number_min": 0,
+        "number_max": 89,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            720,
+            1280
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 173
+      }
+    },
+    {
+      "video_id": "7e2557",
+      "task": "add a brooch on top of a shirt pocket",
+      "source_url": "https://vimeo.com/44388058",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "7e2557",
+        "scene_status": "preliminary_match",
+        "reason": "室外站立讲话、手势，背景稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 95,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.9583333333333335
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 96,
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "time_base": "1/12288",
+        "average_rate": "24",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 48640,
+          "seconds": 3.9583333333333335
+        }
+      },
+      "edited": {
+        "frame_count": 96,
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "time_base": "1/24000",
+        "average_rate": "24",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 95000,
+          "seconds": 3.9583333333333335
+        }
+      },
+      "mask": {
+        "count": 96,
+        "number_min": 0,
+        "number_max": 95,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 213
+      }
+    },
+    {
+      "video_id": "7p8l14",
+      "task": "add a star badge to a guy's hat",
+      "source_url": "https://vimeo.com/338166175",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "7p8l14",
+        "scene_status": "preliminary_match",
+        "reason": "站立人物，后方行人活动，建筑背景基本稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 119,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.9706333333333332
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 119119,
+          "seconds": 3.9706333333333332
+        }
+      },
+      "edited": {
+        "frame_count": 120,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 119119,
+          "seconds": 3.9706333333333332
+        }
+      },
+      "mask": {
+        "count": 120,
+        "number_min": 0,
+        "number_max": 119,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "7p8r14",
+      "task": "add panama hat",
+      "source_url": "https://vimeo.com/336385849",
+      "type": "splicing",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "7p8r14",
+        "scene_status": "preliminary_match",
+        "reason": "室内讲话和头部活动，背景稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 77,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 5.133333333333334
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 78,
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "time_base": "1/31103",
+        "average_rate": "31103/2000",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 154000,
+          "seconds": 4.951290872263126
+        }
+      },
+      "edited": {
+        "frame_count": 78,
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "15",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 154000,
+          "seconds": 5.133333333333334
+        }
+      },
+      "mask": {
+        "count": 78,
+        "number_min": 0,
+        "number_max": 77,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            360,
+            640
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 256
+      }
+    },
+    {
+      "video_id": "95qvg9",
+      "task": "Remove a woman and a man walking on the background",
+      "source_url": "https://vimeo.com/159805605",
+      "type": "inpainting",
+      "alignment": {
+        "status": "aligned",
+        "index_base": 0
+      },
+      "scene_review": {
+        "video_id": "95qvg9",
+        "scene_status": "preliminary_match",
+        "reason": "街边人物讲话及后方行人，背景基本稳定",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "all_nonempty",
+        "positive_runs": [
+          {
+            "first_frame": 0,
+            "last_frame_inclusive": 99,
+            "first_pts_s": 0.0,
+            "last_positive_pts_s": 3.96
+          }
+        ],
+        "boundary_convention": "closed sampled PTS range, not an inferred continuous end-time"
+      },
+      "trimmed": {
+        "frame_count": 100,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/12800",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 50688,
+          "seconds": 3.96
+        }
+      },
+      "edited": {
+        "frame_count": 100,
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "time_base": "1/25000",
+        "average_rate": "25",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 99000,
+          "seconds": 3.96
+        }
+      },
+      "mask": {
+        "count": 100,
+        "number_min": 0,
+        "number_max": 99,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            540,
+            960
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 0,
+        "unique_value_count": 247
+      }
+    },
+    {
+      "video_id": "9g2gk7",
+      "task": "remove the running man",
+      "source_url": "https://vimeo.com/3421541",
+      "type": "inpainting",
+      "alignment": {
+        "status": "alignment_unresolved",
+        "index_base": null,
+        "missing_annotation_not_normal": true
+      },
+      "scene_review": {
+        "video_id": "9g2gk7",
+        "scene_status": "preliminary_match",
+        "reason": "草地人物跑步，建筑背景稳定；mask帧数不符",
+        "human_activity": "visible",
+        "camera_motion": "fixed_or_mild",
+        "shot_changes": "none_observed_in_sampled_frames_full_playback_pending",
+        "pending": "人工播放全段确认相机和切镜；未冻结训练资格"
+      },
+      "mask_timing": {
+        "profile": "unresolved",
+        "positive_runs": null
+      },
+      "trimmed": {
+        "frame_count": 150,
+        "sizes_hw": [
+          [
+            336,
+            504
+          ]
+        ],
+        "time_base": "1/11988",
+        "average_rate": "2997/100",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 59600,
+          "seconds": 4.971638304971639
+        }
+      },
+      "edited": {
+        "frame_count": 149,
+        "sizes_hw": [
+          [
+            336,
+            504
+          ]
+        ],
+        "time_base": "1/30000",
+        "average_rate": "30000/1001",
+        "first_pts": {
+          "ticks": 0,
+          "seconds": 0.0
+        },
+        "last_pts": {
+          "ticks": 148148,
+          "seconds": 4.938266666666666
+        }
+      },
+      "mask": {
+        "count": 150,
+        "number_min": 0,
+        "number_max": 149,
+        "modes": [
+          "RGB"
+        ],
+        "sizes_hw": [
+          [
+            336,
+            504
+          ]
+        ],
+        "foreground_rule": "PIL RGB-to-L luminance then uint8/255 >= 0.5; white edited-region interpretation checked by overlays; original ZIP unchanged",
+        "empty_count": 48,
+        "unique_value_count": 256
+      }
+    }
+  ],
+  "download_files": [
+    {
+      "path": "trimmed/4dvw24.mp4",
+      "status": "VERIFIED",
+      "bytes": 977296,
+      "sha256": "6bd8b914e892fbcc2c1be2c5cd659a5b57ee848f0ed57824d3d268bd665bfaa7",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "6bd8b914e892fbcc2c1be2c5cd659a5b57ee848f0ed57824d3d268bd665bfaa7"
+    },
+    {
+      "path": "edited/4dvw24.mp4",
+      "status": "VERIFIED",
+      "bytes": 5088326,
+      "sha256": "47f7ef0d81f84a783161835a79b7510cb53c36abdb932933f329f27bfbeb9298",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "47f7ef0d81f84a783161835a79b7510cb53c36abdb932933f329f27bfbeb9298"
+    },
+    {
+      "path": "masks/4dvw24.zip",
+      "status": "VERIFIED",
+      "bytes": 1373392,
+      "sha256": "ff639dc1756b77449636585b3b0e4929d2a1a601a6ae6c6c22669cad5fd3c323",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "ff639dc1756b77449636585b3b0e4929d2a1a601a6ae6c6c22669cad5fd3c323"
+    },
+    {
+      "path": "trimmed/4q26w4.mp4",
+      "status": "VERIFIED",
+      "bytes": 620353,
+      "sha256": "eddb6edbeab4123cd621ca800095ebc9a7f83aaef17244726c0958b5b1aa5a23",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "eddb6edbeab4123cd621ca800095ebc9a7f83aaef17244726c0958b5b1aa5a23"
+    },
+    {
+      "path": "edited/4q26w4.mp4",
+      "status": "VERIFIED",
+      "bytes": 6851267,
+      "sha256": "df4831dcace0f0c1500fe81f495bf0b202307d3b7172dc2c05b501cacbc35a83",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "df4831dcace0f0c1500fe81f495bf0b202307d3b7172dc2c05b501cacbc35a83"
+    },
+    {
+      "path": "masks/4q26w4.zip",
+      "status": "VERIFIED",
+      "bytes": 301541,
+      "sha256": "0014df557f57755458194ae8a5628bd3561f2297a8468b4e8dbdd70a1852aae8",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "0014df557f57755458194ae8a5628bd3561f2297a8468b4e8dbdd70a1852aae8"
+    },
+    {
+      "path": "trimmed/4qwdw4.mp4",
+      "status": "VERIFIED",
+      "bytes": 754523,
+      "sha256": "9ecdafea2ac416f003b7823e446be55816e179e1a48ea166ac546e7ddc6e7abc",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "9ecdafea2ac416f003b7823e446be55816e179e1a48ea166ac546e7ddc6e7abc"
+    },
+    {
+      "path": "edited/4qwdw4.mp4",
+      "status": "VERIFIED",
+      "bytes": 4384823,
+      "sha256": "c14ee37cc9b123c9ed8525814ad90644283442c4ae091a1131effcf692f7c09c",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "c14ee37cc9b123c9ed8525814ad90644283442c4ae091a1131effcf692f7c09c"
+    },
+    {
+      "path": "masks/4qwdw4.zip",
+      "status": "VERIFIED",
+      "bytes": 686200,
+      "sha256": "b7c94c9b23bea4cfc25d9787aeda98606788d78949b917aadf6af2686a16d184",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "b7c94c9b23bea4cfc25d9787aeda98606788d78949b917aadf6af2686a16d184"
+    },
+    {
+      "path": "trimmed/4qwe54.mp4",
+      "status": "VERIFIED",
+      "bytes": 513352,
+      "sha256": "cdd4eea5619820c0813cf17146682490833f5d740ffcbc835a55aa171dfd83d0",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "cdd4eea5619820c0813cf17146682490833f5d740ffcbc835a55aa171dfd83d0"
+    },
+    {
+      "path": "edited/4qwe54.mp4",
+      "status": "VERIFIED",
+      "bytes": 2518020,
+      "sha256": "6537d8d9c93cdd60c449cedf5c49fc6c136edeb18c806c1437bd42ec38d2adcd",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "6537d8d9c93cdd60c449cedf5c49fc6c136edeb18c806c1437bd42ec38d2adcd"
+    },
+    {
+      "path": "masks/4qwe54.zip",
+      "status": "VERIFIED",
+      "bytes": 480732,
+      "sha256": "667fc0d9bd2108d7dafb84ec8295ea5053b67921c3d49232518337b715c5ccb8",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "667fc0d9bd2108d7dafb84ec8295ea5053b67921c3d49232518337b715c5ccb8"
+    },
+    {
+      "path": "trimmed/4qwgw4.mp4",
+      "status": "VERIFIED",
+      "bytes": 363700,
+      "sha256": "6f2f33640fa5325319f723315ea99b6f36076aa01b1df2215cf403acae0af8cd",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "6f2f33640fa5325319f723315ea99b6f36076aa01b1df2215cf403acae0af8cd"
+    },
+    {
+      "path": "edited/4qwgw4.mp4",
+      "status": "VERIFIED",
+      "bytes": 804684,
+      "sha256": "2cdf1d1b483863e4414818e8b14f30f195aa625f8969a5822c58423ddbf8b24a",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "2cdf1d1b483863e4414818e8b14f30f195aa625f8969a5822c58423ddbf8b24a"
+    },
+    {
+      "path": "masks/4qwgw4.zip",
+      "status": "VERIFIED",
+      "bytes": 300162,
+      "sha256": "38e40c3d2d92d088df1ec1a064ae5e2cf7e73c36107af39c717245963a97accc",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "38e40c3d2d92d088df1ec1a064ae5e2cf7e73c36107af39c717245963a97accc"
+    },
+    {
+      "path": "trimmed/4qwn54.mp4",
+      "status": "VERIFIED",
+      "bytes": 854444,
+      "sha256": "76c763f15260743345f448358db8814e419037823d854a31b2cd3ba29097c9d5",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "76c763f15260743345f448358db8814e419037823d854a31b2cd3ba29097c9d5"
+    },
+    {
+      "path": "edited/4qwn54.mp4",
+      "status": "VERIFIED",
+      "bytes": 3247611,
+      "sha256": "d9c88c0cf4e5f580f46e5bfc984b22780571bde5ebe8f89e700a850c35900e51",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "d9c88c0cf4e5f580f46e5bfc984b22780571bde5ebe8f89e700a850c35900e51"
+    },
+    {
+      "path": "masks/4qwn54.zip",
+      "status": "VERIFIED",
+      "bytes": 36535,
+      "sha256": "184c5fc7c79d60625e0078148fa215d384f4a17e9881a11aa92bd2d115feeaa1",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "184c5fc7c79d60625e0078148fa215d384f4a17e9881a11aa92bd2d115feeaa1"
+    },
+    {
+      "path": "trimmed/4vge14.mp4",
+      "status": "VERIFIED",
+      "bytes": 1066032,
+      "sha256": "ddee6672956daf7bfc38b69ea107e38ca6cff8f015083c181b6d9f4678d95034",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "ddee6672956daf7bfc38b69ea107e38ca6cff8f015083c181b6d9f4678d95034"
+    },
+    {
+      "path": "edited/4vge14.mp4",
+      "status": "VERIFIED",
+      "bytes": 6438604,
+      "sha256": "6d1dfe3cf9825869627809913bd3dfd7c104596eafe9a491f1057b19b57e51a5",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "6d1dfe3cf9825869627809913bd3dfd7c104596eafe9a491f1057b19b57e51a5"
+    },
+    {
+      "path": "masks/4vge14.zip",
+      "status": "VERIFIED",
+      "bytes": 506617,
+      "sha256": "a49dc7d1c28f15345c52a509894d78bb0279604816f52c0c75f884663ebf37a3",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "a49dc7d1c28f15345c52a509894d78bb0279604816f52c0c75f884663ebf37a3"
+    },
+    {
+      "path": "trimmed/4vo387.mp4",
+      "status": "VERIFIED",
+      "bytes": 1023550,
+      "sha256": "c58315eb25c1fdb0f92c1d7ca457834444142f29f660e90dc2ca34490b898975",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "c58315eb25c1fdb0f92c1d7ca457834444142f29f660e90dc2ca34490b898975"
+    },
+    {
+      "path": "edited/4vo387.mp4",
+      "status": "VERIFIED",
+      "bytes": 5350750,
+      "sha256": "719b7bdaa4e0924de523b42ac1414834be6e56cf8fe185acf25f6eb998ce9d73",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "719b7bdaa4e0924de523b42ac1414834be6e56cf8fe185acf25f6eb998ce9d73"
+    },
+    {
+      "path": "masks/4vo387.zip",
+      "status": "VERIFIED",
+      "bytes": 274294,
+      "sha256": "3756a8770edd74882c18dd55dfe45dae7d37061045eda25e1514cb8478a4ca8e",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "3756a8770edd74882c18dd55dfe45dae7d37061045eda25e1514cb8478a4ca8e"
+    },
+    {
+      "path": "trimmed/4wge37.mp4",
+      "status": "VERIFIED",
+      "bytes": 1024867,
+      "sha256": "d798648a9387b1ec8f4fac2960e01a902a4cf40599719efc772a6bf7685619df",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "d798648a9387b1ec8f4fac2960e01a902a4cf40599719efc772a6bf7685619df"
+    },
+    {
+      "path": "edited/4wge37.mp4",
+      "status": "VERIFIED",
+      "bytes": 5120848,
+      "sha256": "d320822b025b251c32f47583c57b7a274fe0fd4fc11bc31ca184bb3b2ea522d4",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "d320822b025b251c32f47583c57b7a274fe0fd4fc11bc31ca184bb3b2ea522d4"
+    },
+    {
+      "path": "masks/4wge37.zip",
+      "status": "VERIFIED",
+      "bytes": 1302666,
+      "sha256": "747f26ee9680d0596c4a1033224f76af26702e046d6ef32a0c6e0fd6c0ca487b",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "747f26ee9680d0596c4a1033224f76af26702e046d6ef32a0c6e0fd6c0ca487b"
+    },
+    {
+      "path": "trimmed/4xeqd7.mp4",
+      "status": "VERIFIED",
+      "bytes": 1483654,
+      "sha256": "b27dfe33d01389f386300b72e5024dc1c956dcd36ab33c99994ee7b585565a0c",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "b27dfe33d01389f386300b72e5024dc1c956dcd36ab33c99994ee7b585565a0c"
+    },
+    {
+      "path": "edited/4xeqd7.mp4",
+      "status": "VERIFIED",
+      "bytes": 8239862,
+      "sha256": "26f426b10ad6e122d3e909989d070b3246d8ab51a2887403e218e9f1c689d08f",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "26f426b10ad6e122d3e909989d070b3246d8ab51a2887403e218e9f1c689d08f"
+    },
+    {
+      "path": "masks/4xeqd7.zip",
+      "status": "VERIFIED",
+      "bytes": 317681,
+      "sha256": "9e50b183decc28d1bca9c56c14f148446bd5a24e8f10824377245e24dc4f73a1",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "9e50b183decc28d1bca9c56c14f148446bd5a24e8f10824377245e24dc4f73a1"
+    },
+    {
+      "path": "trimmed/4ymrn4.mp4",
+      "status": "VERIFIED",
+      "bytes": 468903,
+      "sha256": "b1e722351deb4ffb81a80fee7097905df7fd633efcf0c7f41852a56b0e47969d",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "b1e722351deb4ffb81a80fee7097905df7fd633efcf0c7f41852a56b0e47969d"
+    },
+    {
+      "path": "edited/4ymrn4.mp4",
+      "status": "VERIFIED",
+      "bytes": 2125581,
+      "sha256": "bbfeb5f4a5e75188ac042c19d9a92b95e2b5efe119b02a727bfb814ddf95de01",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "bbfeb5f4a5e75188ac042c19d9a92b95e2b5efe119b02a727bfb814ddf95de01"
+    },
+    {
+      "path": "masks/4ymrn4.zip",
+      "status": "VERIFIED",
+      "bytes": 419696,
+      "sha256": "869a34b3903a6ee51d32104533a67d380fcaf019e5d8bab2467667f579a48461",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "869a34b3903a6ee51d32104533a67d380fcaf019e5d8bab2467667f579a48461"
+    },
+    {
+      "path": "trimmed/4z1827.mp4",
+      "status": "VERIFIED",
+      "bytes": 1046239,
+      "sha256": "9400cdeb47548346dfd160f6253f13d4955b92f5bb5de31c6f0f5efc80f7a8fc",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "9400cdeb47548346dfd160f6253f13d4955b92f5bb5de31c6f0f5efc80f7a8fc"
+    },
+    {
+      "path": "edited/4z1827.mp4",
+      "status": "VERIFIED",
+      "bytes": 4717755,
+      "sha256": "8224e63a1c4ef05da7677451f4ad5e79370d17b7a6ac67c37cd46fd586bb0aba",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "8224e63a1c4ef05da7677451f4ad5e79370d17b7a6ac67c37cd46fd586bb0aba"
+    },
+    {
+      "path": "masks/4z1827.zip",
+      "status": "VERIFIED",
+      "bytes": 628295,
+      "sha256": "d61ec74b8f3101e0d7c0a78e39a2cbc37590531f14e5c426e50ed66406311619",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "d61ec74b8f3101e0d7c0a78e39a2cbc37590531f14e5c426e50ed66406311619"
+    },
+    {
+      "path": "trimmed/4z1q27.mp4",
+      "status": "VERIFIED",
+      "bytes": 254365,
+      "sha256": "e56d970b2acdb0090091e28bf217b3577396aa79c5440ba73c610a95bb8da232",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "e56d970b2acdb0090091e28bf217b3577396aa79c5440ba73c610a95bb8da232"
+    },
+    {
+      "path": "edited/4z1q27.mp4",
+      "status": "VERIFIED",
+      "bytes": 2626250,
+      "sha256": "35811285bb4721d0729b34ae9855a319e89bc630a47487c38c962abad67901e4",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "35811285bb4721d0729b34ae9855a319e89bc630a47487c38c962abad67901e4"
+    },
+    {
+      "path": "masks/4z1q27.zip",
+      "status": "VERIFIED",
+      "bytes": 456868,
+      "sha256": "fac162420864a39973fbed76e537c80890a9d45f3b65d51d6729d4a9c9a644fb",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "fac162420864a39973fbed76e537c80890a9d45f3b65d51d6729d4a9c9a644fb"
+    },
+    {
+      "path": "trimmed/73rqr7.mp4",
+      "status": "VERIFIED",
+      "bytes": 448207,
+      "sha256": "d863f6aae31386d9f5afc802598463461bda11f45f4cdb310415188400d46ed6",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "d863f6aae31386d9f5afc802598463461bda11f45f4cdb310415188400d46ed6"
+    },
+    {
+      "path": "edited/73rqr7.mp4",
+      "status": "VERIFIED",
+      "bytes": 3103937,
+      "sha256": "afa2ec5c64dd07818d8c971976ac1a8c3edb28e0667cebe971df29f9d8d4d4c4",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "afa2ec5c64dd07818d8c971976ac1a8c3edb28e0667cebe971df29f9d8d4d4c4"
+    },
+    {
+      "path": "masks/73rqr7.zip",
+      "status": "VERIFIED",
+      "bytes": 579919,
+      "sha256": "3bfb781731f8e39bb33776ed0281b96bb0c517fd0b52ce8ad5d1d98dd77c6f08",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "3bfb781731f8e39bb33776ed0281b96bb0c517fd0b52ce8ad5d1d98dd77c6f08"
+    },
+    {
+      "path": "trimmed/7e23j7.mp4",
+      "status": "VERIFIED",
+      "bytes": 471332,
+      "sha256": "23bde244ff3d2e67a6d741cbde3aecf3f10a79708ebc2f6c435d1da88e88c032",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "23bde244ff3d2e67a6d741cbde3aecf3f10a79708ebc2f6c435d1da88e88c032"
+    },
+    {
+      "path": "edited/7e23j7.mp4",
+      "status": "VERIFIED",
+      "bytes": 2489002,
+      "sha256": "2cd3c1e170659bca978654ea5c186940311e452341ed5bba732816a99c17f49a",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "2cd3c1e170659bca978654ea5c186940311e452341ed5bba732816a99c17f49a"
+    },
+    {
+      "path": "masks/7e23j7.zip",
+      "status": "VERIFIED",
+      "bytes": 416050,
+      "sha256": "a26afb74db410ca24eace4881b8804df3202a94d8b34f1aee0e5eda752038804",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "a26afb74db410ca24eace4881b8804df3202a94d8b34f1aee0e5eda752038804"
+    },
+    {
+      "path": "trimmed/7e2557.mp4",
+      "status": "VERIFIED",
+      "bytes": 354775,
+      "sha256": "07db53051d2f2c95ec3e901e899d377ffaaa13e182c46110b7fbc2cfbb0770b1",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "07db53051d2f2c95ec3e901e899d377ffaaa13e182c46110b7fbc2cfbb0770b1"
+    },
+    {
+      "path": "edited/7e2557.mp4",
+      "status": "VERIFIED",
+      "bytes": 2584236,
+      "sha256": "b70286cd20ab70ed91747b93ec755327096808c4ea60d07c7b824577a835cd5f",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "b70286cd20ab70ed91747b93ec755327096808c4ea60d07c7b824577a835cd5f"
+    },
+    {
+      "path": "masks/7e2557.zip",
+      "status": "VERIFIED",
+      "bytes": 189756,
+      "sha256": "7abde1cbba8461c52c639efdc504b84e3c37d6810f0422d46e18f6934e2f84c8",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "7abde1cbba8461c52c639efdc504b84e3c37d6810f0422d46e18f6934e2f84c8"
+    },
+    {
+      "path": "trimmed/7p8l14.mp4",
+      "status": "VERIFIED",
+      "bytes": 578261,
+      "sha256": "316bd42e583767fe04bc37f31025121f3c76d7aa3838a94fcafadebafb9f5869",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "316bd42e583767fe04bc37f31025121f3c76d7aa3838a94fcafadebafb9f5869"
+    },
+    {
+      "path": "edited/7p8l14.mp4",
+      "status": "VERIFIED",
+      "bytes": 1078806,
+      "sha256": "1f7e1dc6b577829f47eba4c0e233413d6266a921b963290cd4cce88b2027ac54",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "1f7e1dc6b577829f47eba4c0e233413d6266a921b963290cd4cce88b2027ac54"
+    },
+    {
+      "path": "masks/7p8l14.zip",
+      "status": "VERIFIED",
+      "bytes": 170006,
+      "sha256": "ce06e2fee7e012027d0a2c6f442d01fc1f1964eb6afb38efa5a3c7e0f043034f",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "ce06e2fee7e012027d0a2c6f442d01fc1f1964eb6afb38efa5a3c7e0f043034f"
+    },
+    {
+      "path": "trimmed/7p8r14.mp4",
+      "status": "VERIFIED",
+      "bytes": 251909,
+      "sha256": "bffd0606140f451a4245da2f32826c3b4892f2a2e6b672187f383e72a9ae9cc5",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "bffd0606140f451a4245da2f32826c3b4892f2a2e6b672187f383e72a9ae9cc5"
+    },
+    {
+      "path": "edited/7p8r14.mp4",
+      "status": "VERIFIED",
+      "bytes": 1342333,
+      "sha256": "9b9c0b671a4633904dfeefb3b59296360304a81009a954b0a2b0644fce08d46a",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "9b9c0b671a4633904dfeefb3b59296360304a81009a954b0a2b0644fce08d46a"
+    },
+    {
+      "path": "masks/7p8r14.zip",
+      "status": "VERIFIED",
+      "bytes": 465360,
+      "sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc"
+    },
+    {
+      "path": "trimmed/95qvg9.mp4",
+      "status": "VERIFIED",
+      "bytes": 782220,
+      "sha256": "0cf00cd899b8ba2a1c8bbdd1362010005776f500a10092529125cdd0c5af77a8",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "0cf00cd899b8ba2a1c8bbdd1362010005776f500a10092529125cdd0c5af77a8"
+    },
+    {
+      "path": "edited/95qvg9.mp4",
+      "status": "VERIFIED",
+      "bytes": 1120754,
+      "sha256": "09c4aa71cd6cd79cc6e604c7c1a5dce1a31c4a7e781740d2c31288365daaa191",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "09c4aa71cd6cd79cc6e604c7c1a5dce1a31c4a7e781740d2c31288365daaa191"
+    },
+    {
+      "path": "masks/95qvg9.zip",
+      "status": "VERIFIED",
+      "bytes": 10759241,
+      "sha256": "7dd114d63d6e7189e1fe569071fd73ec66ba8568d2a3be443119e825a0446f0a",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "7dd114d63d6e7189e1fe569071fd73ec66ba8568d2a3be443119e825a0446f0a"
+    },
+    {
+      "path": "trimmed/9g2gk7.mp4",
+      "status": "VERIFIED",
+      "bytes": 321824,
+      "sha256": "e10235ee7cf494196b4f41e6c5f1025f5c343a3655f485f8e8d23ea40c840850",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "e10235ee7cf494196b4f41e6c5f1025f5c343a3655f485f8e8d23ea40c840850"
+    },
+    {
+      "path": "edited/9g2gk7.mp4",
+      "status": "VERIFIED",
+      "bytes": 1549944,
+      "sha256": "2b0708aa47ffe8800789aa29cd1258580b2a8dd0c814c1526b959ff0d657a377",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "2b0708aa47ffe8800789aa29cd1258580b2a8dd0c814c1526b959ff0d657a377"
+    },
+    {
+      "path": "masks/9g2gk7.zip",
+      "status": "VERIFIED",
+      "bytes": 399755,
+      "sha256": "e1ffcd04ccc3b29e29fb8939c2ae7eb5b408a50b49be8512d002959ad3630bd9",
+      "official_checksum_type": "LFS_SHA256",
+      "local_sha256": "e1ffcd04ccc3b29e29fb8939c2ae7eb5b408a50b49be8512d002959ad3630bd9"
+    }
+  ],
+  "TVIL_status": "UNVERIFIED_PUBLIC_SPATIAL_ASSETS_DIRECTORY_BLOCKED",
+  "models_or_training_run": false
+}
