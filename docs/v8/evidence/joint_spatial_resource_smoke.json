@@ -1,0 +1,92 @@
+{
+  "status": "COMPLETE",
+  "records": [
+    {
+      "condition": "CELL_LOC",
+      "dataset": "ActivityForensics",
+      "loss": 1.303360470944403,
+      "video": 0.7066255537854222,
+      "frame": 0.6513071179292592,
+      "pixel": 0.2710813581943512,
+      "gradient_norm": 0.3658321499824524,
+      "elapsed_s": 19.282592993229628,
+      "frames": 1478,
+      "evaluation_s": 5.2522794138640165,
+      "peak_allocated_bytes": 663880192,
+      "peak_reserved_bytes": 727711744,
+      "parameters": 362658,
+      "updated": 1
+    },
+    {
+      "condition": "CELL_LOC",
+      "dataset": "ANAKIN",
+      "loss": 2.050521421923369,
+      "video": 0.7076172982171125,
+      "frame": 0.7076175273311833,
+      "pixel": 0.9890953600406647,
+      "gradient_norm": 0.47804003953933716,
+      "elapsed_s": 2.278574057854712,
+      "frames": 180,
+      "evaluation_s": 0.7125185891054571,
+      "peak_allocated_bytes": 623697920,
+      "peak_reserved_bytes": 727711744,
+      "parameters": 362658,
+      "updated": 1
+    },
+    {
+      "condition": "COMPONENT_LOC",
+      "dataset": "ActivityForensics",
+      "loss": 1.303073047116544,
+      "video": 0.7063047834596619,
+      "frame": 0.6510981990476208,
+      "pixel": 0.2712191641330719,
+      "gradient_norm": 0.36650219559669495,
+      "elapsed_s": 13.866179510951042,
+      "frames": 1478,
+      "evaluation_s": 5.2502356688492,
+      "peak_allocated_bytes": 663357952,
+      "peak_reserved_bytes": 725614592,
+      "parameters": 362658,
+      "updated": 1
+    },
+    {
+      "condition": "COMPONENT_LOC",
+      "dataset": "ANAKIN",
+      "loss": 2.0505752380983506,
+      "video": 0.7076015774102697,
+      "frame": 0.7076018080323503,
+      "pixel": 0.9891727566719055,
+      "gradient_norm": 0.4783391058444977,
+      "elapsed_s": 1.6613519992679358,
+      "frames": 180,
+      "evaluation_s": 0.7045297143049538,
+      "peak_allocated_bytes": 623175680,
+      "peak_reserved_bytes": 725614592,
+      "parameters": 362658,
+      "updated": 1
+    }
+  ],
+  "initial_parameter_sha256": "a350fe6ee6f57095d82d895136660e8de7c925e383df609469bf7ef6dd8365ba",
+  "smoke_video_ids": [
+    "b54b0b01364c250601c8b133",
+    "196a6ce48666e6e37cdbea0b",
+    "5e281219c8a281ae6109f506",
+    "ceb1a2c7d9ba416daf788ea4"
+  ],
+  "smoke_weights": "discarded; formal models start from paired frozen initialization",
+  "runtime_at_launch": {
+    "python": "3.12.7",
+    "torch": "2.5.1+cu124",
+    "numpy": "1.26.4",
+    "cuda_runtime": "12.4",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "matplotlib": "3.10.7",
+    "contourpy": "1.3.3"
+  },
+  "verification": {
+    "targeted_and_legacy_tests_passed": 30,
+    "actual_cuda_bfloat16_backward": "passed",
+    "automatic_report_render": "passed",
+    "smoke_weights": "discarded"
+  }
+}

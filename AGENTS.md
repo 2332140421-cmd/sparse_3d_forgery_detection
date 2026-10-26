@@ -77,3 +77,7 @@ results, or inconsistency between the paper and implementation.
   proposed spatial supervision: `docs/v8/spatial_localization_plan.md`, ADR-0021.
 - Distinguish historical results from local trained assets and new execution evidence.
   A random interface model must never be called COMPONENT_ADAPTED.
+- Joint edit-region localization: ADR-0022 and `docs/v8/joint_spatial_contract.md`.
+  User authorizes selected full-video frontend extraction and two paired-initialized
+  CELL_LOC/COMPONENT_LOC models. Keep both 256 geometry and 512 localization paths,
+  all-frame temporal gradients, and edit-region labels distinct from old visible-anomaly labels.

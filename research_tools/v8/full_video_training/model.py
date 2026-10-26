@@ -9,7 +9,7 @@ class VideoTraining:
     def __init__(self,model):
         self.model=model
 
-    def chunk(self,cpu,previous,previous_active,first):
+    def chunk(self,cpu,previous,previous_active,first,return_hidden=False):
         # A pure function: all context is explicit and input storage is never mutated.
         m=self.model;device=next(m.parameters()).device
         a={k:v.to(device,non_blocking=False) for k,v in cpu.items()}
@@ -26,7 +26,7 @@ class VideoTraining:
                                       for i in range(0,len(px),m.patch_chunk)])
         h=m.cell_encoder(torch.cat((torch.where(active[...,None],x,0.),geom.reshape(t,n,64)),-1))
         h=m.spatial(h,a['component_ids'],area,mu,(valid&content).sum((-1,-2)))
-        logits=[]
+        logits=[];hidden=[]
         for ti in range(t):
             if first and ti==0:
                 prev=previous;aux=torch.zeros((n,4),device=device,dtype=x.dtype)
@@ -42,10 +42,12 @@ class VideoTraining:
             previous=torch.where(active[ti,:,None],current,0.)
             previous_active=active[ti]
             logits.append(m.cell_head(previous).squeeze(-1))
+            if return_hidden:hidden.append(previous)
         logits=torch.stack(logits)
         weights=torch.where(area>0,area.double().clamp_min(1).log(),-torch.inf)
         numerator=torch.logsumexp(logits.double()+weights,(0,1))
-        return previous,previous_active,numerator,area.double().sum(),logits
+        result=(previous,previous_active,numerator,area.double().sum(),logits)
+        return (*result,torch.stack(hidden)) if return_hidden else result
 
     def video(self,cpu,chunk_size,use_checkpoint=True,return_cells=False):
         device=next(self.model.parameters()).device

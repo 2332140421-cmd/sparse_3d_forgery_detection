@@ -1,0 +1,15 @@
+{
+  "smoke_based_projections": [
+    {
+      "train_pairs_per_dataset": 24,
+      "projected_training_s_two_conditions": 30689.314858847778,
+      "projected_routine_evaluation_s_two_conditions": 4680.090405616737,
+      "projected_total_excluding_exact_pixel_AP_s": 35369.40526446451,
+      "extra_exact_pixel_AP_s": null,
+      "pixel_AP_cost_reason": "not measured in resource smoke; actual logged at scheduled epochs and final"
+    }
+  ],
+  "chosen_quota": 24,
+  "threshold_hours": 48,
+  "rule": "only reduce train pairs synchronously; dev8 per dataset unchanged; no architecture/frame reduction"
+}

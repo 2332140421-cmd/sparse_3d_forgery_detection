@@ -23,3 +23,5 @@
 - [ADR 0011: V7 real-only structural normality pilot](0011-v7-real-only-structural-normality-pilot.md)
 - [ADR 0012: V7 paired second-order structural signal pilot](0012-v7-paired-second-order-signal-pilot.md)
 - [ADR 0013: V8 full-coverage observation field](0013-v8-full-coverage-observation-field.md)
+
+- [ADR-0022：V8完整联合编辑区域定位](0022-v8-joint-spatial-localization.md)

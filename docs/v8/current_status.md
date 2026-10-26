@@ -5,7 +5,17 @@
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前方法与实现
+## 当前执行：完整联合编辑区域定位
+
+用户已授权ADR-0022：CELL_LOC/COMPONENT_LOC共享256结构与dense几何、512像素分支，
+同初始化、数据及预算，唯一条件差异为成员分区；目标更新为编辑区域。
+代码与固定队列已完成，两库真实完整pair在两个模型上均完成实际更新/评价，smoke权重已丢弃。
+固定96训练/32开发视频、59,909帧；两模型各362,658参数。正式运行状态以独立progress.json为准。
+资源与启动说明见[联合定位pilot](../experiments/v8-joint-spatial-pilot.md)。
+用户已确认本批ANAKIN mask位置和像素细节，取代旧粗矩形概括。
+当前协议见[joint_spatial_contract.md](joint_spatial_contract.md)，旧结果保持原样。
+
+## 既有V8方法与实现
 
 纯V8主方法为GLOBAL_COMPONENT：全视频真实解码帧/原生PTS→256×256 letterbox→
 MoGe-2 dense XYZ与CoTracker3 online短历史对应→16×16基础格→几何/近期运动规则驱动
