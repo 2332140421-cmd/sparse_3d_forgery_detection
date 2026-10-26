@@ -10,8 +10,10 @@
 用户已授权ADR-0022：CELL_LOC/COMPONENT_LOC共享256结构与dense几何、512像素分支，
 同初始化、数据及预算，唯一条件差异为成员分区；目标更新为编辑区域。
 代码与固定队列已完成，两库真实完整pair在两个模型上均完成实际更新/评价，smoke权重已丢弃。
-固定96训练/32开发视频、59,909帧；两模型各362,658参数。独立任务已启动RUNNING，PID3433433、tmux `v8_joint_spatial_pilot_v1`；启动核验为frontend阶段。
-后续状态以独立progress.json为准，正式成绩尚未产生。
+固定96训练/32开发视频、59,909帧；两模型各362,658参数。独立任务已COMPLETE，best/last评价及报告齐全。
+CELL_LOC最佳epoch6、末轮14；COMPONENT_LOC最佳epoch5、末轮13，均按patience8早停。
+ANAKIN最佳dev Dice为0.120542/0.114502，component差值−0.006039；未显示定位增益。
+固定阈值下两模型均漏检全部8个ANAKIN开发fake；当前应先审阅固定预测图与曲线，不自动重训。
 资源与启动说明见[联合定位pilot](../experiments/v8-joint-spatial-pilot.md)。
 用户已确认本批ANAKIN mask位置和像素细节，取代旧粗矩形概括。
 当前协议见[joint_spatial_contract.md](joint_spatial_contract.md)，旧结果保持原样。

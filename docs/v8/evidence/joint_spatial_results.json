@@ -1,0 +1,1250 @@
+{
+  "progress": {
+    "status": "COMPLETE",
+    "stage": "report_complete",
+    "pid": 3433433,
+    "unix_time": 1793028930.88006
+  },
+  "conditions": {
+    "CELL_LOC": {
+      "status": "COMPLETE",
+      "best_epoch": 6,
+      "last_epoch": 14,
+      "stop_reason": "early_stop_dev_dice_patience8_delta0.002",
+      "parameters": 362658,
+      "initial_parameters_sha256": "a350fe6ee6f57095d82d895136660e8de7c925e383df609469bf7ef6dd8365ba",
+      "elapsed_s": 9756.401061598677,
+      "train_videos": 96,
+      "dev_videos": 32,
+      "finite_training": 1,
+      "updates": 672,
+      "identity": {
+        "schema": "v8-joint-spatial-v1",
+        "manifest_sha256": "2b850d6b0cf8ebf6bfb06476bc48a40421bcf503f40b2e63d642bb57389ee047",
+        "statistics_sha256": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+        "config_sha256": "3a775302e301a859036e2c70bc16d217553234df24e91bafe8ef11a010a2ea52",
+        "code_sha256": {
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/run.py": "f3e5248d0e0537df188ebdb6bae4c9dee70257f08858014c39bd7f4a99c74114",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/joint_data.py": "1f333480110dfef6d6bb308b60173089313e17af9ae0661c25b35628e7df1ce4",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/model.py": "c3cd8c629685db046589d95a96836c071398d00ce2d3da03c31c43f693a9a61f",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/metrics.py": "4f299f62cb8453b159439b933950175734b3595b0309f08b3bc7d0e9d7a49665",
+          "research_tools/v8/full_video_training/model.py": "1d27cddbf873e9c387c1db7d5d90ea7d99b94052c6570b00bfbc05c1532f42ed"
+        }
+      },
+      "best_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.609375,
+            "ap": 0.6594020562770563,
+            "acc": 0.5,
+            "precision": 0.5,
+            "recall": 0.125,
+            "f1": 0.2,
+            "confusion_matrix": [
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                1
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5076011632390169,
+            "ap": 0.1457675938423237,
+            "acc": 0.7784979340516892,
+            "precision": 0.08192090395480225,
+            "recall": 0.07483870967741936,
+            "f1": 0.0782198246797033,
+            "confusion_matrix": [
+              [
+                9493,
+                1300
+              ],
+              [
+                1434,
+                116
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.12429676511954993,
+          "real_spatial_fpr": 0.24230994879027007,
+          "empty_mask_spatial_fpr": 0.24230994879027007,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              688950411,
+              238726389
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.193914243371029,
+          "loss_video": 0.76220619870539,
+          "loss_frame": 0.5086438507453994,
+          "loss_pixel": 0.17738611929293924,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.546875,
+            "ap": 0.6184981684981685,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5344770071524583,
+            "ap": 0.5219019950776456,
+            "acc": 0.5027685492801772,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                908,
+                0
+              ],
+              [
+                898,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.18854731270705066,
+          "empty_mask_spatial_fpr": 0.18778745022262527,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              757950235,
+              193521277
+            ],
+            [
+              9847341,
+              9125947
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.977731144599478,
+          "loss_video": 0.8147539161527244,
+          "loss_frame": 0.8244445074687892,
+          "loss_pixel": 0.750754974712359,
+          "spatial_iou": 0.07522578028279649,
+          "spatial_dice": 0.12054192952159126,
+          "pixel_ap": 0.12741080459088244
+        },
+        "dataset_macro": {
+          "auroc": 0.578125,
+          "ap": 0.6389501123876125,
+          "acc": 0.5,
+          "precision": 0.25,
+          "recall": 0.0625,
+          "f1": 0.1,
+          "frame_auroc": 0.5210390851957376,
+          "frame_ap": 0.33383479445998465,
+          "loss": 1.5858226939852536,
+          "loss_video": 0.7884800574290571,
+          "loss_frame": 0.6665441791070943,
+          "loss_pixel": 0.4640705470026491
+        }
+      },
+      "last_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.59375,
+            "ap": 0.6398049866799866,
+            "acc": 0.5625,
+            "precision": 0.5555555555555556,
+            "recall": 0.625,
+            "f1": 0.5882352941176471,
+            "confusion_matrix": [
+              [
+                4,
+                4
+              ],
+              [
+                3,
+                5
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5386964071695215,
+            "ap": 0.18415325219492645,
+            "acc": 0.5737665073320911,
+            "precision": 0.1549190998698159,
+            "recall": 0.5374193548387097,
+            "f1": 0.24050815648910062,
+            "confusion_matrix": [
+              [
+                6249,
+                4544
+              ],
+              [
+                717,
+                833
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.40966938090685573,
+          "real_spatial_fpr": 0.12704232270586946,
+          "empty_mask_spatial_fpr": 0.12704232270586946,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              801117939,
+              126558861
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.607749448835959,
+          "loss_video": 0.9407888674636977,
+          "loss_frame": 0.9454871704809643,
+          "loss_pixel": 0.1942169961317791,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.546875,
+            "ap": 0.6194180819180819,
+            "acc": 0.5,
+            "precision": 0.5,
+            "recall": 0.375,
+            "f1": 0.42857142857142855,
+            "confusion_matrix": [
+              [
+                5,
+                3
+              ],
+              [
+                5,
+                3
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5201769963599973,
+            "ap": 0.5432332859164639,
+            "acc": 0.5210409745293466,
+            "precision": 0.5282051282051282,
+            "recall": 0.344097995545657,
+            "f1": 0.41672285906945383,
+            "confusion_matrix": [
+              [
+                632,
+                276
+              ],
+              [
+                589,
+                309
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.36935763888888884,
+          "real_spatial_fpr": 0.06998712921644926,
+          "empty_mask_spatial_fpr": 0.07395566964301663,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              870986665,
+              80484847
+            ],
+            [
+              13807381,
+              5165907
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 2.4206971248703377,
+          "loss_video": 1.0941181230122043,
+          "loss_frame": 1.1350806525745192,
+          "loss_pixel": 0.7590386755708733,
+          "spatial_iou": 0.04497324541120029,
+          "spatial_dice": 0.07240103774043544,
+          "pixel_ap": 0.09906578392732508
+        },
+        "dataset_macro": {
+          "auroc": 0.5703125,
+          "ap": 0.6296115342990343,
+          "acc": 0.53125,
+          "precision": 0.5277777777777778,
+          "recall": 0.5,
+          "f1": 0.5084033613445378,
+          "frame_auroc": 0.5294367017647594,
+          "frame_ap": 0.3636932690556952,
+          "loss": 2.014223286853148,
+          "loss_video": 1.017453495237951,
+          "loss_frame": 1.0402839115277418,
+          "loss_pixel": 0.47662783585132623
+        }
+      },
+      "best_train_monitor": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.8125,
+            "ap": 0.8541666666666666,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.8514863494676146,
+            "ap": 0.6605516191752605,
+            "acc": 0.7890484739676841,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                5274,
+                0
+              ],
+              [
+                1410,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.13286261144807035,
+          "empty_mask_spatial_fpr": 0.13286261144807035,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              402093670,
+              61312730
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.1016619067142663,
+          "loss_video": 0.7287731676452264,
+          "loss_frame": 0.4734102117333694,
+          "loss_pixel": 0.1361836332023553,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.5625,
+            "ap": 0.5845238095238094,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5759896513038899,
+            "ap": 0.5168135173728221,
+            "acc": 0.5047846889952153,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                422,
+                0
+              ],
+              [
+                414,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.2540917102448459,
+          "empty_mask_spatial_fpr": 0.29268591159865454,
+          "spatial_reason": null,
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              227034847,
+              88758426
+            ],
+            [
+              2857140,
+              13125587
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.8449399155082586,
+          "loss_video": 0.7272255080177211,
+          "loss_frame": 0.729369552841145,
+          "loss_pixel": 0.7530296310699649,
+          "spatial_iou": 0.15126803912812053,
+          "spatial_dice": 0.2399729134199129,
+          "pixel_ap": null
+        },
+        "dataset_macro": {
+          "auroc": 0.6875,
+          "ap": 0.7193452380952381,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.7137380003857523,
+          "frame_ap": 0.5886825682740413,
+          "loss": 1.4733009111112625,
+          "loss_video": 0.7279993378314737,
+          "loss_frame": 0.6013898822872572,
+          "loss_pixel": 0.4446066321361601
+        }
+      },
+      "last_train_monitor": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.75,
+            "ap": 0.8303571428571428,
+            "acc": 0.625,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1": 0.4,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.8590258110844852,
+            "ap": 0.6715852632052149,
+            "acc": 0.8402154398563735,
+            "precision": 0.7164556962025317,
+            "recall": 0.4014184397163121,
+            "f1": 0.5145454545454545,
+            "confusion_matrix": [
+              [
+                5050,
+                224
+              ],
+              [
+                844,
+                566
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.00644468313641246,
+          "real_spatial_fpr": 0.020670975567849824,
+          "empty_mask_spatial_fpr": 0.020670975567849824,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              453858737,
+              9547663
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.8774684556852601,
+          "loss_video": 0.6715280308804613,
+          "loss_frame": 0.35711293934541477,
+          "loss_pixel": 0.027383955132091454,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.75,
+            "ap": 0.7708333333333333,
+            "acc": 0.625,
+            "precision": 0.6666666666666666,
+            "recall": 0.5,
+            "f1": 0.5714285714285714,
+            "confusion_matrix": [
+              [
+                3,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.6460951988460746,
+            "ap": 0.600707901163448,
+            "acc": 0.6255980861244019,
+            "precision": 0.6711864406779661,
+            "recall": 0.4782608695652174,
+            "f1": 0.5585331452750353,
+            "confusion_matrix": [
+              [
+                325,
+                97
+              ],
+              [
+                216,
+                198
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.155,
+          "real_spatial_fpr": 0.038885820083873326,
+          "empty_mask_spatial_fpr": 0.042876451205987556,
+          "spatial_reason": null,
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              302549224,
+              13244049
+            ],
+            [
+              7468151,
+              8514576
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.524796667038446,
+          "loss_video": 0.6327805924924167,
+          "loss_frame": 0.7169155108188988,
+          "loss_pixel": 0.53355831913658,
+          "spatial_iou": 0.2255673932397549,
+          "spatial_dice": 0.32172922654758346,
+          "pixel_ap": null
+        },
+        "dataset_macro": {
+          "auroc": 0.75,
+          "ap": 0.800595238095238,
+          "acc": 0.625,
+          "precision": 0.8333333333333333,
+          "recall": 0.375,
+          "f1": 0.4857142857142857,
+          "frame_auroc": 0.7525605049652799,
+          "frame_ap": 0.6361465821843315,
+          "loss": 1.201132561361853,
+          "loss_video": 0.652154311686439,
+          "loss_frame": 0.5370142250821568,
+          "loss_pixel": 0.28047113713433575
+        }
+      },
+      "artifacts": {
+        "best.pt": {
+          "bytes": 4447296,
+          "sha256": "93cc21b14e84874c2700b5b51aa6128f9d4a799b06c2d21d7bcd91708a7d9524"
+        },
+        "last.pt": {
+          "bytes": 4468288,
+          "sha256": "c5755bc9c29a3fa22bd25a65b66beee87d16aefbd8bca77ab78ce67acb8d6e80"
+        },
+        "history.csv": {
+          "bytes": 41709,
+          "sha256": "303b02ec07b472a36b0289579cef8504d66e4300a745d7052e4cfc605811d35e"
+        },
+        "history.json": {
+          "bytes": 115461,
+          "sha256": "f53b953c5f96fd5c0043e587a31ef22683fb5d8ce762aa9c7772f4e3d81b3eb6"
+        },
+        "curves.png": {
+          "bytes": 215380,
+          "sha256": "3bb2c47a76dfa442409e22caffde295d68a06282ec438a1b4b2fb8b025343e23"
+        },
+        "summary.json": {
+          "bytes": 2095638,
+          "sha256": "eeab4bc981046524b572121ddce58003b51f782d314be218f795a1e2a53b3d26"
+        }
+      }
+    },
+    "COMPONENT_LOC": {
+      "status": "COMPLETE",
+      "best_epoch": 5,
+      "last_epoch": 13,
+      "stop_reason": "early_stop_dev_dice_patience8_delta0.002",
+      "parameters": 362658,
+      "initial_parameters_sha256": "a350fe6ee6f57095d82d895136660e8de7c925e383df609469bf7ef6dd8365ba",
+      "elapsed_s": 8923.90903971903,
+      "train_videos": 96,
+      "dev_videos": 32,
+      "finite_training": 1,
+      "updates": 624,
+      "identity": {
+        "schema": "v8-joint-spatial-v1",
+        "manifest_sha256": "2b850d6b0cf8ebf6bfb06476bc48a40421bcf503f40b2e63d642bb57389ee047",
+        "statistics_sha256": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+        "config_sha256": "3a775302e301a859036e2c70bc16d217553234df24e91bafe8ef11a010a2ea52",
+        "code_sha256": {
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/run.py": "f3e5248d0e0537df188ebdb6bae4c9dee70257f08858014c39bd7f4a99c74114",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/joint_data.py": "1f333480110dfef6d6bb308b60173089313e17af9ae0661c25b35628e7df1ce4",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/model.py": "c3cd8c629685db046589d95a96836c071398d00ce2d3da03c31c43f693a9a61f",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/metrics.py": "4f299f62cb8453b159439b933950175734b3595b0309f08b3bc7d0e9d7a49665",
+          "research_tools/v8/full_video_training/model.py": "1d27cddbf873e9c387c1db7d5d90ea7d99b94052c6570b00bfbc05c1532f42ed"
+        }
+      },
+      "best_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.609375,
+            "ap": 0.6069444444444445,
+            "acc": 0.5,
+            "precision": 0.5,
+            "recall": 0.125,
+            "f1": 0.2,
+            "confusion_matrix": [
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                1
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.7230116891772744,
+            "ap": 0.28936384967923395,
+            "acc": 0.8228955683383294,
+            "precision": 0.28396739130434784,
+            "recall": 0.2696774193548387,
+            "f1": 0.27663798808735934,
+            "confusion_matrix": [
+              [
+                9739,
+                1054
+              ],
+              [
+                1132,
+                418
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.12044681396492832,
+          "real_spatial_fpr": 0.17974416918054514,
+          "empty_mask_spatial_fpr": 0.17974416918054514,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              747452556,
+              180224244
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.1672516363673098,
+          "loss_video": 0.7844200386858531,
+          "loss_frame": 0.4352013351242017,
+          "loss_pixel": 0.16523093011935597,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.515625,
+            "ap": 0.6007672882672882,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5311497404903702,
+            "ap": 0.5138803250767676,
+            "acc": 0.5027685492801772,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                908,
+                0
+              ],
+              [
+                898,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.19832703060699586,
+          "empty_mask_spatial_fpr": 0.19208889506887286,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              744126039,
+              207345473
+            ],
+            [
+              10109003,
+              8864285
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.9745533218283882,
+          "loss_video": 0.7737526996682728,
+          "loss_frame": 0.7846037316837313,
+          "loss_pixel": 0.8084987563182496,
+          "spatial_iou": 0.07541052129779044,
+          "spatial_dice": 0.11450249104756194,
+          "pixel_ap": 0.1193680166489747
+        },
+        "dataset_macro": {
+          "auroc": 0.5625,
+          "ap": 0.6038558663558664,
+          "acc": 0.5,
+          "precision": 0.25,
+          "recall": 0.0625,
+          "f1": 0.1,
+          "frame_auroc": 0.6270807148338223,
+          "frame_ap": 0.40162208737800076,
+          "loss": 1.570902479097849,
+          "loss_video": 0.7790863691770629,
+          "loss_frame": 0.6099025334039665,
+          "loss_pixel": 0.4868648432188028
+        }
+      },
+      "last_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.71875,
+            "ap": 0.6812499999999999,
+            "acc": 0.75,
+            "precision": 0.7,
+            "recall": 0.875,
+            "f1": 0.7777777777777778,
+            "confusion_matrix": [
+              [
+                5,
+                3
+              ],
+              [
+                1,
+                7
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.7758692461960112,
+            "ap": 0.47035217974643134,
+            "acc": 0.7370979502552054,
+            "precision": 0.28218966846569005,
+            "recall": 0.7083870967741935,
+            "f1": 0.4036022789928322,
+            "confusion_matrix": [
+              [
+                8000,
+                2793
+              ],
+              [
+                452,
+                1098
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.286174317290844,
+          "real_spatial_fpr": 0.1595223123108101,
+          "empty_mask_spatial_fpr": 0.1595223123108101,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              768366119,
+              159310681
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.5838523556062962,
+          "loss_video": 0.8805820886822668,
+          "loss_frame": 0.800755676328402,
+          "loss_pixel": 0.30289242875982836,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.578125,
+            "ap": 0.6477640415140415,
+            "acc": 0.625,
+            "precision": 0.75,
+            "recall": 0.375,
+            "f1": 0.5,
+            "confusion_matrix": [
+              [
+                7,
+                1
+              ],
+              [
+                5,
+                3
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.554065323822886,
+            "ap": 0.5517691915263062,
+            "acc": 0.5431893687707641,
+            "precision": 0.5809312638580931,
+            "recall": 0.29175946547884185,
+            "f1": 0.38843587842846555,
+            "confusion_matrix": [
+              [
+                719,
+                189
+              ],
+              [
+                636,
+                262
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.2350451388888889,
+          "real_spatial_fpr": 0.05613261110365962,
+          "empty_mask_spatial_fpr": 0.05790144135140115,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              883982484,
+              67489028
+            ],
+            [
+              15330827,
+              3642461
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 2.2904355408710324,
+          "loss_video": 0.9598864099024363,
+          "loss_frame": 1.1931862807474591,
+          "loss_pixel": 0.7339559905948667,
+          "spatial_iou": 0.04259456660087941,
+          "spatial_dice": 0.07362473381949948,
+          "pixel_ap": 0.10731007028845235
+        },
+        "dataset_macro": {
+          "auroc": 0.6484375,
+          "ap": 0.6645070207570207,
+          "acc": 0.6875,
+          "precision": 0.725,
+          "recall": 0.625,
+          "f1": 0.6388888888888888,
+          "frame_auroc": 0.6649672850094486,
+          "frame_ap": 0.5110606856363688,
+          "loss": 1.9371439482386643,
+          "loss_video": 0.9202342492923516,
+          "loss_frame": 0.9969709785379306,
+          "loss_pixel": 0.5184242096773475
+        }
+      },
+      "best_train_monitor": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.8125,
+            "ap": 0.8541666666666666,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.9621532904627814,
+            "ap": 0.8936997770356864,
+            "acc": 0.8740275284260922,
+            "precision": 0.9863013698630136,
+            "recall": 0.4085106382978723,
+            "f1": 0.5777331995987964,
+            "confusion_matrix": [
+              [
+                5266,
+                8
+              ],
+              [
+                834,
+                576
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0018796992481203006,
+          "real_spatial_fpr": 0.08300549408813207,
+          "empty_mask_spatial_fpr": 0.08300549408813207,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              422884728,
+              40521672
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.9804764972966669,
+          "loss_video": 0.6796648734026687,
+          "loss_frame": 0.36227819709387377,
+          "loss_pixel": 0.1196725253470613,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.625,
+            "ap": 0.6916666666666667,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.6192675779014126,
+            "ap": 0.6605219567576937,
+            "acc": 0.5047846889952153,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                422,
+                0
+              ],
+              [
+                414,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.24448859034358353,
+          "empty_mask_spatial_fpr": 0.27629790352486683,
+          "spatial_reason": null,
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              221297715,
+              94495558
+            ],
+            [
+              2679982,
+              13302745
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.858906775962824,
+          "loss_video": 0.7161801219966881,
+          "loss_frame": 0.7168971957080514,
+          "loss_pixel": 0.7842780561121101,
+          "spatial_iou": 0.1614180919548293,
+          "spatial_dice": 0.2614978660509739,
+          "pixel_ap": null
+        },
+        "dataset_macro": {
+          "auroc": 0.71875,
+          "ap": 0.7729166666666667,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.790710434182097,
+          "frame_ap": 0.77711086689669,
+          "loss": 1.4196916366297454,
+          "loss_video": 0.6979224976996784,
+          "loss_frame": 0.5395876964009626,
+          "loss_pixel": 0.4519752907295857
+        }
+      },
+      "last_train_monitor": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 1.0,
+            "ap": 1.0,
+            "acc": 0.875,
+            "precision": 1.0,
+            "recall": 0.75,
+            "f1": 0.8571428571428571,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.9904988206563982,
+            "ap": 0.9736298054857293,
+            "acc": 0.9488330341113106,
+            "precision": 0.8228536880290206,
+            "recall": 0.9652482269503546,
+            "f1": 0.8883812010443864,
+            "confusion_matrix": [
+              [
+                4981,
+                293
+              ],
+              [
+                49,
+                1361
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.05899480316765474,
+          "real_spatial_fpr": 0.01309611653264764,
+          "empty_mask_spatial_fpr": 0.01309611653264764,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              457047676,
+              6358724
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.2751121540118143,
+          "loss_video": 0.19842412099260426,
+          "loss_frame": 0.11527390839721197,
+          "loss_pixel": 0.01905107882060408,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.8125,
+            "ap": 0.8541666666666666,
+            "acc": 0.75,
+            "precision": 1.0,
+            "recall": 0.5,
+            "f1": 0.6666666666666666,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.7321816974609062,
+            "ap": 0.7916548902272617,
+            "acc": 0.6973684210526315,
+            "precision": 0.8484848484848485,
+            "recall": 0.47342995169082125,
+            "f1": 0.6077519379844961,
+            "confusion_matrix": [
+              [
+                387,
+                35
+              ],
+              [
+                218,
+                196
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.07083333333333333,
+          "real_spatial_fpr": 0.028308655600167994,
+          "empty_mask_spatial_fpr": 0.02887587413291217,
+          "spatial_reason": null,
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              302200372,
+              13592901
+            ],
+            [
+              6686777,
+              9295950
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.3449240341791215,
+          "loss_video": 0.5049325716139075,
+          "loss_frame": 0.6888334812587124,
+          "loss_pixel": 0.49557472193585783,
+          "spatial_iou": 0.26399013485166295,
+          "spatial_dice": 0.37114202958500836,
+          "pixel_ap": null
+        },
+        "dataset_macro": {
+          "auroc": 0.90625,
+          "ap": 0.9270833333333333,
+          "acc": 0.8125,
+          "precision": 1.0,
+          "recall": 0.625,
+          "f1": 0.7619047619047619,
+          "frame_auroc": 0.8613402590586522,
+          "frame_ap": 0.8826423478564955,
+          "loss": 0.810018094095468,
+          "loss_video": 0.3516783463032559,
+          "loss_frame": 0.40205369482796216,
+          "loss_pixel": 0.25731290037823096
+        }
+      },
+      "artifacts": {
+        "best.pt": {
+          "bytes": 4444672,
+          "sha256": "2179c0b38d0c75a0c235d9516bc4ba6b0708c5f3fcd32f820d6799b85170ee4f"
+        },
+        "last.pt": {
+          "bytes": 4465664,
+          "sha256": "9ab5a1827d538fbe787133918b8594262fc9319bf04a9bf226c87cb540924194"
+        },
+        "history.csv": {
+          "bytes": 39536,
+          "sha256": "f283acb754445a52dce1f931726a0bbbb0386bf9db34dfaeedb5d056a77b1ff4"
+        },
+        "history.json": {
+          "bytes": 107643,
+          "sha256": "00ddcdd31320161ad4c5d0b298086ff5eb4dcaa677905f46cdf0fc05a71db810"
+        },
+        "curves.png": {
+          "bytes": 172100,
+          "sha256": "254511860c2960c29899f1763809e48cffccb707f59d3b31fcf6ffc98118cc6b"
+        },
+        "summary.json": {
+          "bytes": 2088595,
+          "sha256": "95dac54ca30202cd6666ad8e73a571b28aa88dfc43925cbbe23f99523cae4834"
+        }
+      }
+    }
+  }
+}

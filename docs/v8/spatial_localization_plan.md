@@ -1,5 +1,9 @@
 # 当前执行协议
 
+完整联合训练已COMPLETE；结果见[联合定位pilot](../experiments/v8-joint-spatial-pilot.md)。
+两条件最佳ANAKIN开发Dice为0.120542/0.114502，未显示component定位增益。
+下一步为固定样例、曲线及错误分析；不自动扩量、改阈值或追加训练。
+
 本轮用户已授权完整定位联合训练，当前以[joint_spatial_contract.md](joint_spatial_contract.md)及ADR-0022为准。
 目标更新为编辑区域，双分辨率256/512，配对随机初始化；以下为被取代的历史提案。
 用户已人工确认本批ANAKIN mask覆盖位置、无明显错位且有像素细节，不再采用粗矩形的笼统概括。
