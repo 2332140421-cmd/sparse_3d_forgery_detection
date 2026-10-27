@@ -1,6 +1,6 @@
 # V8 当前状态与边界
 
-更新2026-10-26。当前工作分支`v8-spatial-localization`，基线为远端
+更新2026-10-28。当前工作分支`v8-spatial-head-decoupling`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
@@ -9,8 +9,10 @@
 
 2026-10-27新增用户授权[输出分离对照](../experiments/v8-spatial-head-decoupling.md)，
 分支`v8-spatial-head-decoupling`；原monitor16完整训练/原dev32，固定30轮，原缓存只读。
-COUPLED与SEPARATE_HEADS均为完整COMPONENT_LOC。当前RUNNING/train，PID794523、
-tmux `v8_spatial_head_decoupling_v1`，启动快照COUPLED第1轮；以下原pilot成绩不变。
+COUPLED与SEPARATE_HEADS均为完整COMPONENT_LOC，已COMPLETE，各30轮/240更新；原实验只读核验通过。
+第30轮ANAKIN train Dice 0.535687/0.534415，dev Dice 0.052465/0.037654；分离未改善定位，
+两库dev视频均被分离头判real。背景误报减少但GT召回也下降，不支持输出耦合为主要瓶颈。
+下一步仅建议核查完整定位路径的小样本可拟合性，不扩大该修改，不自动启动新实验。以下原pilot成绩不变。
 
 用户已授权ADR-0022：CELL_LOC/COMPONENT_LOC共享256结构与dense几何、512像素分支，
 同初始化、数据及预算，唯一条件差异为成员分区；目标更新为编辑区域。

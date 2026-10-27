@@ -1,0 +1,1724 @@
+{
+  "progress": {
+    "status": "COMPLETE",
+    "stage": "report_complete",
+    "pid": 794523,
+    "unix_time": 1793120742.315917
+  },
+  "costs": {
+    "COUPLED": {
+      "active_training_evaluation_s": 6040.072558367625,
+      "parameters": 362658,
+      "added_parameters": 0
+    },
+    "SEPARATE_HEADS": {
+      "active_training_evaluation_s": 5860.0901146531105,
+      "parameters": 370979,
+      "added_parameters": 8321
+    },
+    "new_output_logical_bytes": 420671529,
+    "original_cache_copied_bytes": 0
+  },
+  "conditions": {
+    "COUPLED": {
+      "status": "COMPLETE",
+      "best_epoch": 18,
+      "last_epoch": 30,
+      "stop_reason": "max_epochs",
+      "parameters": 362658,
+      "additional_detection_parameters": 0,
+      "initial_parameters_sha256": "a350fe6ee6f57095d82d895136660e8de7c925e383df609469bf7ef6dd8365ba",
+      "elapsed_s": 6040.072558367625,
+      "train_videos": 16,
+      "dev_videos": 32,
+      "finite_training": 1,
+      "updates": 240,
+      "identity": {
+        "schema": "v8-joint-spatial-v1",
+        "manifest_sha256": "7a88a9d5ac86e4ae0b2a7af22b2e4be10501593ebaca25d8a3dd0f2119c07a30",
+        "statistics_sha256": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+        "config_sha256": "46cdaa85796cd768054128f9b0f5b7889076189adedb50e6be08eaf89b88b2b8",
+        "code_sha256": {
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/run.py": "bdc0a1d71b8dc00fb30dc0a4d76b2973c819576c16f5e0a3e80987dcef916a77",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/joint_data.py": "d79975dc3170ecf34d972f8ab19faece866f60fad4ab8273697955a2a3d2f5dd",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/model.py": "980aa6baf238492175d2be523a6e2d451c52cef9e4ccb7ac7158da91e8ef8360",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/metrics.py": "90b3858d773a39b4c63aa8e4225919fb01346890970bd809ca7d09a3971a2dbe",
+          "research_tools/v8/full_video_training/model.py": "1d27cddbf873e9c387c1db7d5d90ea7d99b94052c6570b00bfbc05c1532f42ed",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/head_decoupling.py": "48442f1619ed31d35b74228cc498aff99972e92badeefdfb311d0345dc0df8d2"
+        },
+        "source_assets": {
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/joint_manifest.json": "2b850d6b0cf8ebf6bfb06476bc48a40421bcf503f40b2e63d642bb57389ee047",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/statistics.json": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/progress.json": "981cc226158b8e52f6c02929a31bd6d767f541273cb2c9c123876502252f4743",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/CELL_LOC/summary.json": "eeab4bc981046524b572121ddce58003b51f782d314be218f795a1e2a53b3d26",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/CELL_LOC/history.json": "f53b953c5f96fd5c0043e587a31ef22683fb5d8ce762aa9c7772f4e3d81b3eb6",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/CELL_LOC/history.csv": "303b02ec07b472a36b0289579cef8504d66e4300a745d7052e4cfc605811d35e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/COMPONENT_LOC/summary.json": "95dac54ca30202cd6666ad8e73a571b28aa88dfc43925cbbe23f99523cae4834",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/COMPONENT_LOC/history.json": "00ddcdd31320161ad4c5d0b298086ff5eb4dcaa677905f46cdf0fc05a71db810",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/COMPONENT_LOC/history.csv": "f283acb754445a52dce1f931726a0bbbb0386bf9db34dfaeedb5d056a77b1ff4",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/b54b0b01364c250601c8b133/complete.json": "976168da42a07aac6c129eb0f9c941a570f512be512971858a08ae43b9784248",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/196a6ce48666e6e37cdbea0b/complete.json": "e3421a71f09206442e84ca90bee7a199c30be80bcf9de63a9c5ae0211297172b",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/603add9a4239118a745c87ca/complete.json": "1b77728358f6f2e9290972eb822fadfa46a2bf501854f712db0c7aa5b85b11e8",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/4f75d24d42edd5d9f827ecb1/complete.json": "de7d2c78f7ef8c71c090ae9ef4ecbc65b7ace13e79f517d2198bb33cea6e9bd8",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/121db83e2a37f3f5fc9512d0/complete.json": "f40853cc44abc37a6d611fea6ab1988f37af78067bc73c6af96027d0c934444d",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/77c37d281dee127bc5f4ae76/complete.json": "99e2db87630f7ae2f0ce86540faa836d2ebc3df5931c5fa5af6bf11a0300b5d0",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2ccc864ff184b8e0c920ae79/complete.json": "7fdc5aea3993e2661747a3fbe47f64db69c48a8bd21e7df2d08cf49bfe247158",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/627bdb51fd3b715a19f75444/complete.json": "4d4bfd59309ec77b5d9e1447946e6efda34173a893478dea496695ef91cff088",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5e281219c8a281ae6109f506/complete.json": "63845fb5d367ccdbc71a4b382d965a7998cf50dc4790a8329c69c1d93c26380e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ceb1a2c7d9ba416daf788ea4/complete.json": "42855767072467f9b220c5961940af6aa41b1787ec86728bc5c8b7d3351cc468",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/aab916c01c66df953cc3a760/complete.json": "49479d87fcdcb1729ba06c1e79967ecd5d6e311e7c7ae1573ebe577e79187d80",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/f45dc8b05d8e00b4a30a11df/complete.json": "71c0675a40e03cd1b1d2aa92533f9f07a532497f778c0ace1f71e11a67d14b1e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/7f6c4de78fd5220b6dbbea63/complete.json": "6ccb47fcf51b3278f2bc5938c9703b9f441c372cad0e74cdcb12d7d359ee808b",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/f0ba19d9d7098e420eff20ab/complete.json": "4f3171ee4aa93580197fe6924615804a9f79ec446e337af1c77b21a3d965a340",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5412ec415c6dc6000437ff00/complete.json": "43e082e542dd8791eb67e12e0cc6976cee2539e3a9aab5a752c6da6dc5115877",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ac8efb162961478dd9f9af22/complete.json": "dc3255dc5fdecff696b082667409feb1804cee2b46538bd35e1461ec6064758d",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/455faa1d20d86c7a4e5ac65f/complete.json": "7081a6545bb686871cf9dbab7f1b1888683e81f6863434d85742ea79207d5e70",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ebc293dba90b3c32b014af5b/complete.json": "33bc6b07bd054c72e133384eec0fae761ad79e2fae0eccde1cddaf5eb631cbc2",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/9b8eed0860e425653ded3577/complete.json": "ca721b5946ef774beaf38eada4702a62ea52edd8381cdaa1435aae0c9c4010c7",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/1b5d09886b6ab579e0843ce5/complete.json": "098ed480a8f62bbe35d28d5d4e920ea6c690cc216931f481622da979936906e5",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/8a320346011857db379da130/complete.json": "faf5e77fd7f6d718589f246e50b755380218f1b1db574369b69629930e292dab",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/821cea466fcce1266852f43c/complete.json": "5f812aa64719905c2dadf705169793ef317b67f465db794e32cfec56b44eab42",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/77b52ae60ceb459e8cab443d/complete.json": "75b4c3d6918d125917dc7ba235e844a973b1cdfe14df2f5af47e537b22177b70",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/eca336932d4faae37ddc851f/complete.json": "b87025a5db0f91382b37eed9d29aff1982e31450fa35e5350c37f5777e47385f",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/314ed8b0b72ffa7da2c87c57/complete.json": "cf1651b1477602832eecd07ead2da395f75f62affad445721acd2cb5c74e6ab5",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/a6b3ee66c5d28699d2dfe01d/complete.json": "66f0f88451b46a80bc5cadf10f6dd497d29e8a639d0cc060c5f3dd2d54de8a53",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/55c6dcb47e5a5688c9f563a8/complete.json": "e2c0b3b2e7f808659af6042cfb8abcb41cfd4b9989a502ba24c0920066866ad6",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/3ee3a1b16ca3411faf3cd60f/complete.json": "411c64d42d8b2b34bc9859e45a83c897a1e3d776e0d1e92690e44aa69d101bfd",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/54fe4199ac1efb901ddf55bb/complete.json": "756dd9321344e617068f157b81d4d1c9f9fc52529f9b5390130595ae5cda5c63",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/773256753840d735a0bf6a99/complete.json": "97c02dd2c03d8f2ea888eee0f58888226e4c5ac2ea01cb8ee4f18a6e429c046b",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2055ca439549760e43a8ddf9/complete.json": "222f0990798d1bf6956a429314d023a47d68071049da42342a52e07909d1ec07",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5bfac26aab7b1b8a810f6e9d/complete.json": "8c40872fc049f568cb3c1a867b61f0b1500e3548fc84189edbb2afbd0b5451f4",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ba6243a7578ef8a64737d567/complete.json": "b85266105d0a08adab0532364fc2dd0b3796d688683c39686b80a7e615c12fca",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/c98cb33f48392c108c40f206/complete.json": "0c6c9e7033b3f95d07bcb4ccf81be4da12e692a812336096d15aa72310579983",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/cdc2ee33084c90a92487107e/complete.json": "f24a257f9e24f6306bb8068ae4e8b68f4070388159e67c75b0307bba64a60f3e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2649719f53fe1a54aa56ab8f/complete.json": "ccaaefafa0a3b5ceb579f85350e3beab95e56db34e2f078e48409298c3b5ac14",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/38834f95f2fd8ceb943c4243/complete.json": "d0ea7d33898e0e4d9a31d6a3a97c8beca7341a01ef3f92e4f1180cc9827874bf",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/e55c9628ed7641f96707430e/complete.json": "33c6cfd37744dda294cb57078bce11bf6d8a73764e06c2f06e26283e754af944",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/424b814a818225209898bae7/complete.json": "e69d2f610ddaae07061ba3619ac1648c3253e0319df58d7b3a9bc97f58948ee8",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/a2a08b465a8cea8a95403ee7/complete.json": "4fd43ea1d9a997593411b3d50eb9557de55207c868f68734a872acfb623565cc",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5c2fda735c71289d10a3de7a/complete.json": "44e15f336cd63116f9b7043570f56c2fbf6c92f8ecc8af3b6bd074bdb62c65a0",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/f2cd41132415857399b19518/complete.json": "2d743e927031160fcb62e7c71a7839659243266e88bad3035af1a98777eed4b1",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/43bf59b67bd6d45e8b8bf43e/complete.json": "23cfa93ec582f87beb5d5fa88d9232403c045ca6e0b534b65ffa77588e40d55a",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/8a6ce2b60f7cb1353c2919cc/complete.json": "268df3f623a27997e3349b8c3d3ba5accf99cded02a2ae887363c0e283f9a1d1",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/d7b7aa3915ac3ddc0bf94b22/complete.json": "087942d2f4b3fc702b68bb66bb3e1862ec7c55017f45dd7850f54fb0a3b7437a",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/e73bc60d4e2c5b994ee45ba4/complete.json": "d15f047a1e5e799e572571b519f65c1d56b8cd98c5542f4084d62ec47f3e8d4a",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2ad19f5f828cec54da51b511/complete.json": "6d6ede4b6ad8c87d45fcdd75cb2f59f951a9aff5e6f9dd0092b15167863fb324",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/37b22da558e1daee1e72b707/complete.json": "ed222670fcf5c3d65a1ab43892e09eaa6b786f65289dcdcd5767797f7e2807b5"
+        }
+      },
+      "best_train": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.875,
+            "ap": 0.9166666666666666,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.9688669426088641,
+            "ap": 0.9157606074045606,
+            "acc": 0.9105326152004788,
+            "precision": 0.950110864745011,
+            "recall": 0.6078014184397164,
+            "f1": 0.7413494809688581,
+            "confusion_matrix": [
+              [
+                5229,
+                45
+              ],
+              [
+                553,
+                857
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.01154672395273899,
+          "real_spatial_fpr": 0.08791515685465094,
+          "empty_mask_spatial_fpr": 0.08791515685465094,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              420336745,
+              43069655
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.8876655671507812,
+          "loss_video": 0.656953398082202,
+          "loss_frame": 0.29778435345024223,
+          "loss_pixel": 0.08181999234345791,
+          "loss_pixel_bce": 0.08181999234345791,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.9375,
+            "ap": 0.95,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.7540124092771938,
+            "ap": 0.7316808560565753,
+            "acc": 0.5047846889952153,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                422,
+                0
+              ],
+              [
+                414,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.16856830445621207,
+          "empty_mask_spatial_fpr": 0.19028476509274744,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              257148326,
+              58644947
+            ],
+            [
+              2241293,
+              13741434
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.7415245036610063,
+          "loss_video": 0.7375217561994122,
+          "loss_frame": 0.7387804188275173,
+          "loss_pixel": 0.6346125380478354,
+          "loss_pixel_bce": 0.27243836051251136,
+          "loss_pixel_dice": 0.36217417575482624,
+          "spatial_iou": 0.262058259413087,
+          "spatial_dice": 0.39019110494562886,
+          "pixel_ap": 0.41700182681337555
+        },
+        "dataset_macro": {
+          "auroc": 0.90625,
+          "ap": 0.9333333333333333,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.861439675943029,
+          "frame_ap": 0.8237207317305679,
+          "loss": 1.3145950354058937,
+          "loss_video": 0.697237577140807,
+          "loss_frame": 0.5182823861388798,
+          "loss_pixel": 0.35821626519564664
+        }
+      },
+      "best_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.578125,
+            "ap": 0.560218253968254,
+            "acc": 0.4375,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                7,
+                1
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.7270267168385722,
+            "ap": 0.38334239776528833,
+            "acc": 0.8713440816657214,
+            "precision": 0.4781609195402299,
+            "recall": 0.26838709677419353,
+            "f1": 0.343801652892562,
+            "confusion_matrix": [
+              [
+                10339,
+                454
+              ],
+              [
+                1134,
+                416
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.07459815759288846,
+          "real_spatial_fpr": 0.1605223495369896,
+          "empty_mask_spatial_fpr": 0.1605223495369896,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              768256828,
+              159419972
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.187675877645464,
+          "loss_video": 0.8658289023331754,
+          "loss_frame": 0.3904259677918198,
+          "loss_pixel": 0.1266339914163786,
+          "loss_pixel_bce": 0.1266339914163786,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.515625,
+            "ap": 0.592433954933955,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.502186699763547,
+            "ap": 0.4956581821658977,
+            "acc": 0.5027685492801772,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                908,
+                0
+              ],
+              [
+                898,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.16081596292126818,
+          "empty_mask_spatial_fpr": 0.1596093908451396,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              780488503,
+              170983009
+            ],
+            [
+              11422124,
+              7551164
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 2.0640834596282027,
+          "loss_video": 0.8906136264098633,
+          "loss_frame": 0.9065144947438228,
+          "loss_pixel": 0.7202125858464279,
+          "loss_pixel_bce": 0.2703964319240509,
+          "loss_pixel_dice": 0.44981615393722635,
+          "spatial_iou": 0.06047198125376306,
+          "spatial_dice": 0.0920254558934103,
+          "pixel_ap": 0.09908366263818097
+        },
+        "dataset_macro": {
+          "auroc": 0.546875,
+          "ap": 0.5763261044511045,
+          "acc": 0.46875,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.6146067083010596,
+          "frame_ap": 0.439500289965593,
+          "loss": 1.6258796686368333,
+          "loss_video": 0.8782212643715194,
+          "loss_frame": 0.6484702312678213,
+          "loss_pixel": 0.4234232886314032
+        }
+      },
+      "last_train": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 1.0,
+            "ap": 1.0,
+            "acc": 0.875,
+            "precision": 1.0,
+            "recall": 0.75,
+            "f1": 0.8571428571428571,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.9922179459250116,
+            "ap": 0.9803038144589794,
+            "acc": 0.9747157390783961,
+            "precision": 0.9586104951958611,
+            "recall": 0.9198581560283688,
+            "f1": 0.9388346000723851,
+            "confusion_matrix": [
+              [
+                5218,
+                56
+              ],
+              [
+                113,
+                1297
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.008861439312567132,
+          "real_spatial_fpr": 0.004047786830769931,
+          "empty_mask_spatial_fpr": 0.004047786830769931,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              461451313,
+              1955087
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.2382324723814892,
+          "loss_video": 0.19121289977178524,
+          "loss_frame": 0.08487898457566576,
+          "loss_pixel": 0.004580080321871111,
+          "loss_pixel_bce": 0.004580080321871111,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.9375,
+            "ap": 0.95,
+            "acc": 0.625,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1": 0.4,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.8504418801657623,
+            "ap": 0.8256063741924901,
+            "acc": 0.6303827751196173,
+            "precision": 0.8431372549019608,
+            "recall": 0.3115942028985507,
+            "f1": 0.455026455026455,
+            "confusion_matrix": [
+              [
+                398,
+                24
+              ],
+              [
+                285,
+                129
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.04,
+          "real_spatial_fpr": 0.019875972984915967,
+          "empty_mask_spatial_fpr": 0.029478903387932777,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              308098187,
+              7695086
+            ],
+            [
+              7430280,
+              8552447
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.0488480664317947,
+          "loss_video": 0.4365002029186239,
+          "loss_frame": 0.46392460810470787,
+          "loss_pixel": 0.38038555946081687,
+          "loss_pixel_bce": 0.13915398145564153,
+          "loss_pixel_dice": 0.24123157878079987,
+          "spatial_iou": 0.4194522477893305,
+          "spatial_dice": 0.535687482922502,
+          "pixel_ap": 0.6698098813593445
+        },
+        "dataset_macro": {
+          "auroc": 0.96875,
+          "ap": 0.975,
+          "acc": 0.75,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6285714285714286,
+          "frame_auroc": 0.9213299130453869,
+          "frame_ap": 0.9029550943257347,
+          "loss": 0.643540269406642,
+          "loss_video": 0.31385655134520457,
+          "loss_frame": 0.2744017963401868,
+          "loss_pixel": 0.192482819891344
+        }
+      },
+      "last_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.65625,
+            "ap": 0.6126488095238095,
+            "acc": 0.625,
+            "precision": 0.625,
+            "recall": 0.625,
+            "f1": 0.625,
+            "confusion_matrix": [
+              [
+                5,
+                3
+              ],
+              [
+                3,
+                5
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.7283847655140877,
+            "ap": 0.31112010395726136,
+            "acc": 0.6798995381997893,
+            "precision": 0.20882852292020374,
+            "recall": 0.555483870967742,
+            "f1": 0.30354309888947645,
+            "confusion_matrix": [
+              [
+                7531,
+                3262
+              ],
+              [
+                689,
+                861
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.3223820502558866,
+          "real_spatial_fpr": 0.21316223298100745,
+          "empty_mask_spatial_fpr": 0.21316223298100745,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              711799845,
+              215876955
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.9525713040772072,
+          "loss_video": 1.133368447824508,
+          "loss_frame": 0.9802279666824979,
+          "loss_pixel": 0.3290888729114501,
+          "loss_pixel_bce": 0.3290888729114501,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.5625,
+            "ap": 0.6325854700854701,
+            "acc": 0.625,
+            "precision": 0.6666666666666666,
+            "recall": 0.5,
+            "f1": 0.5714285714285714,
+            "confusion_matrix": [
+              [
+                6,
+                2
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5288968142617466,
+            "ap": 0.542121713328753,
+            "acc": 0.5365448504983389,
+            "precision": 0.5454545454545454,
+            "recall": 0.40757238307349664,
+            "f1": 0.4665391969407266,
+            "confusion_matrix": [
+              [
+                603,
+                305
+              ],
+              [
+                532,
+                366
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.34351041666666665,
+          "real_spatial_fpr": 0.06529801576967592,
+          "empty_mask_spatial_fpr": 0.07135952096193415,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              877325696,
+              74145816
+            ],
+            [
+              15444604,
+              3528684
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 2.887129987476767,
+          "loss_video": 1.2668546160331586,
+          "loss_frame": 1.6532274476136344,
+          "loss_pixel": 0.7936616476367913,
+          "loss_pixel_bce": 0.3231566626619818,
+          "loss_pixel_dice": 0.47050498384899564,
+          "spatial_iou": 0.0298154705790038,
+          "spatial_dice": 0.05246464351108883,
+          "pixel_ap": 0.08038085321206681
+        },
+        "dataset_macro": {
+          "auroc": 0.609375,
+          "ap": 0.6226171398046398,
+          "acc": 0.625,
+          "precision": 0.6458333333333333,
+          "recall": 0.5625,
+          "f1": 0.5982142857142857,
+          "frame_auroc": 0.6286407898879172,
+          "frame_ap": 0.42662090864300717,
+          "loss": 2.419850645776987,
+          "loss_video": 1.2001115319288334,
+          "loss_frame": 1.316727707148066,
+          "loss_pixel": 0.5613752602741207
+        }
+      },
+      "artifacts": {
+        "best.pt": {
+          "bytes": 4494400,
+          "sha256": "697613071144cbc51d13930e7383112755a467f260c9b323060790baef832264"
+        },
+        "last.pt": {
+          "bytes": 4527616,
+          "sha256": "cd77797fb10d1416f87295448ff9cf268d29473533b04778697e1143b18043a5"
+        },
+        "history.json": {
+          "bytes": 256374,
+          "sha256": "6312e0dcf067b8b27aa1329dc67c7c577c08acc76e33cfa9a85bac461d7637d0"
+        },
+        "history.csv": {
+          "bytes": 84467,
+          "sha256": "a8b0b376b13ad7266480b073d7e14cad0db75bba4beec361c5a02e10b896148a"
+        },
+        "summary.json": {
+          "bytes": 2102875,
+          "sha256": "ea67a46522fa31f3876accef591eb8008acc8c676c1ba6fac27343367fbf4cc5"
+        }
+      },
+      "train_dice_trajectory": [
+        {
+          "epoch": 1,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 2,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 3,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 4,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 5,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 6,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 7,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 8,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 9,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 10,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 11,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 12,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 13,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 14,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 15,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 16,
+          "train": 0.00030042111298670044,
+          "dev": 0.00024751312448232775
+        },
+        {
+          "epoch": 17,
+          "train": 0.3601180853409556,
+          "dev": 0.08639868709126951
+        },
+        {
+          "epoch": 18,
+          "train": 0.3901911003106109,
+          "dev": 0.09202545919776318
+        },
+        {
+          "epoch": 19,
+          "train": 0.3905041712451793,
+          "dev": 0.08862433190998764
+        },
+        {
+          "epoch": 20,
+          "train": 0.43770576645647863,
+          "dev": 0.08538204695228649
+        },
+        {
+          "epoch": 21,
+          "train": 0.4367146968819672,
+          "dev": 0.0842772466951566
+        },
+        {
+          "epoch": 22,
+          "train": 0.4231710101113761,
+          "dev": 0.0864142105493545
+        },
+        {
+          "epoch": 23,
+          "train": 0.5469457327907373,
+          "dev": 0.07810216338309758
+        },
+        {
+          "epoch": 24,
+          "train": 0.4725013195291421,
+          "dev": 0.08531754018459811
+        },
+        {
+          "epoch": 25,
+          "train": 0.2742849838826052,
+          "dev": 0.05213871173916422
+        },
+        {
+          "epoch": 26,
+          "train": 0.5721276983790761,
+          "dev": 0.075107200709444
+        },
+        {
+          "epoch": 27,
+          "train": 0.5526122200081295,
+          "dev": 0.062234792193936836
+        },
+        {
+          "epoch": 28,
+          "train": 0.41209783195091854,
+          "dev": 0.061465184154325274
+        },
+        {
+          "epoch": 29,
+          "train": 0.5242183981233406,
+          "dev": 0.06249916440590583
+        },
+        {
+          "epoch": 30,
+          "train": 0.5356874677224112,
+          "dev": 0.052464642643587675
+        }
+      ]
+    },
+    "SEPARATE_HEADS": {
+      "status": "COMPLETE",
+      "best_epoch": 29,
+      "last_epoch": 30,
+      "stop_reason": "max_epochs",
+      "parameters": 370979,
+      "additional_detection_parameters": 8321,
+      "initial_parameters_sha256": "a350fe6ee6f57095d82d895136660e8de7c925e383df609469bf7ef6dd8365ba",
+      "elapsed_s": 5860.0901146531105,
+      "train_videos": 16,
+      "dev_videos": 32,
+      "finite_training": 1,
+      "updates": 240,
+      "identity": {
+        "schema": "v8-joint-spatial-v1",
+        "manifest_sha256": "7a88a9d5ac86e4ae0b2a7af22b2e4be10501593ebaca25d8a3dd0f2119c07a30",
+        "statistics_sha256": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+        "config_sha256": "46cdaa85796cd768054128f9b0f5b7889076189adedb50e6be08eaf89b88b2b8",
+        "code_sha256": {
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/run.py": "bdc0a1d71b8dc00fb30dc0a4d76b2973c819576c16f5e0a3e80987dcef916a77",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/joint_data.py": "d79975dc3170ecf34d972f8ab19faece866f60fad4ab8273697955a2a3d2f5dd",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/model.py": "980aa6baf238492175d2be523a6e2d451c52cef9e4ccb7ac7158da91e8ef8360",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/metrics.py": "90b3858d773a39b4c63aa8e4225919fb01346890970bd809ca7d09a3971a2dbe",
+          "research_tools/v8/full_video_training/model.py": "1d27cddbf873e9c387c1db7d5d90ea7d99b94052c6570b00bfbc05c1532f42ed",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/v8/spatial_localization/head_decoupling.py": "48442f1619ed31d35b74228cc498aff99972e92badeefdfb311d0345dc0df8d2"
+        },
+        "source_assets": {
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/joint_manifest.json": "2b850d6b0cf8ebf6bfb06476bc48a40421bcf503f40b2e63d642bb57389ee047",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/statistics.json": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/progress.json": "981cc226158b8e52f6c02929a31bd6d767f541273cb2c9c123876502252f4743",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/CELL_LOC/summary.json": "eeab4bc981046524b572121ddce58003b51f782d314be218f795a1e2a53b3d26",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/CELL_LOC/history.json": "f53b953c5f96fd5c0043e587a31ef22683fb5d8ce762aa9c7772f4e3d81b3eb6",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/CELL_LOC/history.csv": "303b02ec07b472a36b0289579cef8504d66e4300a745d7052e4cfc605811d35e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/COMPONENT_LOC/summary.json": "95dac54ca30202cd6666ad8e73a571b28aa88dfc43925cbbe23f99523cae4834",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/COMPONENT_LOC/history.json": "00ddcdd31320161ad4c5d0b298086ff5eb4dcaa677905f46cdf0fc05a71db810",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/COMPONENT_LOC/history.csv": "f283acb754445a52dce1f931726a0bbbb0386bf9db34dfaeedb5d056a77b1ff4",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/b54b0b01364c250601c8b133/complete.json": "976168da42a07aac6c129eb0f9c941a570f512be512971858a08ae43b9784248",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/196a6ce48666e6e37cdbea0b/complete.json": "e3421a71f09206442e84ca90bee7a199c30be80bcf9de63a9c5ae0211297172b",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/603add9a4239118a745c87ca/complete.json": "1b77728358f6f2e9290972eb822fadfa46a2bf501854f712db0c7aa5b85b11e8",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/4f75d24d42edd5d9f827ecb1/complete.json": "de7d2c78f7ef8c71c090ae9ef4ecbc65b7ace13e79f517d2198bb33cea6e9bd8",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/121db83e2a37f3f5fc9512d0/complete.json": "f40853cc44abc37a6d611fea6ab1988f37af78067bc73c6af96027d0c934444d",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/77c37d281dee127bc5f4ae76/complete.json": "99e2db87630f7ae2f0ce86540faa836d2ebc3df5931c5fa5af6bf11a0300b5d0",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2ccc864ff184b8e0c920ae79/complete.json": "7fdc5aea3993e2661747a3fbe47f64db69c48a8bd21e7df2d08cf49bfe247158",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/627bdb51fd3b715a19f75444/complete.json": "4d4bfd59309ec77b5d9e1447946e6efda34173a893478dea496695ef91cff088",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5e281219c8a281ae6109f506/complete.json": "63845fb5d367ccdbc71a4b382d965a7998cf50dc4790a8329c69c1d93c26380e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ceb1a2c7d9ba416daf788ea4/complete.json": "42855767072467f9b220c5961940af6aa41b1787ec86728bc5c8b7d3351cc468",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/aab916c01c66df953cc3a760/complete.json": "49479d87fcdcb1729ba06c1e79967ecd5d6e311e7c7ae1573ebe577e79187d80",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/f45dc8b05d8e00b4a30a11df/complete.json": "71c0675a40e03cd1b1d2aa92533f9f07a532497f778c0ace1f71e11a67d14b1e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/7f6c4de78fd5220b6dbbea63/complete.json": "6ccb47fcf51b3278f2bc5938c9703b9f441c372cad0e74cdcb12d7d359ee808b",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/f0ba19d9d7098e420eff20ab/complete.json": "4f3171ee4aa93580197fe6924615804a9f79ec446e337af1c77b21a3d965a340",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5412ec415c6dc6000437ff00/complete.json": "43e082e542dd8791eb67e12e0cc6976cee2539e3a9aab5a752c6da6dc5115877",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ac8efb162961478dd9f9af22/complete.json": "dc3255dc5fdecff696b082667409feb1804cee2b46538bd35e1461ec6064758d",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/455faa1d20d86c7a4e5ac65f/complete.json": "7081a6545bb686871cf9dbab7f1b1888683e81f6863434d85742ea79207d5e70",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ebc293dba90b3c32b014af5b/complete.json": "33bc6b07bd054c72e133384eec0fae761ad79e2fae0eccde1cddaf5eb631cbc2",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/9b8eed0860e425653ded3577/complete.json": "ca721b5946ef774beaf38eada4702a62ea52edd8381cdaa1435aae0c9c4010c7",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/1b5d09886b6ab579e0843ce5/complete.json": "098ed480a8f62bbe35d28d5d4e920ea6c690cc216931f481622da979936906e5",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/8a320346011857db379da130/complete.json": "faf5e77fd7f6d718589f246e50b755380218f1b1db574369b69629930e292dab",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/821cea466fcce1266852f43c/complete.json": "5f812aa64719905c2dadf705169793ef317b67f465db794e32cfec56b44eab42",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/77b52ae60ceb459e8cab443d/complete.json": "75b4c3d6918d125917dc7ba235e844a973b1cdfe14df2f5af47e537b22177b70",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/eca336932d4faae37ddc851f/complete.json": "b87025a5db0f91382b37eed9d29aff1982e31450fa35e5350c37f5777e47385f",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/314ed8b0b72ffa7da2c87c57/complete.json": "cf1651b1477602832eecd07ead2da395f75f62affad445721acd2cb5c74e6ab5",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/a6b3ee66c5d28699d2dfe01d/complete.json": "66f0f88451b46a80bc5cadf10f6dd497d29e8a639d0cc060c5f3dd2d54de8a53",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/55c6dcb47e5a5688c9f563a8/complete.json": "e2c0b3b2e7f808659af6042cfb8abcb41cfd4b9989a502ba24c0920066866ad6",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/3ee3a1b16ca3411faf3cd60f/complete.json": "411c64d42d8b2b34bc9859e45a83c897a1e3d776e0d1e92690e44aa69d101bfd",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/54fe4199ac1efb901ddf55bb/complete.json": "756dd9321344e617068f157b81d4d1c9f9fc52529f9b5390130595ae5cda5c63",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/773256753840d735a0bf6a99/complete.json": "97c02dd2c03d8f2ea888eee0f58888226e4c5ac2ea01cb8ee4f18a6e429c046b",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2055ca439549760e43a8ddf9/complete.json": "222f0990798d1bf6956a429314d023a47d68071049da42342a52e07909d1ec07",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5bfac26aab7b1b8a810f6e9d/complete.json": "8c40872fc049f568cb3c1a867b61f0b1500e3548fc84189edbb2afbd0b5451f4",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/ba6243a7578ef8a64737d567/complete.json": "b85266105d0a08adab0532364fc2dd0b3796d688683c39686b80a7e615c12fca",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/c98cb33f48392c108c40f206/complete.json": "0c6c9e7033b3f95d07bcb4ccf81be4da12e692a812336096d15aa72310579983",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/cdc2ee33084c90a92487107e/complete.json": "f24a257f9e24f6306bb8068ae4e8b68f4070388159e67c75b0307bba64a60f3e",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2649719f53fe1a54aa56ab8f/complete.json": "ccaaefafa0a3b5ceb579f85350e3beab95e56db34e2f078e48409298c3b5ac14",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/38834f95f2fd8ceb943c4243/complete.json": "d0ea7d33898e0e4d9a31d6a3a97c8beca7341a01ef3f92e4f1180cc9827874bf",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/e55c9628ed7641f96707430e/complete.json": "33c6cfd37744dda294cb57078bce11bf6d8a73764e06c2f06e26283e754af944",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/424b814a818225209898bae7/complete.json": "e69d2f610ddaae07061ba3619ac1648c3253e0319df58d7b3a9bc97f58948ee8",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/a2a08b465a8cea8a95403ee7/complete.json": "4fd43ea1d9a997593411b3d50eb9557de55207c868f68734a872acfb623565cc",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/5c2fda735c71289d10a3de7a/complete.json": "44e15f336cd63116f9b7043570f56c2fbf6c92f8ecc8af3b6bd074bdb62c65a0",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/f2cd41132415857399b19518/complete.json": "2d743e927031160fcb62e7c71a7839659243266e88bad3035af1a98777eed4b1",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/43bf59b67bd6d45e8b8bf43e/complete.json": "23cfa93ec582f87beb5d5fa88d9232403c045ca6e0b534b65ffa77588e40d55a",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/8a6ce2b60f7cb1353c2919cc/complete.json": "268df3f623a27997e3349b8c3d3ba5accf99cded02a2ae887363c0e283f9a1d1",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/d7b7aa3915ac3ddc0bf94b22/complete.json": "087942d2f4b3fc702b68bb66bb3e1862ec7c55017f45dd7850f54fb0a3b7437a",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/e73bc60d4e2c5b994ee45ba4/complete.json": "d15f047a1e5e799e572571b519f65c1d56b8cd98c5542f4084d62ec47f3e8d4a",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/2ad19f5f828cec54da51b511/complete.json": "6d6ede4b6ad8c87d45fcdd75cb2f59f951a9aff5e6f9dd0092b15167863fb324",
+          "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1/cache/37b22da558e1daee1e72b707/complete.json": "ed222670fcf5c3d65a1ab43892e09eaa6b786f65289dcdcd5767797f7e2807b5"
+        }
+      },
+      "best_train": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.625,
+            "ap": 0.7678571428571428,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.8977782080969939,
+            "ap": 0.8045484315978938,
+            "acc": 0.7890484739676841,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                5274,
+                0
+              ],
+              [
+                1410,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 2.855186909071621e-06,
+          "empty_mask_spatial_fpr": 2.855186909071621e-06,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              463405022,
+              1378
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.9949716467302288,
+          "loss_video": 0.6973375937083595,
+          "loss_frame": 0.5907218571936043,
+          "loss_pixel": 0.0022731244250672094,
+          "loss_pixel_bce": 0.0022731244250672094,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 1.0,
+            "ap": 1.0,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.6770439819584679,
+            "ap": 0.6451040638374876,
+            "acc": 0.5047846889952153,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                422,
+                0
+              ],
+              [
+                414,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.020589286629742853,
+          "empty_mask_spatial_fpr": 0.02351135985934984,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              309029885,
+              6763388
+            ],
+            [
+              6231233,
+              9751494
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.4236904444686087,
+          "loss_video": 0.6931650278121576,
+          "loss_frame": 0.6925293320262941,
+          "loss_pixel": 0.384260750643304,
+          "loss_pixel_bce": 0.09731379787525178,
+          "loss_pixel_dice": 0.28694695132219383,
+          "spatial_iou": 0.3283391678037675,
+          "spatial_dice": 0.41852423100990505,
+          "pixel_ap": 0.7013671798407507
+        },
+        "dataset_macro": {
+          "auroc": 0.8125,
+          "ap": 0.8839285714285714,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.7874110950277309,
+          "frame_ap": 0.7248262477176908,
+          "loss": 1.2093310455994186,
+          "loss_video": 0.6952513107602585,
+          "loss_frame": 0.6416255946099492,
+          "loss_pixel": 0.1932669375341856
+        }
+      },
+      "best_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.484375,
+            "ap": 0.556845238095238,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.6441644674116737,
+            "ap": 0.37202995585803067,
+            "acc": 0.8744227497366929,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                10793,
+                0
+              ],
+              [
+                1550,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 5.456589923672966e-06,
+          "empty_mask_spatial_fpr": 5.456589923672966e-06,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              927672723,
+              4077
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.0017230724595474,
+          "loss_video": 0.7060982620892124,
+          "loss_frame": 0.5812154442978117,
+          "loss_pixel": 0.005017088221429148,
+          "loss_pixel_bce": 0.005017088221429148,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.546875,
+            "ap": 0.6105429292929293,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5215996389431238,
+            "ap": 0.5076539481046125,
+            "acc": 0.5027685492801772,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                908,
+                0
+              ],
+              [
+                898,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.03157503422029388,
+          "empty_mask_spatial_fpr": 0.03030613574211308,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              912517641,
+              38953871
+            ],
+            [
+              16970194,
+              2003094
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.6734116203277285,
+          "loss_video": 0.6985739564081878,
+          "loss_frame": 0.6978641421924605,
+          "loss_pixel": 0.6259055928233106,
+          "loss_pixel_bce": 0.16992922422948242,
+          "loss_pixel_dice": 0.4559763673402162,
+          "spatial_iou": 0.021562060536788018,
+          "spatial_dice": 0.039146311434734654,
+          "pixel_ap": 0.1074856236178407
+        },
+        "dataset_macro": {
+          "auroc": 0.515625,
+          "ap": 0.5836940836940836,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.5828820531773987,
+          "frame_ap": 0.4398419519813216,
+          "loss": 1.337567346393638,
+          "loss_video": 0.7023361092487002,
+          "loss_frame": 0.6395397932451361,
+          "loss_pixel": 0.31546134052236985
+        }
+      },
+      "last_train": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.625,
+            "ap": 0.7678571428571428,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.9032892525086266,
+            "ap": 0.8132776212424121,
+            "acc": 0.7890484739676841,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                5274,
+                0
+              ],
+              [
+                1410,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 7.227062364906976e-06,
+          "empty_mask_spatial_fpr": 7.227062364906976e-06,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              463402912,
+              3488
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.9869168144576381,
+          "loss_video": 0.6982454741633846,
+          "loss_frame": 0.5760545539187075,
+          "loss_pixel": 0.0006440633348998056,
+          "loss_pixel_bce": 0.0006440633348998056,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.875,
+            "ap": 0.9166666666666666,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.6868260182704856,
+            "ap": 0.6744830265403245,
+            "acc": 0.5047846889952153,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                422,
+                0
+              ],
+              [
+                414,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.018726535058751007,
+          "empty_mask_spatial_fpr": 0.020865559644223028,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              309533020,
+              6260253
+            ],
+            [
+              5783591,
+              10199136
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.3938146990116174,
+          "loss_video": 0.692476399803994,
+          "loss_frame": 0.6917219343566693,
+          "loss_pixel": 0.35547733202928866,
+          "loss_pixel_bce": 0.08213960546476798,
+          "loss_pixel_dice": 0.27333772745715756,
+          "spatial_iou": 0.416662642206164,
+          "spatial_dice": 0.5344149208918842,
+          "pixel_ap": 0.710957126731717
+        },
+        "dataset_macro": {
+          "auroc": 0.75,
+          "ap": 0.8422619047619047,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.7950576353895561,
+          "frame_ap": 0.7438803238913683,
+          "loss": 1.1903657567346277,
+          "loss_video": 0.6953609369836893,
+          "loss_frame": 0.6338882441376884,
+          "loss_pixel": 0.17806069768209423
+        }
+      },
+      "last_metrics": {
+        "ActivityForensics": {
+          "video": {
+            "auroc": 0.484375,
+            "ap": 0.556845238095238,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.6531041923827571,
+            "ap": 0.38267680402306775,
+            "acc": 0.8744227497366929,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                10793,
+                0
+              ],
+              [
+                1550,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.00010633066426915207,
+          "empty_mask_spatial_fpr": 0.00010633066426915207,
+          "spatial_reason": "no_positive_spatial_GT",
+          "pixel_ap_reason": "not_scheduled_or_no_positive_spatial_GT",
+          "pixel_confusion_matrix": [
+            [
+              927598028,
+              78772
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 0.9951195082227329,
+          "loss_video": 0.7098491121602477,
+          "loss_frame": 0.5658629945138246,
+          "loss_pixel": 0.0023388988055727915,
+          "loss_pixel_bce": 0.0023388988055727915,
+          "loss_pixel_dice": 0.0,
+          "spatial_iou": null,
+          "spatial_dice": null,
+          "pixel_ap": null
+        },
+        "ANAKIN": {
+          "video": {
+            "auroc": 0.53125,
+            "ap": 0.6132672882672883,
+            "acc": 0.5,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                8,
+                0
+              ],
+              [
+                8,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "frame": {
+            "auroc": 0.5219332241005464,
+            "ap": 0.5104939001164484,
+            "acc": 0.5027685492801772,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "confusion_matrix": [
+              [
+                908,
+                0
+              ],
+              [
+                898,
+                0
+              ]
+            ],
+            "undefined_reason": null
+          },
+          "real_frame_fpr": 0.0,
+          "real_spatial_fpr": 0.030258400865510324,
+          "empty_mask_spatial_fpr": 0.029640906865021528,
+          "spatial_reason": null,
+          "pixel_ap_reason": null,
+          "pixel_confusion_matrix": [
+            [
+              913123213,
+              38348299
+            ],
+            [
+              17030095,
+              1943193
+            ]
+          ],
+          "pixel_confusion_scope": "pooled counts of known native GT pixels; does not replace positive-video mean Dice",
+          "loss": 1.6826440340712734,
+          "loss_video": 0.7002600249782871,
+          "loss_frame": 0.6995482092359676,
+          "loss_pixel": 0.6326099044750024,
+          "loss_pixel_bce": 0.16931824594028227,
+          "loss_pixel_dice": 0.4632916603069753,
+          "spatial_iou": 0.020670614156560803,
+          "spatial_dice": 0.03765447008270904,
+          "pixel_ap": 0.1022532399227146
+        },
+        "dataset_macro": {
+          "auroc": 0.5078125,
+          "ap": 0.5850562631812631,
+          "acc": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "frame_auroc": 0.5875187082416518,
+          "frame_ap": 0.446585352069758,
+          "loss": 1.3388817711470031,
+          "loss_video": 0.7050545685692674,
+          "loss_frame": 0.6327056018748961,
+          "loss_pixel": 0.3174744016402876
+        }
+      },
+      "artifacts": {
+        "best.pt": {
+          "bytes": 4629152,
+          "sha256": "1e5feeac01cc8ed4a0e4d6aa07ef37a22433a39be99f2c22898a05070f9e4b04"
+        },
+        "last.pt": {
+          "bytes": 4631904,
+          "sha256": "8da05efa3c7536385abf9400b89b438d4dcb51d63b47dffe9c3ff79e09e1eb2d"
+        },
+        "history.json": {
+          "bytes": 249843,
+          "sha256": "43070e681611025e998ce2e7f6b087cc5428c21f300e144498f2f978a2e47a2e"
+        },
+        "history.csv": {
+          "bytes": 77936,
+          "sha256": "714af5d2bfed7c5c7242efa87fbd6cb6d0accec81a8837c0058240b81523e4e1"
+        },
+        "summary.json": {
+          "bytes": 2147020,
+          "sha256": "71bd59add0387028578db3fb7ccc3292b14cde4414e9db244db48971b7184d93"
+        }
+      },
+      "train_dice_trajectory": [
+        {
+          "epoch": 1,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 2,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 3,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 4,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 5,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 6,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 7,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 8,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 9,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 10,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 11,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 12,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 13,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 14,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 15,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 16,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 17,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 18,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 19,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 20,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 21,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 22,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 23,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 24,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 25,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 26,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 27,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 28,
+          "train": 0.0,
+          "dev": 0.0
+        },
+        {
+          "epoch": 29,
+          "train": 0.41852473272441265,
+          "dev": 0.039146353270958195
+        },
+        {
+          "epoch": 30,
+          "train": 0.5344149208918842,
+          "dev": 0.03765446897781746
+        }
+      ]
+    }
+  },
+  "validation": {
+    "fixed_float32_npz": 288,
+    "matching_full_epochs": 30,
+    "updates_per_condition": 240,
+    "native_spatial_summary_reproduced": true,
+    "source_artifacts_unchanged": true,
+    "last_optimizer_amp_rng_present": true,
+    "all_epoch_pair_orders_identical": true,
+    "pixel_ap_schedule_and_nulls_correct": true
+  }
+}
