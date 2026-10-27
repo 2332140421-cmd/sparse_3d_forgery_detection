@@ -1,7 +1,7 @@
 # V8检测／空间定位输出分离对照
 
 2026-10-27；分支`v8-spatial-head-decoupling`，起点诊断提交`0964236`。
-当前：实现、定向回归与两库完整pair smoke完成，正式任务待独立启动；没有正式成绩。
+当前：**RUNNING**。实现、定向回归与两库完整pair smoke完成，正式独立任务已进入训练；没有正式成绩。
 冻结协议：[head_decoupling_contract.md](../v8/head_decoupling_contract.md)、ADR-0023。
 
 本轮只改COMPONENT_LOC的检测输出路径，检验共享像素响应是否限制空间学习。
@@ -74,3 +74,20 @@ MPLCONFIGDIR=/media/njupt/8FCD3869E2FAB06F/chenyh/cache/matplotlib \
 不会按视频real预测隐藏mask，也不自动追加seed、样本、训练轮次或阈值搜索。
 
 原实验资产只读；完成后复核并集中审阅实际结果，再更新小型结果摘要。当前无正式指标，不预填正结论。
+
+## 启动快照
+
+代码`3acbf6cba31752a63d86fe0432c9db28266803d4`已push后启动；北京时间2026-10-27 21:47。
+tmux：`v8_spatial_head_decoupling_v1`，Python PID **794523**。
+一次启动核验：RUNNING/train，COUPLED epoch1、当前pair7/8；进程存活，未见启动错误。
+记录见[head_decoupling_launch.json](../v8/evidence/head_decoupling_launch.json)。
+预估约3小时，完成时间约北京时间10月28日00:47；IO、绘图及最终导出会影响实际时间。
+不在Codex内逐轮轮询。运行输出重定向run.log，tmux主窗可没有文字；可另开终端查看：
+
+```bash
+V8_OUT=/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_head_decoupling_v1
+cat "$V8_OUT/progress.json"
+tail -f "$V8_OUT/run.log"
+```
+
+Python结束时自动产出summary、curves、index和report；届时再集中审阅并提交结果摘要。

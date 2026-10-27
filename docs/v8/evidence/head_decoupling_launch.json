@@ -1,0 +1,23 @@
+{
+  "session": "v8_spatial_head_decoupling_v1",
+  "pid": 794523,
+  "code_commit": "3acbf6cba31752a63d86fe0432c9db28266803d4",
+  "started_utc": "2026-10-27T13:47:06.751605+00:00",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_head_decoupling_v1",
+  "log": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_head_decoupling_v1/run.log",
+  "progress": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_head_decoupling_v1/progress.json",
+  "command": "exec env MPLCONFIGDIR=/media/njupt/8FCD3869E2FAB06F/chenyh/cache/matplotlib OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES=0 /media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/bin/python -u -m research_tools.v8.spatial_localization.run --config docs/v8/head_decoupling_config.json --resume >> /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_head_decoupling_v1/run.log 2>&1",
+  "status": "LAUNCHED; verify progress pid before claiming training",
+  "startup_verified": {
+    "status": "RUNNING",
+    "stage": "train",
+    "pid": 794523,
+    "condition": "COUPLED",
+    "epoch": 1,
+    "pair": 7,
+    "total_pairs": 8
+  },
+  "estimated_runtime_s": 10800,
+  "estimated_completion_asia_shanghai": "2026-10-28T00:47:06.751605+08:00",
+  "estimate_limits": "smoke-based; actual frontend not run; final evaluation/export and IO can vary"
+}
