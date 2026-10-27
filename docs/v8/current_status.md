@@ -7,6 +7,10 @@
 
 ## 当前执行：完整联合编辑区域定位
 
+2026-10-27新增用户授权[输出分离对照](../experiments/v8-spatial-head-decoupling.md)，
+分支`v8-spatial-head-decoupling`；原monitor16完整训练/原dev32，固定30轮，原缓存只读。
+COUPLED与SEPARATE_HEADS均为完整COMPONENT_LOC。当前准备与smoke完成，待正式启动；以下原pilot成绩不变。
+
 用户已授权ADR-0022：CELL_LOC/COMPONENT_LOC共享256结构与dense几何、512像素分支，
 同初始化、数据及预算，唯一条件差异为成员分区；目标更新为编辑区域。
 代码与固定队列已完成，两库真实完整pair在两个模型上均完成实际更新/评价，smoke权重已丢弃。

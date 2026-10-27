@@ -1,0 +1,3298 @@
+{
+  "schema": "v8-spatial-head-decoupling-v1",
+  "selection": "exact original train_monitor plus all dev; no resampling",
+  "source_manifest_sha256": "2b850d6b0cf8ebf6bfb06476bc48a40421bcf503f40b2e63d642bb57389ee047",
+  "rows": [
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:NK9RX",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "145f47d2ea4cabf6df96c40c7fd1b59ffcee9b8774033b6b16e99db6743b6cee",
+      "video_id": "b54b0b01364c250601c8b133",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:NK9RX",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 739,
+      "source_hw": [
+        270,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 1,
+      "video_relative_path": "real/charades/NK9RX.mp4",
+      "cache_relative_path": "cache/b54b0b01364c250601c8b133",
+      "pts_sha256": "f0c8254dc3c2e1203492ca0fc4f4a16b9692fe2b7941d184cce34ae474a5d576"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:NK9RX",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "0f5aaf79f802f15cb2462090087987c074d4b81a2408a91d9ce1b05aee61e6f5",
+      "video_id": "196a6ce48666e6e37cdbea0b",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:NK9RX",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          5.1,
+          10.5
+        ],
+        [
+          13.2,
+          28.2
+        ]
+      ],
+      "actual_frames": 739,
+      "source_hw": [
+        1080,
+        1920
+      ],
+      "mapping256": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.13333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.26666666666666666
+      },
+      "train_monitor": 1,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/NK9RX+5.10=10.50=charades@train_delete@NK9RX@813@wan+13.20=28.20=charades@train_add@NK9RX@811@wan.mp4",
+      "cache_relative_path": "cache/196a6ce48666e6e37cdbea0b",
+      "pts_sha256": "f0c8254dc3c2e1203492ca0fc4f4a16b9692fe2b7941d184cce34ae474a5d576"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:UVEPN",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "2bc8b394fee26a7ccc8976efa7fa8d715ff812b66f1561fa6c0cb2c0f2db9294",
+      "video_id": "603add9a4239118a745c87ca",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:UVEPN",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 704,
+      "source_hw": [
+        360,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 1,
+      "video_relative_path": "real/charades/UVEPN.mp4",
+      "cache_relative_path": "cache/603add9a4239118a745c87ca",
+      "pts_sha256": "89e96457abe22a2782d4cc05010f751045733249ba1b6c42ff74d327219a6bcb"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:UVEPN",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "ba1577af9ae5f04843112ef6a6ce677d3387fd6699e5b97affa52d9b4b3ef1b8",
+      "video_id": "4f75d24d42edd5d9f827ecb1",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:UVEPN",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          10.8,
+          17.0
+        ]
+      ],
+      "actual_frames": 705,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/UVEPN+10.80=17.00=charades@train_delete@UVEPN@156@fcvg.mp4",
+      "cache_relative_path": "cache/4f75d24d42edd5d9f827ecb1",
+      "pts_sha256": "1cebe53adcc051f62ad0f1d58cc1be07f4a8f5a4526f22c6a01d271d482304f9"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:7SXQS",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "c3a66aba1d1f412a0b9dd6c7ed2cec4298e33fb75b36379c3a8d8a67b01b1e2f",
+      "video_id": "121db83e2a37f3f5fc9512d0",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:7SXQS",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 931,
+      "source_hw": [
+        270,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 1,
+      "video_relative_path": "real/charades/7SXQS.mp4",
+      "cache_relative_path": "cache/121db83e2a37f3f5fc9512d0",
+      "pts_sha256": "14dc0f920cfe01bb190135e1c767910a1c89096fa9275f8a22163ad15f7909e7"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:7SXQS",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "236441b0a8483b92fcbdb446f35b427178abdefdd848bb3481ccc966b0400192",
+      "video_id": "77c37d281dee127bc5f4ae76",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:7SXQS",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          1.0,
+          7.0
+        ],
+        [
+          18.2,
+          31.04
+        ]
+      ],
+      "actual_frames": 931,
+      "source_hw": [
+        1080,
+        1920
+      ],
+      "mapping256": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.13333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.26666666666666666
+      },
+      "train_monitor": 1,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/7SXQS+1.00=7.00=charades@train_delete@7SXQS@444@wan+18.20=31.04=charades@train_delete@7SXQS@447@wan.mp4",
+      "cache_relative_path": "cache/77c37d281dee127bc5f4ae76",
+      "pts_sha256": "834ad3e7e146e6207c26e0768b3f7a7f340e5909789bce66cd31e365a635a0dc"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:C9VPX",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "2705ee2a9422ca650eb43f04582dad2b63897ab252ba3c5dab5a5bc735a20af6",
+      "video_id": "2ccc864ff184b8e0c920ae79",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:C9VPX",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 967,
+      "source_hw": [
+        270,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 1,
+      "video_relative_path": "real/charades/C9VPX.mp4",
+      "cache_relative_path": "cache/2ccc864ff184b8e0c920ae79",
+      "pts_sha256": "7ee6571c34f3b92bb7c14b4864c57a8c4f9def2db1c28bbc9bc22d72d24f173c"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:C9VPX",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "5152dbf8f677ba28f4921900855e2bf8223ce8d8db1d639c5b093887f52c5441",
+      "video_id": "627bdb51fd3b715a19f75444",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:C9VPX",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          7.8,
+          13.4
+        ]
+      ],
+      "actual_frames": 968,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 1,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/C9VPX+7.80=13.40=charades@train_delete@C9VPX@958@fcvg.mp4",
+      "cache_relative_path": "cache/627bdb51fd3b715a19f75444",
+      "pts_sha256": "8fb0d948d136e0c3369a9c519623c3a3d42db6bcb49af02f27f9dc1bffc4e14e"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/5746386",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "f8ecbb44f214ba892711c8e1f7b9f159e1839f5b51e25df569db2ea7b8fc7249",
+      "video_id": "5e281219c8a281ae6109f506",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:95qlg9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/5746386",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/95qlg9.zip",
+      "task": "remove the person on the blue ball",
+      "mask_sha256": "90055f336c93dd934a32b0a59d24a5e92db2247eb5d5617240d93039e18c7d12",
+      "index_base": 0,
+      "actual_frames": 90,
+      "source_hw": [
+        368,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/95qlg9.mp4",
+      "cache_relative_path": "cache/5e281219c8a281ae6109f506",
+      "pts_sha256": "def139cf223b5c54cb647c5bdfc78eb6371689e5c29d868ad3a736a3a7e7b9e3",
+      "mask_members_sha256": "422f7f380774e4d642572e14d28de3469f8807945e044f1ec41a9a7af72ddfba",
+      "mask_relative_path": "secondary_datasets/anakin/masks/95qlg9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/5746386",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "736287dc0141df83a786a34be2bf495897822f68c53165799b3098bec1baaede",
+      "video_id": "ceb1a2c7d9ba416daf788ea4",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:95qlg9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/5746386",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/95qlg9.zip",
+      "task": "remove the person on the blue ball",
+      "mask_sha256": "90055f336c93dd934a32b0a59d24a5e92db2247eb5d5617240d93039e18c7d12",
+      "index_base": 0,
+      "actual_frames": 90,
+      "source_hw": [
+        368,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/edited/95qlg9.mp4",
+      "cache_relative_path": "cache/ceb1a2c7d9ba416daf788ea4",
+      "pts_sha256": "def139cf223b5c54cb647c5bdfc78eb6371689e5c29d868ad3a736a3a7e7b9e3",
+      "mask_members_sha256": "422f7f380774e4d642572e14d28de3469f8807945e044f1ec41a9a7af72ddfba",
+      "mask_relative_path": "secondary_datasets/anakin/masks/95qlg9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/75085608",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "a6a93da0147c81a07597b38cb72b90d5e27d8da0483342d4d051005c5a7912b1",
+      "video_id": "aab916c01c66df953cc3a760",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:76rjm7",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/75085608",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/76rjm7.zip",
+      "task": "Remove the guy who goes with the phone",
+      "mask_sha256": "744eb707057fd6a5dbb327b0fe0626e1d7d39337100abe7eac5bcff64ebd4a99",
+      "index_base": 0,
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/76rjm7.mp4",
+      "cache_relative_path": "cache/aab916c01c66df953cc3a760",
+      "pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4",
+      "mask_members_sha256": "dbbf97285a2bc3b2bda3a7bc571a8885e97e703ba7ccd5e2b6b6b1d3dd49dcb9",
+      "mask_relative_path": "secondary_datasets/anakin/masks/76rjm7.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/75085608",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "c890a9918f5163517b9b5c0958638a6394a5ac3ea8882490d3f6db52cc318be5",
+      "video_id": "f45dc8b05d8e00b4a30a11df",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:76rjm7",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/75085608",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/76rjm7.zip",
+      "task": "Remove the guy who goes with the phone",
+      "mask_sha256": "744eb707057fd6a5dbb327b0fe0626e1d7d39337100abe7eac5bcff64ebd4a99",
+      "index_base": 0,
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/edited/76rjm7.mp4",
+      "cache_relative_path": "cache/f45dc8b05d8e00b4a30a11df",
+      "pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f",
+      "mask_members_sha256": "dbbf97285a2bc3b2bda3a7bc571a8885e97e703ba7ccd5e2b6b6b1d3dd49dcb9",
+      "mask_relative_path": "secondary_datasets/anakin/masks/76rjm7.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/336385849",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "bffd0606140f451a4245da2f32826c3b4892f2a2e6b672187f383e72a9ae9cc5",
+      "video_id": "7f6c4de78fd5220b6dbbea63",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:7p8r14",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/336385849",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/7p8r14.zip",
+      "task": "add panama hat",
+      "mask_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "index_base": 0,
+      "actual_frames": 78,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/7p8r14.mp4",
+      "cache_relative_path": "cache/7f6c4de78fd5220b6dbbea63",
+      "pts_sha256": "bdf7078d5493ab38724b2e234dbe79fae298eb4ab6e5eb324e27a03612cb3234",
+      "mask_members_sha256": "41ec8c6cbcb0c334f5827febc72ecfbcad46576a083f82f9ed4a1a021874dc5e",
+      "mask_relative_path": "secondary_datasets/anakin/masks/7p8r14.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/336385849",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "9b9c0b671a4633904dfeefb3b59296360304a81009a954b0a2b0644fce08d46a",
+      "video_id": "f0ba19d9d7098e420eff20ab",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:7p8r14",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/336385849",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/7p8r14.zip",
+      "task": "add panama hat",
+      "mask_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "index_base": 0,
+      "actual_frames": 78,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/edited/7p8r14.mp4",
+      "cache_relative_path": "cache/f0ba19d9d7098e420eff20ab",
+      "pts_sha256": "254d4998ae8a18c95ecfb0f50418851d4e847ff1993f55f859dac2743406a98c",
+      "mask_members_sha256": "41ec8c6cbcb0c334f5827febc72ecfbcad46576a083f82f9ed4a1a021874dc5e",
+      "mask_relative_path": "secondary_datasets/anakin/masks/7p8r14.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/31603044",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "d0da94053c871c41221303feff9ec9ead282702e456fe6c26e1220bff0b2d807",
+      "video_id": "5412ec415c6dc6000437ff00",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:40y1x9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/31603044",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/40y1x9.zip",
+      "task": "remove a dog running towards a person",
+      "mask_sha256": "3386b8fba9d8897a0cd4276e891c6476b7497741eaf0aaf033cfa52d2140cab3",
+      "index_base": 0,
+      "actual_frames": 150,
+      "source_hw": [
+        640,
+        360
+      ],
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/40y1x9.mp4",
+      "cache_relative_path": "cache/5412ec415c6dc6000437ff00",
+      "pts_sha256": "04ae951f7e6c93d3fdef059e4ec2df250b5f6d56ba13dc73e8772ae81a2130b0",
+      "mask_members_sha256": "2b9554b82353a19af1356b2644b9116b29b92e0358d3eb43a82884bbcdb36d9c",
+      "mask_relative_path": "secondary_datasets/anakin/masks/40y1x9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/31603044",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "e059ec82bd4328070c1fb03f2e9638ae0b2bba694450d1ca215532b966aacb60",
+      "video_id": "ac8efb162961478dd9f9af22",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:40y1x9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/31603044",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "annotation_source": "official masks/40y1x9.zip",
+      "task": "remove a dog running towards a person",
+      "mask_sha256": "3386b8fba9d8897a0cd4276e891c6476b7497741eaf0aaf033cfa52d2140cab3",
+      "index_base": 0,
+      "actual_frames": 150,
+      "source_hw": [
+        640,
+        360
+      ],
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "video_relative_path": "secondary_datasets/anakin/edited/40y1x9.mp4",
+      "cache_relative_path": "cache/ac8efb162961478dd9f9af22",
+      "pts_sha256": "89bdd950bf8268fa96a4e039bcc8e13f9de9f0494c8cd1bdeba54b50e5a645f3",
+      "mask_members_sha256": "2b9554b82353a19af1356b2644b9116b29b92e0358d3eb43a82884bbcdb36d9c",
+      "mask_relative_path": "secondary_datasets/anakin/masks/40y1x9.zip"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:9R4AQ",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "24c830fb22d92271fe32e8dae0e032d1a26a0824f7c8d6b8249d0de6cf371495",
+      "video_id": "455faa1d20d86c7a4e5ac65f",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:9R4AQ",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 711,
+      "source_hw": [
+        360,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/9R4AQ.mp4",
+      "cache_relative_path": "cache/455faa1d20d86c7a4e5ac65f",
+      "pts_sha256": "e808ea6d6c4d13fbd72783c335262af800cc3bd97ddb1d7edf7974a62b4f15d6"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:9R4AQ",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "b752f5ff0a047bfd3e9cc0bc69ed115bafdf1cdfea3701213ea0e81575b36710",
+      "video_id": "ebc293dba90b3c32b014af5b",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:9R4AQ",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          0.0,
+          4.7
+        ]
+      ],
+      "actual_frames": 711,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/9R4AQ+0.00=4.70=charades@train_add@9R4AQ@791@wan.mp4",
+      "cache_relative_path": "cache/ebc293dba90b3c32b014af5b",
+      "pts_sha256": "e808ea6d6c4d13fbd72783c335262af800cc3bd97ddb1d7edf7974a62b4f15d6"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:54VBR",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "b2a68d5333f7e40ed478520297782c8be3bef6ef2c5c6e1f1d8afb00a2d25741",
+      "video_id": "9b8eed0860e425653ded3577",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:54VBR",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 720,
+      "source_hw": [
+        360,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/54VBR.mp4",
+      "cache_relative_path": "cache/9b8eed0860e425653ded3577",
+      "pts_sha256": "2614a76b0b8c144017c1115193d6c90735d784d580a1d55639394baaecf6719d"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:54VBR",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "4da93fccd96788c6d3bc24a583eb4e684c82fa5fd21463c64b520f81961a4734",
+      "video_id": "1b5d09886b6ab579e0843ce5",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:54VBR",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          16.3,
+          23.8
+        ]
+      ],
+      "actual_frames": 721,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/54VBR+16.30=23.80=charades@train_delete@54VBR@382@fcvg.mp4",
+      "cache_relative_path": "cache/1b5d09886b6ab579e0843ce5",
+      "pts_sha256": "4809ff1e106ad352afdc59e945d9cb68bc57c593a887b3714e7ca83ca19ae87b"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:GK15U",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "b96039645ae6a00e739b9ec16bbec4d4b6e3385973d82be6061afc1aa0d7219f",
+      "video_id": "8a320346011857db379da130",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:GK15U",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 530,
+      "source_hw": [
+        270,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/GK15U.mp4",
+      "cache_relative_path": "cache/8a320346011857db379da130",
+      "pts_sha256": "d5c4e6b536d2ea084790b9c560701e22c36de8a84c124beeb0d42363d185deb9"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:GK15U",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "56b028b8e3cd2ac65a71442e3a2453496aaebf8fd36de66f3fac70c1cb2145f3",
+      "video_id": "821cea466fcce1266852f43c",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:GK15U",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          0.7,
+          6.9
+        ],
+        [
+          29.9,
+          31.79
+        ]
+      ],
+      "actual_frames": 532,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/GK15U+0.70=6.90=charades@train_delete@GK15U@598@wan+29.90=31.79=charades@train_delete@GK15U@599@wan.mp4",
+      "cache_relative_path": "cache/821cea466fcce1266852f43c",
+      "pts_sha256": "4aa22f367e9b53a12e5add5a42c8220edf99b7e64e86020b4b9ab276e14fab0f"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:44T8B",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "4be91099dbc7c5478302687b300aae540665ca2d1ec794c8faacbc28dda3b139",
+      "video_id": "77b52ae60ceb459e8cab443d",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:44T8B",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 712,
+      "source_hw": [
+        360,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/44T8B.mp4",
+      "cache_relative_path": "cache/77b52ae60ceb459e8cab443d",
+      "pts_sha256": "b76bee6239ed824b26763775ab03b2bb8673da8bdc649769acf03dd673ecc3db"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:44T8B",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "ba154b93288cc533987ad32f8be02505267281762cf21681cccb905ff1a93997",
+      "video_id": "eca336932d4faae37ddc851f",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:44T8B",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          0.0,
+          3.5
+        ]
+      ],
+      "actual_frames": 712,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/44T8B+0.00=3.50=charades@test_delete@44T8B@723@fcvg.mp4",
+      "cache_relative_path": "cache/eca336932d4faae37ddc851f",
+      "pts_sha256": "b76bee6239ed824b26763775ab03b2bb8673da8bdc649769acf03dd673ecc3db"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:LFU36",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "b8e396070cd73b9d0101ac0d34e911483273184b5755227ef6aa894d543f7c97",
+      "video_id": "314ed8b0b72ffa7da2c87c57",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:LFU36",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 824,
+      "source_hw": [
+        360,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/LFU36.mp4",
+      "cache_relative_path": "cache/314ed8b0b72ffa7da2c87c57",
+      "pts_sha256": "df38d83f9ac25c381a3395d87f969460bf862f8f65f312a628bed9828aab1751"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:LFU36",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "c715dc1c83d66f12d04fa6c2f9d08cddba96fd531558791742fe3dd0af62f809",
+      "video_id": "a6b3ee66c5d28699d2dfe01d",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:LFU36",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          0.0,
+          12.6
+        ]
+      ],
+      "actual_frames": 825,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/LFU36+0.00=12.60=charades@train_delete@LFU36@601@wan.mp4",
+      "cache_relative_path": "cache/a6b3ee66c5d28699d2dfe01d",
+      "pts_sha256": "a4c3de630499eca22b009bb206d8acd0e4baf1a00540018f70273d14fccea7bf"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:72HTA",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "04732e059eededc3e329f2f243a8d5654e415cbb20fc46c2e7cbd2d93a3687c4",
+      "video_id": "55c6dcb47e5a5688c9f563a8",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:72HTA",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 901,
+      "source_hw": [
+        270,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/72HTA.mp4",
+      "cache_relative_path": "cache/55c6dcb47e5a5688c9f563a8",
+      "pts_sha256": "e43c4ee219c95418cca53922108c7775449d8ef3dc9f6bd0a47a91144a596b55"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:72HTA",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "c6213f75864f3680ad6578b1439ab92d95aae5f0d0e3f376309a46dd6c905304",
+      "video_id": "3ee3a1b16ca3411faf3cd60f",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:72HTA",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          0.0,
+          11.0
+        ]
+      ],
+      "actual_frames": 901,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/72HTA+0.00=11.00=charades@train_delete@72HTA@426@fcvg.mp4",
+      "cache_relative_path": "cache/3ee3a1b16ca3411faf3cd60f",
+      "pts_sha256": "a37d3d797fe7f4cb85e0e2f528eebf772dc590ebb23b9bede0998191b6cb9a70"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:5GPOJ",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "b5947095d5093908eda9e2d37e863cf3bed99d0471d5e765c926b1b0a1853448",
+      "video_id": "54fe4199ac1efb901ddf55bb",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:5GPOJ",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 756,
+      "source_hw": [
+        270,
+        480
+      ],
+      "mapping256": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          270,
+          480
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/5GPOJ.mp4",
+      "cache_relative_path": "cache/54fe4199ac1efb901ddf55bb",
+      "pts_sha256": "a8ec14aef89885e179e2c08053ce5935e28b93696281b06192b735ed48916748"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:5GPOJ",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "2b9995bb158924616cd265c10392a45aec5a0a40cf62d1cea5a863317148af07",
+      "video_id": "773256753840d735a0bf6a99",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:5GPOJ",
+      "generator": "wan",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          9.6,
+          14.7
+        ]
+      ],
+      "actual_frames": 756,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/5GPOJ+9.60=14.70=charades@train_delete@5GPOJ@326@wan.mp4",
+      "cache_relative_path": "cache/773256753840d735a0bf6a99",
+      "pts_sha256": "1076621ab5c4a8c0a4e00f0a392c20dbfd67b70b2c468113ea7aa2cc31161b9c"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:L347E",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "e8e62eff3db3d7b96f633e3778f2ec446ebfaeb92ee1d5012b01392016effdee",
+      "video_id": "2055ca439549760e43a8ddf9",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "af:L347E",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [],
+      "actual_frames": 1015,
+      "source_hw": [
+        480,
+        270
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          270
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.5333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          270
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 1.0666666666666667
+      },
+      "train_monitor": 0,
+      "video_relative_path": "real/charades/L347E.mp4",
+      "cache_relative_path": "cache/2055ca439549760e43a8ddf9",
+      "pts_sha256": "a3bfa401c2715890300bffaa20e738fb000d4e433df5d47fb3167baf5b72c93e"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:L347E",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "083abd7c9ffb65c3d0ad0a7cae7cc7cf17b01dc6e858e2c6ab74cbec1f0bf031",
+      "video_id": "5bfac26aab7b1b8a810f6e9d",
+      "spatial_target": "edit_region",
+      "spatial_status": "missing",
+      "pair_id": "af:L347E",
+      "generator": "fcvg",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "official_split": "train",
+      "annotation_source": "official annot.zip",
+      "intervals_s": [
+        [
+          28.3,
+          33.8
+        ]
+      ],
+      "actual_frames": 1016,
+      "source_hw": [
+        720,
+        406
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          406
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.35555555555555557
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          406
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          289
+        ],
+        "pad_xy": [
+          111,
+          0
+        ],
+        "scale": 0.7111111111111111
+      },
+      "train_monitor": 0,
+      "video_relative_path": "official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/L347E+28.30=33.80=charades@train_delete@L347E@241@fcvg.mp4",
+      "cache_relative_path": "cache/5bfac26aab7b1b8a810f6e9d",
+      "pts_sha256": "0c9806827d839ff30395f1e2c3c806d1f9787f7e560aa16e9f4a0a25c7a6ea84"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/53936221",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "4d0d9d1cd518a2843d3a59ff40261cefddc58c584ad31328c1222e450ce3905a",
+      "video_id": "ba6243a7578ef8a64737d567",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:4xd3r9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/53936221",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4xd3r9.zip",
+      "task": "remove any 5 people",
+      "mask_sha256": "c20da6b1f22d7d9ed3792d60fad4192b0d3fa9f12d0fa73aff1d3f38d0a822de",
+      "index_base": 0,
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/4xd3r9.mp4",
+      "cache_relative_path": "cache/ba6243a7578ef8a64737d567",
+      "pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4",
+      "mask_members_sha256": "dbbf97285a2bc3b2bda3a7bc571a8885e97e703ba7ccd5e2b6b6b1d3dd49dcb9",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4xd3r9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/53936221",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "096ddad6ab567e2ff10f0e8c58f18779a8727da5402a0d21db5c01c05e8f4a67",
+      "video_id": "c98cb33f48392c108c40f206",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:4xd3r9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/53936221",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4xd3r9.zip",
+      "task": "remove any 5 people",
+      "mask_sha256": "c20da6b1f22d7d9ed3792d60fad4192b0d3fa9f12d0fa73aff1d3f38d0a822de",
+      "index_base": 0,
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/4xd3r9.mp4",
+      "cache_relative_path": "cache/c98cb33f48392c108c40f206",
+      "pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f",
+      "mask_members_sha256": "dbbf97285a2bc3b2bda3a7bc571a8885e97e703ba7ccd5e2b6b6b1d3dd49dcb9",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4xd3r9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/422525196",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "9af7cd24b7693c0851118f5cbd6eda8d7ea1b59c59e8edbb868152456c8e63a5",
+      "video_id": "cdc2ee33084c90a92487107e",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:4xd5r9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/422525196",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4xd5r9.zip",
+      "task": "add a necklace around your neck",
+      "mask_sha256": "d5c33c59ff681edf23c878b862f8f735ee98b59c2bc703e91f11b348f5dfe08b",
+      "index_base": 0,
+      "actual_frames": 120,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/4xd5r9.mp4",
+      "cache_relative_path": "cache/cdc2ee33084c90a92487107e",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d",
+      "mask_members_sha256": "ab51d2bdece8764117c20193ef5243079082e62f25c4b150a204692cb3a24555",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4xd5r9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/422525196",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "4e6eae45b8a7b1066aeb71a68b329a4b25c4f5be78cb5175921eb35defd01972",
+      "video_id": "2649719f53fe1a54aa56ab8f",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:4xd5r9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/422525196",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4xd5r9.zip",
+      "task": "add a necklace around your neck",
+      "mask_sha256": "d5c33c59ff681edf23c878b862f8f735ee98b59c2bc703e91f11b348f5dfe08b",
+      "index_base": 0,
+      "actual_frames": 120,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/4xd5r9.mp4",
+      "cache_relative_path": "cache/2649719f53fe1a54aa56ab8f",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d",
+      "mask_members_sha256": "ab51d2bdece8764117c20193ef5243079082e62f25c4b150a204692cb3a24555",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4xd5r9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/532330511",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "89bd8d4b4d32fc24a02c7b621b95935dd4a361192c11561413714887fd1f6322",
+      "video_id": "38834f95f2fd8ceb943c4243",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:7e2p57",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/532330511",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/7e2p57.zip",
+      "task": "Add dollar sign to t-shirt",
+      "mask_sha256": "686c3a9c2eeac36775033b922239162122fab317483966fbbb02aaad5617bd59",
+      "index_base": 0,
+      "actual_frames": 125,
+      "source_hw": [
+        480,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          128,
+          256
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          256,
+          512
+        ],
+        "pad_xy": [
+          0,
+          128
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/7e2p57.mp4",
+      "cache_relative_path": "cache/38834f95f2fd8ceb943c4243",
+      "pts_sha256": "5ac5f7c333f5e9c7f6d000be568654eee7cb239ebf29fe3814ab892158920a4e",
+      "mask_members_sha256": "90e75b64c3ec2479c0478ea18443a9094bd9f5c661a9b7c796e32ef4f1170f41",
+      "mask_relative_path": "secondary_datasets/anakin/masks/7e2p57.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/532330511",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "ce951c97b45cd3f2d297d02d47b8a07557415b06902b09d9d1aadc4d859349cb",
+      "video_id": "e55c9628ed7641f96707430e",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:7e2p57",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/532330511",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/7e2p57.zip",
+      "task": "Add dollar sign to t-shirt",
+      "mask_sha256": "686c3a9c2eeac36775033b922239162122fab317483966fbbb02aaad5617bd59",
+      "index_base": 0,
+      "actual_frames": 125,
+      "source_hw": [
+        480,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          128,
+          256
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          256,
+          512
+        ],
+        "pad_xy": [
+          0,
+          128
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/7e2p57.mp4",
+      "cache_relative_path": "cache/e55c9628ed7641f96707430e",
+      "pts_sha256": "fe38e9fd52947585aa976cc9ff5e70334b8af996c87f24fd2e34868d53335b88",
+      "mask_members_sha256": "90e75b64c3ec2479c0478ea18443a9094bd9f5c661a9b7c796e32ef4f1170f41",
+      "mask_relative_path": "secondary_datasets/anakin/masks/7e2p57.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/40886434",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "11bfc1b983095b295436c1f89a828eb681c76b466e42faae4daf2388eb43ef0a",
+      "video_id": "424b814a818225209898bae7",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:4rvro9",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/40886434",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4rvro9.zip",
+      "task": "add a hat to your head",
+      "mask_sha256": "1ffad297f8e482cd328a1494f223e24c6a3d3b6e7df89b065a8444b8d8d68496",
+      "index_base": 0,
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/4rvro9.mp4",
+      "cache_relative_path": "cache/424b814a818225209898bae7",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f",
+      "mask_members_sha256": "2b9554b82353a19af1356b2644b9116b29b92e0358d3eb43a82884bbcdb36d9c",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4rvro9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/40886434",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "75156f442400aa74f19e068755b1cc3b3bf0f89d236127543e94e8faafa60555",
+      "video_id": "a2a08b465a8cea8a95403ee7",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:4rvro9",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/40886434",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4rvro9.zip",
+      "task": "add a hat to your head",
+      "mask_sha256": "1ffad297f8e482cd328a1494f223e24c6a3d3b6e7df89b065a8444b8d8d68496",
+      "index_base": 0,
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/4rvro9.mp4",
+      "cache_relative_path": "cache/a2a08b465a8cea8a95403ee7",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f",
+      "mask_members_sha256": "2b9554b82353a19af1356b2644b9116b29b92e0358d3eb43a82884bbcdb36d9c",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4rvro9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/51633066",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "0490f70ee85a189ff317db76bb87732e88add5244aa1cdfa47bd176155c7f744",
+      "video_id": "5c2fda735c71289d10a3de7a",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:4wgx37",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/51633066",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4wgx37.zip",
+      "task": "remove the guy on the bike",
+      "mask_sha256": "31c57c9f4616cf83a62b05b4435b232acf4e57bfd52872d8dbc81bf3319854b7",
+      "index_base": 0,
+      "actual_frames": 120,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/4wgx37.mp4",
+      "cache_relative_path": "cache/5c2fda735c71289d10a3de7a",
+      "pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9",
+      "mask_members_sha256": "ab51d2bdece8764117c20193ef5243079082e62f25c4b150a204692cb3a24555",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4wgx37.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/51633066",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "76e4c9b14229509af55f838d05d5f21cea5c43e71c7e789d27e9adb0b4d23bb3",
+      "video_id": "f2cd41132415857399b19518",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:4wgx37",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/51633066",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/4wgx37.zip",
+      "task": "remove the guy on the bike",
+      "mask_sha256": "31c57c9f4616cf83a62b05b4435b232acf4e57bfd52872d8dbc81bf3319854b7",
+      "index_base": 0,
+      "actual_frames": 120,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/4wgx37.mp4",
+      "cache_relative_path": "cache/f2cd41132415857399b19518",
+      "pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269",
+      "mask_members_sha256": "ab51d2bdece8764117c20193ef5243079082e62f25c4b150a204692cb3a24555",
+      "mask_relative_path": "secondary_datasets/anakin/masks/4wgx37.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/47662435",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "2869ed35cdda48896e60cde6d99b084df11f87c64345462af4fd771da816079b",
+      "video_id": "43bf59b67bd6d45e8b8bf43e",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:71g867",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/47662435",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/71g867.zip",
+      "task": "remove people who appear in the frame to the right",
+      "mask_sha256": "c5df525f7c17f12a78f4670f7ae2eab3ba9a929ee123eacf544421fea074e731",
+      "index_base": 0,
+      "actual_frames": 96,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/71g867.mp4",
+      "cache_relative_path": "cache/43bf59b67bd6d45e8b8bf43e",
+      "pts_sha256": "1966faeff765dc59e46fdc264c2fbca63dd75ac03b0f4144d0d66000b70a2be0",
+      "mask_members_sha256": "e8e980399352ad595d3ec4b51b2d39b4ea2a6999f62bbbddf8e9f13b13235e40",
+      "mask_relative_path": "secondary_datasets/anakin/masks/71g867.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/47662435",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "343f016102dec99adbfb9170c5eed24d255625ae484b4c8d0dc86bcf0cd78bb2",
+      "video_id": "8a6ce2b60f7cb1353c2919cc",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:71g867",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/47662435",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/71g867.zip",
+      "task": "remove people who appear in the frame to the right",
+      "mask_sha256": "c5df525f7c17f12a78f4670f7ae2eab3ba9a929ee123eacf544421fea074e731",
+      "index_base": 0,
+      "actual_frames": 96,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/71g867.mp4",
+      "cache_relative_path": "cache/8a6ce2b60f7cb1353c2919cc",
+      "pts_sha256": "ebcd91cbbdc67783704f9f96bbb08ecf360b5cbe5a5bec60d4a3eee2fdcf1bb1",
+      "mask_members_sha256": "e8e980399352ad595d3ec4b51b2d39b4ea2a6999f62bbbddf8e9f13b13235e40",
+      "mask_relative_path": "secondary_datasets/anakin/masks/71g867.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/211093832",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "703eafcafbd3adc9b02c2a23204562e24b36be88929d760c908d724e3d0e3577",
+      "video_id": "d7b7aa3915ac3ddc0bf94b22",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:7e2e57",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/211093832",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/7e2e57.zip",
+      "task": "Add a cat walking across in front of a woman with a dog",
+      "mask_sha256": "21e6a41b2768a0c2efa1b95ecae64836d7977ef7a242566324abfd63f5977e6f",
+      "index_base": 0,
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/7e2e57.mp4",
+      "cache_relative_path": "cache/d7b7aa3915ac3ddc0bf94b22",
+      "pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9",
+      "mask_members_sha256": "ab51d2bdece8764117c20193ef5243079082e62f25c4b150a204692cb3a24555",
+      "mask_relative_path": "secondary_datasets/anakin/masks/7e2e57.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/211093832",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "0ad7c1904e45baa27b7478cd5171b3ddbeec49886b16b47a93dfa690707d7d3e",
+      "video_id": "e73bc60d4e2c5b994ee45ba4",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:7e2e57",
+      "generator": "splicing",
+      "original_url": "https://vimeo.com/211093832",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/7e2e57.zip",
+      "task": "Add a cat walking across in front of a woman with a dog",
+      "mask_sha256": "21e6a41b2768a0c2efa1b95ecae64836d7977ef7a242566324abfd63f5977e6f",
+      "index_base": 0,
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/7e2e57.mp4",
+      "cache_relative_path": "cache/e73bc60d4e2c5b994ee45ba4",
+      "pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269",
+      "mask_members_sha256": "ab51d2bdece8764117c20193ef5243079082e62f25c4b150a204692cb3a24555",
+      "mask_relative_path": "secondary_datasets/anakin/masks/7e2e57.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/644436285",
+      "role": "real",
+      "label": 0,
+      "video_sha256": "e8d7b21d25ed63e5f476902f59381c7bdaf7be5c42ab045fcc188a55354a009f",
+      "video_id": "2ad19f5f828cec54da51b511",
+      "spatial_target": "edit_region",
+      "spatial_status": "known_background",
+      "pair_id": "an:95q8g9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/644436285",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/95q8g9.zip",
+      "task": "remove the rider in the white hat along with the horse",
+      "mask_sha256": "c36b19a6310559d1f3c85963ec20efb5e3249c78b606f56a9e5af0a89c60b5cd",
+      "index_base": 0,
+      "actual_frames": 72,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/trimmed/95q8g9.mp4",
+      "cache_relative_path": "cache/2ad19f5f828cec54da51b511",
+      "pts_sha256": "bbddc0ecb6999a04e888f92a3e0a99a7139b6e04a67a844ab9a83f9524d779bc",
+      "mask_members_sha256": "19371755ecee2ed60e0dcecc533c89996bf69794856f7f54aa17768281855dc1",
+      "mask_relative_path": "secondary_datasets/anakin/masks/95q8g9.zip"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/644436285",
+      "role": "fake",
+      "label": 1,
+      "video_sha256": "6a9ba2d88bd6b7e23078b43a0d640f9d0faaefab6b055a4cf712fe53904e5a03",
+      "video_id": "37b22da558e1daee1e72b707",
+      "spatial_target": "edit_region",
+      "spatial_status": "edit_mask",
+      "pair_id": "an:95q8g9",
+      "generator": "inpainting",
+      "original_url": "https://vimeo.com/644436285",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "annotation_source": "official masks/95q8g9.zip",
+      "task": "remove the rider in the white hat along with the horse",
+      "mask_sha256": "c36b19a6310559d1f3c85963ec20efb5e3249c78b606f56a9e5af0a89c60b5cd",
+      "index_base": 0,
+      "actual_frames": 72,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "video_relative_path": "secondary_datasets/anakin/edited/95q8g9.mp4",
+      "cache_relative_path": "cache/37b22da558e1daee1e72b707",
+      "pts_sha256": "bbddc0ecb6999a04e888f92a3e0a99a7139b6e04a67a844ab9a83f9524d779bc",
+      "mask_members_sha256": "19371755ecee2ed60e0dcecc533c89996bf69794856f7f54aa17768281855dc1",
+      "mask_relative_path": "secondary_datasets/anakin/masks/95q8g9.zip"
+    }
+  ],
+  "full_external_manifest_sha256": "7a88a9d5ac86e4ae0b2a7af22b2e4be10501593ebaca25d8a3dd0f2119c07a30",
+  "statistics_sha256": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+  "frame_count": 21669
+}

@@ -166,8 +166,8 @@ def select(config,out):
 
 
 class Video:
-    def __init__(self,out,r,stats=None,grouping=None):
-        self.row=r;self.directory=out/'cache'/r['video_id'];self.stats=stats;self.grouping=grouping
+    def __init__(self,out,r,stats=None,grouping=None,*,cache_root=None,read_only=False):
+        self.row=r;self.directory=(Path(cache_root) if cache_root else out/'cache')/r['video_id'];self.stats=stats;self.grouping=grouping
         meta=json.loads((self.directory/'complete.json').read_text())
         if meta['video_sha256']!=r['video_sha256'] or meta['schema']!=SCHEMA:raise ValueError('VIDEO_CACHE_IDENTITY')
         self.arrays={k:np.load(self.directory/(k+'.npy'),mmap_mode='r') for k in meta['fields']}
@@ -178,6 +178,7 @@ class Video:
             key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:20]
             path=self.directory/('fitted_components_'+key+'.npy');sidecar=path.with_suffix('.json')
             if not sidecar.exists():
+                if read_only:raise FileNotFoundError('READ_ONLY_COMPONENT_CACHE_REQUIRED:'+str(sidecar))
                 tmp=path.with_name(path.name+'.tmp');a=self.arrays
                 comp=np.lib.format.open_memmap(tmp,mode='w+',dtype=np.int64,shape=(r['actual_frames'],256))
                 for i in range(r['actual_frames']):

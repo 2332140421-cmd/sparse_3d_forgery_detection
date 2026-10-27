@@ -33,9 +33,11 @@ def progress(out,stage,**fields):
     save(out/'progress.json',{'status':'RUNNING','stage':stage,'pid':os.getpid(),'unix_time':time.time(),**fields})
 
 
-def parameters_sha(model):
+def parameters_sha(model,common_only=False):
     h=hashlib.sha256()
-    for k,v in model.named_parameters():h.update(k.encode());h.update(v.detach().cpu().numpy().tobytes())
+    for k,v in model.named_parameters():
+        if common_only and k.startswith('detection_head.'):continue
+        h.update(k.encode());h.update(v.detach().cpu().numpy().tobytes())
     return h.hexdigest()
 
 
@@ -49,9 +51,10 @@ def pairs(rows,split):
 
 
 def update_pair(model,optimizer,pair,out,fitted,config,scaler):
-    started=time.monotonic();optimizer.zero_grad(set_to_none=True);total=0.;losses={k:0. for k in ['video','frame','pixel']}
+    started=time.monotonic();optimizer.zero_grad(set_to_none=True);total=0.
+    losses={k:0. for k in (['video','frame','pixel','pixel_bce','pixel_dice'] if config.get('source_run') else ['video','frame','pixel'])}
     for r in sorted(pair,key=lambda r:r['role']):
-        v=Video(out,r,fitted['statistics'],fitted['grouping'])
+        v=Video(out,r,fitted['statistics'],fitted['grouping'],cache_root=config.get('cache_root'),read_only=bool(config.get('source_run')))
         try:
             with torch.autocast('cuda',dtype=torch.bfloat16,enabled=config['amp']):
                 loss,parts=video_loss(model,v,config['chunk_frames'],True)
@@ -138,24 +141,36 @@ def checkpoint_payload(model,opt,scaler,identity,epoch,pair_index,history,online
 
 
 def train(config,out,rows,fitted,resume):
+    decoupling=bool(config.get('source_run'))
+    if decoupling:from . import head_decoupling as heads
+    conditions=heads.CONDITIONS if decoupling else CONDITIONS
+    evaluation_options={'cache_root':config['cache_root'],'read_only':True} if decoupling else {}
+    train_key='train' if decoupling else 'train_monitor'
     identity={'schema':SCHEMA,'manifest_sha256':digest(out/'joint_manifest.json'),'statistics_sha256':digest(out/'statistics.json'),
         'config_sha256':hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest(),
         'code_sha256':{str(p):digest(p) for p in [Path(__file__),Path(__file__).with_name('joint_data.py'),Path(__file__).with_name('model.py'),Path(__file__).with_name('metrics.py'),Path('research_tools/v8/full_video_training/model.py')]}}
+    if decoupling:
+        identity['code_sha256'][str(Path(heads.__file__))]=digest(Path(heads.__file__))
+        identity['source_assets']=json.loads((out/'asset_references.json').read_text())['small_file_hashes']
     train_pairs=pairs(rows,'train');dev=[r for r in rows if r['split']=='dev'];monitor=[r for r in rows if r.get('train_monitor')]
     initial_path=out/'paired_initialization.pt';initial_sha=None
-    for c in CONDITIONS:
+    for c in conditions:
         directory=out/c;directory.mkdir(exist_ok=True);summary_path=directory/'summary.json'
         if summary_path.exists() and json.loads(summary_path.read_text())['status']=='COMPLETE':
             if json.loads(summary_path.read_text())['identity']!=identity:raise ValueError('COMPLETE_RUN_IDENTITY_CHANGED')
             continue
-        seed_all(SEED);model=LocalizationModel(c,fitted['statistics']).cuda();sha=parameters_sha(model)
+        seed_all(SEED)
+        model=(heads.initial_model(c,fitted,Path(config['source_run'])) if decoupling else LocalizationModel(c,fitted['statistics'])).cuda()
+        sha=parameters_sha(model,common_only=decoupling)
         if initial_sha is not None and sha!=initial_sha:raise ValueError('UNPAIRED_PARAMETERS')
         initial_sha=sha
         if initial_path.exists():
             init=torch.load(initial_path,map_location='cpu',weights_only=False)
             if init['sha256']!=sha:raise ValueError('INITIALIZATION_CHANGED')
-            model.load_state_dict(init['model'],strict=True)
-            if parameters_sha(model)!=sha:raise ValueError('INITIALIZATION_PAYLOAD_CHANGED')
+            missing=model.load_state_dict(init['model'],strict=not decoupling)
+            if decoupling and (missing.unexpected_keys or any(not k.startswith('detection_head.') for k in missing.missing_keys)):
+                raise ValueError('INITIALIZATION_MODULES_CHANGED')
+            if parameters_sha(model,common_only=decoupling)!=sha:raise ValueError('INITIALIZATION_PAYLOAD_CHANGED')
         else:atomic_torch(initial_path,{'sha256':sha,'model':model.state_dict(),'statistics_sha256':identity['statistics_sha256']})
         opt=torch.optim.AdamW(model.parameters(),lr=config['lr'],weight_decay=config['weight_decay']);scaler=torch.amp.GradScaler('cuda',enabled=False)
         epoch=0;pair_index=0;history=[];online=[];updates=0;best=-float('inf');best_epoch=None;patience_ref=-float('inf');stale=0;elapsed=0.
@@ -168,7 +183,7 @@ def train(config,out,rows,fitted,resume):
             epoch,pair_index,history,online,updates,best,best_epoch,patience_ref,stale,elapsed=(cp[k] for k in ['epoch','pair_index','history','online','updates','best','best_epoch','patience_ref','stale','elapsed_s'])
             if epoch!=len(history) or pair_index!=len(online) or epoch>config['epochs']:raise ValueError('RECOVERY_POSITION_INCONSISTENT')
         begin=time.monotonic();stop_reason='max_epochs'
-        while epoch<config['epochs'] and stale<config['patience']:
+        while epoch<config['epochs'] and (decoupling or stale<config['patience']):
             epoch_start=time.monotonic();prior_pair_s=sum(r['elapsed_s'] for r in online);torch.cuda.reset_peak_memory_stats();model.train();ordered=[]
             by_dataset={d:sorted([key for key,pair in train_pairs.items() if pair[0]['dataset']==d]) for d in ['ActivityForensics','ANAKIN']}
             rng=random.Random(SEED+epoch)
@@ -182,41 +197,56 @@ def train(config,out,rows,fitted,resume):
                 atomic_torch(cp_path,payload)
                 if STOP:raise InterruptedError('SAFE_STOP_AT_PAIR_BOUNDARY; resume with --resume')
             progress(out,'evaluate',condition=c,epoch=epoch+1)
-            tm=evaluate(model,out,monitor,fitted,config['chunk_frames'],config['amp'])
-            dv=evaluate(model,out,dev,fitted,config['chunk_frames'],config['amp'],pixel_ap=(epoch+1)%5==0)
+            tm=evaluate(model,out,monitor,fitted,config['chunk_frames'],config['amp'],**({'pixel_ap':(epoch+1)%5==0,**evaluation_options} if decoupling else {}))
+            dv=evaluate(model,out,dev,fitted,config['chunk_frames'],config['amp'],pixel_ap=(epoch+1)%5==0,**evaluation_options)
             dice=dv['datasets']['ANAKIN']['spatial_dice']
             if dice is None:raise ValueError('DEV_NO_POSITIVE_SPATIAL_GT')
-            record={'condition':c,'epoch':epoch+1,'online_train':{k:float(np.mean([r[k] for r in online])) for k in ['loss','video','frame','pixel']},
-                'train_monitor':tm['datasets'],'dev':dv['datasets'],'lr':opt.param_groups[0]['lr'],
+            loss_keys=['loss','video','frame','pixel','pixel_bce','pixel_dice'] if decoupling else ['loss','video','frame','pixel']
+            record={'condition':c,'epoch':epoch+1,'online_train':{k:float(np.mean([r[k] for r in online])) for k in loss_keys},
+                train_key:tm['datasets'],'dev':dv['datasets'],'lr':opt.param_groups[0]['lr'],
                 'gradient_norm_mean':float(np.mean([r['gradient_norm'] for r in online])),'updates':updates,
                 'epoch_s':time.monotonic()-epoch_start+prior_pair_s,'epoch_time_convention':'active wall; resumed epoch adds measured prior pair time, excludes downtime',
                 'training_pair_s':sum(r['elapsed_s'] for r in online),
                 'evaluation_s':tm['elapsed_s']+dv['elapsed_s'],'frames':sum(r['frames'] for r in online),
                 'peak_allocated_bytes':torch.cuda.max_memory_allocated(),'peak_reserved_bytes':torch.cuda.max_memory_reserved()}
+            if decoupling:
+                save(directory/'epoch_metrics'/f'epoch_{epoch+1:02d}.json',{'train':tm,'dev':dv,'pair_updates':online,'pair_order':ordered})
             history.append(record);save(directory/'history.json',history);history_csv(directory/'history.csv',history)
             improved=dice>best
             if improved:best=dice;best_epoch=epoch+1
-            if dice>patience_ref+config['min_delta']:patience_ref=dice;stale=0
-            else:stale+=1
+            if not decoupling:
+                if dice>patience_ref+config['min_delta']:patience_ref=dice;stale=0
+                else:stale+=1
             epoch+=1;pair_index=0;online=[]
+            if decoupling:heads.curves(out,c,history)
             payload=checkpoint_payload(model,opt,scaler,{**identity,'condition':c},epoch,0,history,online,updates,best,best_epoch,patience_ref,stale,elapsed+time.monotonic()-begin)
             atomic_torch(cp_path,payload)
             if improved:atomic_torch(directory/'best.pt',payload)
             print(f'{c} epoch={epoch:02d} online={record["online_train"]["loss"]:.6f} dev_dice={dice:.6f} video_auc_AF={dv["datasets"]["ActivityForensics"]["video"]["auroc"]:.6f} video_auc_AN={dv["datasets"]["ANAKIN"]["video"]["auroc"]:.6f} best={best:.6f}@{best_epoch} seconds={record["epoch_s"]:.1f}',flush=True)
-        if stale>=config['patience']:stop_reason='early_stop_dev_dice_patience8_delta0.002'
+        if not decoupling and stale>=config['patience']:stop_reason='early_stop_dev_dice_patience8_delta0.002'
         progress(out,'final_metrics',condition=c)
-        last_metrics=evaluate(model,out,dev,fitted,config['chunk_frames'],config['amp'],pixel_ap=True)
-        last_monitor=evaluate(model,out,monitor,fitted,config['chunk_frames'],config['amp'])
+        last_metrics=evaluate(model,out,dev,fitted,config['chunk_frames'],config['amp'],pixel_ap=True,
+            **({'sample_dir':directory/'samples'/'last'/'dev','save_logits':True,**evaluation_options} if decoupling else {}))
+        last_monitor=evaluate(model,out,monitor,fitted,config['chunk_frames'],config['amp'],
+            **({'pixel_ap':True,'sample_dir':directory/'samples'/'last'/'train','save_logits':True,**evaluation_options} if decoupling else {}))
         best_cp=torch.load(directory/'best.pt',map_location='cpu',weights_only=False);model.load_state_dict(best_cp['model'])
-        best_metrics=evaluate(model,out,dev,fitted,config['chunk_frames'],config['amp'],pixel_ap=True,sample_dir=directory/'samples')
-        best_monitor=evaluate(model,out,monitor,fitted,config['chunk_frames'],config['amp'])
+        best_metrics=evaluate(model,out,dev,fitted,config['chunk_frames'],config['amp'],pixel_ap=True,
+            sample_dir=directory/'samples'/'best'/'dev' if decoupling else directory/'samples',
+            **({'save_logits':True,**evaluation_options} if decoupling else {}))
+        best_monitor=evaluate(model,out,monitor,fitted,config['chunk_frames'],config['amp'],
+            **({'pixel_ap':True,'sample_dir':directory/'samples'/'best'/'train','save_logits':True,**evaluation_options} if decoupling else {}))
         save(summary_path,{'status':'COMPLETE','best_epoch':best_epoch,'last_epoch':epoch,'stop_reason':stop_reason,
             'best_metrics':best_metrics,'last_metrics':last_metrics,'best_train_monitor':best_monitor,'last_train_monitor':last_monitor,
             'parameters':sum(p.numel() for p in model.parameters()),'initial_parameters_sha256':sha,
             'elapsed_s':elapsed+time.monotonic()-begin,'train_videos':sum(r['split']=='train' for r in rows),'dev_videos':len(dev),
             'finite_training':True,'updates':updates,'gradient_norms':'history.csv','identity':identity})
+        if decoupling:
+            summary=json.loads(summary_path.read_text())
+            summary['best_train']=summary.pop('best_train_monitor');summary['last_train']=summary.pop('last_train_monitor')
+            summary['additional_detection_parameters']=sum(p.numel() for p in model.detection_head.parameters()) if hasattr(model,'detection_head') else 0
+            save(summary_path,summary)
         del model,opt;torch.cuda.empty_cache()
-        if c==CONDITIONS[0]:report(out)
+        if c==conditions[0] and not decoupling:report(out)
 
 
 def main():
@@ -228,6 +258,17 @@ def main():
     torch.set_num_threads(4);os.environ.setdefault('TORCH_HOME',str(Path(config['workspace'])/'cache/torch'))
     os.environ.setdefault('MPLCONFIGDIR',str(Path(config['workspace'])/'cache/matplotlib'))
     try:
+        if config.get('source_run'):
+            from . import head_decoupling as heads
+            rows,fitted=heads.prepare(config,out)
+            if args.phase=='select':
+                save(out/'progress.json',{'status':'SELECTED','stage':'read_only_cache_verified','pid':os.getpid()});return
+            heads.smoke(config,out,rows,fitted,update_pair,progress,parameters_sha)
+            if args.phase=='smoke':
+                save(out/'progress.json',{'status':'SMOKE_COMPLETE','stage':'cached_pair_smoke','pid':os.getpid()});return
+            train(config,out,rows,fitted,args.resume);heads.report(out,rows)
+            heads.verify_source(out)
+            save(out/'progress.json',{'status':'COMPLETE','stage':'report_complete','pid':os.getpid(),'unix_time':time.time()});return
         progress(out,'selection');rows=select(config,out)
         if args.phase=='select':
             save(out/'progress.json',{'status':'SELECTED','stage':'candidate_queue_complete','pid':os.getpid()})

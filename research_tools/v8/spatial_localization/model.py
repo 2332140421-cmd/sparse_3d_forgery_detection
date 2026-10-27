@@ -1,4 +1,5 @@
 """Complete paired 256-structure/512-edit-region model for the joint pilot."""
+import copy
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -18,7 +19,7 @@ def dense_image(a):
 
 
 class LocalizationModel(nn.Module):
-    def __init__(self,condition,statistics):
+    def __init__(self,condition,statistics,output_mode='COUPLED'):
         super().__init__()
         if condition not in CONDITIONS:raise ValueError(condition)
         self.condition=condition
@@ -28,6 +29,10 @@ class LocalizationModel(nn.Module):
         self.geo1=nn.Conv2d(7,32,3,padding=1);self.geo2=nn.Conv2d(32,32,3,padding=1)
         self.fuse=nn.Conv2d(192,32,1);self.refine=nn.Conv2d(32,32,3,padding=1)
         self.decode=nn.Conv2d(40,16,3,padding=1);self.residual=nn.Conv2d(16,1,1)
+        if output_mode not in ('COUPLED','SEPARATE_HEADS'):raise ValueError(output_mode)
+        self.output_mode=output_mode
+        # Copy only after all common modules have consumed their random draws.
+        if output_mode=='SEPARATE_HEADS':self.detection_head=copy.deepcopy(self.structure.cell_head)
 
     def pixel(self,a,hidden,cells):
         content=dense_image(a['content']).bool();mask=a['content512'][:,None].bool()
@@ -64,14 +69,24 @@ class LocalizationModel(nn.Module):
             h,active,_,_,cells,history=VideoTraining(self.structure).chunk(
                 {k:cpu[k] for k in STRUCTURE_KEYS},previous.float(),previous_active,first,True)
         a={k:cpu[k].to(device) for k in ['rgb512','xyz','valid','content','content512','mu','area']}
-        return h,active,self.pixel(a,history,cells)
+        result=(h,active,self.pixel(a,history,cells))
+        if self.output_mode=='SEPARATE_HEADS':
+            with torch.autocast(device_type=device.type,enabled=False):
+                detection=self.detection_head(history.float()).squeeze(-1)
+            return (*result,detection)
+        return result
 
 
-def loss_sums(logits,a):
+def loss_sums(logits,a,detection=None,detailed=False):
     mask=a['content512'].bool();areas=mask.sum((-1,-2)).double()
-    weighted=torch.where(mask,logits.double(),-torch.inf)
-    frame=torch.logsumexp(weighted,(-1,-2))-areas.log()
-    numerator=torch.logsumexp(frame+areas.log(),0)
+    if detection is None:
+        weighted=torch.where(mask,logits.double(),-torch.inf)
+        frame=torch.logsumexp(weighted,(-1,-2))-areas.log();detection_areas=areas
+    else:
+        cell_area=a['area'].double();detection_areas=cell_area.sum(-1)
+        weights=torch.where(cell_area>0,cell_area.clamp_min(1).log(),-torch.inf)
+        frame=torch.logsumexp(detection.double()+weights,-1)-detection_areas.log()
+    numerator=torch.logsumexp(frame+detection_areas.log(),0)
     labels=a['frame_label'].to(logits.device)
     frame_loss=F.binary_cross_entropy_with_logits(frame,labels.double(),reduction='sum')
     known=a['pixel_known'].bool();gt=a['gt'].float()
@@ -81,26 +96,30 @@ def loss_sums(logits,a):
     positive=target.sum((-1,-2))>0
     dice=torch.where(positive,1-(2*(p*target).sum((-1,-2))+1)/(p.sum((-1,-2))+target.sum((-1,-2))+1),0.)
     pixel=((bce+dice)*known).sum()
-    return numerator,areas.sum(),frame_loss,pixel,known.sum(),frame
+    result=(numerator,detection_areas.sum(),frame_loss,pixel,known.sum(),frame)
+    return (*result,(bce*known).sum(),(dice*known).sum()) if detailed else result
 
 
 def video_loss(model,video,chunk_size=2,use_checkpoint=True):
     device=next(model.parameters()).device
     previous=torch.zeros(256,128,device=device);active=torch.zeros(256,dtype=torch.bool,device=device)
     numerator=torch.tensor(-torch.inf,device=device,dtype=torch.float64);area=torch.tensor(0.,device=device,dtype=torch.float64)
-    frames=torch.tensor(0.,device=device);pixels=frames.clone();known=frames.clone();count=video.row['actual_frames']
+    frames=torch.tensor(0.,device=device);pixels=frames.clone();known=frames.clone();bces=frames.clone();dices=frames.clone();count=video.row['actual_frames']
     def step(cpu,h,pa,first):
-        h,pa,logits=model.chunk(cpu,h,pa,first)
+        outputs=model.chunk(cpu,h,pa,first);h,pa,logits=outputs[:3]
         labels={k:cpu[k].to(device) for k in ['content512','gt','pixel_known','frame_label']}
-        n,a,f,p,k,_=loss_sums(logits,labels)
-        return h,pa,n,a,f,p,k
+        if len(outputs)==4:labels['area']=cpu['area'].to(device)
+        n,a,f,p,k,_,b,d=loss_sums(logits,labels,outputs[3] if len(outputs)==4 else None,True)
+        return h,pa,n,a,f,p,k,b,d
     for start in range(0,count,chunk_size):
         cpu=video.chunk(start,min(start+chunk_size,count))
         args=(cpu,previous,active,start==0)
         result=checkpoint(step,*args,use_reentrant=False) if use_checkpoint else step(*args)
-        previous,active,n,a,f,p,k=result
+        previous,active,n,a,f,p,k,b,d=result
         numerator=torch.logaddexp(numerator,n);area=area+a;frames=frames+f;pixels=pixels+p;known=known+k
+        bces=bces+b;dices=dices+d
     z=numerator-area.log()
     vl=F.binary_cross_entropy_with_logits(z,torch.tensor(float(video.row['label']),device=device,dtype=z.dtype))
     fl=frames/count;pl=pixels/known.clamp_min(1)
-    return vl+.5*fl+pl,{'video':vl,'frame':fl,'pixel':pl,'logit':z}
+    return vl+.5*fl+pl,{'video':vl,'frame':fl,'pixel':pl,'logit':z,
+                      'pixel_bce':bces/known.clamp_min(1),'pixel_dice':dices/known.clamp_min(1)}

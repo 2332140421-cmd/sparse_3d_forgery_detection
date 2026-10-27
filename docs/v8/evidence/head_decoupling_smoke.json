@@ -1,0 +1,99 @@
+{
+  "status": "COMPLETE",
+  "config_sha256": "46cdaa85796cd768054128f9b0f5b7889076189adedb50e6be08eaf89b88b2b8",
+  "common_initial_parameters_sha256": "a350fe6ee6f57095d82d895136660e8de7c925e383df609469bf7ef6dd8365ba",
+  "records": [
+    {
+      "condition": "COUPLED",
+      "dataset": "ActivityForensics",
+      "pair_id": "af:NK9RX",
+      "loss": 1.3030226954125816,
+      "video": 0.7061297700698004,
+      "frame": 0.6510817453083649,
+      "pixel": 0.27135205268859863,
+      "pixel_bce": 0.27135205268859863,
+      "pixel_dice": 0.0,
+      "gradient_norm": 0.3673801124095917,
+      "elapsed_s": 15.370061011053622,
+      "frames": 1478,
+      "evaluation_s": 5.209723901003599,
+      "exact_ap_evaluation_s": null,
+      "peak_allocated_bytes": 664016384,
+      "parameters": 362658,
+      "additional_parameters": 0
+    },
+    {
+      "condition": "COUPLED",
+      "dataset": "ANAKIN",
+      "pair_id": "an:95qlg9",
+      "loss": 2.0508980883300656,
+      "video": 0.7076479886016556,
+      "frame": 0.7076485234695766,
+      "pixel": 0.9894258379936218,
+      "pixel_bce": 0.5491302311420441,
+      "pixel_dice": 0.44029563665390015,
+      "gradient_norm": 0.4775465130805969,
+      "elapsed_s": 1.713397583924234,
+      "frames": 180,
+      "evaluation_s": 0.7136257388629019,
+      "exact_ap_evaluation_s": 2.318099807947874,
+      "peak_allocated_bytes": 623834112,
+      "parameters": 362658,
+      "additional_parameters": 0
+    },
+    {
+      "condition": "SEPARATE_HEADS",
+      "dataset": "ActivityForensics",
+      "pair_id": "af:NK9RX",
+      "loss": 1.303339403754224,
+      "video": 0.6947612047517944,
+      "frame": 0.6744522926276623,
+      "pixel": 0.27135205268859863,
+      "pixel_bce": 0.27135205268859863,
+      "pixel_dice": 0.0,
+      "gradient_norm": 0.4141715466976166,
+      "elapsed_s": 13.997568520251662,
+      "frames": 1478,
+      "evaluation_s": 5.323786017019302,
+      "exact_ap_evaluation_s": null,
+      "peak_allocated_bytes": 663595008,
+      "parameters": 370979,
+      "additional_parameters": 8321
+    },
+    {
+      "condition": "SEPARATE_HEADS",
+      "dataset": "ANAKIN",
+      "pair_id": "an:95qlg9",
+      "loss": 2.0322317060623023,
+      "video": 0.6952949529322275,
+      "frame": 0.6952952963831353,
+      "pixel": 0.9892891049385071,
+      "pixel_bce": 0.5489935576915741,
+      "pixel_dice": 0.44029536843299866,
+      "gradient_norm": 0.7124484777450562,
+      "elapsed_s": 1.7170928353443742,
+      "frames": 180,
+      "evaluation_s": 0.7274543261155486,
+      "exact_ap_evaluation_s": 2.3600497380830348,
+      "peak_allocated_bytes": 623481344,
+      "parameters": 370979,
+      "additional_parameters": 8321
+    }
+  ],
+  "projection_30_epochs": {
+    "COUPLED": {
+      "training_s": 2323.9868702634517,
+      "routine_eval_s": 2326.251129934506,
+      "extra_AP_extrapolated_s": 141.30068301741653,
+      "total_s": 4791.5386832153745
+    },
+    "SEPARATE_HEADS": {
+      "training_s": 2138.2959271740383,
+      "routine_eval_s": 2376.3916009690465,
+      "extra_AP_extrapolated_s": 143.77723594726996,
+      "total_s": 4658.464764090355
+    }
+  },
+  "projection_limits": "one full pair/dataset; excludes final best/last extra eval and exports; includes measured ANAKIN AP extrapolation",
+  "smoke_weights": "discarded; formal conditions recreate the paired random initialization"
+}

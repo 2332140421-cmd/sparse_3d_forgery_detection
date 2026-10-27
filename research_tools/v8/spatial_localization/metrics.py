@@ -34,20 +34,22 @@ def spatial_frame(prediction,gt):
 
 
 @torch.no_grad()
-def evaluate_video(model,video,chunk,amp=False,pixel_ap=False,sample_dir=None):
+def evaluate_video(model,video,chunk,amp=False,pixel_ap=False,sample_dir=None,save_logits=False):
     started=time.monotonic();r=video.row;device=next(model.parameters()).device
     previous=torch.zeros(256,128,device=device);active=torch.zeros(256,dtype=torch.bool,device=device)
-    numerator=torch.tensor(-torch.inf,device=device,dtype=torch.float64);area=0.;fl=0.;pl=0.;known=0
+    numerator=torch.tensor(-torch.inf,device=device,dtype=torch.float64);area=0.;fl=0.;pl=0.;known=0;pb=0.;pd=0.
     labels=[];scores=[];ious=[];dices=[];aps=[];empty_fps=[];samples={int(r['actual_frames']*f) for f in [.25,.5,.75]}
     pixel_cm=np.zeros((2,2),np.int64)
     if sample_dir:Path(sample_dir).mkdir(parents=True,exist_ok=True)
     for start in range(0,r['actual_frames'],chunk):
         a=video.chunk(start,min(start+chunk,r['actual_frames']))
         with torch.autocast(device_type=device.type,dtype=torch.bfloat16,enabled=amp):
-            previous,active,logits=model.chunk(a,previous,active,start==0)
+            outputs=model.chunk(a,previous,active,start==0);previous,active,logits=outputs[:3]
         loss_inputs={k:a[k].to(device) for k in ['content512','gt','pixel_known','frame_label']}
-        n,ar,f,p,k,frame=loss_sums(logits,loss_inputs)
+        if len(outputs)==4:loss_inputs['area']=a['area'].to(device)
+        n,ar,f,p,k,frame,b,d=loss_sums(logits,loss_inputs,outputs[3] if len(outputs)==4 else None,True)
         numerator=torch.logaddexp(numerator,n);area+=float(ar);fl+=float(f);pl+=float(p);known+=int(k)
+        pb+=float(b);pd+=float(d)
         labels.extend(a['frame_label'].tolist());scores.extend(frame.cpu().tolist())
         for j,z in enumerate(logits.float().cpu().numpy()):
             fi=start+j;gt=video.native_gt(fi);native=to_source(z,r['mapping512']);prediction=native>=0
@@ -66,10 +68,19 @@ def evaluate_video(model,video,chunk,amp=False,pixel_ap=False,sample_dir=None):
                 cv2.putText(preview,'RGB | '+('GT MISSING' if gt is None else 'GT edit region')+' | prediction logit>=0',
                     (10,25),cv2.FONT_HERSHEY_SIMPLEX,.7,(255,255,0),2)
                 cv2.imwrite(str(Path(sample_dir)/f'{r["video_id"]}_{fi}.jpg'),preview[:,:,::-1])
+                if save_logits and r['dataset']=='ANAKIN':
+                    np.savez_compressed(Path(sample_dir)/f'{r["video_id"]}_{fi}.npz',
+                        logits=z.astype(np.float32),gt512=a['gt'][j].numpy(),native_gt=gt,
+                        content512=a['content512'][j].numpy(),rgb512=rgb,
+                        pts_s=np.array(r['pts'][fi]['pts_s']),frame_index=np.array(fi),
+                        metadata=np.array(json.dumps({'video_id':r['video_id'],'source_id':r['source_id'],
+                            'split':r['split'],'role':r['role'],'mapping512':r['mapping512'],
+                            'output_mode':getattr(model,'output_mode','COUPLED'),'spatial_target':'edit_region'})))
     z=float(numerator)-np.log(area);vl=float(np.logaddexp(0,z)-r['label']*z)
     result={k:r[k] for k in ['video_id','pair_id','source_id','dataset','split','label','role','generator']}
     result.update(logit=z,frame_labels=labels,frame_scores=scores,
         loss_video=vl,loss_frame=fl/r['actual_frames'],loss_pixel=pl/max(known,1),
+        loss_pixel_bce=pb/max(known,1),loss_pixel_dice=pd/max(known,1),
         loss=vl+.5*fl/r['actual_frames']+pl/max(known,1),
         spatial_iou=float(np.mean(ious)) if ious else None,spatial_dice=float(np.mean(dices)) if dices else None,
         pixel_ap=float(np.mean(aps)) if aps else None,pixel_ap_reason=None if aps else 'not_scheduled_or_no_positive_GT',
@@ -96,7 +107,7 @@ def aggregate(records):
     for dataset in ['ActivityForensics','ANAKIN']:
         rr=[r for r in records if r['dataset']==dataset]
         if not rr:continue
-        mean=lambda k:float(np.mean([r[k] for r in rr if r[k] is not None])) if any(r[k] is not None for r in rr) else None
+        mean=lambda k:float(np.mean([r[k] for r in rr if r.get(k) is not None])) if any(r.get(k) is not None for r in rr) else None
         real=[r for r in rr if r['role']=='real']
         result[dataset]={'video':classification([r['label'] for r in rr],[r['logit'] for r in rr]),
             'frame':classification([y for r in rr for y in r['frame_labels']],[z for r in rr for z in r['frame_scores']]),
@@ -107,7 +118,7 @@ def aggregate(records):
             'pixel_ap_reason':None if mean('pixel_ap') is not None else 'not_scheduled_or_no_positive_spatial_GT',
             'pixel_confusion_matrix':np.sum([r['pixel_confusion_matrix'] for r in rr if r.get('pixel_confusion_matrix') is not None],axis=0).tolist() if any(r.get('pixel_confusion_matrix') is not None for r in rr) else None,
             'pixel_confusion_scope':'pooled counts of known native GT pixels; does not replace positive-video mean Dice',
-            **{k:mean(k) for k in ['loss','loss_video','loss_frame','loss_pixel','spatial_iou','spatial_dice','pixel_ap']}}
+            **{k:mean(k) for k in ['loss','loss_video','loss_frame','loss_pixel','loss_pixel_bce','loss_pixel_dice','spatial_iou','spatial_dice','pixel_ap']}}
     result['dataset_macro']={k:(float(np.mean([v['video'][k] for v in result.values() if v['video'][k] is not None]))
                               if any(v['video'][k] is not None for v in result.values()) else None)
                               for k in ['auroc','ap','acc','precision','recall','f1']}
@@ -120,11 +131,11 @@ def aggregate(records):
     return result
 
 
-def evaluate(model,out,rows,fit,chunk,amp=False,pixel_ap=False,sample_dir=None):
+def evaluate(model,out,rows,fit,chunk,amp=False,pixel_ap=False,sample_dir=None,*,cache_root=None,read_only=False,save_logits=False):
     started=time.monotonic();model.eval();records=[]
     for r in rows:
-        v=Video(out,r,fit['statistics'],fit['grouping'])
-        try:records.append(evaluate_video(model,v,chunk,amp,pixel_ap,sample_dir))
+        v=Video(out,r,fit['statistics'],fit['grouping'],cache_root=cache_root,read_only=read_only)
+        try:records.append(evaluate_video(model,v,chunk,amp,pixel_ap,sample_dir,save_logits))
         finally:v.close()
     return {'datasets':aggregate(records),'records':records,'elapsed_s':time.monotonic()-started,
         'pixel_ap_scheduled':pixel_ap,'spatial_aggregation':'positive GT frames mean within video, then video mean; empty backgrounds excluded from Dice/IoU'}

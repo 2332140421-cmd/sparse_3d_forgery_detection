@@ -81,3 +81,7 @@ results, or inconsistency between the paper and implementation.
   User authorizes selected full-video frontend extraction and two paired-initialized
   CELL_LOC/COMPONENT_LOC models. Keep both 256 geometry and 512 localization paths,
   all-frame temporal gradients, and edit-region labels distinct from old visible-anomaly labels.
+- Head decoupling: ADR-0023 and `docs/v8/head_decoupling_contract.md` authorize
+  COUPLED/SEPARATE_HEADS on full COMPONENT_LOC, original monitor16 training/dev32,
+  original train96 statistics, read-only source caches, and exactly30 epochs.
+  Separate detection head reads GRU hidden; never gate pixel masks by detection.

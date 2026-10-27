@@ -25,3 +25,4 @@
 - [ADR 0013: V8 full-coverage observation field](0013-v8-full-coverage-observation-field.md)
 
 - [ADR-0022：V8完整联合编辑区域定位](0022-v8-joint-spatial-localization.md)
+- [ADR-0023：V8检测与空间定位输出分离](0023-v8-spatial-head-decoupling.md)
