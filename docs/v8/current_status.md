@@ -12,7 +12,9 @@
 仅SPATIAL_TRANSFER/SPATIAL_3D_CONTEXT，全部原ANAKIN训练48/开发16，共7984帧；
 原缓存/原96训练统计只读。官方AINPAINT完整定位权重已匹配，横竖屏官方forward与量化、
 零修正一致性通过；64视频共享冻结特征已完成，两个条件完整pair两次实际更新及评价通过，
-准备提交推送后正式独立运行，当前尚无正式训练结果。
+代码`d53fb5a`先提交推送后，2026-10-29 04:20:38在独立tmux
+`v8_pretrained_spatial_context_pilot_v1`启动单入口，当前RUNNING，尚无完整正式结果。
+先验证现有资产/特征，再epoch0、两个条件训练和自动报告；不逐轮人工调参或轮询。
 本轮不改历史检测/定位成绩，不自动追加条件。
 
 2026-10-27新增用户授权[输出分离对照](../experiments/v8-spatial-head-decoupling.md)，

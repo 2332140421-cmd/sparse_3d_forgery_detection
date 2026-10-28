@@ -1,6 +1,6 @@
 # V8预训练空间定位基础与三维时序上下文增强
 
-日期2026-10-29。当前阶段PREFLIGHT_COMPLETE：未启动正式训练，尚无本轮模型分数。
+日期2026-10-29。当前状态RUNNING：独立入口已启动，尚无完整正式评价或最终结论。
 基于审阅提交`1cafc51e01f3d0b668b99680522fa655f7320f82`建立
 `v8-pretrained-spatial-context`，旧实验不变。
 
@@ -80,6 +80,23 @@ OMP_NUM_THREADS=4 \
 正式运行前需先通过完整定位权重加载、横竖屏官方forward/量化/零修正一致性、
 两条件完整ANAKIN pair两次真实更新及评价smoke，再提交推送和独立tmux启动。
 权重不能完整恢复则资产阻塞，不用随机decoder替代。
+
+### 本次启动
+
+上述前置验证已全部通过。执行代码提交`d53fb5a914769ac1cfecb1d66157eb5d67d8d1d1`
+已先普通push。北京时间2026-10-29 04:20:38独立启动：
+
+```bash
+tmux attach -t v8_pretrained_spatial_context_pilot_v1
+```
+
+日志绝对路径：
+`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_pretrained_spatial_context_pilot_v1/run.log`
+
+`tee`同时输出到tmux画面和日志，会话设置remain-on-exit，退出后保留画面。
+同目录`launch.json`保存代码提交/命令/启动时刻，`progress.json`为当前执行状态。
+启动先验证资产和已存在特征SHA，复用smoke证据，再完整epoch0评价、训练A/B、最终评价/报告。
+RUNNING不表示两模型成绩已完成；实际早停、指标与最终存储需完成后集中审阅。
 
 Python最终自动写`report_zh.md`、`result_summary.json`、`index.html`和固定原始F32 NPZ；
 best/last完整train/dev Dice/IoU/AP/real空间FP、epoch0、参数/成本分列。
