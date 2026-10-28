@@ -85,3 +85,9 @@ results, or inconsistency between the paper and implementation.
   COUPLED/SEPARATE_HEADS on full COMPONENT_LOC, original monitor16 training/dev32,
   original train96 statistics, read-only source caches, and exactly30 epochs.
   Separate detection head reads GRU hidden; never gate pixel masks by detection.
+- Pretrained spatial/context comparison: ADR-0024 and
+  `docs/v8/pretrained_spatial_context_contract.md` authorize the two specified
+  conditions, full ANAKIN48 train/16 dev, frozen official AINPAINT spatial backbone
+  including trained LoRA, and spatial-only decoder training. The context condition
+  adds full dense geometry/component/attention/GRU through zero-initialized residual
+  projection. Source caches/statistics remain read-only; no old trained weights.

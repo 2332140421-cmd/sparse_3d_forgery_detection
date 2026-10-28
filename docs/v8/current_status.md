@@ -1,11 +1,19 @@
 # V8 当前状态与边界
 
-更新2026-10-28。当前工作分支`v8-spatial-head-decoupling`，既有V8历史基线为远端
+更新2026-10-29。当前工作分支`v8-pretrained-spatial-context`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
 ## 当前执行：完整联合编辑区域定位
+
+2026-10-29用户授权[预训练空间定位与三维时序增强](../experiments/v8-pretrained-spatial-context.md)，
+协议[pretrained_spatial_context_contract.md](pretrained_spatial_context_contract.md)、ADR-0024。
+仅SPATIAL_TRANSFER/SPATIAL_3D_CONTEXT，全部原ANAKIN训练48/开发16，共7984帧；
+原缓存/原96训练统计只读。官方AINPAINT完整定位权重已匹配，横竖屏官方forward与量化、
+零修正一致性通过；64视频共享冻结特征已完成，两个条件完整pair两次实际更新及评价通过，
+准备提交推送后正式独立运行，当前尚无正式训练结果。
+本轮不改历史检测/定位成绩，不自动追加条件。
 
 2026-10-27新增用户授权[输出分离对照](../experiments/v8-spatial-head-decoupling.md)，
 分支`v8-spatial-head-decoupling`；原monitor16完整训练/原dev32，固定30轮，原缓存只读。

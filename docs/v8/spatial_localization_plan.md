@@ -90,3 +90,13 @@ ANAKIN公开标签表示编辑区域，与上文人工入口的可见异常区�
 仍需单独冻结。17/20对mask结构可对应，11对同时初审符合场景；仍需全段播放器确认，
 用户已确认mask像素细节；外观装饰分布本身仍不能直接证明人体结构定位适用。TVIL空间资产尚未核实。
 见[核验报告](secondary_dataset_review.md)；后续不自动扩大下载或启动训练。
+
+## 2026-10-29当前授权：预训练空间基础与上下文
+
+原随机联合定位和输出分离已完成，后者未改善定位。本轮改用完整官方AINPAINT
+spatial预训练定位基础，与零初始化残差接入的dense几何+完整component/attention/GRU比较。
+以[新合同](pretrained_spatial_context_contract.md)、ADR-0024和
+[实验记录](../experiments/v8-pretrained-spatial-context.md)为准。
+这取代上文作为“下一步”的过时提案，不改历史实验或人工接口标签记录。
+全部原ANAKIN训练24pair/开发8pair完整帧，固定共享冻结视觉特征，空间监督，
+不重跑前端、不用AF媒体更新、不再试输出头分离。

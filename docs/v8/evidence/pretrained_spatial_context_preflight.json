@@ -1,0 +1,628 @@
+{
+  "stage": "PREFLIGHT_COMPLETE",
+  "download": {
+    "status": "DOWNLOADED",
+    "source": "https://drive.google.com/file/d/1Wz4IZ046XTsikE6wPUc7_VDWxZJbzs9d/view",
+    "path": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
+    "tool": "gdown5.2.0 isolated /tmp",
+    "attempts": [],
+    "bytes": 1266224146,
+    "sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
+    "elapsed_s": 1527.9006525450386
+  },
+  "load": {
+    "official_revision": "753ae1b700b054c97e15569718690211e36cdf53",
+    "dino_revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
+    "checkpoint_sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
+    "checkpoint_bytes": 1266224146,
+    "source_epoch": 6,
+    "localization_keys": 575,
+    "excluded_classification_keys": [
+      "encoder.head_features.1.weight",
+      "encoder.head_features.1.bias",
+      "encoder.classifier.1.weight",
+      "encoder.classifier.1.bias"
+    ],
+    "backbone_parameters": 305952048,
+    "trained_lora_parameters": 1579312,
+    "decoder_parameters": 2094017,
+    "preprocess": "RGB/255; black pad right6 bottom6 to518; official ImageNet mean/std; no crop",
+    "loaded_backbone_lora_decoder": "all required keys and shapes matched; only unused classification excluded"
+  },
+  "official_forward_probe": [
+    {
+      "video_id": "5e281219c8a281ae6109f506",
+      "source_hw": [
+        368,
+        640
+      ],
+      "quantization_mean_abs": 1.354600726699573e-06,
+      "quantization_max_abs": 7.677078247070312e-05,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 2.818298526108265e-05,
+      "repeated_backbone_logits_max_abs": 0.00016164779663085938,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      }
+    },
+    {
+      "video_id": "ceb1a2c7d9ba416daf788ea4",
+      "source_hw": [
+        368,
+        640
+      ],
+      "quantization_mean_abs": 2.0142140328971436e-06,
+      "quantization_max_abs": 8.96453857421875e-05,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 3.8623809814453125e-05,
+      "repeated_backbone_logits_max_abs": 0.00025832653045654297,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      }
+    },
+    {
+      "video_id": "5412ec415c6dc6000437ff00",
+      "source_hw": [
+        640,
+        360
+      ],
+      "quantization_mean_abs": 1.485810003032384e-06,
+      "quantization_max_abs": 0.00011205673217773438,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 6.42538070678711e-05,
+      "repeated_backbone_logits_max_abs": 0.0002951622009277344,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      }
+    },
+    {
+      "video_id": "ac8efb162961478dd9f9af22",
+      "source_hw": [
+        640,
+        360
+      ],
+      "quantization_mean_abs": 2.172847644033027e-06,
+      "quantization_max_abs": 8.726119995117188e-05,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 0.00010752677917480469,
+      "repeated_backbone_logits_max_abs": 0.00020694732666015625,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      }
+    }
+  ],
+  "native_decode_mapping": [
+    {
+      "video_id": "5e281219c8a281ae6109f506",
+      "frame_index": 45,
+      "native_decoded_matches_cached_RGB512": true,
+      "source_hw": [
+        368,
+        640
+      ],
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      },
+      "extra_padding_right_bottom": [
+        6,
+        6
+      ]
+    },
+    {
+      "video_id": "5412ec415c6dc6000437ff00",
+      "frame_index": 75,
+      "native_decoded_matches_cached_RGB512": true,
+      "source_hw": [
+        640,
+        360
+      ],
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      },
+      "extra_padding_right_bottom": [
+        6,
+        6
+      ]
+    }
+  ],
+  "directed_tests": {
+    "new_path": 10,
+    "old_head_decoupling": 7,
+    "old_joint": 10,
+    "total": 27
+  },
+  "limits": "official real/edited horizontal/portrait probes and both full pair two-update smoke passed; smoke discarded; no formal scores yet",
+  "actual_cache_parity": [
+    {
+      "video_id": "5e281219c8a281ae6109f506",
+      "source_hw": [
+        368,
+        640
+      ],
+      "quantization_mean_abs": 1.2778797099599615e-05,
+      "quantization_max_abs": 0.00027239322662353516,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 2.818298526108265e-05,
+      "repeated_backbone_logits_max_abs": 0.00016164779663085938,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      }
+    },
+    {
+      "video_id": "ceb1a2c7d9ba416daf788ea4",
+      "source_hw": [
+        368,
+        640
+      ],
+      "quantization_mean_abs": 2.1233490770100616e-05,
+      "quantization_max_abs": 0.0003859996795654297,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 3.8623809814453125e-05,
+      "repeated_backbone_logits_max_abs": 0.00025832653045654297,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      }
+    },
+    {
+      "video_id": "5412ec415c6dc6000437ff00",
+      "source_hw": [
+        640,
+        360
+      ],
+      "quantization_mean_abs": 1.0351068340241909e-05,
+      "quantization_max_abs": 0.00021219253540039062,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 6.42538070678711e-05,
+      "repeated_backbone_logits_max_abs": 0.0002951622009277344,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      }
+    },
+    {
+      "video_id": "ac8efb162961478dd9f9af22",
+      "source_hw": [
+        640,
+        360
+      ],
+      "quantization_mean_abs": 1.15791108328267e-05,
+      "quantization_max_abs": 0.00023698806762695312,
+      "threshold_flip_fraction": 0.0,
+      "AB_max_abs": 0.0,
+      "same_official_tokens_decode_max_abs": 0.0,
+      "repeated_backbone_features_max_abs": 0.00010752677917480469,
+      "repeated_backbone_logits_max_abs": 0.00020694732666015625,
+      "official_forward_vs_feature_decode": "PASS",
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      }
+    }
+  ],
+  "features": {
+    "seconds": 579.9945473140106,
+    "frames": 7984,
+    "seconds_per_frame": 0.07264460762951035,
+    "bytes": 22384844800,
+    "backbone_training": "frozen including trained LoRA; always eval; no per-epoch encoder calls"
+  },
+  "smoke": {
+    "config_sha256": "adde0933bf3147af0da5fbdf5bd2390796bd1607f87e46b8964dcc4e471a426d",
+    "records": [
+      {
+        "condition": "SPATIAL_TRANSFER",
+        "pair_id": "an:95qlg9",
+        "updates": [
+          {
+            "loss": 0.6437885761260986,
+            "bce": 0.446161188185215,
+            "dice": 0.19762736558914185,
+            "gradient_norm": 3.700979471206665,
+            "branch_grad_abs_sum": {},
+            "seconds": 1.4605343909934163,
+            "frames": 180
+          },
+          {
+            "loss": 0.43264542520046234,
+            "bce": 0.25596532970666885,
+            "dice": 0.1766800880432129,
+            "gradient_norm": 2.603273630142212,
+            "branch_grad_abs_sum": {},
+            "seconds": 0.975196611136198,
+            "frames": 180
+          }
+        ],
+        "evaluation_s": 0.48056206898763776,
+        "exact_AP_evaluation_s": 1.8336523659527302,
+        "peak_allocated_bytes": 375171072,
+        "trainable_parameters": 2094017,
+        "model_parameters": 308046065,
+        "frozen_backbone_parameters": 305952048
+      },
+      {
+        "condition": "SPATIAL_3D_CONTEXT",
+        "pair_id": "an:95qlg9",
+        "updates": [
+          {
+            "loss": 0.6437885761260986,
+            "bce": 0.446161188185215,
+            "dice": 0.19762736558914185,
+            "gradient_norm": 3.7031171321868896,
+            "branch_grad_abs_sum": {
+              "geometry": 0.0,
+              "gru": 0.0,
+              "projection": 2.7805097103118896
+            },
+            "seconds": 2.0516492943279445,
+            "frames": 180
+          },
+          {
+            "loss": 0.4318763166666031,
+            "bce": 0.2552945017814636,
+            "dice": 0.17658187448978424,
+            "gradient_norm": 2.599850654602051,
+            "branch_grad_abs_sum": {
+              "geometry": 0.0027907134499400854,
+              "gru": 0.025179274380207062,
+              "projection": 2.736926555633545
+            },
+            "seconds": 1.8651612340472639,
+            "frames": 180
+          }
+        ],
+        "evaluation_s": 0.7626604209654033,
+        "exact_AP_evaluation_s": 2.1480659171938896,
+        "peak_allocated_bytes": 660058624,
+        "trainable_parameters": 2569665,
+        "model_parameters": 308530034,
+        "frozen_backbone_parameters": 305952048
+      }
+    ],
+    "projection_max30": {
+      "SPATIAL_TRANSFER": {
+        "train30_s": 1253.9955109297298,
+        "routine_eval30_s": 639.4679264662167,
+        "extra_dev_AP6_s": 81.45603587729856
+      },
+      "SPATIAL_3D_CONTEXT": {
+        "train30_s": 2016.5046203585032,
+        "routine_eval30_s": 1014.84680016463,
+        "extra_dev_AP6_s": 83.40141087295487
+      }
+    },
+    "smoke_weights": "discarded; recreate paired official decoder and zero projection",
+    "limits": "one complete train pair; final full AP and exports excluded; early stopping may shorten"
+  }
+}

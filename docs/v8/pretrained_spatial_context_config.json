@@ -1,0 +1,15 @@
+{
+  "protocol": "v8-pretrained-spatial-context-v1",
+  "workspace": "/media/njupt/8FCD3869E2FAB06F/chenyh",
+  "source_run": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_pretrained_spatial_context_pilot_v1",
+  "official_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/AINPAINT-CVIU26",
+  "dino_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/dinov2-ainpaint",
+  "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
+  "checkpoint_sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
+  "seed": 20260909,
+  "chunk_frames": 2,
+  "feature_chunk": 2,
+  "epochs": 30,
+  "amp": true
+}

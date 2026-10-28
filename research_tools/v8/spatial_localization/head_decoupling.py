@@ -190,7 +190,7 @@ def curves(out,condition,history):
     fig.tight_layout();fig.savefig(out/condition/'curves.png');plt.close(fig)
 
 
-def sample_index(out,rows):
+def sample_index(out,rows,conditions=CONDITIONS,title='第30轮主比较；best补充'):
     from PIL import Image, ImageDraw
     import matplotlib
     directory=out/'comparison';directory.mkdir(exist_ok=True);entries=[];details=[]
@@ -199,7 +199,7 @@ def sample_index(out,rows):
             if r['dataset']!='ANAKIN':continue
             for fi in [int(r['actual_frames']*f) for f in [.25,.5,.75]]:
                 name=f'{r["video_id"]}_{fi}';data=[]
-                for c in CONDITIONS:
+                for c in conditions:
                     with np.load(out/c/'samples'/checkpoint/r['split']/(name+'.npz'),allow_pickle=False) as z:
                         data.append({k:z[k].copy() for k in z.files})
                 if not np.array_equal(data[0]['native_gt'],data[1]['native_gt']):raise ValueError('SAMPLE_GT_MISMATCH')
@@ -210,7 +210,7 @@ def sample_index(out,rows):
                 heat=[(matplotlib.colormaps['coolwarm'](np.clip((a+6)/12,0,1))[...,:3]*255).astype(np.uint8) for a in zs]
                 w=320;h=max(1,round(rgb.shape[0]*w/rgb.shape[1]));panel=Image.new('RGB',(w*4,2*(h+28)),'white');draw=ImageDraw.Draw(panel)
                 for row,images in enumerate([[rgb,gt_rgb,*binary],[rgb,gt_rgb,*heat]]):
-                    titles=['RGB','GT edit region','COUPLED binary>=0','SEPARATE_HEADS binary>=0'] if row==0 else ['RGB','GT','COUPLED logit [-6,+6]','SEPARATE logit [-6,+6]']
+                    titles=['RGB','GT edit region',*[c+' binary>=0' for c in conditions]] if row==0 else ['RGB','GT',*[c+' logit [-6,+6]' for c in conditions]]
                     for j,a in enumerate(images):
                         draw.text((j*w+4,row*(h+28)+5),titles[j],fill='black')
                         interpolation=Image.Resampling.NEAREST if j==1 or (row==0 and j>=2) else Image.Resampling.BILINEAR
@@ -218,7 +218,7 @@ def sample_index(out,rows):
                 png=f'{checkpoint}_{name}.png';panel.save(directory/png)
                 detail={'checkpoint':checkpoint,'video_id':r['video_id'],'pair_id':r['pair_id'],'split':r['split'],'role':r['role'],
                         'frame_index':fi,'pts_s':float(data[0]['pts_s']),'conditions':{}}
-                for c,a in zip(CONDITIONS,zs):
+                for c,a in zip(conditions,zs):
                     pred=a>=0;tp=int((pred&gt).sum());fg=int(gt.sum());pp=int(pred.sum())
                     detail['conditions'][c]={'dice':2*tp/(fg+pp) if fg else None,'iou':tp/(fg+pp-tp) if fg else None,
                         'gt_recall':tp/fg if fg else None,'background_fpr':float((pred&~gt).sum()/max(1,(~gt).sum())),
@@ -226,7 +226,7 @@ def sample_index(out,rows):
                 details.append(detail)
                 entries.append('<h3>'+html.escape(f'{checkpoint} {r["split"]} {r["pair_id"]} {r["role"]} frame{fi} PTS{float(data[0]["pts_s"]):.4f}')+'</h3><p>'+html.escape(r['task'])+'</p><img loading="lazy" style="max-width:100%" src="comparison/'+png+'">')
     save(out/'fixed_sample_statistics.json',details)
-    (out/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>V8输出分离对照</title><h1>第30轮主比较；best补充</h1><p>固定25/50/75%；二值阈值0，连续logit固定绝对色阶[-6,+6]、超界仅显示裁剪，原始float32 NPZ不裁剪。无视频阈值门控。</p>'+''.join(entries))
+    (out/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>V8空间定位对照</title><h1>'+html.escape(title)+'</h1><p>'+html.escape('RGB | GT | '+' | '.join(conditions))+'</p><p>固定25/50/75%；二值阈值0，连续logit固定绝对色阶[-6,+6]、超界仅显示裁剪，原始float32 NPZ不裁剪。无视频阈值门控。</p>'+''.join(entries))
     return details
 
 

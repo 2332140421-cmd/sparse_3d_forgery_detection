@@ -513,3 +513,12 @@ seed20260909、5轮完整视频适配中，仅增加聚合frame logit的时间�
 COUPLED/SEPARATE_HEADS。仅新对照中允许独立GRU检测头，pixel定位分支不变；
 固定原monitor16训练/原dev32和原96训练统计，缓存只读复用，固定30轮不早停。
 本轮取代14.8在该对照中的单输出检测限制，保留原实验和其他默认路径。
+
+### 14.10 V8预训练空间定位与三维时序增强
+
+用户授权按ADR-0024与`docs/v8/pretrained_spatial_context_contract.md`比较
+SPATIAL_TRANSFER与SPATIAL_3D_CONTEXT。完整官方AINPAINT spatial骨干/已训练LoRA冻结，
+相同定位decoder可训练；B在decoder前加入dense几何和完整component/attention/GRU，
+投影末层零初始化。全部原ANAKIN48训练/16开发、空间BCE+Dice、最多30轮早停，
+原96训练统计与缓存只读。仅在新对照取代14.8随机像素基础/检测监督、14.9小队列固定轮数；
+保留旧方法、历史分数与其他默认路径。

@@ -186,3 +186,12 @@ ActivityNet v1.3历史包下载6928.1秒，逐段SHA309.7秒，流式扫描528.5
 35,128,010,257字节；44个缺失source均为ActivityNet。5389 fake和现有real容器均通过，
 分层首/中/尾解码无失败，核验345.4秒。小型证据见[evidence/asset_preparation.json](evidence/asset_preparation.json)。
 历史14个开发source的real与23个fake候选均有新机路径；仍不等于恢复精确28视频或244训练视频。
+
+## AINPAINT空间预训练资产（2026-10-29）
+
+本轮独立预训练定位实验已获取官方spatial checkpoint，1,266,224,146字节，
+SHA256 `6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7`。
+575个定位必需键完整匹配，含已训练LoRA和decoder；未引入官方时空/RAFT资产。
+只对原固定ANAKIN64视频7984帧新增共享冻结patch特征，原V8缓存只读；
+准确版本、加载证据、成本和状态见[本轮实验](../experiments/v8-pretrained-spatial-context.md)。
+这里不更新上文ActivityForensics/real恢复计数。

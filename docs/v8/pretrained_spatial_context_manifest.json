@@ -1,0 +1,4105 @@
+{
+  "selection": "all original ANAKIN24train/8dev pairs; no reselection",
+  "data_root": "workspace/data/sparse_3d_forgery_detection",
+  "original_manifest_sha256": "2b850d6b0cf8ebf6bfb06476bc48a40421bcf503f40b2e63d642bb57389ee047",
+  "original_statistics_sha256": "d62bc377355ed9a6d05bcd4e474ab8e5b54438b5d0588ed818e5366a23512089",
+  "full_manifest_sha256": "7e60f427bb2f4ca2fbf49e1a05122ebc903363f443061189215977f67f57386b",
+  "rows": [
+    {
+      "video_id": "5e281219c8a281ae6109f506",
+      "source_id": "anakin:https://vimeo.com/5746386",
+      "pair_id": "an:95qlg9",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "f8ecbb44f214ba892711c8e1f7b9f159e1839f5b51e25df569db2ea7b8fc7249",
+      "generator": "inpainting",
+      "task": "remove the person on the blue ball",
+      "original_url": "https://vimeo.com/5746386",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 90,
+      "source_hw": [
+        368,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "spatial_status": "known_background",
+      "mask_sha256": "90055f336c93dd934a32b0a59d24a5e92db2247eb5d5617240d93039e18c7d12",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/95qlg9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/95qlg9.zip",
+      "pts_sha256": "def139cf223b5c54cb647c5bdfc78eb6371689e5c29d868ad3a736a3a7e7b9e3"
+    },
+    {
+      "video_id": "ceb1a2c7d9ba416daf788ea4",
+      "source_id": "anakin:https://vimeo.com/5746386",
+      "pair_id": "an:95qlg9",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "736287dc0141df83a786a34be2bf495897822f68c53165799b3098bec1baaede",
+      "generator": "inpainting",
+      "task": "remove the person on the blue ball",
+      "original_url": "https://vimeo.com/5746386",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 90,
+      "source_hw": [
+        368,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          147,
+          256
+        ],
+        "pad_xy": [
+          0,
+          54
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          368,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          294,
+          512
+        ],
+        "pad_xy": [
+          0,
+          109
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "90055f336c93dd934a32b0a59d24a5e92db2247eb5d5617240d93039e18c7d12",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/95qlg9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/95qlg9.zip",
+      "pts_sha256": "def139cf223b5c54cb647c5bdfc78eb6371689e5c29d868ad3a736a3a7e7b9e3"
+    },
+    {
+      "video_id": "aab916c01c66df953cc3a760",
+      "source_id": "anakin:https://vimeo.com/75085608",
+      "pair_id": "an:76rjm7",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "a6a93da0147c81a07597b38cb72b90d5e27d8da0483342d4d051005c5a7912b1",
+      "generator": "inpainting",
+      "task": "Remove the guy who goes with the phone",
+      "original_url": "https://vimeo.com/75085608",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 1,
+      "spatial_status": "known_background",
+      "mask_sha256": "744eb707057fd6a5dbb327b0fe0626e1d7d39337100abe7eac5bcff64ebd4a99",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/76rjm7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/76rjm7.zip",
+      "pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4"
+    },
+    {
+      "video_id": "f45dc8b05d8e00b4a30a11df",
+      "source_id": "anakin:https://vimeo.com/75085608",
+      "pair_id": "an:76rjm7",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "c890a9918f5163517b9b5c0958638a6394a5ac3ea8882490d3f6db52cc318be5",
+      "generator": "inpainting",
+      "task": "Remove the guy who goes with the phone",
+      "original_url": "https://vimeo.com/75085608",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 1,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "744eb707057fd6a5dbb327b0fe0626e1d7d39337100abe7eac5bcff64ebd4a99",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/76rjm7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/76rjm7.zip",
+      "pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f"
+    },
+    {
+      "video_id": "7f6c4de78fd5220b6dbbea63",
+      "source_id": "anakin:https://vimeo.com/336385849",
+      "pair_id": "an:7p8r14",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "bffd0606140f451a4245da2f32826c3b4892f2a2e6b672187f383e72a9ae9cc5",
+      "generator": "splicing",
+      "task": "add panama hat",
+      "original_url": "https://vimeo.com/336385849",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 78,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "spatial_status": "known_background",
+      "mask_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7p8r14.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7p8r14.zip",
+      "pts_sha256": "bdf7078d5493ab38724b2e234dbe79fae298eb4ab6e5eb324e27a03612cb3234"
+    },
+    {
+      "video_id": "f0ba19d9d7098e420eff20ab",
+      "source_id": "anakin:https://vimeo.com/336385849",
+      "pair_id": "an:7p8r14",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "9b9c0b671a4633904dfeefb3b59296360304a81009a954b0a2b0644fce08d46a",
+      "generator": "splicing",
+      "task": "add panama hat",
+      "original_url": "https://vimeo.com/336385849",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 78,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7p8r14.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7p8r14.zip",
+      "pts_sha256": "254d4998ae8a18c95ecfb0f50418851d4e847ff1993f55f859dac2743406a98c"
+    },
+    {
+      "video_id": "5412ec415c6dc6000437ff00",
+      "source_id": "anakin:https://vimeo.com/31603044",
+      "pair_id": "an:40y1x9",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "d0da94053c871c41221303feff9ec9ead282702e456fe6c26e1220bff0b2d807",
+      "generator": "inpainting",
+      "task": "remove a dog running towards a person",
+      "original_url": "https://vimeo.com/31603044",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        640,
+        360
+      ],
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "spatial_status": "known_background",
+      "mask_sha256": "3386b8fba9d8897a0cd4276e891c6476b7497741eaf0aaf033cfa52d2140cab3",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/40y1x9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/40y1x9.zip",
+      "pts_sha256": "04ae951f7e6c93d3fdef059e4ec2df250b5f6d56ba13dc73e8772ae81a2130b0"
+    },
+    {
+      "video_id": "ac8efb162961478dd9f9af22",
+      "source_id": "anakin:https://vimeo.com/31603044",
+      "pair_id": "an:40y1x9",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "e059ec82bd4328070c1fb03f2e9638ae0b2bba694450d1ca215532b966aacb60",
+      "generator": "inpainting",
+      "task": "remove a dog running towards a person",
+      "original_url": "https://vimeo.com/31603044",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        640,
+        360
+      ],
+      "mapping256": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          256,
+          144
+        ],
+        "pad_xy": [
+          56,
+          0
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          640,
+          360
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          512,
+          288
+        ],
+        "pad_xy": [
+          112,
+          0
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 1,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "3386b8fba9d8897a0cd4276e891c6476b7497741eaf0aaf033cfa52d2140cab3",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/40y1x9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/40y1x9.zip",
+      "pts_sha256": "89bdd950bf8268fa96a4e039bcc8e13f9de9f0494c8cd1bdeba54b50e5a645f3"
+    },
+    {
+      "video_id": "38461254ad63a112c53de9d6",
+      "source_id": "anakin:https://vimeo.com/424399803",
+      "pair_id": "an:9j2mp7",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "9885852f868aa0d7d2f97a569ab6684ceb5fa0ae8f4df91be55306f187f2a760",
+      "generator": "swap",
+      "task": "change the shade of the shirt to green  leaving the structure",
+      "original_url": "https://vimeo.com/424399803",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "0d59041bf459d16303595d7aac8bbd53fb215120ddfcf03a17653a5298c65422",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/9j2mp7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/9j2mp7.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "68140c7fe2dabcfb3c25516b",
+      "source_id": "anakin:https://vimeo.com/424399803",
+      "pair_id": "an:9j2mp7",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "84ab1eae38343897a353dd7ff4f25a5ec9ff33ebd0e6f8a3778c5468f7ec8164",
+      "generator": "swap",
+      "task": "change the shade of the shirt to green  leaving the structure",
+      "original_url": "https://vimeo.com/424399803",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "0d59041bf459d16303595d7aac8bbd53fb215120ddfcf03a17653a5298c65422",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/9j2mp7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/9j2mp7.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "c56cd01fdf49d431462025d8",
+      "source_id": "anakin:https://vimeo.com/122082041",
+      "pair_id": "an:4rvyj9",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "55cdfd8e4a4e29ffff37a92e1b61061e00505be9fda7162b938575201b26beac",
+      "generator": "splicing",
+      "task": "Add a badge with a lanyard around the neck",
+      "original_url": "https://vimeo.com/122082041",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "75597e24cf6645d0c362e05b64fa642b926a7e5efd21bb4659e9c1e78c4fc1ec",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4rvyj9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4rvyj9.zip",
+      "pts_sha256": "fd5c9d8dabfc35a3de2e2f058579ba318bdd741ab9624d2de0df392b8abfbccc"
+    },
+    {
+      "video_id": "c40e8728eb3c5906bf09f6bc",
+      "source_id": "anakin:https://vimeo.com/122082041",
+      "pair_id": "an:4rvyj9",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "8f2668117d341e92f2595d48d526b47482645fb15cd702f7685e919cf4208947",
+      "generator": "splicing",
+      "task": "Add a badge with a lanyard around the neck",
+      "original_url": "https://vimeo.com/122082041",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "75597e24cf6645d0c362e05b64fa642b926a7e5efd21bb4659e9c1e78c4fc1ec",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4rvyj9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4rvyj9.zip",
+      "pts_sha256": "29d2717b8b289736de7fa0504e4efc5ddac77814b14afa4d934e0cc9a8709e03"
+    },
+    {
+      "video_id": "4bf6ef90e341d563cac0203b",
+      "source_id": "anakin:https://vimeo.com/46191459",
+      "pair_id": "an:7ogdg4",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "8702a0a632c0c351219cef0d28b07ee1c2ef4539ad366c10fcd1c455a0c1c0fc",
+      "generator": "inpainting",
+      "task": "remove the woman in black walking in the background",
+      "original_url": "https://vimeo.com/46191459",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "44b40d4358af55ee1e199093b718d1bb7fd061c5c12868fb5236be3eb77d822f",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7ogdg4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7ogdg4.zip",
+      "pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9"
+    },
+    {
+      "video_id": "a9331007c3c8d71f0bc4a7f1",
+      "source_id": "anakin:https://vimeo.com/46191459",
+      "pair_id": "an:7ogdg4",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "90e2d7185ff25ca419951579ad69067f82ac62f17bd32e2fcfebc742b4b74551",
+      "generator": "inpainting",
+      "task": "remove the woman in black walking in the background",
+      "original_url": "https://vimeo.com/46191459",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "44b40d4358af55ee1e199093b718d1bb7fd061c5c12868fb5236be3eb77d822f",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7ogdg4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7ogdg4.zip",
+      "pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269"
+    },
+    {
+      "video_id": "40275cb22e4e9a78cf0290aa",
+      "source_id": "anakin:https://vimeo.com/151027998",
+      "pair_id": "an:4wdn37",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "1c9f242ae42fbc3cca11c571ad18e5f70af87f0395a7210f8e33860b4ca7d820",
+      "generator": "inpainting",
+      "task": "remove running guy",
+      "original_url": "https://vimeo.com/151027998",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "49f6408d43fa365f55fe98d22e2e5cae40c870c2d2f52f5fe4c447e4f8fc192a",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4wdn37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wdn37.zip",
+      "pts_sha256": "3d2671f276ac28f48236240e982a2d75b33250f4eaf8e64c9031db7ace881648"
+    },
+    {
+      "video_id": "65b51cc7b6327e4cac1be825",
+      "source_id": "anakin:https://vimeo.com/151027998",
+      "pair_id": "an:4wdn37",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "1cac88a6f91a6de81b596b0a9fd39f16dab3816b5d27e9f9d62892b03fe13f95",
+      "generator": "inpainting",
+      "task": "remove running guy",
+      "original_url": "https://vimeo.com/151027998",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "49f6408d43fa365f55fe98d22e2e5cae40c870c2d2f52f5fe4c447e4f8fc192a",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4wdn37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wdn37.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "f8df9f435cff39cb27f475d6",
+      "source_id": "anakin:https://vimeo.com/40130084",
+      "pair_id": "an:9lpog7",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "fd6c182c0fb68e9b495c7c2e5c3103df013bba78c9bf953a3ee2df004471f8c3",
+      "generator": "inpainting",
+      "task": "Delete the guy in black in the background",
+      "original_url": "https://vimeo.com/40130084",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        1080,
+        1920
+      ],
+      "mapping256": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.13333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.26666666666666666
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "77a52a04a7f4ff4a62797812ee4b5e92353da4c903b4516a45c4863d972b41a4",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/9lpog7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/9lpog7.zip",
+      "pts_sha256": "a7ff72bad2b134f3b2470ced8335210f5df0827c437a92a67b56a7dfb229c7a6"
+    },
+    {
+      "video_id": "86ea811222ae83b75cf214e4",
+      "source_id": "anakin:https://vimeo.com/40130084",
+      "pair_id": "an:9lpog7",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "4d541eae00341d8a5a40e82ac67c6de7c0fafcb9be5c6b8ff2f1364b0daf499d",
+      "generator": "inpainting",
+      "task": "Delete the guy in black in the background",
+      "original_url": "https://vimeo.com/40130084",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        1080,
+        1920
+      ],
+      "mapping256": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.13333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.26666666666666666
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "77a52a04a7f4ff4a62797812ee4b5e92353da4c903b4516a45c4863d972b41a4",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/9lpog7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/9lpog7.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "c26e3fc1fdc6aabda308ae84",
+      "source_id": "anakin:https://vimeo.com/12973568",
+      "pair_id": "an:7ogg04",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "4dd8e13597163fdf97a6e2760f74e8d42a42ae2181d5d1da7edafaac5908710a",
+      "generator": "inpainting",
+      "task": "remove girl without umbrella",
+      "original_url": "https://vimeo.com/12973568",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 75,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "66b20259f3cd411e993af9848affcdc28f8f08bef9d53cc82dfd01d85f841a28",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7ogg04.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7ogg04.zip",
+      "pts_sha256": "3a6e90de38fab11fa97fee1e71df98cf1b1e6737ea19dc5867c8f9af45ce8dbe"
+    },
+    {
+      "video_id": "cb41b3d004b6640f6c3b5bb1",
+      "source_id": "anakin:https://vimeo.com/12973568",
+      "pair_id": "an:7ogg04",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "e354796bbcec2d36d8cd8398b5441dd023610e6f762e18efa2f2f49061640874",
+      "generator": "inpainting",
+      "task": "remove girl without umbrella",
+      "original_url": "https://vimeo.com/12973568",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 75,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "66b20259f3cd411e993af9848affcdc28f8f08bef9d53cc82dfd01d85f841a28",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7ogg04.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7ogg04.zip",
+      "pts_sha256": "598dae9c4f61dbbe7031b4241ea1b44a23f36dd1ef9b95da411dae06db7115ce"
+    },
+    {
+      "video_id": "1f2917e9f5fddfc574f0c503",
+      "source_id": "anakin:https://vimeo.com/92496383",
+      "pair_id": "an:7ogo04",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "0d2264d235f26a7a363e91639ac99329211f8e22fdde63b1a606429b780c495d",
+      "generator": "inpainting",
+      "task": "Remove the man in the white jacket",
+      "original_url": "https://vimeo.com/92496383",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "1c5b1fc7efcb752b556af61f11c933fa0fa0ff61b2d12bb01d787aedf1aaa8cc",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7ogo04.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7ogo04.zip",
+      "pts_sha256": "3d2671f276ac28f48236240e982a2d75b33250f4eaf8e64c9031db7ace881648"
+    },
+    {
+      "video_id": "0a93d3d27cddd679868fd417",
+      "source_id": "anakin:https://vimeo.com/92496383",
+      "pair_id": "an:7ogo04",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "9d60e1475dddf91908a88f88c0483e7d1fcbe2cdc97472491410c9d429845650",
+      "generator": "inpainting",
+      "task": "Remove the man in the white jacket",
+      "original_url": "https://vimeo.com/92496383",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "1c5b1fc7efcb752b556af61f11c933fa0fa0ff61b2d12bb01d787aedf1aaa8cc",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7ogo04.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7ogo04.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "2a27d19e66db0ea8e2b81efc",
+      "source_id": "anakin:https://vimeo.com/67729134",
+      "pair_id": "an:4qwgw4",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "6f2f33640fa5325319f723315ea99b6f36076aa01b1df2215cf403acae0af8cd",
+      "generator": "inpainting",
+      "task": "Remove the man walking on the left side",
+      "original_url": "https://vimeo.com/67729134",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 75,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "38e40c3d2d92d088df1ec1a064ae5e2cf7e73c36107af39c717245963a97accc",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4qwgw4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4qwgw4.zip",
+      "pts_sha256": "3a6e90de38fab11fa97fee1e71df98cf1b1e6737ea19dc5867c8f9af45ce8dbe"
+    },
+    {
+      "video_id": "0ab62b3ca7054e712b131294",
+      "source_id": "anakin:https://vimeo.com/67729134",
+      "pair_id": "an:4qwgw4",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "2cdf1d1b483863e4414818e8b14f30f195aa625f8969a5822c58423ddbf8b24a",
+      "generator": "inpainting",
+      "task": "Remove the man walking on the left side",
+      "original_url": "https://vimeo.com/67729134",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 75,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "38e40c3d2d92d088df1ec1a064ae5e2cf7e73c36107af39c717245963a97accc",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4qwgw4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4qwgw4.zip",
+      "pts_sha256": "598dae9c4f61dbbe7031b4241ea1b44a23f36dd1ef9b95da411dae06db7115ce"
+    },
+    {
+      "video_id": "782426ea0330c7fea684953c",
+      "source_id": "anakin:https://vimeo.com/235273752",
+      "pair_id": "an:4wdo37",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "2d6484f4d9c6b689bd2bf60b0b9b5b98a6fd31385f0445f33c0b4a40fc8fc0ca",
+      "generator": "inpainting",
+      "task": "Remove the guy with the ball in his hands  who is running away from everyone.",
+      "original_url": "https://vimeo.com/235273752",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 300,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "e963650eab98dec831fb297a30c431d502aec1394916c825c368e2e622f42094",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4wdo37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wdo37.zip",
+      "pts_sha256": "e7ba4dbb2c6af4fe95d93df04dd910a608242359281d1ed8db57a2c4f5e8ea0f"
+    },
+    {
+      "video_id": "87664e1174a82a8f26ee463f",
+      "source_id": "anakin:https://vimeo.com/235273752",
+      "pair_id": "an:4wdo37",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "54b0368208163dd00935994a7d17d0482fe8ab8f53104e4f476566cf88b68f53",
+      "generator": "inpainting",
+      "task": "Remove the guy with the ball in his hands  who is running away from everyone.",
+      "original_url": "https://vimeo.com/235273752",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 300,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "e963650eab98dec831fb297a30c431d502aec1394916c825c368e2e622f42094",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4wdo37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wdo37.zip",
+      "pts_sha256": "7def5854fd504818524bba086aaa697f501c387cdcfd0151a17cb0b7c044e34b"
+    },
+    {
+      "video_id": "adcb32286a41e0e3a6fdfdeb",
+      "source_id": "anakin:https://vimeo.com/159805605",
+      "pair_id": "an:95qvg9",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "0cf00cd899b8ba2a1c8bbdd1362010005776f500a10092529125cdd0c5af77a8",
+      "generator": "inpainting",
+      "task": "Remove a woman and a man walking on the background",
+      "original_url": "https://vimeo.com/159805605",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 100,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "7dd114d63d6e7189e1fe569071fd73ec66ba8568d2a3be443119e825a0446f0a",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/95qvg9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/95qvg9.zip",
+      "pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4"
+    },
+    {
+      "video_id": "d74a0e91fefb7a10107172c0",
+      "source_id": "anakin:https://vimeo.com/159805605",
+      "pair_id": "an:95qvg9",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "09c4aa71cd6cd79cc6e604c7c1a5dce1a31c4a7e781740d2c31288365daaa191",
+      "generator": "inpainting",
+      "task": "Remove a woman and a man walking on the background",
+      "original_url": "https://vimeo.com/159805605",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 100,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "7dd114d63d6e7189e1fe569071fd73ec66ba8568d2a3be443119e825a0446f0a",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/95qvg9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/95qvg9.zip",
+      "pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f"
+    },
+    {
+      "video_id": "7de955b21023a518f9dd2ce0",
+      "source_id": "anakin:https://vimeo.com/44388058",
+      "pair_id": "an:7e2557",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "07db53051d2f2c95ec3e901e899d377ffaaa13e182c46110b7fbc2cfbb0770b1",
+      "generator": "splicing",
+      "task": "add a brooch on top of a shirt pocket",
+      "original_url": "https://vimeo.com/44388058",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 96,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "7abde1cbba8461c52c639efdc504b84e3c37d6810f0422d46e18f6934e2f84c8",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7e2557.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7e2557.zip",
+      "pts_sha256": "1966faeff765dc59e46fdc264c2fbca63dd75ac03b0f4144d0d66000b70a2be0"
+    },
+    {
+      "video_id": "473cef2b50cd96215bcdcbed",
+      "source_id": "anakin:https://vimeo.com/44388058",
+      "pair_id": "an:7e2557",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "b70286cd20ab70ed91747b93ec755327096808c4ea60d07c7b824577a835cd5f",
+      "generator": "splicing",
+      "task": "add a brooch on top of a shirt pocket",
+      "original_url": "https://vimeo.com/44388058",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 96,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "7abde1cbba8461c52c639efdc504b84e3c37d6810f0422d46e18f6934e2f84c8",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7e2557.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7e2557.zip",
+      "pts_sha256": "ebcd91cbbdc67783704f9f96bbb08ecf360b5cbe5a5bec60d4a3eee2fdcf1bb1"
+    },
+    {
+      "video_id": "2ea0a5a7bf4aec73266aff76",
+      "source_id": "anakin:https://vimeo.com/143125966",
+      "pair_id": "an:71gz67",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "24c5848031aa399912977d40a27855a1748ad3fcedb746cec365218e54f8238d",
+      "generator": "inpainting",
+      "task": "Remove the guy on the skateboard and don't forget about his shadow.",
+      "original_url": "https://vimeo.com/143125966",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "58319dee9df4d2e389d6bab8a56f2c885ec45ef615eb4e34a4f2d59684270392",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/71gz67.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/71gz67.zip",
+      "pts_sha256": "a7ff72bad2b134f3b2470ced8335210f5df0827c437a92a67b56a7dfb229c7a6"
+    },
+    {
+      "video_id": "8d9fca70e1bd4221db40dd14",
+      "source_id": "anakin:https://vimeo.com/143125966",
+      "pair_id": "an:71gz67",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "764acbd70b00df55c66c347917191a6a8c2a113b9f25dd37c7881d48cefc3e2a",
+      "generator": "inpainting",
+      "task": "Remove the guy on the skateboard and don't forget about his shadow.",
+      "original_url": "https://vimeo.com/143125966",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 119,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "58319dee9df4d2e389d6bab8a56f2c885ec45ef615eb4e34a4f2d59684270392",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/71gz67.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/71gz67.zip",
+      "pts_sha256": "3f2e93cc7e58b224a19d8924c4e7007c7b5b0e181644b9e7f705a203408e180a"
+    },
+    {
+      "video_id": "6bf58f37824b9c8013f5a8f6",
+      "source_id": "anakin:https://vimeo.com/117893672",
+      "pair_id": "an:4ym5n4",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "e312b0b3906336bb9a7544d7525c2bb5899e0d77e4ec45c08d01f3556703e92b",
+      "generator": "inpainting",
+      "task": "remove a passing man in black in the background",
+      "original_url": "https://vimeo.com/117893672",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 96,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "f32e0dde43838109364e4075f306f92a18a3fe27bcb2482633186fe6c4ffc56b",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4ym5n4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4ym5n4.zip",
+      "pts_sha256": "24491ed47545573f8f2af2ac38a23e7de7bb47ad497310a894ff348bb1e9bdf6"
+    },
+    {
+      "video_id": "9cfbacb4960dc36f1ff8db4f",
+      "source_id": "anakin:https://vimeo.com/117893672",
+      "pair_id": "an:4ym5n4",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "5b28ceb96cf690d7087565226560ce2adb321bc2dd4bc19d06fb9b9302142203",
+      "generator": "inpainting",
+      "task": "remove a passing man in black in the background",
+      "original_url": "https://vimeo.com/117893672",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 96,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "f32e0dde43838109364e4075f306f92a18a3fe27bcb2482633186fe6c4ffc56b",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4ym5n4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4ym5n4.zip",
+      "pts_sha256": "24491ed47545573f8f2af2ac38a23e7de7bb47ad497310a894ff348bb1e9bdf6"
+    },
+    {
+      "video_id": "1ba064388272863e75d92e59",
+      "source_id": "anakin:https://vimeo.com/103938384",
+      "pair_id": "an:4dvw24",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "6bd8b914e892fbcc2c1be2c5cd659a5b57ee848f0ed57824d3d268bd665bfaa7",
+      "generator": "splicing",
+      "task": "add glasses to the face",
+      "original_url": "https://vimeo.com/103938384",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 180,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "ff639dc1756b77449636585b3b0e4929d2a1a601a6ae6c6c22669cad5fd3c323",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4dvw24.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4dvw24.zip",
+      "pts_sha256": "cdcaefa96f8a0baccb74d2b4b4212496e79c7709f09a31e3adfdbe37ce70241a"
+    },
+    {
+      "video_id": "d9d49a14fc24303c96df1646",
+      "source_id": "anakin:https://vimeo.com/103938384",
+      "pair_id": "an:4dvw24",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "47f7ef0d81f84a783161835a79b7510cb53c36abdb932933f329f27bfbeb9298",
+      "generator": "splicing",
+      "task": "add glasses to the face",
+      "original_url": "https://vimeo.com/103938384",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 179,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "ff639dc1756b77449636585b3b0e4929d2a1a601a6ae6c6c22669cad5fd3c323",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4dvw24.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4dvw24.zip",
+      "pts_sha256": "52cda13231b91fa407164e19c00383c1277d7d064d34c032ce9e54c18a20d28b"
+    },
+    {
+      "video_id": "ccb63a3b56cf5abb3577b890",
+      "source_id": "anakin:https://vimeo.com/448153089",
+      "pair_id": "an:9l8ng4",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "62d9ecae79d746a1d2ac0ffbe99321275a8dfe4ec56e6a00bdcca171a5686515",
+      "generator": "inpainting",
+      "task": "remove a guy and a girl in a gray sweatshirt (who are skating nearby)",
+      "original_url": "https://vimeo.com/448153089",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "2eb37917b87afd6db36beff2388d2f61085cbb240da17d186ae3b8f08879392e",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/9l8ng4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/9l8ng4.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "68adb5ebba111b7c7c945e1a",
+      "source_id": "anakin:https://vimeo.com/448153089",
+      "pair_id": "an:9l8ng4",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "076822ee6134525c2233e057b7d10de7d5ea19ed1307f048e1c4e8718d9154c3",
+      "generator": "inpainting",
+      "task": "remove a guy and a girl in a gray sweatshirt (who are skating nearby)",
+      "original_url": "https://vimeo.com/448153089",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "2eb37917b87afd6db36beff2388d2f61085cbb240da17d186ae3b8f08879392e",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/9l8ng4.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/9l8ng4.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "43bf3b5843f9f0fefd6445c7",
+      "source_id": "anakin:https://vimeo.com/341041688",
+      "pair_id": "an:4wgm37",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "9465e0cb86ed86d2c3b19e0670e47c2b79d5cb5cbefc98cabc084f03a29e6c75",
+      "generator": "inpainting",
+      "task": "remove 5-7 people in the reflection on the sculpture",
+      "original_url": "https://vimeo.com/341041688",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "9461c1d6e3c54a91861112a421587b0d67478e27d15fcc9cf780e793d2638b75",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4wgm37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wgm37.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "dc78bade65a643b123bdece6",
+      "source_id": "anakin:https://vimeo.com/341041688",
+      "pair_id": "an:4wgm37",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "388d8ab88a4e4f0c1815ed29fa3ea03288f65c91ea859bf5b635a3d7aa0b7083",
+      "generator": "inpainting",
+      "task": "remove 5-7 people in the reflection on the sculpture",
+      "original_url": "https://vimeo.com/341041688",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "9461c1d6e3c54a91861112a421587b0d67478e27d15fcc9cf780e793d2638b75",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4wgm37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wgm37.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "2781886ae295fb7592043d62",
+      "source_id": "anakin:https://vimeo.com/444973695",
+      "pair_id": "an:48o2l9",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "c3467ead9d9247f434d15001ea5b9ead124dc960c92fb8aeb3e18140dbbf016f",
+      "generator": "splicing",
+      "task": "add a tie over the vest",
+      "original_url": "https://vimeo.com/444973695",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 100,
+      "source_hw": [
+        1080,
+        1920
+      ],
+      "mapping256": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.13333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.26666666666666666
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "3a00de178befd56b28c32e11797327aa766481cbc6150a898a7ebf9ac33c9c89",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/48o2l9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/48o2l9.zip",
+      "pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4"
+    },
+    {
+      "video_id": "e64dea5e0e1c0f9c9b6b1756",
+      "source_id": "anakin:https://vimeo.com/444973695",
+      "pair_id": "an:48o2l9",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "9c66fe2117e827cd5ccce7c65618e7ee3c6982fde02fa5dd63a461214639f98e",
+      "generator": "splicing",
+      "task": "add a tie over the vest",
+      "original_url": "https://vimeo.com/444973695",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 100,
+      "source_hw": [
+        1080,
+        1920
+      ],
+      "mapping256": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.13333333333333333
+      },
+      "mapping512": {
+        "source_hw": [
+          1080,
+          1920
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.26666666666666666
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "3a00de178befd56b28c32e11797327aa766481cbc6150a898a7ebf9ac33c9c89",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/48o2l9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/48o2l9.zip",
+      "pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f"
+    },
+    {
+      "video_id": "9d465eb0c15946cd37ad1e72",
+      "source_id": "anakin:https://vimeo.com/445264882",
+      "pair_id": "an:4z1827",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "9400cdeb47548346dfd160f6253f13d4955b92f5bb5de31c6f0f5efc80f7a8fc",
+      "generator": "splicing",
+      "task": "add a spider to the hat",
+      "original_url": "https://vimeo.com/445264882",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "d61ec74b8f3101e0d7c0a78e39a2cbc37590531f14e5c426e50ed66406311619",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4z1827.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4z1827.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "03940cfef98b2a38304cdd0e",
+      "source_id": "anakin:https://vimeo.com/445264882",
+      "pair_id": "an:4z1827",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "8224e63a1c4ef05da7677451f4ad5e79370d17b7a6ac67c37cd46fd586bb0aba",
+      "generator": "splicing",
+      "task": "add a spider to the hat",
+      "original_url": "https://vimeo.com/445264882",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 120,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "d61ec74b8f3101e0d7c0a78e39a2cbc37590531f14e5c426e50ed66406311619",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4z1827.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4z1827.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "8a9691dcdc0248c8ab03723f",
+      "source_id": "anakin:https://vimeo.com/141132187",
+      "pair_id": "an:728qx7",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "acdf12e0eced0b2386819cd8072a8f74066ecc50d468f7baad723c99601c38e6",
+      "generator": "splicing",
+      "task": "Give a guy a tattoo on the right side of his chest",
+      "original_url": "https://vimeo.com/141132187",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "d1efa822cc3dc629804b0a56f7a915f55c3412d40b8f932a1d9356dad9cc12a5",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/728qx7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/728qx7.zip",
+      "pts_sha256": "3d2671f276ac28f48236240e982a2d75b33250f4eaf8e64c9031db7ace881648"
+    },
+    {
+      "video_id": "f02cfe65b813132c7e61618f",
+      "source_id": "anakin:https://vimeo.com/141132187",
+      "pair_id": "an:728qx7",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "e3d8d0c7c7b2ad4119a41daf3fb8479de31257cfc452d1f7ae86a8c5cc594861",
+      "generator": "splicing",
+      "task": "Give a guy a tattoo on the right side of his chest",
+      "original_url": "https://vimeo.com/141132187",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "d1efa822cc3dc629804b0a56f7a915f55c3412d40b8f932a1d9356dad9cc12a5",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/728qx7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/728qx7.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "b0e013b8f4142ff07e2a14b9",
+      "source_id": "anakin:https://vimeo.com/599791279",
+      "pair_id": "an:4xeqd7",
+      "role": "real",
+      "split": "train",
+      "video_sha256": "b27dfe33d01389f386300b72e5024dc1c956dcd36ab33c99994ee7b585565a0c",
+      "generator": "inpainting",
+      "task": "remove the man in the white shirt",
+      "original_url": "https://vimeo.com/599791279",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 210,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "9e50b183decc28d1bca9c56c14f148446bd5a24e8f10824377245e24dc4f73a1",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4xeqd7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4xeqd7.zip",
+      "pts_sha256": "475f1e67f640108bb9fe3156b0d6da956075c7b8d67f3d35600b6037e11ada99"
+    },
+    {
+      "video_id": "43a2225285a3e2091b91b9c2",
+      "source_id": "anakin:https://vimeo.com/599791279",
+      "pair_id": "an:4xeqd7",
+      "role": "fake",
+      "split": "train",
+      "video_sha256": "26f426b10ad6e122d3e909989d070b3246d8ab51a2887403e218e9f1c689d08f",
+      "generator": "inpainting",
+      "task": "remove the man in the white shirt",
+      "original_url": "https://vimeo.com/599791279",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "train",
+      "actual_frames": 210,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "9e50b183decc28d1bca9c56c14f148446bd5a24e8f10824377245e24dc4f73a1",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4xeqd7.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4xeqd7.zip",
+      "pts_sha256": "01aa321a812806a4b4d1ae7e01d47497cdbbd1c890970776c9c207dd8297361c"
+    },
+    {
+      "video_id": "ba6243a7578ef8a64737d567",
+      "source_id": "anakin:https://vimeo.com/53936221",
+      "pair_id": "an:4xd3r9",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "4d0d9d1cd518a2843d3a59ff40261cefddc58c584ad31328c1222e450ce3905a",
+      "generator": "inpainting",
+      "task": "remove any 5 people",
+      "original_url": "https://vimeo.com/53936221",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "c20da6b1f22d7d9ed3792d60fad4192b0d3fa9f12d0fa73aff1d3f38d0a822de",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4xd3r9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4xd3r9.zip",
+      "pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4"
+    },
+    {
+      "video_id": "c98cb33f48392c108c40f206",
+      "source_id": "anakin:https://vimeo.com/53936221",
+      "pair_id": "an:4xd3r9",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "096ddad6ab567e2ff10f0e8c58f18779a8727da5402a0d21db5c01c05e8f4a67",
+      "generator": "inpainting",
+      "task": "remove any 5 people",
+      "original_url": "https://vimeo.com/53936221",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 100,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "c20da6b1f22d7d9ed3792d60fad4192b0d3fa9f12d0fa73aff1d3f38d0a822de",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4xd3r9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4xd3r9.zip",
+      "pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f"
+    },
+    {
+      "video_id": "cdc2ee33084c90a92487107e",
+      "source_id": "anakin:https://vimeo.com/422525196",
+      "pair_id": "an:4xd5r9",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "9af7cd24b7693c0851118f5cbd6eda8d7ea1b59c59e8edbb868152456c8e63a5",
+      "generator": "inpainting",
+      "task": "add a necklace around your neck",
+      "original_url": "https://vimeo.com/422525196",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 120,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "d5c33c59ff681edf23c878b862f8f735ee98b59c2bc703e91f11b348f5dfe08b",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4xd5r9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4xd5r9.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "2649719f53fe1a54aa56ab8f",
+      "source_id": "anakin:https://vimeo.com/422525196",
+      "pair_id": "an:4xd5r9",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "4e6eae45b8a7b1066aeb71a68b329a4b25c4f5be78cb5175921eb35defd01972",
+      "generator": "inpainting",
+      "task": "add a necklace around your neck",
+      "original_url": "https://vimeo.com/422525196",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 120,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "d5c33c59ff681edf23c878b862f8f735ee98b59c2bc703e91f11b348f5dfe08b",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4xd5r9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4xd5r9.zip",
+      "pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "video_id": "38834f95f2fd8ceb943c4243",
+      "source_id": "anakin:https://vimeo.com/532330511",
+      "pair_id": "an:7e2p57",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "89bd8d4b4d32fc24a02c7b621b95935dd4a361192c11561413714887fd1f6322",
+      "generator": "splicing",
+      "task": "Add dollar sign to t-shirt",
+      "original_url": "https://vimeo.com/532330511",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 125,
+      "source_hw": [
+        480,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          128,
+          256
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          256,
+          512
+        ],
+        "pad_xy": [
+          0,
+          128
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "686c3a9c2eeac36775033b922239162122fab317483966fbbb02aaad5617bd59",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7e2p57.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7e2p57.zip",
+      "pts_sha256": "5ac5f7c333f5e9c7f6d000be568654eee7cb239ebf29fe3814ab892158920a4e"
+    },
+    {
+      "video_id": "e55c9628ed7641f96707430e",
+      "source_id": "anakin:https://vimeo.com/532330511",
+      "pair_id": "an:7e2p57",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "ce951c97b45cd3f2d297d02d47b8a07557415b06902b09d9d1aadc4d859349cb",
+      "generator": "splicing",
+      "task": "Add dollar sign to t-shirt",
+      "original_url": "https://vimeo.com/532330511",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 125,
+      "source_hw": [
+        480,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          128,
+          256
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          256,
+          512
+        ],
+        "pad_xy": [
+          0,
+          128
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "686c3a9c2eeac36775033b922239162122fab317483966fbbb02aaad5617bd59",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7e2p57.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7e2p57.zip",
+      "pts_sha256": "fe38e9fd52947585aa976cc9ff5e70334b8af996c87f24fd2e34868d53335b88"
+    },
+    {
+      "video_id": "424b814a818225209898bae7",
+      "source_id": "anakin:https://vimeo.com/40886434",
+      "pair_id": "an:4rvro9",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "11bfc1b983095b295436c1f89a828eb681c76b466e42faae4daf2388eb43ef0a",
+      "generator": "splicing",
+      "task": "add a hat to your head",
+      "original_url": "https://vimeo.com/40886434",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "1ffad297f8e482cd328a1494f223e24c6a3d3b6e7df89b065a8444b8d8d68496",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4rvro9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4rvro9.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "a2a08b465a8cea8a95403ee7",
+      "source_id": "anakin:https://vimeo.com/40886434",
+      "pair_id": "an:4rvro9",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "75156f442400aa74f19e068755b1cc3b3bf0f89d236127543e94e8faafa60555",
+      "generator": "splicing",
+      "task": "add a hat to your head",
+      "original_url": "https://vimeo.com/40886434",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          360,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "1ffad297f8e482cd328a1494f223e24c6a3d3b6e7df89b065a8444b8d8d68496",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4rvro9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4rvro9.zip",
+      "pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "video_id": "5c2fda735c71289d10a3de7a",
+      "source_id": "anakin:https://vimeo.com/51633066",
+      "pair_id": "an:4wgx37",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "0490f70ee85a189ff317db76bb87732e88add5244aa1cdfa47bd176155c7f744",
+      "generator": "inpainting",
+      "task": "remove the guy on the bike",
+      "original_url": "https://vimeo.com/51633066",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 120,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "31c57c9f4616cf83a62b05b4435b232acf4e57bfd52872d8dbc81bf3319854b7",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/4wgx37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wgx37.zip",
+      "pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9"
+    },
+    {
+      "video_id": "f2cd41132415857399b19518",
+      "source_id": "anakin:https://vimeo.com/51633066",
+      "pair_id": "an:4wgx37",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "76e4c9b14229509af55f838d05d5f21cea5c43e71c7e789d27e9adb0b4d23bb3",
+      "generator": "inpainting",
+      "task": "remove the guy on the bike",
+      "original_url": "https://vimeo.com/51633066",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 120,
+      "source_hw": [
+        480,
+        640
+      ],
+      "mapping256": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          192,
+          256
+        ],
+        "pad_xy": [
+          0,
+          32
+        ],
+        "scale": 0.4
+      },
+      "mapping512": {
+        "source_hw": [
+          480,
+          640
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          384,
+          512
+        ],
+        "pad_xy": [
+          0,
+          64
+        ],
+        "scale": 0.8
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "31c57c9f4616cf83a62b05b4435b232acf4e57bfd52872d8dbc81bf3319854b7",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/4wgx37.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/4wgx37.zip",
+      "pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269"
+    },
+    {
+      "video_id": "43bf59b67bd6d45e8b8bf43e",
+      "source_id": "anakin:https://vimeo.com/47662435",
+      "pair_id": "an:71g867",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "2869ed35cdda48896e60cde6d99b084df11f87c64345462af4fd771da816079b",
+      "generator": "inpainting",
+      "task": "remove people who appear in the frame to the right",
+      "original_url": "https://vimeo.com/47662435",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 96,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "c5df525f7c17f12a78f4670f7ae2eab3ba9a929ee123eacf544421fea074e731",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/71g867.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/71g867.zip",
+      "pts_sha256": "1966faeff765dc59e46fdc264c2fbca63dd75ac03b0f4144d0d66000b70a2be0"
+    },
+    {
+      "video_id": "8a6ce2b60f7cb1353c2919cc",
+      "source_id": "anakin:https://vimeo.com/47662435",
+      "pair_id": "an:71g867",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "343f016102dec99adbfb9170c5eed24d255625ae484b4c8d0dc86bcf0cd78bb2",
+      "generator": "inpainting",
+      "task": "remove people who appear in the frame to the right",
+      "original_url": "https://vimeo.com/47662435",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 96,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "c5df525f7c17f12a78f4670f7ae2eab3ba9a929ee123eacf544421fea074e731",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/71g867.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/71g867.zip",
+      "pts_sha256": "ebcd91cbbdc67783704f9f96bbb08ecf360b5cbe5a5bec60d4a3eee2fdcf1bb1"
+    },
+    {
+      "video_id": "d7b7aa3915ac3ddc0bf94b22",
+      "source_id": "anakin:https://vimeo.com/211093832",
+      "pair_id": "an:7e2e57",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "703eafcafbd3adc9b02c2a23204562e24b36be88929d760c908d724e3d0e3577",
+      "generator": "splicing",
+      "task": "Add a cat walking across in front of a woman with a dog",
+      "original_url": "https://vimeo.com/211093832",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "21e6a41b2768a0c2efa1b95ecae64836d7977ef7a242566324abfd63f5977e6f",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/7e2e57.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7e2e57.zip",
+      "pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9"
+    },
+    {
+      "video_id": "e73bc60d4e2c5b994ee45ba4",
+      "source_id": "anakin:https://vimeo.com/211093832",
+      "pair_id": "an:7e2e57",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "0ad7c1904e45baa27b7478cd5171b3ddbeec49886b16b47a93dfa690707d7d3e",
+      "generator": "splicing",
+      "task": "Add a cat walking across in front of a woman with a dog",
+      "original_url": "https://vimeo.com/211093832",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "mapping256": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.2
+      },
+      "mapping512": {
+        "source_hw": [
+          720,
+          1280
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.4
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "21e6a41b2768a0c2efa1b95ecae64836d7977ef7a242566324abfd63f5977e6f",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/7e2e57.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/7e2e57.zip",
+      "pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269"
+    },
+    {
+      "video_id": "2ad19f5f828cec54da51b511",
+      "source_id": "anakin:https://vimeo.com/644436285",
+      "pair_id": "an:95q8g9",
+      "role": "real",
+      "split": "dev",
+      "video_sha256": "e8d7b21d25ed63e5f476902f59381c7bdaf7be5c42ab045fcc188a55354a009f",
+      "generator": "inpainting",
+      "task": "remove the rider in the white hat along with the horse",
+      "original_url": "https://vimeo.com/644436285",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 72,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "known_background",
+      "mask_sha256": "c36b19a6310559d1f3c85963ec20efb5e3249c78b606f56a9e5af0a89c60b5cd",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/trimmed/95q8g9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/95q8g9.zip",
+      "pts_sha256": "bbddc0ecb6999a04e888f92a3e0a99a7139b6e04a67a844ab9a83f9524d779bc"
+    },
+    {
+      "video_id": "37b22da558e1daee1e72b707",
+      "source_id": "anakin:https://vimeo.com/644436285",
+      "pair_id": "an:95q8g9",
+      "role": "fake",
+      "split": "dev",
+      "video_sha256": "6a9ba2d88bd6b7e23078b43a0d640f9d0faaefab6b055a4cf712fe53904e5a03",
+      "generator": "inpainting",
+      "task": "remove the rider in the white hat along with the horse",
+      "original_url": "https://vimeo.com/644436285",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "official_config": "has-masks",
+      "official_split": "validation",
+      "actual_frames": 72,
+      "source_hw": [
+        540,
+        960
+      ],
+      "mapping256": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          256,
+          256
+        ],
+        "content_hw": [
+          144,
+          256
+        ],
+        "pad_xy": [
+          0,
+          56
+        ],
+        "scale": 0.26666666666666666
+      },
+      "mapping512": {
+        "source_hw": [
+          540,
+          960
+        ],
+        "canvas_hw": [
+          512,
+          512
+        ],
+        "content_hw": [
+          288,
+          512
+        ],
+        "pad_xy": [
+          0,
+          112
+        ],
+        "scale": 0.5333333333333333
+      },
+      "train_monitor": 0,
+      "spatial_status": "edit_mask",
+      "mask_sha256": "c36b19a6310559d1f3c85963ec20efb5e3249c78b606f56a9e5af0a89c60b5cd",
+      "index_base": 0,
+      "video_path": "secondary_datasets/anakin/edited/95q8g9.mp4",
+      "mask_zip": "secondary_datasets/anakin/masks/95q8g9.zip",
+      "pts_sha256": "bbddc0ecb6999a04e888f92a3e0a99a7139b6e04a67a844ab9a83f9524d779bc"
+    }
+  ]
+}

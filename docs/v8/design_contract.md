@@ -71,3 +71,12 @@ residual路径，不叠加两次；不修改旧基准行为，亦不把历史差
 视频全部正常解码帧。真实attention保留，hidden跨64帧块延续；各seed独立视频LSE后
 平均最终logit。主指标validation pooled video AUROC；无训练、拟合或阈值修改。
 紧凑mean/mask/shared缓存不改变MEAN_REPLICATED语义。
+
+## 预训练空间定位独立对照
+
+用户授权的`v8-pretrained-spatial-context` / ADR-0024按
+`pretrained_spatial_context_contract.md`执行两条件：冻结官方AINPAINT空间骨干及已训练LoRA，
+共享可训练定位decoder；增强条件在decoder前残差接入dense几何与完整
+component/全帧attention/多前驱因果GRU。只用原ANAKIN48训练/16开发空间监督，
+全部帧、512补齐518、实际256/512映射、原96训练统计和原缓存只读。
+这是独立新定位方法，不改上文弱监督主链、窗口/全视频结果或其他实验默认行为。
