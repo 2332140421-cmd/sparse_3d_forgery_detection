@@ -111,7 +111,8 @@ def report(out,rows):
     chosen=[r for r in rows if r['split']=='dev' or r.get('train_monitor')]
     sample_index(out,chosen,conditions=CONDITIONS,title='AINPAINT迁移与完整三维时序增强：各自best/last')
     boundary=boundary_samples(out,rows)
-    lines=['# V8预训练空间定位基础与三维时序增强','',
+    fixed=(out/'reference_reuse.json').exists()
+    lines=['# V8预训练空间定位基础与三维时序增强'+('（FIXED_BN）' if fixed else ''),'',
         'AINPAINT官方spatial模型在ANAKIN上的统一迁移，不是论文原设置复现。只有空间BCE+Dice，无检测损失/门控。','',
         '|条件|checkpoint/epoch|集合|Dice|IoU|pixel AP|real空间FP|','|---|---|---|---|---|---|---|']
     fmt=lambda x:'未计算' if x is None else f'{x:.6f}'
@@ -127,7 +128,8 @@ def report(out,rows):
     if a['best_epoch']==b['best_epoch']==0:next_step='下一步只检查小样本适配与过拟合：两者微调未超过epoch0，不自动解冻LoRA。'
     elif bd>ad:next_step='下一步优先做去掉新增dense局部几何分支、保留其余上下文的匹配消融，区分整个增强模块的收益来源。'
     else:next_step='下一步保留预训练定位基础，重新判断上下文接入方式；若两者仍弱，先核查监督目标/编辑类型/覆盖，不继续堆模块。'
-    lines.extend([next_step,'差值仅作单seed描述，不作显著性判断；整个模块包含几何与时序，不能归因于纯XYZ或component单独贡献。'])
+    if not fixed:lines.append(next_step)
+    lines.append('差值仅作单seed描述，不作显著性判断；整个模块包含几何与时序，不能归因于纯XYZ或component单独贡献。')
     for c,s in summaries.items():
         lines.append(f'{c}：实际{s["last_epoch"]}轮/{s["updates"]}更新，停止{s["stop_reason"]}；参数/耗时/显存：'+json.dumps(s['costs'],ensure_ascii=False))
         rr=[r for r in s['best']['dev']['records'] if r['role']=='fake'];cm=np.sum([r['pixel_confusion_matrix'] for r in rr],axis=0)
@@ -147,10 +149,101 @@ def report(out,rows):
         p=out/filename
         if p.exists():lines.append(filename+'：'+json.dumps(json.loads(p.read_text()),ensure_ascii=False))
     storage=sum(p.stat().st_size for p in out.rglob('*') if p.is_file() and not p.is_symlink())
-    lines.append(f'报告生成前独立输出目录总存储={storage}字节（含新增视觉特征、checkpoint、固定样例及日志；不含仓库外官方权重/原130GiB缓存）。')
+    contents='checkpoint、固定样例及日志；已有视觉特征与前端缓存只读引用，无新增特征' if fixed else '新增视觉特征、checkpoint、固定样例及日志；不含仓库外官方权重/原130GiB缓存'
+    lines.append(f'报告生成前独立输出目录总存储={storage}字节（{contents}）。')
     lines.extend(['固定时刻全部开发与原monitor训练对照见index.html；全部视频指标见summary，pixel AP以正帧均值后视频均值统计。',
         'GT覆盖/背景FP依据完整帧计数；边界仅依据固定样例原生2px带，不外推为完整队列边界精度。',
         '下载、视觉特征提取与训练成本分别见asset_download.json、feature_costs.json、各条件summary；原缓存只读。',
         '本轮两个条件结束，不自动追加数据集、seed、模型、LoRA微调或参数搜索。'])
     save(out/'result_summary.json',{'epoch0':{s:epoch0[s]['metrics'] for s in ['train','dev']},'conditions':summaries})
     (out/'report_zh.md').write_text('\n'.join(lines)+'\n')
+    if fixed:fixed_bn_comparison(out,summaries)
+
+
+def fixed_bn_comparison(out,current):
+    """Compare saved original results/history only; never execute the old models."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    refs=json.loads((out/'reference_reuse.json').read_text());reference=Path(refs['reference_run'])
+    original={c:json.loads((reference/c/'summary.json').read_text()) for c in CONDITIONS}
+    fmt=lambda v:f'{v:.6f}'
+    lines=['','## 原BN策略与FIXED_BN主比较','',
+        '各自按同一规则选择best，同一行来自同一checkpoint；原策略仅引用已有评价。','',
+        '|BN策略|模型|best/结束轮次|训练Dice|开发Dice|IoU|pixel AP|real空间FP|',
+        '|---|---|---|---:|---:|---:|---:|---:|']
+    for c in CONDITIONS:
+        for label,s in [('原策略',original[c]),('FIXED_BN',current[c])]:
+            m=s['best']['dev']['metrics'];values=[s['best']['train']['metrics']['spatial_dice']]+[m[k] for k in ['spatial_dice','spatial_iou','pixel_ap','real_spatial_fpr']]
+            lines.append('|'+ '|'.join([label,c,f'{s["best_epoch"]}/{s["last_epoch"]}']+[fmt(v) for v in values])+'|')
+    deltas={c:{k:current[c]['best']['dev']['metrics'][k]-original[c]['best']['dev']['metrics'][k]
+        for k in ['spatial_dice','spatial_iou','pixel_ap','real_spatial_fpr']} for c in CONDITIONS}
+    extra={k:current[CONDITIONS[1]]['best']['dev']['metrics'][k]-current[CONDITIONS[0]]['best']['dev']['metrics'][k]
+        for k in ['spatial_dice','spatial_iou','pixel_ap','real_spatial_fpr']}
+    for c in CONDITIONS:
+        lines.append(c+' 固定BN−原策略：'+json.dumps(deltas[c],ensure_ascii=False))
+        old,new=original[c]['best'],current[c]['best']
+        train_delta=new['train']['metrics']['spatial_dice']-old['train']['metrics']['spatial_dice']
+        gap=new['train']['metrics']['spatial_dice']-new['dev']['metrics']['spatial_dice']
+        lines.append(f'{c}：训练Dice变化={train_delta:+.6f}，开发Dice变化={deltas[c]["spatial_dice"]:+.6f}，固定BN best训练−开发差={gap:+.6f}；是否开发改善据开发重叠指标判断，不以训练提升或real误报下降代替。')
+    lines.append('FIXED_BN内增强−迁移：'+json.dumps(extra,ensure_ascii=False))
+    maps={(tag,c):{r['video_id']:r for r in ss[c]['best']['dev']['records'] if r['role']=='fake'}
+        for tag,ss in [('original',original),('fixed',current)] for c in CONDITIONS}
+    keys=set(maps['original',CONDITIONS[0]])
+    if len(keys)!=8 or any(set(m)!=keys for m in maps.values()):raise ValueError('MATCHED_DEV_FAKE_IDENTITIES')
+    paired=[]
+    for vid,r in maps['original',CONDITIONS[0]].items():
+        a,b=[maps['original',c][vid]['spatial_dice'] for c in CONDITIONS]
+        x,y=[maps['fixed',c][vid]['spatial_dice'] for c in CONDITIONS]
+        paired.append({'video_id':vid,'pair_id':r['pair_id'],'generator':r['generator'],'original_transfer':a,'original_context':b,
+            'fixed_transfer':x,'fixed_context':y,'delta_bn_transfer':x-a,'delta_bn_context':y-b,'delta_fixed_context':y-x})
+    lines.extend(['','|开发fake|类型|原迁移|固定迁移|BN差|原增强|固定增强|BN差|固定增强−迁移|',
+        '|---|---|---:|---:|---:|---:|---:|---:|---:|'])
+    for r in paired:
+        lines.append('|'+ '|'.join([r['pair_id'],r['generator']]+[fmt(r[k]) for k in ['original_transfer','fixed_transfer','delta_bn_transfer',
+            'original_context','fixed_context','delta_bn_context','delta_fixed_context']])+'|')
+    groups={}
+    for label,rr in [('全部8条',paired),('旧弱6条',[r for r in paired if r['pair_id'] not in {'an:4rvro9','an:4wgx37'}])]:
+        groups[label]={}
+        for k in ['delta_bn_transfer','delta_bn_context','delta_fixed_context']:
+            d=[r[k] for r in rr];groups[label][k]={'mean':float(np.mean(d)),'up':sum(x>0 for x in d),'tie':sum(x==0 for x in d),'down':sum(x<0 for x in d)}
+        lines.append(label+'：'+json.dumps(groups[label],ensure_ascii=False))
+    lines.append('旧弱6条预先固定为除4rvro9/4wgx37外的原开发fake；仅作描述，不更换样本或主指标。')
+    fig,axes=plt.subplots(2,3,figsize=(15,8));fluctuation={}
+    for ri,c in enumerate(CONDITIONS):
+        oldh=json.loads((reference/c/'history.json').read_text());newh=json.loads((out/c/'history.json').read_text());common=min(len(oldh),len(newh))
+        fluctuation[c]={'common_epochs':common}
+        for label,h in [('原策略',oldh),('FIXED_BN',newh)]:
+            values=[r['dev']['spatial_dice'] for r in h[:common]]
+            fluctuation[c][label]=float(np.abs(np.diff(values)).mean()) if common>1 else None
+        for ci,key in enumerate(['spatial_dice','spatial_iou','real_spatial_fpr']):
+            ax=axes[ri,ci]
+            for label,h in [('ORIGINAL_BN',oldh),('FIXED_BN',newh)]:
+                ax.plot([r['epoch'] for r in h],[r['dev'][key] for r in h],label=label+' dev')
+                if ci==0:ax.plot([r['epoch'] for r in h],[r['train'][key] for r in h],label=label+' train',linestyle=':')
+            ax.set_title(c+' '+key);ax.set_xlabel('epoch');ax.legend(fontsize=6);ax.grid(alpha=.2)
+    fig.tight_layout();fig.savefig(out/'bn_strategy_curves.png');plt.close(fig)
+    lines.append('同轮曲线见bn_strategy_curves.png；共同epoch范围内dev Dice相邻轮绝对差均值（描述性波动，受学习趋势影响）：'+json.dumps(fluctuation,ensure_ascii=False))
+    old_boundary=json.loads((reference/'fixed_boundary_statistics.json').read_text())['aggregates']
+    new_boundary=json.loads((out/'fixed_boundary_statistics.json').read_text())['aggregates']
+    coverage={}
+    for c in CONDITIONS:
+        coverage[c]={}
+        for label,ss in [('original',original),('fixed',current)]:
+            cm=np.sum([r['pixel_confusion_matrix'] for r in ss[c]['best']['dev']['records'] if r['role']=='fake'],axis=0)
+            tn,fp,fn,tp=cm.reshape(-1);coverage[c][label]={'GT_recall':float(tp/max(1,tp+fn)),'BG_FPR':float(fp/max(1,fp+tn))}
+        lines.append(c+' 完整dev fake pooled覆盖/背景：'+json.dumps(coverage[c],ensure_ascii=False))
+        lines.append(c+' 固定样例边界（仅原生2px带，非全队列边界成绩）：'+json.dumps({'original':old_boundary[c],'fixed':new_boundary[c]},ensure_ascii=False))
+    if deltas[CONDITIONS[0]]['spatial_dice']>0 and extra['spatial_dice']<=0:
+        decision='唯一下一步：停止继续修补当前融合方式，保留稳定迁移基线，将后续成本转向空间样本覆盖和视觉适配。'
+    elif extra['spatial_dice']>0:
+        decision='唯一下一步：保留固定BN基础，设计分离dense几何与结构时序贡献的最小匹配消融。'
+    else:
+        decision='唯一下一步：如实保留固定BN未改善的结果，转向空间样本覆盖与视觉适配，不继续搜索BN策略。'
+    lines.extend([decision,'该建议仅据本轮单seed描述性差异，不证明显著性；训练与开发差距、GT覆盖、real FP和边界须联合审阅，不能以背景FP降低代替定位改善。',
+        'epoch0复用来源与固定样本一致性见epoch0_reuse.json；无新增特征提取或大缓存复制。',
+        '原结果与缓存未覆盖的元信息核对见reference_reuse.json。本轮两个条件结束，不自动执行后续建议。'])
+    comparison={'deltas_fixed_minus_original':deltas,'context_minus_transfer_fixed':extra,'paired_dev_fake':paired,
+        'groups':groups,'fluctuation_common_epochs':fluctuation,'coverage':coverage,'boundary':{'original':old_boundary,'fixed':new_boundary},'recommendation':decision}
+    save(out/'bn_strategy_comparison.json',comparison)
+    with (out/'report_zh.md').open('a') as f:f.write('\n'.join(lines)+'\n')

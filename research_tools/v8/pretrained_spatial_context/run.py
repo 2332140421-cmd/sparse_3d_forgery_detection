@@ -18,7 +18,7 @@ from research_tools.v8.local_geometry_pilot.runner import seed_all,atomic_torch,
 from research_tools.v8.spatial_localization.run import checkpoint_payload
 from research_tools.v8.spatial_localization.metrics import history_csv
 from research_tools.v8.spatial_localization.joint_data import save,SEED
-from .assets import prepare,official,extract,patch_features,CachedVideo,verify_source
+from .assets import prepare,official,extract,patch_features,CachedVideo,verify_source,referenced_decoder
 from .model import SpatialModel,CONDITIONS,video_loss
 from .metrics import evaluate,curves,report
 
@@ -56,6 +56,9 @@ def pair_update(model,opt,pair,config,out,fit,scaler):
     if model.context:
         for name,p in [('geometry',model.geo1.weight),('gru',model.structure.gru.weight_ih),('projection',model.projection[-1].weight)]:
             paths[name]=float(p.grad.abs().sum()) if p.grad is not None else None
+    if getattr(model,'freeze_decoder_bn',False):
+        paths['bn_affine']=sum(float(p.grad.abs().sum()) for m in model.decoder.modules() if isinstance(m,torch.nn.BatchNorm2d)
+            for p in [m.weight,m.bias] if p.grad is not None)
     scaler.step(opt);scaler.update();torch.cuda.synchronize()
     return {**losses,'gradient_norm':norm,'branch_grad_abs_sum':paths,'seconds':time.monotonic()-begin,'frames':sum(r['actual_frames'] for r in pair)}
 
@@ -68,8 +71,8 @@ def verify_online(config,out,rows,fit,network,use_cache=True):
         first=next(r for r in rows if (r['source_hw'][0]>r['source_hw'][1])==portrait)
         candidates.extend(r for r in rows if r['pair_id']==first['pair_id'])
     decoder=network.encoder.localization_head;results=[];seed_all(SEED)
-    a=SpatialModel(CONDITIONS[0],decoder,fit['statistics']).cuda().eval()
-    seed_all(SEED);b=SpatialModel(CONDITIONS[1],decoder,fit['statistics']).cuda().eval()
+    a=SpatialModel(CONDITIONS[0],decoder,fit['statistics'],freeze_decoder_bn=config.get('freeze_decoder_bn',False)).cuda().eval()
+    seed_all(SEED);b=SpatialModel(CONDITIONS[1],decoder,fit['statistics'],freeze_decoder_bn=config.get('freeze_decoder_bn',False)).cuda().eval()
     frozen_ids={id(p) for p in network.backbone.parameters()}
     if network.backbone.training or any(p.requires_grad for p in network.backbone.parameters()):raise ValueError('VISUAL_BACKBONE_NOT_FROZEN_EVAL')
     if any(id(p) in frozen_ids for m in [a,b] for p in m.parameters() if p.requires_grad):raise ValueError('FROZEN_BACKBONE_IN_OPTIMIZER')
@@ -115,6 +118,28 @@ def verify_online(config,out,rows,fit,network,use_cache=True):
     save(out/('online_cache_parity.json' if use_cache else 'official_forward_probe.json'),results);del a,b;torch.cuda.empty_cache()
 
 
+@torch.no_grad()
+def verify_reused_epoch0(config,out,rows,fit,decoder):
+    """Fixed original train-monitor snapshots; no encoder or full-queue AP rerun."""
+    reference=Path(config['reference_run']);results=[]
+    for c in CONDITIONS:
+        seed_all(SEED);m=SpatialModel(c,decoder,fit['statistics'],freeze_decoder_bn=True).cuda().eval()
+        for r in [r for r in rows if r['pair_id']=='an:95qlg9']:
+            fi=r['actual_frames']//2;start=fi//2*2;v=CachedVideo(config,out,r,fit,m.context)
+            try:
+                cpu=v.chunk(start,start+2);h=torch.zeros(256,128,device='cuda');active=torch.zeros(256,dtype=torch.bool,device='cuda')
+                with torch.autocast('cuda',dtype=torch.bfloat16,enabled=config['amp']):
+                    z=m.chunk(cpu,h,active,True,r['mapping256'],r['mapping512'])[2][fi-start].float().cpu()
+                path=reference/'epoch0_samples'/'train'/f'{r["video_id"]}_{fi}.npz'
+                with np.load(path,allow_pickle=False) as a:old=torch.from_numpy(a['logits'].copy())
+                torch.testing.assert_close(z,old,atol=1e-5,rtol=1e-5)
+                results.append({'condition':c,'video_id':r['video_id'],'frame_index':fi,'chunk_start':start,
+                    'max_abs_logit_difference':float((z-old).abs().max()),'bn_status':m.bn_status()})
+            finally:v.close()
+        del m;torch.cuda.empty_cache()
+    save(out/'epoch0_reuse.json',{'source':str(reference/'epoch0.json'),'full_queue_AP_reused':True,'fixed_sample_checks':results})
+
+
 def smoke(config,out,rows,fit,decoder,frozen_parameters):
     path=out/'resource_smoke.json'
     config_sha=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest()
@@ -124,21 +149,30 @@ def smoke(config,out,rows,fit,decoder,frozen_parameters):
         return result
     pairid=next(r['pair_id'] for r in rows if r['split']=='train');pair=[r for r in rows if r['pair_id']==pairid];records=[]
     for c in CONDITIONS:
-        seed_all(SEED);m=SpatialModel(c,decoder,fit['statistics']).cuda();seed_all(SEED)
+        seed_all(SEED);m=SpatialModel(c,decoder,fit['statistics'],freeze_decoder_bn=config.get('freeze_decoder_bn',False)).cuda();seed_all(SEED)
         opt=torch.optim.AdamW([p for p in m.parameters() if p.requires_grad],lr=1e-4,weight_decay=1e-4);scaler=torch.amp.GradScaler('cuda',enabled=False)
         before=m.decoder.state_dict();before={k:v.clone() for k,v in before.items()}
         projection=m.projection[-1].weight.detach().clone() if m.context else None
         torch.cuda.reset_peak_memory_stats();m.train();updates=[]
-        for _ in range(2):updates.append(pair_update(m,opt,pair,config,out,fit,scaler))
+        for _ in range(2):
+            updates.append(pair_update(m,opt,pair,config,out,fit,scaler))
+            if config.get('freeze_decoder_bn'):updates[-1]['bn_status']=m.bn_status()
         if not any(not torch.equal(before[k],v) for k,v in m.decoder.named_parameters()):raise ValueError('DECODER_DID_NOT_UPDATE')
         if m.context and torch.equal(projection,m.projection[-1].weight):raise ValueError('PROJECTION_DID_NOT_UPDATE')
+        bn_updated=None
+        if config.get('freeze_decoder_bn'):
+            bn_updated=any(not torch.equal(before[name+'.'+key],p) for name,layer in m.decoder.named_modules()
+                if isinstance(layer,torch.nn.BatchNorm2d) for key,p in [('weight',layer.weight),('bias',layer.bias)])
+            if not bn_updated or not all(u['branch_grad_abs_sum']['bn_affine']>0 for u in updates):raise ValueError('BN_AFFINE_DID_NOT_LEARN')
+            if torch.equal(before['proj.weight'],m.decoder.proj.weight):raise ValueError('DECODER_CONV_DID_NOT_LEARN')
         if m.context and any(not updates[-1]['branch_grad_abs_sum'].get(k) for k in ['geometry','gru','projection']):
             raise ValueError('CONTEXT_PATH_GRADIENT_MISSING_AFTER_TWO_UPDATES')
         progress(out,'smoke_evaluate',condition=c)
         normal=evaluate(m,config,out,pair,fit);ap=evaluate(m,config,out,pair,fit,pixel_ap=True)
         records.append({'condition':c,'pair_id':pairid,'updates':updates,'evaluation_s':normal['seconds'],'exact_AP_evaluation_s':ap['seconds'],
             'peak_allocated_bytes':torch.cuda.max_memory_allocated(),'trainable_parameters':sum(p.numel() for p in m.parameters() if p.requires_grad),
-            'model_parameters':sum(p.numel() for p in m.parameters())+frozen_parameters,'frozen_backbone_parameters':frozen_parameters})
+            'model_parameters':sum(p.numel() for p in m.parameters())+frozen_parameters,'frozen_backbone_parameters':frozen_parameters,
+            'bn_affine_updated':bn_updated})
         del m,opt;torch.cuda.empty_cache()
     projections={}
     for r in records:
@@ -165,7 +199,7 @@ def train(config,out,rows,fit,decoder,frozen_parameters,resume=False):
         if summary.exists():
             if json.loads(summary.read_text())['identity']!=identity:raise ValueError('COMPLETED_IDENTITY_CHANGED')
             continue
-        seed_all(SEED);model=SpatialModel(c,decoder,fit['statistics']).cuda();seed_all(SEED)
+        seed_all(SEED);model=SpatialModel(c,decoder,fit['statistics'],freeze_decoder_bn=config.get('freeze_decoder_bn',False)).cuda();seed_all(SEED)
         opt=torch.optim.AdamW([p for p in model.parameters() if p.requires_grad],lr=1e-4,weight_decay=1e-4);scaler=torch.amp.GradScaler('cuda',enabled=False)
         epoch=0;position=0;history=[];online=[];updates=0;elapsed=0.;stale=0
         initial=json.loads((out/'epoch0.json').read_text());best=initial['dev']['metrics']['spatial_dice'];best_epoch=0;anchor=best
@@ -179,6 +213,8 @@ def train(config,out,rows,fit,decoder,frozen_parameters,resume=False):
             if epoch!=len(history) or position!=len(online):raise ValueError('RESUME_POSITION')
         else:
             atomic_torch(folder/'best.pt',checkpoint_payload(model,opt,scaler,run_identity,0,0,[],[],0,best,0,anchor,0,0.))
+        if config.get('freeze_decoder_bn'):
+            model.train();model.bn_status()  # Also enforces official buffers immediately after resume.
         begin=time.monotonic()
         while epoch<config['epochs'] and stale<8:
             keys=sorted(pairs);random.Random(SEED+epoch).shuffle(keys);model.train();torch.cuda.reset_peak_memory_stats();started=time.monotonic()
@@ -187,6 +223,7 @@ def train(config,out,rows,fit,decoder,frozen_parameters,resume=False):
                 online.append(pair_update(model,opt,pairs[keys[j]],config,out,fit,scaler));updates+=1
                 atomic_torch(last,checkpoint_payload(model,opt,scaler,run_identity,epoch,j+1,history,online,updates,best,best_epoch,anchor,stale,elapsed+time.monotonic()-begin))
                 if STOP:raise InterruptedError('SAFE_PAIR_BOUNDARY_STOP')
+            bn_status=model.bn_status() if config.get('freeze_decoder_bn') else None
             progress(out,'evaluate',condition=c,epoch=epoch+1)
             tm=evaluate(model,config,out,trainrows,fit);dv=evaluate(model,config,out,dev,fit,pixel_ap=(epoch+1)%5==0)
             dice=dv['metrics']['spatial_dice'];improved=dice>best
@@ -197,6 +234,7 @@ def train(config,out,rows,fit,decoder,frozen_parameters,resume=False):
                 'train':tm['metrics'],'dev':dv['metrics'],'gradient_norm_mean':float(np.mean([r['gradient_norm'] for r in online])),
                 'lr':1e-4,'updates':updates,'train_s':sum(r['seconds'] for r in online),'eval_s':tm['seconds']+dv['seconds'],
                 'frames':sum(r['frames'] for r in online),'peak_allocated_bytes':torch.cuda.max_memory_allocated()}
+            if bn_status is not None:record['bn_status']=bn_status
             save(folder/'epoch_metrics'/f'epoch_{epoch+1:02d}.json',{'train':tm,'dev':dv,'pair_order':keys,'updates':online})
             history.append(record);save(folder/'history.json',history);history_csv(folder/'history.csv',history);curves(out,c,history)
             epoch+=1;position=0;online=[]
@@ -207,6 +245,7 @@ def train(config,out,rows,fit,decoder,frozen_parameters,resume=False):
         metrics={}
         for ck in ['last','best']:
             if ck=='best':model.load_state_dict(torch.load(folder/'best.pt',map_location='cpu',weights_only=False)['model'])
+            if config.get('freeze_decoder_bn'):model.bn_status()
             progress(out,'final_metrics',condition=c,checkpoint=ck)
             metrics[ck]={split:evaluate(model,config,out,rr,fit,pixel_ap=True,samples=folder/'samples'/ck)
                 for split,rr in [('train',trainrows),('dev',dev)]}
@@ -229,17 +268,22 @@ def main():
     torch.set_num_threads(4);signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
     try:
         progress(out,'assets');rows,fit=prepare(config,out)
-        network=official(config,out).cuda();decoder=copy.deepcopy(network.encoder.localization_head).cpu()
-        verify_online(config,out,rows,fit,network,use_cache=False)
-        if args.phase=='assets':
-            if (out/'feature_costs.json').exists():verify_online(config,out,rows,fit,network)
-            save(out/'progress.json',{'status':'ASSETS_VERIFIED','pid':os.getpid()});return
-        extract(config,out,rows,fit,network,lambda stage,**kw:progress(out,stage,**kw));verify_online(config,out,rows,fit,network)
-        frozen=sum(p.numel() for p in network.backbone.parameters());del network;torch.cuda.empty_cache()
+        if config.get('reference_run'):
+            if not config.get('freeze_decoder_bn'):raise ValueError('REFERENCE_RUN_REQUIRES_FIXED_BN_PROTOCOL')
+            decoder,frozen=referenced_decoder(config,out,rows);verify_reused_epoch0(config,out,rows,fit,decoder)
+            if args.phase=='assets':save(out/'progress.json',{'status':'ASSETS_VERIFIED','pid':os.getpid()});return
+        else:
+            network=official(config,out).cuda();decoder=copy.deepcopy(network.encoder.localization_head).cpu()
+            verify_online(config,out,rows,fit,network,use_cache=False)
+            if args.phase=='assets':
+                if (out/'feature_costs.json').exists():verify_online(config,out,rows,fit,network)
+                save(out/'progress.json',{'status':'ASSETS_VERIFIED','pid':os.getpid()});return
+            extract(config,out,rows,fit,network,lambda stage,**kw:progress(out,stage,**kw));verify_online(config,out,rows,fit,network)
+            frozen=sum(p.numel() for p in network.backbone.parameters());del network;torch.cuda.empty_cache()
         smoke(config,out,rows,fit,decoder,frozen)
         if args.phase=='smoke':save(out/'progress.json',{'status':'SMOKE_COMPLETE','pid':os.getpid()});return
         if not (out/'epoch0.json').exists():
-            progress(out,'epoch0');baseline=SpatialModel(CONDITIONS[0],decoder,fit['statistics']).cuda()
+            progress(out,'epoch0');baseline=SpatialModel(CONDITIONS[0],decoder,fit['statistics'],freeze_decoder_bn=config.get('freeze_decoder_bn',False)).cuda()
             save(out/'epoch0.json',{s:evaluate(baseline,config,out,[r for r in rows if r['split']==s],fit,pixel_ap=True,
                 samples=out/'epoch0_samples') for s in ['train','dev']});del baseline;torch.cuda.empty_cache()
         train(config,out,rows,fit,decoder,frozen,args.resume);report(out,rows);verify_source(config,out)

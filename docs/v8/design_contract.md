@@ -80,3 +80,7 @@ residual路径，不叠加两次；不修改旧基准行为，亦不把历史差
 component/全帧attention/多前驱因果GRU。只用原ANAKIN48训练/16开发空间监督，
 全部帧、512补齐518、实际256/512映射、原96训练统计和原缓存只读。
 这是独立新定位方法，不改上文弱监督主链、窗口/全视频结果或其他实验默认行为。
+
+用户随后授权`v8-spatial-context-frozen-bn` / ADR-0025仅改变decoder BN统计策略，
+以`spatial_context_frozen_bn_contract.md`为准。官方初始buffers固定、仿射仍训练，
+直接只读复用原缓存；不更改前述原实验或默认行为。

@@ -126,7 +126,7 @@ def test_runner_resume_pair_order_and_epoch0_best(tmp_path,monkeypatch):
     import json
     from research_tools.v8.pretrained_spatial_context import run
     class Tiny(nn.Module):
-        def __init__(self,c,*args):
+        def __init__(self,c,*args,**kwargs):
             super().__init__();self.decoder=nn.Linear(1,1);self.condition=c
         def cuda(self):return self
     monkeypatch.setattr(run,'SpatialModel',Tiny);monkeypatch.setattr(run,'curves',lambda *args:None)

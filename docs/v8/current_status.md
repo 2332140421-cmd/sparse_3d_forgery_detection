@@ -1,11 +1,19 @@
 # V8 当前状态与边界
 
-更新2026-10-29。当前工作分支`v8-pretrained-spatial-context`，既有V8历史基线为远端
+更新2026-10-29。当前工作分支`v8-spatial-context-frozen-bn`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前结果：预训练空间定位对照已完成
+## 当前执行：固定decoder BN匹配对照启动前验证完成
+
+用户授权ADR-0025/[固定BN合同](spatial_context_frozen_bn_contract.md)，两条件从官方初始化
+重新训练，仅固定decoder BN三个buffers，仿射/卷积及Dropout策略保持。
+原64视频7984帧、原96训练统计与已有视觉/前端缓存直接引用，不重提或复制缓存。
+[本轮实验](../experiments/v8-spatial-context-frozen-bn.md)已通过20项相关测试与真实完整pair两次更新smoke，
+尚无正式新分数；提交推送后独立运行，不逐轮调参，不改原实验。
+
+## 已完成：原BN策略预训练空间定位
 
 2026-10-29用户授权[预训练空间定位与三维时序增强](../experiments/v8-pretrained-spatial-context.md)，
 协议[pretrained_spatial_context_contract.md](pretrained_spatial_context_contract.md)、ADR-0024。

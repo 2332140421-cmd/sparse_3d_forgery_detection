@@ -27,3 +27,4 @@
 - [ADR-0022：V8完整联合编辑区域定位](0022-v8-joint-spatial-localization.md)
 - [ADR-0023：V8检测与空间定位输出分离](0023-v8-spatial-head-decoupling.md)
 - [ADR-0024：预训练空间定位与三维时序上下文](0024-v8-pretrained-spatial-context.md)
+- [ADR-0025：固定decoder BN运行统计匹配对照](0025-v8-spatial-context-frozen-bn.md)

@@ -25,11 +25,15 @@ def align256(field,m256,m512):
 
 
 class SpatialModel(nn.Module):
-    def __init__(self,condition,decoder,statistics):
+    def __init__(self,condition,decoder,statistics,*,freeze_decoder_bn=False):
         super().__init__()
         if condition not in CONDITIONS:raise ValueError(condition)
         self.condition=condition;self.context=condition==CONDITIONS[1]
         self.decoder=copy.deepcopy(decoder).requires_grad_(True)
+        self.freeze_decoder_bn=freeze_decoder_bn
+        if freeze_decoder_bn:
+            self._bn_initial={k:v.detach().cpu().clone() for k,v in self.decoder.named_buffers()
+                if k.endswith(('running_mean','running_var','num_batches_tracked'))}
         if self.context:
             self.structure=GlobalContextModel('GLOBAL_COMPONENT',statistics,patch_chunk=512)
             # Kept for compatibility with the shared hidden-state path, never optimized.
@@ -37,6 +41,22 @@ class SpatialModel(nn.Module):
             self.geo1=nn.Conv2d(7,32,3,padding=1);self.geo2=nn.Conv2d(32,32,3,padding=1)
             self.projection=nn.Sequential(nn.Conv2d(160,128,1),nn.ReLU(),nn.Conv2d(128,1024,1))
             nn.init.zeros_(self.projection[-1].weight);nn.init.zeros_(self.projection[-1].bias)
+
+    def train(self,mode=True):
+        super().train(mode)
+        if mode and self.freeze_decoder_bn:
+            for layer in self.decoder.modules():
+                if isinstance(layer,nn.BatchNorm2d):layer.eval()
+        return self
+
+    def bn_status(self):
+        """Small per-epoch assertion against official initialization, also after resume."""
+        layers=[m for m in self.decoder.modules() if isinstance(m,nn.BatchNorm2d)]
+        current=dict(self.decoder.named_buffers())
+        equal=all(torch.equal(current[k].detach().cpu(),v) for k,v in self._bn_initial.items())
+        affine=all(m.weight.requires_grad and m.bias.requires_grad for m in layers)
+        if not layers or not equal or not affine or any(m.training for m in layers):raise ValueError('FIXED_BN_CONTRACT')
+        return {'strategy':'FIXED_BN','layers':len(layers),'buffers_equal':equal,'all_eval':True,'affine_trainable':affine}
 
     def chunk(self,cpu,previous,active,first,m256,m512):
         device=next(self.parameters()).device;features=cpu['features'].to(device)

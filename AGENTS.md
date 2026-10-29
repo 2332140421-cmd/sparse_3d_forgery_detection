@@ -91,3 +91,8 @@ results, or inconsistency between the paper and implementation.
   including trained LoRA, and spatial-only decoder training. The context condition
   adds full dense geometry/component/attention/GRU through zero-initialized residual
   projection. Source caches/statistics remain read-only; no old trained weights.
+- Fixed decoder BN comparison: ADR-0025 and
+  `docs/v8/spatial_context_frozen_bn_contract.md` authorize the same two full models
+  from official initialization with fixed official BN buffers but trainable affine
+  parameters. Keep Dropout's original modes and the default option False. Reference
+  existing visual/frontend caches; no new features, downloads, or old-model fine-tuning.

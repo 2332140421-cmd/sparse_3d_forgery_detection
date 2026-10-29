@@ -110,6 +110,69 @@ def verify_source(config,out):
         raise ValueError('ORIGINAL_ASSETS_CHANGED')
     for video,sha in r['cache_metadata'].items():
         if digest(source/'cache'/video/'complete.json')!=sha:raise ValueError('ORIGINAL_CACHE_CHANGED')
+    if config.get('reference_run'):verify_reference(out)
+
+
+def referenced_decoder(config,out,rows):
+    """Reuse verified assets by metadata; mmap only official decoder tensors, no DINO."""
+    reference=Path(config['reference_run']);features=Path(config['features_root']);source=Path(config['source_run'])
+    if reference.resolve()==out.resolve() or reference.resolve() in out.resolve().parents or out.resolve() in reference.resolve().parents:
+        raise ValueError('REFERENCE_OUTPUT_OVERLAP')
+    if rows!=json.loads((reference/'manifest.json').read_text())['rows']:raise ValueError('EXACT_REFERENCE_QUEUE')
+    original=json.loads((reference/'official_load.json').read_text())
+    if original['checkpoint_sha256']!=config['checkpoint_sha256'] or original['official_revision']!=AINPAINT_REV:
+        raise ValueError('OFFICIAL_REFERENCE_IDENTITY')
+    oldrefs=json.loads((reference/'source_references.json').read_text())
+    if oldrefs['statistics_sha256']!=digest(source/'statistics.json'):raise ValueError('REFERENCE_STATISTICS')
+    small={reference/name for name in ['manifest.json','epoch0.json','official_load.json','source_references.json','result_summary.json','fixed_boundary_statistics.json']}
+    large={Path(config['checkpoint'])}
+    for c in ['SPATIAL_TRANSFER','SPATIAL_3D_CONTEXT']:
+        small.update(reference/c/name for name in ['summary.json','history.json'])
+        large.update(reference/c/name for name in ['best.pt','last.pt'])
+    for r in rows:
+        directory=features/r['video_id'];meta=directory/'complete.json';m=json.loads(meta.read_text())
+        expected={'checkpoint_sha256':config['checkpoint_sha256'],'official_revision':AINPAINT_REV,'dino_revision':DINO_REV,
+            'video_sha256':r['video_sha256'],'pts_sha256':hashlib.sha256(json.dumps(r['pts'],sort_keys=True).encode()).hexdigest(),
+            'shape':[r['actual_frames'],1024,37,37],'dtype':'float16','preprocess':original['preprocess']}
+        if any(m[k]!=v for k,v in expected.items()):raise ValueError('REFERENCE_FEATURE_METADATA:'+r['video_id'])
+        a=np.load(directory/'patch.npy',mmap_mode='r')
+        if list(a.shape)!=expected['shape'] or a.dtype!=np.float16:raise ValueError('REFERENCE_FEATURE_HEADER')
+        del a
+        small.add(meta);large.add(directory/'patch.npy')
+        cache=source/'cache'/r['video_id'];small.add(cache/'complete.json');large.update(cache.glob('*.npy'))
+    refs={'reference_run':str(reference),'features_root':str(features),'epoch0_sha256':digest(reference/'epoch0.json'),
+        'small_file_sha256':{str(p):digest(p) for p in sorted(small)},
+        'large_file_size_mtime':{str(p):[p.stat().st_size,p.stat().st_mtime_ns] for p in sorted(large)},
+        'verification':'existing full SHA acceptance reused; metadata/headers and size/mtime checked; no repeated large-file scan',
+        'new_visual_feature_extraction':False,'new_visual_feature_storage_bytes':0}
+    path=out/'reference_reuse.json'
+    if path.exists() and json.loads(path.read_text())!=refs:raise ValueError('REFERENCE_ASSETS_CHANGED')
+    if not path.exists():save(path,refs)
+    if Path(config['checkpoint']).stat().st_size!=original['checkpoint_bytes']:raise ValueError('OFFICIAL_CHECKPOINT_SIZE')
+    root=Path(config['official_code'])
+    if subprocess.check_output(['git','-C',str(root),'rev-parse','HEAD'],text=True).strip()!=AINPAINT_REV:raise ValueError('OFFICIAL_CODE_REVISION')
+    sys.path.insert(0,str(root))
+    from ainpaint.modules.context_decoder import HighResContextHead
+    decoder=HighResContextHead(1024,1,norm='BN')
+    cp=torch.load(config['checkpoint'],map_location='cpu',weights_only=False,mmap=True)
+    prefix='encoder.localization_head.'
+    decoder.load_state_dict({k[len(prefix):]:v for k,v in cp['model_state_dict'].items() if k.startswith(prefix)},strict=True)
+    decoder.eval();del cp
+    save(out/'official_load.json',{**original,'initialization':'same official decoder; backbone/LoRA represented by shared frozen features; no backbone constructed'})
+    target=out/'epoch0.json'
+    if target.exists() and digest(target)!=refs['epoch0_sha256']:raise ValueError('EPOCH0_REFERENCE_CHANGED')
+    if not target.exists():target.write_bytes((reference/'epoch0.json').read_bytes())
+    verify_reference(out)
+    return decoder,original['backbone_parameters']
+
+
+def verify_reference(out):
+    refs=json.loads((out/'reference_reuse.json').read_text())
+    for name,sha in refs['small_file_sha256'].items():
+        if digest(Path(name))!=sha:raise ValueError('READ_ONLY_REFERENCE_CHANGED:'+name)
+    for name,expected in refs['large_file_size_mtime'].items():
+        p=Path(name)
+        if [p.stat().st_size,p.stat().st_mtime_ns]!=expected:raise ValueError('READ_ONLY_REFERENCE_CHANGED:'+name)
 
 
 def patch_features(model,rgb):
@@ -157,7 +220,7 @@ class CachedVideo:
     def __init__(self,config,out,row,fit,context):
         self.row=row;self.context=context
         self.base=Video(Path(config['source_run']),row,fit['statistics'],fit['grouping'],read_only=True)
-        self.features=np.load(out/'features'/row['video_id']/'patch.npy',mmap_mode='r')
+        self.features=np.load(Path(config.get('features_root',out/'features'))/row['video_id']/'patch.npy',mmap_mode='r')
     def chunk(self,start,end):
         if self.context:a=self.base.chunk(start,end)
         else:a={k:torch.from_numpy(np.array(self.base.arrays[k][start:end],copy=True)) for k in ['content512','gt']}

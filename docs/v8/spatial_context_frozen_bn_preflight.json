@@ -1,0 +1,195 @@
+{
+  "status": "PREFLIGHT_COMPLETE",
+  "reference_head": "acbd53976ebd76bb739ab68f52fba2f3db5e8113",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_pretrained_spatial_context_frozen_bn_v1",
+  "config_sha256": "7c3cc64c57e74ede6aa7278f0c355934e6702df6e0d0732f4afc92da0bf79f2b",
+  "manifest_sha256": "7e60f427bb2f4ca2fbf49e1a05122ebc903363f443061189215977f67f57386b",
+  "epoch0_sha256": "1272fde4b198c808470981a7a09b53e1df6e23cf01cb9c082e74bb4b21a24b4f",
+  "epoch0_reuse": {
+    "source": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_pretrained_spatial_context_pilot_v1/epoch0.json",
+    "full_queue_AP_reused": 1,
+    "fixed_sample_checks": [
+      {
+        "condition": "SPATIAL_TRANSFER",
+        "video_id": "5e281219c8a281ae6109f506",
+        "frame_index": 45,
+        "chunk_start": 44,
+        "max_abs_logit_difference": 0.0,
+        "bn_status": {
+          "strategy": "FIXED_BN",
+          "layers": 5,
+          "buffers_equal": 1,
+          "all_eval": 1,
+          "affine_trainable": 1
+        }
+      },
+      {
+        "condition": "SPATIAL_TRANSFER",
+        "video_id": "ceb1a2c7d9ba416daf788ea4",
+        "frame_index": 45,
+        "chunk_start": 44,
+        "max_abs_logit_difference": 0.0,
+        "bn_status": {
+          "strategy": "FIXED_BN",
+          "layers": 5,
+          "buffers_equal": 1,
+          "all_eval": 1,
+          "affine_trainable": 1
+        }
+      },
+      {
+        "condition": "SPATIAL_3D_CONTEXT",
+        "video_id": "5e281219c8a281ae6109f506",
+        "frame_index": 45,
+        "chunk_start": 44,
+        "max_abs_logit_difference": 0.0,
+        "bn_status": {
+          "strategy": "FIXED_BN",
+          "layers": 5,
+          "buffers_equal": 1,
+          "all_eval": 1,
+          "affine_trainable": 1
+        }
+      },
+      {
+        "condition": "SPATIAL_3D_CONTEXT",
+        "video_id": "ceb1a2c7d9ba416daf788ea4",
+        "frame_index": 45,
+        "chunk_start": 44,
+        "max_abs_logit_difference": 0.0,
+        "bn_status": {
+          "strategy": "FIXED_BN",
+          "layers": 5,
+          "buffers_equal": 1,
+          "all_eval": 1,
+          "affine_trainable": 1
+        }
+      }
+    ]
+  },
+  "resource_smoke": {
+    "config_sha256": "7c3cc64c57e74ede6aa7278f0c355934e6702df6e0d0732f4afc92da0bf79f2b",
+    "records": [
+      {
+        "condition": "SPATIAL_TRANSFER",
+        "pair_id": "an:95qlg9",
+        "updates": [
+          {
+            "loss": 0.25134239345788956,
+            "bce": 0.07820902019739151,
+            "dice": 0.17313334345817566,
+            "gradient_norm": 0.9030164480209351,
+            "branch_grad_abs_sum": {
+              "bn_affine": 0.9558103084564209
+            },
+            "seconds": 1.0871607228182256,
+            "frames": 180,
+            "bn_status": {
+              "strategy": "FIXED_BN",
+              "layers": 5,
+              "buffers_equal": 1,
+              "all_eval": 1,
+              "affine_trainable": 1
+            }
+          },
+          {
+            "loss": 0.21167363226413727,
+            "bce": 0.07302624732255936,
+            "dice": 0.1386474072933197,
+            "gradient_norm": 0.644046425819397,
+            "branch_grad_abs_sum": {
+              "bn_affine": 0.7518275640904903
+            },
+            "seconds": 0.9853582037612796,
+            "frames": 180,
+            "bn_status": {
+              "strategy": "FIXED_BN",
+              "layers": 5,
+              "buffers_equal": 1,
+              "all_eval": 1,
+              "affine_trainable": 1
+            }
+          }
+        ],
+        "evaluation_s": 0.49899498373270035,
+        "exact_AP_evaluation_s": 1.8093076781369746,
+        "peak_allocated_bytes": 376629248,
+        "trainable_parameters": 2094017,
+        "model_parameters": 308046065,
+        "frozen_backbone_parameters": 305952048,
+        "bn_affine_updated": 1
+      },
+      {
+        "condition": "SPATIAL_3D_CONTEXT",
+        "pair_id": "an:95qlg9",
+        "updates": [
+          {
+            "loss": 0.25134239345788956,
+            "bce": 0.07820902019739151,
+            "dice": 0.17313334345817566,
+            "gradient_norm": 0.9032382369041443,
+            "branch_grad_abs_sum": {
+              "geometry": 0.0,
+              "gru": 0.0,
+              "projection": 1.8175716400146484,
+              "bn_affine": 0.9558105170726776
+            },
+            "seconds": 2.031924869865179,
+            "frames": 180,
+            "bn_status": {
+              "strategy": "FIXED_BN",
+              "layers": 5,
+              "buffers_equal": 1,
+              "all_eval": 1,
+              "affine_trainable": 1
+            }
+          },
+          {
+            "loss": 0.21148854866623878,
+            "bce": 0.07293003797531128,
+            "dice": 0.1385585367679596,
+            "gradient_norm": 0.6428021192550659,
+            "branch_grad_abs_sum": {
+              "geometry": 0.0024975412525236607,
+              "gru": 0.017991909757256508,
+              "projection": 2.0810863971710205,
+              "bn_affine": 0.7468363083899021
+            },
+            "seconds": 2.000163038726896,
+            "frames": 180,
+            "bn_status": {
+              "strategy": "FIXED_BN",
+              "layers": 5,
+              "buffers_equal": 1,
+              "all_eval": 1,
+              "affine_trainable": 1
+            }
+          }
+        ],
+        "evaluation_s": 0.8364676772616804,
+        "exact_AP_evaluation_s": 2.1638769200071692,
+        "peak_allocated_bytes": 663808512,
+        "trainable_parameters": 2569665,
+        "model_parameters": 308530034,
+        "frozen_backbone_parameters": 305952048,
+        "bn_affine_updated": 1
+      }
+    ],
+    "projection_max30": {
+      "SPATIAL_TRANSFER": {
+        "train30_s": 1067.0018273673488,
+        "routine_eval30_s": 663.9959916869799,
+        "extra_dev_AP6_s": 78.88082420313731
+      },
+      "SPATIAL_3D_CONTEXT": {
+        "train30_s": 2075.8532582734865,
+        "routine_eval30_s": 1113.0596558762093,
+        "extra_dev_AP6_s": 79.91003641327843
+      }
+    },
+    "smoke_weights": "discarded; recreate paired official decoder and zero projection",
+    "limits": "one complete train pair; final full AP and exports excluded; early stopping may shorten"
+  },
+  "tests": "20 passed; frozen BN, original runner/evaluation, BN diagnosis; CPU NVML warning only",
+  "no_new_feature_extraction": true
+}

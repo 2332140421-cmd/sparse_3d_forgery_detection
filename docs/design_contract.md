@@ -522,3 +522,10 @@ SPATIAL_TRANSFER与SPATIAL_3D_CONTEXT。完整官方AINPAINT spatial骨干/已�
 投影末层零初始化。全部原ANAKIN48训练/16开发、空间BCE+Dice、最多30轮早停，
 原96训练统计与缓存只读。仅在新对照取代14.8随机像素基础/检测监督、14.9小队列固定轮数；
 保留旧方法、历史分数与其他默认路径。
+
+### 14.11 V8固定decoder BN运行统计匹配对照
+
+用户授权按ADR-0025与`docs/v8/spatial_context_frozen_bn_contract.md`，仅在独立新实验
+固定两条件decoder的官方初始BN buffers；仿射/卷积仍训练，Dropout策略不变。
+从同一官方初始化重新训练，直接引用原视觉与前端缓存，数据/结构/loss/预算不变。
+仅取代本新实验中14.10的BN更新策略，默认False保留旧入口行为和历史成绩。
