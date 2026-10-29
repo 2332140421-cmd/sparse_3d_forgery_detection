@@ -5,13 +5,15 @@
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前执行：固定decoder BN匹配对照启动前验证完成
+## 当前执行：固定decoder BN匹配对照 RUNNING
 
 用户授权ADR-0025/[固定BN合同](spatial_context_frozen_bn_contract.md)，两条件从官方初始化
 重新训练，仅固定decoder BN三个buffers，仿射/卷积及Dropout策略保持。
 原64视频7984帧、原96训练统计与已有视觉/前端缓存直接引用，不重提或复制缓存。
 [本轮实验](../experiments/v8-spatial-context-frozen-bn.md)已通过20项相关测试与真实完整pair两次更新smoke，
-尚无正式新分数；提交推送后独立运行，不逐轮调参，不改原实验。
+尚无最终新分数。代码`2eeb38d`已提交普通推送，2026-10-29 22:00:10 +08:00
+在独立tmux `v8_pretrained_spatial_context_frozen_bn_v1`启动；一次核对进程正常并进入首轮评价。
+Python自动完成两条件训练、最终评价与报告，不逐轮轮询调参，不改原实验。
 
 ## 已完成：原BN策略预训练空间定位
 

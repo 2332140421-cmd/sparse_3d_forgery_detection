@@ -1,6 +1,6 @@
 # 固定decoder BN运行统计的匹配对照
 
-2026-10-29。PREFLIGHT_COMPLETE：20项相关测试及两条件真实完整pair smoke通过；尚无正式新分数。
+2026-10-29。RUNNING：20项相关测试及真实完整pair smoke通过，正式两条件已独立启动；尚无最终新分数。
 起点`acbd539`，分支`v8-spatial-context-frozen-bn`。本轮只改BN统计策略，
 不预设固定BN改善定位，旧结果保持原样。
 
@@ -48,3 +48,20 @@ epoch0复用旧完整评价并按固定样例核对，原best/last只作元信�
 依该单pair速率外推，两条件各满30轮的训练、常规评价、周期开发AP合计约84.65分钟；
 不含最终完整best/last AP、样例导出及checkpoint I/O，早停可能缩短。这是预算外推，非完成耗时。
 未新增特征存储，直接引用原20.85GiB特征与前端缓存。正式checkpoint与最终指标尚未产生。
+
+## 独立运行记录
+
+代码`2eeb38df0501ecc1aefde9d82ba7098b25689e6a`已普通push并核对远端后，于2026-10-29 22:00:10 +08:00
+启动本轮全流程，无`--resume`，从同一官方初始化重新训练。
+独立tmux：`v8_pretrained_spatial_context_frozen_bn_v1`，Python PID启动核对为900055。
+唯一一次启动核对确认RUNNING，迁移条件已进入首轮评价；不逐轮轮询或改配置。
+日志为上述输出目录的`run.log`，实时状态为`progress.json`，精确启动参数及代码版本见`launch.json`。
+
+```bash
+tmux attach -t v8_pretrained_spatial_context_frozen_bn_v1
+```
+
+Python自动依次训练两个条件，输出最终best/last精确评价、固定样例索引`index.html`、
+原BN/固定BN同轮曲线及`report_zh.md`，结束前核对旧资产元信息。
+只有`progress.json`为COMPLETE/report_complete才表示全流程完成；当前RUNNING不代表已取得最终成绩。
+完成后集中审阅最终结果并补齐本文档，不自动追加实验。
