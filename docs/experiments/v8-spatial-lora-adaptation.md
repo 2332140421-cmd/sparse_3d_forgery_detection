@@ -1,6 +1,6 @@
 # V8空间定位LoRA适配对照
 
-2026-10-30，RUNNING；分支`v8-spatial-lora-adaptation`，从`9aaa029`开始。
+2026-10-30，COMPLETE；分支`v8-spatial-lora-adaptation`，从`9aaa029`开始。
 本轮只训练一个条件SPATIAL_LORA_ADAPT，检验冻结视觉是否限制ANAKIN空间定位。
 不运行三维增强、额外seed或前端；完整模型、输入、全部实际帧与正式损失保持。
 
@@ -46,7 +46,7 @@ best严格最大Dice且epoch0可选；delta只控制patience。每轮完整dev�
 |条件|best/结束轮次|完整训练Dice|开发Dice|IoU|pixel AP|real FP|
 |---|---|---:|---:|---:|---:|---:|
 |固定BN冻结视觉|7/15|0.570987|0.245772|0.189581|0.350134|0.014186|
-|SPATIAL_LORA_ADAPT|尚未训练|—|—|—|—|—|
+|SPATIAL_LORA_ADAPT|12/20|0.664341|0.312192|0.246006|0.423351|0.032730|
 |原BN历史参考|12/20|0.587574|0.274765|0.212297|0.349170|0.038293|
 
 上一轮固定BN已COMPLETE：两模型各15轮/360更新、best均第7轮；增强Dice0.254395，
@@ -57,8 +57,8 @@ best严格最大Dice且epoch0可选；delta只控制patience。每轮完整dev�
 输出：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_lora_adaptation_pilot_v1/`。
 报告须比较8条fake与原弱6条、GT覆盖/背景/固定边界、完整train与dev、monitor曲线、
 last及实际成本。样例直接引用旧固定BN原始响应，不重跑基线。
-smoke、外推预算和正式实测分开记录；最终结果尚未产生，不预填收益。
-完成后集中审阅并提交小型结果和必要曲线；不追加实验。
+smoke、外推预算和正式实测分开记录；最终指标见下文完成结果和小型结果JSON。
+已集中汇总并提交小型结果和必要曲线；不追加实验。
 
 ## 启动前验证（实测）
 
@@ -95,3 +95,49 @@ LoRA/decoder梯度绝对和分别2080.23/496.57、1204.12/380.76，参数均实�
 无`--resume`，只训练新条件，自动结果交付已启用。日志为输出目录`run.log`，
 实时状态`progress.json`，最终退出码`exit_code.txt`，实际Git交付记录`publication.json`。
 仅在最终评价、报告和交付完成后标记COMPLETE；当前尚无新条件最终指标。
+
+## 完成结果（自动集中汇总）
+
+# V8空间定位LoRA适配对照
+
+仅新训练SPATIAL_LORA_ADAPT；全部条件从同一官方已训练LoRA/decoder初始化。主要对照固定BN冻结视觉，原BN仅历史参考。
+完整输入/全部帧/空间BCE+Dice不变；无三维增强，无检测门控。单seed和8条开发fake仅作描述性比较。
+
+|条件|best/结束轮次|完整训练Dice|开发Dice|IoU|pixel AP|GT召回(视频均值)|real空间FP|
+|---|---|---:|---:|---:|---:|---:|---:|
+|固定BN冻结视觉|7/15|0.570987|0.245772|0.189581|0.350134|0.211642|0.014186|
+|LoRA适配固定BN|12/20|0.664341|0.312192|0.246006|0.423351|0.313702|0.032730|
+|原BN历史参考|12/20|0.587574|0.274765|0.212297|0.349170|0.308388|0.038293|
+LoRA−固定BN冻结视觉：{"spatial_dice": 0.06642011533210179, "spatial_iou": 0.05642513557743467, "pixel_ap": 0.07321712937493552, "real_spatial_fpr": 0.0185433530613359, "gt_recall": 0.10206028809144124}
+
+|开发fake|类型|冻结视觉Dice|LoRA Dice|差|
+|---|---|---:|---:|---:|
+|an:4xd3r9|inpainting|0.029942|0.066325|0.036383|
+|an:4xd5r9|inpainting|0.178024|0.072950|-0.105075|
+|an:7e2p57|splicing|0.000000|0.000000|0.000000|
+|an:4rvro9|splicing|0.745436|0.825083|0.079646|
+|an:4wgx37|inpainting|0.757326|0.779656|0.022330|
+|an:71g867|inpainting|0.246958|0.520010|0.273052|
+|an:7e2e57|splicing|0.002451|0.008093|0.005642|
+|an:95q8g9|inpainting|0.006036|0.225418|0.219382|
+全部8条：{"n": 8, "mean": 0.06642011533210182, "up": 6, "tie": 1, "down": 1}
+原较弱6条：{"n": 6, "mean": 0.07156407107381135, "up": 4, "tie": 1, "down": 1}
+inpainting：{"n": 5, "mean": 0.08921442379792559, "up": 4, "tie": 0, "down": 1}
+splicing：{"n": 3, "mean": 0.028429601222395545, "up": 2, "tie": 1, "down": 0}
+完整训练Dice变化=+0.093355，开发变化=+0.066420，best训练−开发差=+0.352149；曲线中的monitor仅为固定4pair，不冒充完整训练。
+
+|LoRA checkpoint|集合|Dice|IoU|pixel AP|real FP|
+|---|---|---:|---:|---:|---:|
+|best/12|train|0.664341|0.548813|0.770824|0.023271|
+|best/12|dev|0.312192|0.246006|0.423351|0.032730|
+|last/20|train|0.738467|0.635142|0.821310|0.013313|
+|last/20|dev|0.179891|0.141637|0.421892|0.015313|
+固定25/50/75%原生2px边界统计：{"FROZEN_VISUAL": {"interior_recall": 0.25221351254724866, "GT_boundary_recall": 0.1138916929085945, "near_boundary_BG_FPR": 0.08833724174243185, "far_BG_FPR": 0.011641746781605934}, "SPATIAL_LORA_ADAPT": {"interior_recall": 0.33968173226910964, "GT_boundary_recall": 0.20868283875566657, "near_boundary_BG_FPR": 0.1753771011232012, "far_BG_FPR": 0.022395220236543473}}
+冻结视觉完整fake覆盖/背景：{"video_mean_GT_recall": 0.21164190731260085, "pooled_GT_recall": 0.303813445513503, "pooled_BG_FPR": 0.0107119410449408}
+LoRA完整fake覆盖/背景：{"video_mean_GT_recall": 0.3137021954040421, "pooled_GT_recall": 0.48279850071321323, "pooled_BG_FPR": 0.01874723999474341}
+边界只代表固定时刻；完整GT覆盖与背景统计单列，背景误报下降本身不等于定位改善。样例索引见index.html，原始F32响应未裁剪。
+实际20轮/480次更新，best第12轮，停止原因patience8_delta0.002；成本：{"training_loop_s": 20545.579268482514, "train_updates_s": 17979.06698576361, "routine_evaluation_s": 2489.174528995063, "final_evaluation_s": 1095.4648316120729, "peak_allocated_bytes": 1846627328, "peak_reserved_bytes": 1954545664, "parameters": {"lora": 1579312, "decoder": 2094017, "frozen": 304372736, "checkpointed_blocks": 24}}
+smoke与满30轮预算外推见resource_smoke.json；正式成本单列，不将估计当实测。旧特征仅用于初始化核对；训练/评分全用当前LoRA在线FP32视觉、可微FP16量化、BF16 decoder。
+报告前新增输出存储=252154037字节（checkpoint/必要固定样例/曲线/日志，无逐轮特征，无主干副本）。
+唯一下一步建议：保留视觉适配基础，先扩充空间监督覆盖以检验开发收益的稳定性。
+本轮收益只能归于视觉适配条件，不归于三维或component；不自动追加实验。

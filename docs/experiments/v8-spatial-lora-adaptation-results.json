@@ -1,0 +1,210 @@
+{
+  "status": "COMPLETE",
+  "baseline_best_epoch": 7,
+  "new_best_epoch": 12,
+  "new_last_epoch": 20,
+  "delta": {
+    "spatial_dice": 0.06642011533210179,
+    "spatial_iou": 0.05642513557743467,
+    "pixel_ap": 0.07321712937493552,
+    "real_spatial_fpr": 0.0185433530613359,
+    "gt_recall": 0.10206028809144124
+  },
+  "paired_dev_fake": [
+    {
+      "video_id": "c98cb33f48392c108c40f206",
+      "pair_id": "an:4xd3r9",
+      "generator": "inpainting",
+      "baseline": 0.029942224427402322,
+      "lora": 0.06632502775025491,
+      "delta": 0.03638280332285258
+    },
+    {
+      "video_id": "2649719f53fe1a54aa56ab8f",
+      "pair_id": "an:4xd5r9",
+      "generator": "inpainting",
+      "baseline": 0.17802429209841894,
+      "lora": 0.07294959982909419,
+      "delta": -0.10507469226932475
+    },
+    {
+      "video_id": "e55c9628ed7641f96707430e",
+      "pair_id": "an:7e2p57",
+      "generator": "splicing",
+      "baseline": 0.0,
+      "lora": 0.0,
+      "delta": 0.0
+    },
+    {
+      "video_id": "a2a08b465a8cea8a95403ee7",
+      "pair_id": "an:4rvro9",
+      "generator": "splicing",
+      "baseline": 0.7454361590503193,
+      "lora": 0.825082627547512,
+      "delta": 0.0796464684971927
+    },
+    {
+      "video_id": "f2cd41132415857399b19518",
+      "pair_id": "an:4wgx37",
+      "generator": "inpainting",
+      "baseline": 0.7573263357508894,
+      "lora": 0.7796563634676431,
+      "delta": 0.022330027716753742
+    },
+    {
+      "video_id": "8a6ce2b60f7cb1353c2919cc",
+      "pair_id": "an:71g867",
+      "generator": "inpainting",
+      "baseline": 0.24695784407921745,
+      "lora": 0.5200098232639607,
+      "delta": 0.2730519791847433
+    },
+    {
+      "video_id": "e73bc60d4e2c5b994ee45ba4",
+      "pair_id": "an:7e2e57",
+      "generator": "splicing",
+      "baseline": 0.0024511083461674996,
+      "lora": 0.008093443516161432,
+      "delta": 0.005642335169993932
+    },
+    {
+      "video_id": "37b22da558e1daee1e72b707",
+      "pair_id": "an:95q8g9",
+      "generator": "inpainting",
+      "baseline": 0.006035754354161408,
+      "lora": 0.2254177553887645,
+      "delta": 0.2193820010346031
+    }
+  ],
+  "groups": {
+    "全部8条": {
+      "n": 8,
+      "mean": 0.06642011533210182,
+      "up": 6,
+      "tie": 1,
+      "down": 1
+    },
+    "原较弱6条": {
+      "n": 6,
+      "mean": 0.07156407107381135,
+      "up": 4,
+      "tie": 1,
+      "down": 1
+    },
+    "inpainting": {
+      "n": 5,
+      "mean": 0.08921442379792559,
+      "up": 4,
+      "tie": 0,
+      "down": 1
+    },
+    "splicing": {
+      "n": 3,
+      "mean": 0.028429601222395545,
+      "up": 2,
+      "tie": 1,
+      "down": 0
+    }
+  },
+  "boundary": {
+    "FROZEN_VISUAL": {
+      "interior_recall": 0.25221351254724866,
+      "GT_boundary_recall": 0.1138916929085945,
+      "near_boundary_BG_FPR": 0.08833724174243185,
+      "far_BG_FPR": 0.011641746781605934
+    },
+    "SPATIAL_LORA_ADAPT": {
+      "interior_recall": 0.33968173226910964,
+      "GT_boundary_recall": 0.20868283875566657,
+      "near_boundary_BG_FPR": 0.1753771011232012,
+      "far_BG_FPR": 0.022395220236543473
+    }
+  },
+  "train_dev_gap": 0.35214947494378246,
+  "costs": {
+    "training_loop_s": 20545.579268482514,
+    "train_updates_s": 17979.06698576361,
+    "routine_evaluation_s": 2489.174528995063,
+    "final_evaluation_s": 1095.4648316120729,
+    "peak_allocated_bytes": 1846627328,
+    "peak_reserved_bytes": 1954545664,
+    "parameters": {
+      "lora": 1579312,
+      "decoder": 2094017,
+      "frozen": 304372736,
+      "checkpointed_blocks": 24
+    }
+  },
+  "output_bytes_before_report": 252154037,
+  "recommendation": "唯一下一步建议：保留视觉适配基础，先扩充空间监督覆盖以检验开发收益的稳定性。",
+  "best_metrics": {
+    "baseline": {
+      "train": {
+        "loss": 0.28613938279520235,
+        "bce": 0.06571334503178403,
+        "dice_loss": 0.22042603737006702,
+        "spatial_dice": 0.5709866636370569,
+        "spatial_iou": 0.45415881499033856,
+        "pixel_ap": 0.6992994210951115,
+        "empty_spatial_fpr": 0.014086730880583452,
+        "real_spatial_fpr": 0.013726479018614878
+      },
+      "dev": {
+        "loss": 0.4761818267057748,
+        "bce": 0.09870221507932365,
+        "dice_loss": 0.3774796113847858,
+        "spatial_dice": 0.24577171476332205,
+        "spatial_iou": 0.1895811869174075,
+        "pixel_ap": 0.3501341227490018,
+        "empty_spatial_fpr": 0.013684649172415004,
+        "real_spatial_fpr": 0.014186300197439099
+      }
+    },
+    "lora": {
+      "train": {
+        "loss": 0.24160641027761795,
+        "bce": 0.06332415912040666,
+        "dice_loss": 0.1782822511231498,
+        "spatial_dice": 0.6643413050392063,
+        "spatial_iou": 0.5488134909572479,
+        "pixel_ap": 0.7708239645211981,
+        "empty_spatial_fpr": 0.022244349459681845,
+        "real_spatial_fpr": 0.02327103718058346,
+        "gt_recall": 0.8081190699730895
+      },
+      "dev": {
+        "loss": 0.47267095868905884,
+        "bce": 0.12982941140468007,
+        "dice_loss": 0.34284154926271493,
+        "spatial_dice": 0.31219183009542384,
+        "spatial_iou": 0.24600632249484217,
+        "pixel_ap": 0.4233512521239373,
+        "empty_spatial_fpr": 0.03277374946304691,
+        "real_spatial_fpr": 0.032729653258775,
+        "gt_recall": 0.3137021954040421
+      }
+    },
+    "historical": {
+      "train": {
+        "loss": 0.3146805034375111,
+        "bce": 0.09025811466723288,
+        "dice_loss": 0.22442238780604348,
+        "spatial_dice": 0.5875743812721647,
+        "spatial_iou": 0.46555169745154495,
+        "pixel_ap": 0.6896568129986402,
+        "empty_spatial_fpr": 0.028858749733977847,
+        "real_spatial_fpr": 0.030822310771939403
+      },
+      "dev": {
+        "loss": 0.5046173912396867,
+        "bce": 0.13779616700556813,
+        "dice_loss": 0.36682122456158195,
+        "spatial_dice": 0.2747651891358408,
+        "spatial_iou": 0.21229735858363505,
+        "pixel_ap": 0.34916963085873937,
+        "empty_spatial_fpr": 0.036568593881726535,
+        "real_spatial_fpr": 0.038293205443331244
+      }
+    }
+  }
+}
