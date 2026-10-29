@@ -1,6 +1,6 @@
 # V8空间定位LoRA适配对照
 
-2026-10-30，PREFLIGHT_COMPLETE；分支`v8-spatial-lora-adaptation`，从`9aaa029`开始。
+2026-10-30，RUNNING；分支`v8-spatial-lora-adaptation`，从`9aaa029`开始。
 本轮只训练一个条件SPATIAL_LORA_ADAPT，检验冻结视觉是否限制ANAKIN空间定位。
 不运行三维增强、额外seed或前端；完整模型、输入、全部实际帧与正式损失保持。
 
@@ -87,3 +87,11 @@ LoRA/decoder梯度绝对和分别2080.23/496.57、1204.12/380.76，参数均实�
 仅允许当前任务分支且Git工作区干净；若期间有其他未提交改动，停止文档推送并保留现场，
 不覆盖或暂存用户文件。`publication.json`记录实际推送commit；完成状态只在最终步骤结束后写入。
 这只是本次已授权结果交付，不启动新实验。
+
+## 独立启动
+
+代码`7a3007e0dd81ac0adc06c82ce959aa2ab58240f6`已普通推送后启动。
+启动时间`2026-10-30T00:17:54.478864+08:00`，tmux `v8_spatial_lora_adaptation_pilot_v1`。
+无`--resume`，只训练新条件，自动结果交付已启用。日志为输出目录`run.log`，
+实时状态`progress.json`，最终退出码`exit_code.txt`，实际Git交付记录`publication.json`。
+仅在最终评价、报告和交付完成后标记COMPLETE；当前尚无新条件最终指标。

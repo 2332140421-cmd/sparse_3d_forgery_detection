@@ -5,11 +5,13 @@
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前执行：空间定位LoRA适配准备
+## 当前执行：空间定位LoRA适配 RUNNING
 
 用户授权ADR-0026/[单条件LoRA适配](../experiments/v8-spatial-lora-adaptation.md)，
 完整原ANAKIN队列、官方初始化，原DINO冻结、已有LoRA/decoder训练，固定BN统计。
-复用固定BN迁移结果作为主对照，原BN作历史参考；当前实现及资源验证，不预填新成绩。
+复用固定BN迁移结果作为主对照，原BN作历史参考。28项相关测试及横竖完整pair smoke通过，
+代码`7a3007e`已提交推送后，在独立tmux `v8_spatial_lora_adaptation_pilot_v1`正式启动。
+Python自动训练、评价、报告及小型结果提交推送，不逐轮轮询、不预填新成绩。
 
 ## 已完成：固定decoder BN匹配对照
 
