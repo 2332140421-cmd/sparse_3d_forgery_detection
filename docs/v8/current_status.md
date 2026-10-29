@@ -5,7 +5,7 @@
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前执行：完整联合编辑区域定位
+## 当前结果：预训练空间定位对照已完成
 
 2026-10-29用户授权[预训练空间定位与三维时序增强](../experiments/v8-pretrained-spatial-context.md)，
 协议[pretrained_spatial_context_contract.md](pretrained_spatial_context_contract.md)、ADR-0024。
@@ -13,9 +13,15 @@
 原缓存/原96训练统计只读。官方AINPAINT完整定位权重已匹配，横竖屏官方forward与量化、
 零修正一致性通过；64视频共享冻结特征已完成，两个条件完整pair两次实际更新及评价通过，
 代码`d53fb5a`先提交推送后，2026-10-29 04:20:38在独立tmux
-`v8_pretrained_spatial_context_pilot_v1`启动单入口，当前RUNNING，尚无完整正式结果。
-先验证现有资产/特征，再epoch0、两个条件训练和自动报告；不逐轮人工调参或轮询。
-本轮不改历史检测/定位成绩，不自动追加条件。
+`v8_pretrained_spatial_context_pilot_v1`启动单入口，05:26:09正常完成，状态COMPLETE。
+迁移基线20轮/480更新，best第12轮；增强12轮/288更新，best第4轮，均按patience8早停。
+官方初始化dev Dice/AP为0.112233/0.220394；迁移best为0.274765/0.349170，
+增强best为0.250421/0.353893。增强Dice差−0.024344，8条开发fake为3提高/0持平/5下降；
+抑制背景同时损失GT覆盖，未见平均重叠或边界增益。inpainting/splicing均值差−0.035501/−0.005750。
+训练与开发存在明显差距、后期评价波动，不能仅以最佳轮次提前证明过拟合。
+最终指标、逐视频配对、实际成本及证据范围见[完成审阅](../experiments/v8-pretrained-spatial-context.md)。
+唯一后续提案为固定已适配decoder、只学习上下文残差的匹配接入对照，本轮不实施。
+本次仅读已有结果、更新相关文档并提交；不重启、resume、推理或提取前端，不改历史分数。
 
 2026-10-27新增用户授权[输出分离对照](../experiments/v8-spatial-head-decoupling.md)，
 分支`v8-spatial-head-decoupling`；原monitor16完整训练/原dev32，固定30轮，原缓存只读。
@@ -107,9 +113,11 @@ query集中，本轮不恢复或修复V9。
 精确进度、完整性及人工缺口见[data_assets.md](data_assets.md)。
 历史仅恢复14个开发验证source名称，缺完整V8视频身份manifest，未重新抽样替代244/28队列。
 
-## 尚未完成及后续研究（本轮不执行）
+## 新机准备阶段的后续提案（历史记录）
 
-**此前环境和真实数据接口准备完成；空间定位训练尚未开始。** ActivityForensics仍无可直接使用的公开空间真值；ANAKIN候选的公开编辑mask核验见下节，尚无空间性能。
+**以下为新机准备阶段的历史提案；后续已完成的训练、结果和标签合同以上方及ADR-0022/0024为准。**
+当时环境和真实数据接口已准备，尚未进行空间训练；ActivityForensics无可直接使用的公开空间真值，
+ANAKIN候选的公开编辑mask核验见下节。其后已有的空间性能见上方，不能沿用当时“尚无空间性能”的状态。
 正式CELL_LOC/COMPONENT_LOC拟共享格均值压缩前的局部像素RGB/XYZ编码器与非整格常值
 解码器，仅改变cell/component上下文；公平初始化和预算见
 [spatial_localization_plan.md](spatial_localization_plan.md)。
