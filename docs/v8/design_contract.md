@@ -84,3 +84,8 @@ component/全帧attention/多前驱因果GRU。只用原ANAKIN48训练/16开发�
 用户随后授权`v8-spatial-context-frozen-bn` / ADR-0025仅改变decoder BN统计策略，
 以`spatial_context_frozen_bn_contract.md`为准。官方初始buffers固定、仿射仍训练，
 直接只读复用原缓存；不更改前述原实验或默认行为。
+
+用户随后授权`v8-spatial-lora-adaptation` / ADR-0026，设计统一记于
+`docs/experiments/v8-spatial-lora-adaptation.md`。单条件在线适配已有LoRA与decoder，
+原骨干冻结eval、decoder BN buffers固定；旧缓存只作初始化核对/冻结对照，不作适配输入。
+不替代前述独立实验成绩或其他入口默认行为。

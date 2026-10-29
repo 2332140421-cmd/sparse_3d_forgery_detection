@@ -96,3 +96,8 @@ results, or inconsistency between the paper and implementation.
   from official initialization with fixed official BN buffers but trainable affine
   parameters. Keep Dropout's original modes and the default option False. Reference
   existing visual/frontend caches; no new features, downloads, or old-model fine-tuning.
+- Spatial LoRA adaptation: ADR-0026 and `docs/experiments/v8-spatial-lora-adaptation.md`
+  authorize one online-visual condition with original DINO frozen, existing LoRA and
+  decoder trainable, backbone eval, and fixed official decoder BN buffers. Preserve
+  full-frame pair weighting; old patch caches are parity references only, never
+  inputs to the adapted model's training or final scores.

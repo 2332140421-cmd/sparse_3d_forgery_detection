@@ -17,10 +17,11 @@ from .model import pixel_sums,CONDITIONS
 
 
 @torch.no_grad()
-def evaluate(model,config,out,rows,fit,pixel_ap=False,samples=None):
+def evaluate(model,config,out,rows,fit,pixel_ap=False,samples=None,video_factory=None):
+    if video_factory is None:video_factory=CachedVideo
     model.eval();device=next(model.parameters()).device;records=[];started=time.monotonic()
     for r in rows:
-        v=CachedVideo(config,out,r,fit,model.context);h=torch.zeros(256,128,device=device);active=torch.zeros(256,dtype=torch.bool,device=device)
+        v=video_factory(config,out,r,fit,model.context);h=torch.zeros(256,128,device=device);active=torch.zeros(256,dtype=torch.bool,device=device)
         sums=np.zeros(3);ious=[];dices=[];aps=[];empty=[];cm=np.zeros((2,2),np.int64)
         keep={int(r['actual_frames']*f) for f in [.25,.5,.75]};export=samples is not None and (r['split']=='dev' or r.get('train_monitor'))
         if export:(Path(samples)/r['split']).mkdir(parents=True,exist_ok=True)
@@ -60,10 +61,10 @@ def evaluate(model,config,out,rows,fit,pixel_ap=False,samples=None):
     return {'metrics':metrics,'records':records,'seconds':time.monotonic()-started,'pixel_ap_scheduled':pixel_ap}
 
 
-def boundary_samples(out,rows):
+def boundary_samples(out,rows,conditions=CONDITIONS):
     """Descriptive fixed-sample errors in native 2-pixel GT bands; no label editing."""
     records=[];kernel=np.ones((5,5),np.uint8)
-    for c in CONDITIONS:
+    for c in conditions:
         for r in rows:
             if r['split']!='dev' or r['role']!='fake':continue
             for fi in [int(r['actual_frames']*f) for f in [.25,.5,.75]]:
@@ -76,7 +77,7 @@ def boundary_samples(out,rows):
                 records.append({'condition':c,'video_id':r['video_id'],'frame_index':fi,
                     **{k:float(pred[m].mean()) if m.any() else None for k,m in regions.items()}})
     aggregates={}
-    for c in CONDITIONS:
+    for c in conditions:
         aggregates[c]={}
         for key in ['interior_recall','GT_boundary_recall','near_boundary_BG_FPR','far_BG_FPR']:
             means=[]
@@ -89,17 +90,17 @@ def boundary_samples(out,rows):
     return aggregates
 
 
-def curves(out,condition,history):
+def curves(out,condition,history,train_split='train'):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     fig,axes=plt.subplots(2,3,figsize=(15,8));epochs=[r['epoch'] for r in history]
     for ax,k in zip(axes.flat[:3],['loss','bce','dice_loss']):
-        for split in ['train','dev']:ax.plot(epochs,[r[split][k] for r in history],label=split)
+        for split in [train_split,'dev']:ax.plot(epochs,[r[split][k] for r in history],label=split)
         online='dice' if k=='dice_loss' else k
         ax.plot(epochs,[r['online'][online] for r in history],label='online',linestyle=':');ax.set_title(k)
     for ax,k in zip(axes.flat[3:],['spatial_dice','spatial_iou','real_spatial_fpr']):
-        for split in ['train','dev']:ax.plot(epochs,[r[split][k] for r in history],label=split)
+        for split in [train_split,'dev']:ax.plot(epochs,[r[split][k] for r in history],label=split)
         ax.set_title(k)
     for ax in axes.flat:ax.set_xlabel('epoch');ax.legend();ax.grid(alpha=.2)
     fig.tight_layout();fig.savefig(out/condition/'curves.png');plt.close(fig)

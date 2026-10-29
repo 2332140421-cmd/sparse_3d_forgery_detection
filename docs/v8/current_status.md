@@ -1,19 +1,26 @@
 # V8 当前状态与边界
 
-更新2026-10-29。当前工作分支`v8-spatial-context-frozen-bn`，既有V8历史基线为远端
+更新2026-10-30。当前工作分支`v8-spatial-lora-adaptation`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前执行：固定decoder BN匹配对照 RUNNING
+## 当前执行：空间定位LoRA适配准备
+
+用户授权ADR-0026/[单条件LoRA适配](../experiments/v8-spatial-lora-adaptation.md)，
+完整原ANAKIN队列、官方初始化，原DINO冻结、已有LoRA/decoder训练，固定BN统计。
+复用固定BN迁移结果作为主对照，原BN作历史参考；当前实现及资源验证，不预填新成绩。
+
+## 已完成：固定decoder BN匹配对照
 
 用户授权ADR-0025/[固定BN合同](spatial_context_frozen_bn_contract.md)，两条件从官方初始化
 重新训练，仅固定decoder BN三个buffers，仿射/卷积及Dropout策略保持。
 原64视频7984帧、原96训练统计与已有视觉/前端缓存直接引用，不重提或复制缓存。
 [本轮实验](../experiments/v8-spatial-context-frozen-bn.md)已通过20项相关测试与真实完整pair两次更新smoke，
-尚无最终新分数。代码`2eeb38d`已提交普通推送，2026-10-29 22:00:10 +08:00
-在独立tmux `v8_pretrained_spatial_context_frozen_bn_v1`启动；一次核对进程正常并进入首轮评价。
-Python自动完成两条件训练、最终评价与报告，不逐轮轮询调参，不改原实验。
+代码`2eeb38d`正式运行已COMPLETE/report_complete，两条件均15轮/360更新、best第7轮。
+固定迁移开发Dice/IoU/AP/real FP=0.245772/0.189581/0.350134/0.014186；
+增强为0.254395/0.195870/0.353108/0.014478。固定BN内增强Dice+0.008623，
+两者未超过原BN迁移Dice0.274765。上述只读结果供本轮对照，不重跑旧模型。
 
 ## 已完成：原BN策略预训练空间定位
 

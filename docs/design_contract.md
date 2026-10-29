@@ -529,3 +529,11 @@ SPATIAL_TRANSFER与SPATIAL_3D_CONTEXT。完整官方AINPAINT spatial骨干/已�
 固定两条件decoder的官方初始BN buffers；仿射/卷积仍训练，Dropout策略不变。
 从同一官方初始化重新训练，直接引用原视觉与前端缓存，数据/结构/loss/预算不变。
 仅取代本新实验中14.10的BN更新策略，默认False保留旧入口行为和历史成绩。
+
+### 14.12 V8空间定位LoRA适配
+
+用户授权按ADR-0026及`docs/experiments/v8-spatial-lora-adaptation.md`仅训练一个
+SPATIAL_LORA_ADAPT，从官方已有LoRA/decoder初始化，冻结原DINOv2、训练LoRA与decoder，
+骨干始终eval、decoder官方BN统计固定。训练/评分使用在线FP32视觉及可微FP16量化，
+逐chunk即时反传并按完整视频帧数累计pair梯度；完整输入/全部帧/原空间loss不变。
+仅取代本新条件中14.10/14.11的LoRA冻结与缓存视觉路径，不改旧条件和历史结果。
