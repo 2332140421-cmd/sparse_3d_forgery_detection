@@ -20,8 +20,15 @@
 抑制背景同时损失GT覆盖，未见平均重叠或边界增益。inpainting/splicing均值差−0.035501/−0.005750。
 训练与开发存在明显差距、后期评价波动，不能仅以最佳轮次提前证明过拟合。
 最终指标、逐视频配对、实际成本及证据范围见[完成审阅](../experiments/v8-pretrained-spatial-context.md)。
-唯一后续提案为固定已适配decoder、只学习上下文残差的匹配接入对照，本轮不实施。
-本次仅读已有结果、更新相关文档并提交；不重启、resume、推理或提取前端，不改历史分数。
+该完成审阅原建议固定已适配decoder、只学习上下文残差，仍为后续候选。
+上述完成结果审阅仅更新文档，未重启训练、推理或前端；后续限定BN诊断另述，不改历史分数。
+
+随后授权的[限定BN状态诊断](../experiments/v8-pretrained-spatial-bn-diagnosis.md)已完成：
+只用两个best与原训练2pair/4视频480帧，读取已有特征，仅切换decoder BN，Dropout始终关闭。
+RUNNING_STATS复现最大偏差4.44e-7；原checkpoint/缓存/正式结果前后哈希一致，参数未更新。
+BATCH_STATS使竖屏fake迁移/增强Dice从0.501870/0.432410变为0.598243/0.451220，
+横屏仅小幅增加，增强real误报反而上升。输出统计敏感性不能忽略，但未证明BN为唯一瓶颈。
+当前优先建议控制BN训练/评价统计一致性；本轮没有校准、改训练策略或启动新训练。
 
 2026-10-27新增用户授权[输出分离对照](../experiments/v8-spatial-head-decoupling.md)，
 分支`v8-spatial-head-decoupling`；原monitor16完整训练/原dev32，固定30轮，原缓存只读。
