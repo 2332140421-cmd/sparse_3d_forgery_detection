@@ -115,4 +115,6 @@ LoRA分别21883/7178/190/1168秒，总计约8.99小时。未含新增特征提�
 代码`2436d58def77a4b53ae1bfe5ebcf21e7e2575b6e`先普通推送并核对远端后，于`2026-10-30T12:11:20.755132+08:00`
 在独立tmux `v8_spatial_supervision_expansion_v1`启动单入口，无`--resume`，两条件均重新从官方初始化开始。
 日志`run.log`、任务状态`progress.json`、实际退出码`exit_code.txt`、交付状态`publication.json`均在输出目录；
-当前RUNNING，尚无最终成绩，不逐轮查询或中途改设置。
+启动时RUNNING，指标当时尚未产生；最终成绩见完成结果，不逐轮查询或中途改设置。
+一次启动核对：Python PID `2051085`、tmux pane存活，状态RUNNING/features，正在补齐新增train/dev特征；
+保留测试集无RGB模型缓存或DINO特征。本段为启动时事实记录，不代替最终完成状态。
