@@ -1,6 +1,6 @@
 # V8空间定位监督扩量匹配对照
 
-2026-10-30，PREFLIGHT_COMPLETE；分支`v8-spatial-supervision-expansion`，起点`eedfd9d`。
+2026-10-30，RUNNING；分支`v8-spatial-supervision-expansion`，起点`eedfd9d`。
 仅FROZEN_VISUAL与LORA_ADAPT各一个seed；不预设扩量或视觉适配有效，不运行三维增强。
 [唯一配置](../v8/spatial_supervision_expansion_config.json)、
 [冻结manifest](../v8/evidence/spatial_supervision_expansion_manifest.json)、ADR-0027。
@@ -109,3 +109,10 @@ LoRA分别21883/7178/190/1168秒，总计约8.99小时。未含新增特征提�
 发布或远端核验失败仅写publication.json，原COMPLETE状态不覆盖，实际退出码及错误日志保留。
 必要报告、小型结果和曲线自动普通提交推送；只允许当前任务分支且工作区干净，不覆盖用户改动。
 尚无本轮最终成绩，最终表及实际成本由完成报告补齐。不追加新训练、额外seed、三维或test评分。
+
+## 正式启动记录
+
+代码`2436d58def77a4b53ae1bfe5ebcf21e7e2575b6e`先普通推送并核对远端后，于`2026-10-30T12:11:20.755132+08:00`
+在独立tmux `v8_spatial_supervision_expansion_v1`启动单入口，无`--resume`，两条件均重新从官方初始化开始。
+日志`run.log`、任务状态`progress.json`、实际退出码`exit_code.txt`、交付状态`publication.json`均在输出目录；
+当前RUNNING，尚无最终成绩，不逐轮查询或中途改设置。
