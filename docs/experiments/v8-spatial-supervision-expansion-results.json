@@ -1,0 +1,1992 @@
+{
+  "status": "COMPLETE",
+  "actual_pairs": {
+    "train": 29,
+    "dev": 20,
+    "test_reserved": 20
+  },
+  "delta": {
+    "spatial_dice": 0.06372897426346977,
+    "spatial_iou": 0.058207690028011294,
+    "pixel_ap": 0.142326961558367,
+    "gt_recall": 0.0847186333439654,
+    "real_spatial_fpr": -0.017292635819145967
+  },
+  "distributions": {
+    "FROZEN_VISUAL": {
+      "mean": 0.204793288087986,
+      "median": 0.11115658588249083,
+      "dice_below_0_05": 10,
+      "groups": {
+        "type": {
+          "inpainting": {
+            "n": 10,
+            "mean": 0.24765575420361552,
+            "median": 0.2101597230356717
+          },
+          "splicing": {
+            "n": 10,
+            "mean": 0.16193082197235648,
+            "median": 0.005146480265159056
+          }
+        },
+        "area": {
+          "large": {
+            "n": 1,
+            "mean": 0.7662558860762865,
+            "median": 0.7662558860762865
+          },
+          "medium": {
+            "n": 12,
+            "mean": 0.2371030536163612,
+            "median": 0.2101597230356717
+          },
+          "small": {
+            "n": 7,
+            "mean": 0.06919617604101426,
+            "median": 1.5431018420265576e-05
+          }
+        }
+      },
+      "videos": [
+        {
+          "video_id": "c98cb33f48392c108c40f206",
+          "pair_id": "an:4xd3r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.035901570173774995,
+          "spatial_iou": 0.019333021756301524,
+          "pixel_ap": 0.027391818199127525
+        },
+        {
+          "video_id": "e55c9628ed7641f96707430e",
+          "pair_id": "an:7e2p57",
+          "generator": "splicing",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.0007345305973372364
+        },
+        {
+          "video_id": "37b22da558e1daee1e72b707",
+          "pair_id": "an:95q8g9",
+          "generator": "inpainting",
+          "spatial_dice": 0.00783251218743887,
+          "spatial_iou": 0.003980092140456933,
+          "pixel_ap": 0.096793849063258
+        },
+        {
+          "video_id": "a2a08b465a8cea8a95403ee7",
+          "pair_id": "an:4rvro9",
+          "generator": "splicing",
+          "spatial_dice": 0.757728639686314,
+          "spatial_iou": 0.6106871443860455,
+          "pixel_ap": 0.8639970444049622
+        },
+        {
+          "video_id": "2649719f53fe1a54aa56ab8f",
+          "pair_id": "an:4xd5r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.23390784448013677,
+          "spatial_iou": 0.15567216722755098,
+          "pixel_ap": 0.39453813976979873
+        },
+        {
+          "video_id": "8a6ce2b60f7cb1353c2919cc",
+          "pair_id": "an:71g867",
+          "generator": "inpainting",
+          "spatial_dice": 0.24603561852483927,
+          "spatial_iou": 0.16009822829973652,
+          "pixel_ap": 0.5259576801446704
+        },
+        {
+          "video_id": "e73bc60d4e2c5b994ee45ba4",
+          "pair_id": "an:7e2e57",
+          "generator": "splicing",
+          "spatial_dice": 0.008306602686078551,
+          "spatial_iou": 0.0062285117261568395,
+          "pixel_ap": 0.023115215860618297
+        },
+        {
+          "video_id": "f2cd41132415857399b19518",
+          "pair_id": "an:4wgx37",
+          "generator": "inpainting",
+          "spatial_dice": 0.7662558860762865,
+          "spatial_iou": 0.6376991832555448,
+          "pixel_ap": 0.8764616035544852
+        },
+        {
+          "video_id": "fcddd79143060c867b8a8f39",
+          "pair_id": "an:73rqr7",
+          "generator": "splicing",
+          "spatial_dice": 0.36889974506407264,
+          "spatial_iou": 0.22677079354124358,
+          "pixel_ap": 0.6579826604902124
+        },
+        {
+          "video_id": "0c6c9c8944f1e73eeaacb14d",
+          "pair_id": "an:4z1q27",
+          "generator": "splicing",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.2824187648074007
+        },
+        {
+          "video_id": "77fcad3bf53723c1fc84e00b",
+          "pair_id": "an:40elg7",
+          "generator": "inpainting",
+          "spatial_dice": 0.013289472601112162,
+          "spatial_iou": 0.007022318054516906,
+          "pixel_ap": 0.042218342093608835
+        },
+        {
+          "video_id": "e479ce8ed53d7e94ed6e5994",
+          "pair_id": "an:4qwdw4",
+          "generator": "inpainting",
+          "spatial_dice": 0.4786854814200091,
+          "spatial_iou": 0.31747811507390233,
+          "pixel_ap": 0.5093584764839273
+        },
+        {
+          "video_id": "53b1b80891786024f1c4a431",
+          "pair_id": "an:4z1v27",
+          "generator": "splicing",
+          "spatial_dice": 1.5431018420265576e-05,
+          "spatial_iou": 7.718869217509426e-06,
+          "pixel_ap": 0.0007013135144906331
+        },
+        {
+          "video_id": "d0214a761f71950ce92e3800",
+          "pair_id": "an:7e83j7",
+          "generator": "splicing",
+          "spatial_dice": 0.001986357844239562,
+          "spatial_iou": 0.0011275636116075227,
+          "pixel_ap": 0.10668329571144092
+        },
+        {
+          "video_id": "7bc5c79919c61f5a9097a807",
+          "pair_id": "an:4xend7",
+          "generator": "inpainting",
+          "spatial_dice": 0.18641160159120668,
+          "spatial_iou": 0.1250459584294989,
+          "pixel_ap": 0.21521885698727844
+        },
+        {
+          "video_id": "bedd2fb777f8ad13965aa3c9",
+          "pair_id": "an:4vge14",
+          "generator": "splicing",
+          "spatial_dice": 0.2204186410082851,
+          "spatial_iou": 0.12441269510737145,
+          "pixel_ap": 0.22357137142202924
+        },
+        {
+          "video_id": "a5e85f2c6c6705749b654db8",
+          "pair_id": "an:4ny267",
+          "generator": "splicing",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.00241215596910296
+        },
+        {
+          "video_id": "8df0ed43a97c81ee17328bf3",
+          "pair_id": "an:7og5g4",
+          "generator": "inpainting",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.22107227014904707
+        },
+        {
+          "video_id": "59e3e1ac66d035dae5a510f1",
+          "pair_id": "an:7p8l14",
+          "generator": "splicing",
+          "spatial_dice": 0.26195280241615493,
+          "spatial_iou": 0.15588151141478165,
+          "pixel_ap": 0.2227451439174497
+        },
+        {
+          "video_id": "1e2e11c5da9e69d58c1ff339",
+          "pair_id": "an:7ogeg4",
+          "generator": "inpainting",
+          "spatial_dice": 0.5082375549813508,
+          "spatial_iou": 0.34509899243442227,
+          "pixel_ap": 0.5302146482970114
+        }
+      ]
+    },
+    "LORA_ADAPT": {
+      "mean": 0.26852226235145576,
+      "median": 0.1564499619971244,
+      "dice_below_0_05": 8,
+      "groups": {
+        "type": {
+          "inpainting": {
+            "n": 10,
+            "mean": 0.24467199700289877,
+            "median": 0.1564499619971244
+          },
+          "splicing": {
+            "n": 10,
+            "mean": 0.29237252770001276,
+            "median": 0.22736382666742677
+          }
+        },
+        "area": {
+          "large": {
+            "n": 1,
+            "mean": 0.8297044631552579,
+            "median": 0.8297044631552579
+          },
+          "medium": {
+            "n": 12,
+            "mean": 0.26119067212335295,
+            "median": 0.1564499619971244
+          },
+          "small": {
+            "n": 7,
+            "mean": 0.20092181691337446,
+            "median": 0.08511350993566129
+          }
+        }
+      },
+      "videos": [
+        {
+          "video_id": "c98cb33f48392c108c40f206",
+          "pair_id": "an:4xd3r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.021983134153976683,
+          "spatial_iou": 0.012299513696897564,
+          "pixel_ap": 0.03075948315733803
+        },
+        {
+          "video_id": "e55c9628ed7641f96707430e",
+          "pair_id": "an:7e2p57",
+          "generator": "splicing",
+          "spatial_dice": 0.0011748270080447403,
+          "spatial_iou": 0.000612714755391512,
+          "pixel_ap": 0.0018172510784130835
+        },
+        {
+          "video_id": "37b22da558e1daee1e72b707",
+          "pair_id": "an:95q8g9",
+          "generator": "inpainting",
+          "spatial_dice": 0.1522936453651448,
+          "spatial_iou": 0.09946714640126422,
+          "pixel_ap": 0.5182635481240284
+        },
+        {
+          "video_id": "a2a08b465a8cea8a95403ee7",
+          "pair_id": "an:4rvro9",
+          "generator": "splicing",
+          "spatial_dice": 0.8746739835130269,
+          "spatial_iou": 0.777565833842314,
+          "pixel_ap": 0.9619828024776007
+        },
+        {
+          "video_id": "2649719f53fe1a54aa56ab8f",
+          "pair_id": "an:4xd5r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.00029566592860923077,
+          "spatial_iou": 0.00014919002036889846,
+          "pixel_ap": 0.3704237557341251
+        },
+        {
+          "video_id": "8a6ce2b60f7cb1353c2919cc",
+          "pair_id": "an:71g867",
+          "generator": "inpainting",
+          "spatial_dice": 0.1893805789795227,
+          "spatial_iou": 0.12805707887422543,
+          "pixel_ap": 0.5307536036094028
+        },
+        {
+          "video_id": "e73bc60d4e2c5b994ee45ba4",
+          "pair_id": "an:7e2e57",
+          "generator": "splicing",
+          "spatial_dice": 0.008775258866566254,
+          "spatial_iou": 0.004823081594884247,
+          "pixel_ap": 0.09489021557517598
+        },
+        {
+          "video_id": "f2cd41132415857399b19518",
+          "pair_id": "an:4wgx37",
+          "generator": "inpainting",
+          "spatial_dice": 0.8297044631552579,
+          "spatial_iou": 0.7217714789430097,
+          "pixel_ap": 0.9152479929916598
+        },
+        {
+          "video_id": "fcddd79143060c867b8a8f39",
+          "pair_id": "an:73rqr7",
+          "generator": "splicing",
+          "spatial_dice": 0.6338233162269127,
+          "spatial_iou": 0.46463432974865715,
+          "pixel_ap": 0.7750435512318806
+        },
+        {
+          "video_id": "0c6c9c8944f1e73eeaacb14d",
+          "pair_id": "an:4z1q27",
+          "generator": "splicing",
+          "spatial_dice": 0.4377058494719492,
+          "spatial_iou": 0.3468555074008572,
+          "pixel_ap": 0.49931603827628457
+        },
+        {
+          "video_id": "77fcad3bf53723c1fc84e00b",
+          "pair_id": "an:40elg7",
+          "generator": "inpainting",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.03073325526433971
+        },
+        {
+          "video_id": "e479ce8ed53d7e94ed6e5994",
+          "pair_id": "an:4qwdw4",
+          "generator": "inpainting",
+          "spatial_dice": 0.46803701732892306,
+          "spatial_iou": 0.3079839080594049,
+          "pixel_ap": 0.4615204999907881
+        },
+        {
+          "video_id": "53b1b80891786024f1c4a431",
+          "pair_id": "an:4z1v27",
+          "generator": "splicing",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.0012163297654934498
+        },
+        {
+          "video_id": "d0214a761f71950ce92e3800",
+          "pair_id": "an:7e83j7",
+          "generator": "splicing",
+          "spatial_dice": 0.01740231280275458,
+          "spatial_iou": 0.01007807695668874,
+          "pixel_ap": 0.1877227552814877
+        },
+        {
+          "video_id": "7bc5c79919c61f5a9097a807",
+          "pair_id": "an:4xend7",
+          "generator": "inpainting",
+          "spatial_dice": 0.160606278629104,
+          "spatial_iou": 0.11669663856218308,
+          "pixel_ap": 0.26127516192143235
+        },
+        {
+          "video_id": "bedd2fb777f8ad13965aa3c9",
+          "pair_id": "an:4vge14",
+          "generator": "splicing",
+          "spatial_dice": 0.49544207577601945,
+          "spatial_iou": 0.33052979583701514,
+          "pixel_ap": 0.888776752407269
+        },
+        {
+          "video_id": "a5e85f2c6c6705749b654db8",
+          "pair_id": "an:4ny267",
+          "generator": "splicing",
+          "spatial_dice": 0.36961414339919224,
+          "spatial_iou": 0.23758893215770188,
+          "pixel_ap": 0.40828314148497774
+        },
+        {
+          "video_id": "8df0ed43a97c81ee17328bf3",
+          "pair_id": "an:7og5g4",
+          "generator": "inpainting",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.25114269762871444
+        },
+        {
+          "video_id": "59e3e1ac66d035dae5a510f1",
+          "pair_id": "an:7p8l14",
+          "generator": "splicing",
+          "spatial_dice": 0.08511350993566129,
+          "spatial_iou": 0.04450334438041907,
+          "pixel_ap": 0.7739187245139848
+        },
+        {
+          "video_id": "1e2e11c5da9e69d58c1ff339",
+          "pair_id": "an:7ogeg4",
+          "generator": "inpainting",
+          "spatial_dice": 0.624419186488449,
+          "spatial_iou": 0.4570812446572983,
+          "pixel_ap": 0.7070388520902017
+        }
+      ]
+    }
+  },
+  "original8": {
+    "FROZEN_VISUAL": {
+      "mean": 0.2569960842268586,
+      "median": 0.1349047073269559,
+      "dice_below_0_05": 4,
+      "groups": {
+        "type": {
+          "inpainting": {
+            "n": 5,
+            "mean": 0.2579866862884953,
+            "median": 0.23390784448013677
+          },
+          "splicing": {
+            "n": 3,
+            "mean": 0.2553450807907975,
+            "median": 0.008306602686078551
+          }
+        },
+        "area": {
+          "large": {
+            "n": 1,
+            "mean": 0.7662558860762865,
+            "median": 0.7662558860762865
+          },
+          "medium": {
+            "n": 6,
+            "mean": 0.21495213128976376,
+            "median": 0.1349047073269559
+          },
+          "small": {
+            "n": 1,
+            "mean": 0.0,
+            "median": 0.0
+          }
+        }
+      },
+      "videos": [
+        {
+          "video_id": "c98cb33f48392c108c40f206",
+          "pair_id": "an:4xd3r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.035901570173774995,
+          "spatial_iou": 0.019333021756301524,
+          "pixel_ap": 0.027391818199127525
+        },
+        {
+          "video_id": "e55c9628ed7641f96707430e",
+          "pair_id": "an:7e2p57",
+          "generator": "splicing",
+          "spatial_dice": 0.0,
+          "spatial_iou": 0.0,
+          "pixel_ap": 0.0007345305973372364
+        },
+        {
+          "video_id": "37b22da558e1daee1e72b707",
+          "pair_id": "an:95q8g9",
+          "generator": "inpainting",
+          "spatial_dice": 0.00783251218743887,
+          "spatial_iou": 0.003980092140456933,
+          "pixel_ap": 0.096793849063258
+        },
+        {
+          "video_id": "a2a08b465a8cea8a95403ee7",
+          "pair_id": "an:4rvro9",
+          "generator": "splicing",
+          "spatial_dice": 0.757728639686314,
+          "spatial_iou": 0.6106871443860455,
+          "pixel_ap": 0.8639970444049622
+        },
+        {
+          "video_id": "2649719f53fe1a54aa56ab8f",
+          "pair_id": "an:4xd5r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.23390784448013677,
+          "spatial_iou": 0.15567216722755098,
+          "pixel_ap": 0.39453813976979873
+        },
+        {
+          "video_id": "8a6ce2b60f7cb1353c2919cc",
+          "pair_id": "an:71g867",
+          "generator": "inpainting",
+          "spatial_dice": 0.24603561852483927,
+          "spatial_iou": 0.16009822829973652,
+          "pixel_ap": 0.5259576801446704
+        },
+        {
+          "video_id": "e73bc60d4e2c5b994ee45ba4",
+          "pair_id": "an:7e2e57",
+          "generator": "splicing",
+          "spatial_dice": 0.008306602686078551,
+          "spatial_iou": 0.0062285117261568395,
+          "pixel_ap": 0.023115215860618297
+        },
+        {
+          "video_id": "f2cd41132415857399b19518",
+          "pair_id": "an:4wgx37",
+          "generator": "inpainting",
+          "spatial_dice": 0.7662558860762865,
+          "spatial_iou": 0.6376991832555448,
+          "pixel_ap": 0.8764616035544852
+        }
+      ]
+    },
+    "LORA_ADAPT": {
+      "mean": 0.25978519462126864,
+      "median": 0.08713838975956074,
+      "dice_below_0_05": 4,
+      "groups": {
+        "type": {
+          "inpainting": {
+            "n": 5,
+            "mean": 0.23873149751650224,
+            "median": 0.1522936453651448
+          },
+          "splicing": {
+            "n": 3,
+            "mean": 0.29487468979587933,
+            "median": 0.008775258866566254
+          }
+        },
+        "area": {
+          "large": {
+            "n": 1,
+            "mean": 0.8297044631552579,
+            "median": 0.8297044631552579
+          },
+          "medium": {
+            "n": 6,
+            "mean": 0.2079003778011411,
+            "median": 0.08713838975956074
+          },
+          "small": {
+            "n": 1,
+            "mean": 0.0011748270080447403,
+            "median": 0.0011748270080447403
+          }
+        }
+      },
+      "videos": [
+        {
+          "video_id": "c98cb33f48392c108c40f206",
+          "pair_id": "an:4xd3r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.021983134153976683,
+          "spatial_iou": 0.012299513696897564,
+          "pixel_ap": 0.03075948315733803
+        },
+        {
+          "video_id": "e55c9628ed7641f96707430e",
+          "pair_id": "an:7e2p57",
+          "generator": "splicing",
+          "spatial_dice": 0.0011748270080447403,
+          "spatial_iou": 0.000612714755391512,
+          "pixel_ap": 0.0018172510784130835
+        },
+        {
+          "video_id": "37b22da558e1daee1e72b707",
+          "pair_id": "an:95q8g9",
+          "generator": "inpainting",
+          "spatial_dice": 0.1522936453651448,
+          "spatial_iou": 0.09946714640126422,
+          "pixel_ap": 0.5182635481240284
+        },
+        {
+          "video_id": "a2a08b465a8cea8a95403ee7",
+          "pair_id": "an:4rvro9",
+          "generator": "splicing",
+          "spatial_dice": 0.8746739835130269,
+          "spatial_iou": 0.777565833842314,
+          "pixel_ap": 0.9619828024776007
+        },
+        {
+          "video_id": "2649719f53fe1a54aa56ab8f",
+          "pair_id": "an:4xd5r9",
+          "generator": "inpainting",
+          "spatial_dice": 0.00029566592860923077,
+          "spatial_iou": 0.00014919002036889846,
+          "pixel_ap": 0.3704237557341251
+        },
+        {
+          "video_id": "8a6ce2b60f7cb1353c2919cc",
+          "pair_id": "an:71g867",
+          "generator": "inpainting",
+          "spatial_dice": 0.1893805789795227,
+          "spatial_iou": 0.12805707887422543,
+          "pixel_ap": 0.5307536036094028
+        },
+        {
+          "video_id": "e73bc60d4e2c5b994ee45ba4",
+          "pair_id": "an:7e2e57",
+          "generator": "splicing",
+          "spatial_dice": 0.008775258866566254,
+          "spatial_iou": 0.004823081594884247,
+          "pixel_ap": 0.09489021557517598
+        },
+        {
+          "video_id": "f2cd41132415857399b19518",
+          "pair_id": "an:4wgx37",
+          "generator": "inpainting",
+          "spatial_dice": 0.8297044631552579,
+          "spatial_iou": 0.7217714789430097,
+          "pixel_ap": 0.9152479929916598
+        }
+      ]
+    }
+  },
+  "boundary": {
+    "FROZEN_VISUAL": {
+      "interior_recall": 0.2653728187660628,
+      "GT_boundary_recall": 0.17132007498004928,
+      "near_boundary_BG_FPR": 0.15438364219056103,
+      "far_BG_FPR": 0.021872044417634035
+    },
+    "LORA_ADAPT": {
+      "interior_recall": 0.37490313549026333,
+      "GT_boundary_recall": 0.2507113605640273,
+      "near_boundary_BG_FPR": 0.2186953461386552,
+      "far_BG_FPR": 0.009916864371316893
+    }
+  },
+  "output_bytes": 17105754032,
+  "recommendation": "下一步建议：先在更多独立source上验证当前视觉适配收益的稳定性。",
+  "conditions": {
+    "FROZEN_VISUAL": {
+      "best_epoch": 5,
+      "last_epoch": 13,
+      "updates": 377,
+      "costs": {
+        "training_loop_s": 961.9986938377842,
+        "train_updates_s": 439.1370845064521,
+        "routine_evaluation_s": 475.3580996338278,
+        "final_evaluation_s": 657.5422824090347,
+        "peak_allocated_bytes": 1908407296,
+        "peak_reserved_bytes": 2042626048,
+        "parameters": {
+          "lora": 0,
+          "decoder": 2094017,
+          "frozen": 305952048,
+          "checkpointed_blocks": 0
+        }
+      },
+      "best": {
+        "train": {
+          "loss": 0.3479701908529997,
+          "bce": 0.07961896393736678,
+          "dice_loss": 0.26835122643581505,
+          "spatial_dice": 0.46831097933829535,
+          "spatial_iou": 0.36063479938930876,
+          "pixel_ap": 0.6462275426074653,
+          "empty_spatial_fpr": 0.016990583877981035,
+          "real_spatial_fpr": 0.016127016355448987,
+          "gt_recall": 0.5138755895951312
+        },
+        "dev": {
+          "loss": 0.515712449175858,
+          "bce": 0.11089937732961004,
+          "dice_loss": 0.40481307276056866,
+          "spatial_dice": 0.204793288087986,
+          "spatial_iou": 0.14482720076641775,
+          "pixel_ap": 0.2911793590718629,
+          "empty_spatial_fpr": 0.052294639228171784,
+          "real_spatial_fpr": 0.028768449939183406,
+          "gt_recall": 0.24109604529484258
+        }
+      },
+      "last": {
+        "train": {
+          "loss": 0.23825367395570243,
+          "bce": 0.04666497098709935,
+          "dice_loss": 0.19158870272087747,
+          "spatial_dice": 0.6355546522806024,
+          "spatial_iou": 0.5222758337771208,
+          "pixel_ap": 0.7461973402138002,
+          "empty_spatial_fpr": 0.011226044173992996,
+          "real_spatial_fpr": 0.011955383199311252,
+          "gt_recall": 0.6861250686458836
+        },
+        "dev": {
+          "loss": 0.4988249764238054,
+          "bce": 0.09608989273559447,
+          "dice_loss": 0.40273508322901197,
+          "spatial_dice": 0.2000383201508543,
+          "spatial_iou": 0.14420579478626103,
+          "pixel_ap": 0.377005463941923,
+          "empty_spatial_fpr": 0.03226651016832648,
+          "real_spatial_fpr": 0.011893551810159126,
+          "gt_recall": 0.26375168954141237
+        }
+      }
+    },
+    "LORA_ADAPT": {
+      "best_epoch": 26,
+      "last_epoch": 30,
+      "updates": 870,
+      "costs": {
+        "training_loop_s": 29811.042979296297,
+        "train_updates_s": 21840.564238172024,
+        "routine_evaluation_s": 7824.9941195761785,
+        "final_evaluation_s": 1583.1631843531504,
+        "peak_allocated_bytes": 10510061568,
+        "peak_reserved_bytes": 10806624256,
+        "parameters": {
+          "lora": 1579312,
+          "decoder": 2094017,
+          "frozen": 304372736,
+          "checkpointed_blocks": 0
+        }
+      },
+      "best": {
+        "train": {
+          "loss": 0.17229977545590766,
+          "bce": 0.03259749826543923,
+          "dice_loss": 0.1397022770264043,
+          "spatial_dice": 0.7349755509477272,
+          "spatial_iou": 0.6340278760844322,
+          "pixel_ap": 0.8224433090483934,
+          "empty_spatial_fpr": 0.009825866843279902,
+          "real_spatial_fpr": 0.010159419316233705,
+          "gt_recall": 0.8051003508092541
+        },
+        "dev": {
+          "loss": 0.4738230292808822,
+          "bce": 0.10555073672647794,
+          "dice_loss": 0.368272292204284,
+          "spatial_dice": 0.26852226235145576,
+          "spatial_iou": 0.20303489079442905,
+          "pixel_ap": 0.43350632063022987,
+          "empty_spatial_fpr": 0.0354992703332411,
+          "real_spatial_fpr": 0.011475814120037441,
+          "gt_recall": 0.325814678638808
+        }
+      },
+      "last": {
+        "train": {
+          "loss": 0.18814032206660458,
+          "bce": 0.04064531914636955,
+          "dice_loss": 0.14749500291886616,
+          "spatial_dice": 0.7131354518697341,
+          "spatial_iou": 0.5972959477311324,
+          "pixel_ap": 0.8344349847857716,
+          "empty_spatial_fpr": 0.007594158718549291,
+          "real_spatial_fpr": 0.008114114767625486,
+          "gt_recall": 0.659329138731549
+        },
+        "dev": {
+          "loss": 0.5261383648700704,
+          "bce": 0.12626039178337298,
+          "dice_loss": 0.3998779719977743,
+          "spatial_dice": 0.1961823389195548,
+          "spatial_iou": 0.13589721519507067,
+          "pixel_ap": 0.40756736649330333,
+          "empty_spatial_fpr": 0.020917192557620652,
+          "real_spatial_fpr": 0.004343286813382717,
+          "gt_recall": 0.21178938156009292
+        }
+      }
+    }
+  },
+  "reference": {
+    "metrics": {
+      "loss": 0.5387141872655979,
+      "bce": 0.15494420741814766,
+      "dice_loss": 0.3837699800990523,
+      "spatial_dice": 0.23101561216685546,
+      "spatial_iou": 0.17077385743931975,
+      "pixel_ap": 0.36159386821988215,
+      "empty_spatial_fpr": 0.06811431036557548,
+      "real_spatial_fpr": 0.03687794409310526,
+      "gt_recall": 0.3300101549273178
+    },
+    "records": [
+      {
+        "video_id": "ba6243a7578ef8a64737d567",
+        "pair_id": "an:4xd3r9",
+        "source_id": "anakin:https://vimeo.com/53936221",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 100,
+        "loss": 0.0828693163394928,
+        "bce": 0.0828693163394928,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 100,
+        "empty_spatial_fpr": 0.027728580729166667,
+        "pixel_confusion_matrix": [
+          [
+            89604534,
+            2555466
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "c98cb33f48392c108c40f206",
+        "pair_id": "an:4xd3r9",
+        "source_id": "anakin:https://vimeo.com/53936221",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 100,
+        "loss": 1.1393535423278809,
+        "bce": 0.20557101517915727,
+        "dice_loss": 0.9337825465202332,
+        "spatial_dice": 0.06620786540074783,
+        "spatial_iou": 0.03522819878734702,
+        "pixel_ap": 0.03553118048868667,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 100,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            88223222,
+            2462336
+          ],
+          [
+            1320125,
+            154317
+          ]
+        ],
+        "gt_recall": 0.10466128881298824
+      },
+      {
+        "video_id": "38834f95f2fd8ceb943c4243",
+        "pair_id": "an:7e2p57",
+        "source_id": "anakin:https://vimeo.com/532330511",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 125,
+        "loss": 0.002913563045673072,
+        "bce": 0.002913563045673072,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 125,
+        "empty_spatial_fpr": 0.0005385416666666667,
+        "pixel_confusion_matrix": [
+          [
+            57568980,
+            31020
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "e55c9628ed7641f96707430e",
+        "pair_id": "an:7e2p57",
+        "source_id": "anakin:https://vimeo.com/532330511",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 125,
+        "loss": 1.0006790628433229,
+        "bce": 0.004495258621871471,
+        "dice_loss": 0.9961837878227234,
+        "spatial_dice": 0.0,
+        "spatial_iou": 0.0,
+        "pixel_ap": 0.0005396079612572241,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 125,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            57576413,
+            3145
+          ],
+          [
+            20442,
+            0
+          ]
+        ],
+        "gt_recall": 0.0
+      },
+      {
+        "video_id": "2ad19f5f828cec54da51b511",
+        "pair_id": "an:95q8g9",
+        "source_id": "anakin:https://vimeo.com/644436285",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 72,
+        "loss": 0.026101472800494067,
+        "bce": 0.026101472800494067,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 72,
+        "empty_spatial_fpr": 0.009447150420096022,
+        "pixel_confusion_matrix": [
+          [
+            36972187,
+            352613
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "37b22da558e1daee1e72b707",
+        "pair_id": "an:95q8g9",
+        "source_id": "anakin:https://vimeo.com/644436285",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 72,
+        "loss": 0.9506280554665459,
+        "bce": 0.1881212575568093,
+        "dice_loss": 0.7625068061881595,
+        "spatial_dice": 0.22496410676708697,
+        "spatial_iou": 0.14327562108996242,
+        "pixel_ap": 0.3642154112832692,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 72,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            35336729,
+            596526
+          ],
+          [
+            1099879,
+            291666
+          ]
+        ],
+        "gt_recall": 0.2095986834777172
+      },
+      {
+        "video_id": "424b814a818225209898bae7",
+        "pair_id": "an:4rvro9",
+        "source_id": "anakin:https://vimeo.com/40886434",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 150,
+        "loss": 0.002085242912871763,
+        "bce": 0.002085242912871763,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 150,
+        "empty_spatial_fpr": 0.0008091724537037038,
+        "pixel_confusion_matrix": [
+          [
+            34532035,
+            27965
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "a2a08b465a8cea8a95403ee7",
+        "pair_id": "an:4rvro9",
+        "source_id": "anakin:https://vimeo.com/40886434",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 150,
+        "loss": 0.2363231138388316,
+        "bce": 0.03635611688097318,
+        "dice_loss": 0.19996699770291645,
+        "spatial_dice": 0.8249832458804327,
+        "spatial_iou": 0.7027448368132804,
+        "pixel_ap": 0.9267613247458201,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 150,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            33352769,
+            101151
+          ],
+          [
+            257067,
+            849013
+          ]
+        ],
+        "gt_recall": 0.76758733545494
+      },
+      {
+        "video_id": "cdc2ee33084c90a92487107e",
+        "pair_id": "an:4xd5r9",
+        "source_id": "anakin:https://vimeo.com/422525196",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 0.02859702739418329,
+        "bce": 0.02859702739418329,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.009482277199074074,
+        "pixel_confusion_matrix": [
+          [
+            27385834,
+            262166
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "2649719f53fe1a54aa56ab8f",
+        "pair_id": "an:4xd5r9",
+        "source_id": "anakin:https://vimeo.com/422525196",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 1.187154612938563,
+        "bce": 0.28482089241345726,
+        "dice_loss": 0.9023337225119273,
+        "spatial_dice": 0.07369985229184767,
+        "spatial_iou": 0.04498686235502898,
+        "pixel_ap": 0.4251807869839203,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            26101142,
+            70359
+          ],
+          [
+            1394993,
+            81506
+          ]
+        ],
+        "gt_recall": 0.05520220467470686
+      },
+      {
+        "video_id": "43bf59b67bd6d45e8b8bf43e",
+        "pair_id": "an:71g867",
+        "source_id": "anakin:https://vimeo.com/47662435",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 96,
+        "loss": 0.016869605863272834,
+        "bce": 0.016869605863272834,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 96,
+        "empty_spatial_fpr": 0.006521606445312499,
+        "pixel_confusion_matrix": [
+          [
+            87896610,
+            576990
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "8a6ce2b60f7cb1353c2919cc",
+        "pair_id": "an:71g867",
+        "source_id": "anakin:https://vimeo.com/47662435",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 96,
+        "loss": 0.6860325559973717,
+        "bce": 0.2169591950563093,
+        "dice_loss": 0.4690733688573043,
+        "spatial_dice": 0.5199897940483068,
+        "spatial_iou": 0.3841828535095754,
+        "pixel_ap": 0.6862026568635254,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 91,
+        "empty_gt_frames": 5,
+        "empty_spatial_fpr": 0.03320746527777778,
+        "pixel_confusion_matrix": [
+          [
+            80618464,
+            1015088
+          ],
+          [
+            3833475,
+            3006573
+          ]
+        ],
+        "gt_recall": 0.4395543715482698
+      },
+      {
+        "video_id": "d7b7aa3915ac3ddc0bf94b22",
+        "pair_id": "an:7e2e57",
+        "source_id": "anakin:https://vimeo.com/211093832",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.041471178519229095,
+        "bce": 0.041471178519229095,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.014775037977430554,
+        "pixel_confusion_matrix": [
+          [
+            108957999,
+            1634001
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "e73bc60d4e2c5b994ee45ba4",
+        "pair_id": "an:7e2e57",
+        "source_id": "anakin:https://vimeo.com/211093832",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 1.1384516815344492,
+        "bce": 0.15180371180176735,
+        "dice_loss": 0.9866479615370433,
+        "spatial_dice": 0.008056578248816783,
+        "spatial_iou": 0.004292756548767735,
+        "pixel_ap": 0.05241597826469848,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            106932301,
+            2145036
+          ],
+          [
+            1503850,
+            10813
+          ]
+        ],
+        "gt_recall": 0.007138881718243596
+      },
+      {
+        "video_id": "5c2fda735c71289d10a3de7a",
+        "pair_id": "an:4wgx37",
+        "source_id": "anakin:https://vimeo.com/51633066",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 0.5568371673425039,
+        "bce": 0.5568371673425039,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.19258973524305556,
+        "pixel_confusion_matrix": [
+          [
+            29764372,
+            7099628
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "f2cd41132415857399b19518",
+        "pair_id": "an:4wgx37",
+        "source_id": "anakin:https://vimeo.com/51633066",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 0.4662661055723826,
+        "bce": 0.23138902535041173,
+        "dice_loss": 0.23487708518902461,
+        "spatial_dice": 0.779692574581703,
+        "spatial_iou": 0.6532879273647417,
+        "pixel_ap": 0.8959323812781171,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            29367253,
+            2347178
+          ],
+          [
+            382870,
+            4766699
+          ]
+        ],
+        "gt_recall": 0.9256500883860378
+      },
+      {
+        "video_id": "7ecc0dd16d2d9dac43283aea",
+        "pair_id": "an:73rqr7",
+        "source_id": "anakin:https://vimeo.com/413587157",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.004630063163737456,
+        "bce": 0.004630063163737456,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.00018960583847736626,
+        "pixel_confusion_matrix": [
+          [
+            62196205,
+            11795
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "fcddd79143060c867b8a8f39",
+        "pair_id": "an:73rqr7",
+        "source_id": "anakin:https://vimeo.com/413587157",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.5614859471718471,
+        "bce": 0.17919511844714484,
+        "dice_loss": 0.38229083518187207,
+        "spatial_dice": 0.6331831246593354,
+        "spatial_iou": 0.4640827869025716,
+        "pixel_ap": 0.753330723015665,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            57178231,
+            151284
+          ],
+          [
+            2535479,
+            2343006
+          ]
+        ],
+        "gt_recall": 0.48027328156179633
+      },
+      {
+        "video_id": "6e45e896b55ee992a7c48c58",
+        "pair_id": "an:4z1q27",
+        "source_id": "anakin:https://vimeo.com/449732824",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 100,
+        "loss": 0.000967394319595769,
+        "bce": 0.000967394319595769,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 100,
+        "empty_spatial_fpr": 0.00016335441132189098,
+        "pixel_confusion_matrix": [
+          [
+            39845490,
+            6510
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "0c6c9c8944f1e73eeaacb14d",
+        "pair_id": "an:4z1q27",
+        "source_id": "anakin:https://vimeo.com/449732824",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 100,
+        "loss": 0.8671913623809815,
+        "bce": 0.012880177218466998,
+        "dice_loss": 0.8543111777305603,
+        "spatial_dice": 0.14307250585047432,
+        "spatial_iou": 0.08967176202946646,
+        "pixel_ap": 0.31507373677982536,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 100,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            39734553,
+            19487
+          ],
+          [
+            85131,
+            12829
+          ]
+        ],
+        "gt_recall": 0.13096161698652511
+      },
+      {
+        "video_id": "42293e48417348d999228aae",
+        "pair_id": "an:40elg7",
+        "source_id": "anakin:https://vimeo.com/443438024",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 225,
+        "loss": 0.054323746869340536,
+        "bce": 0.054323746869340536,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 225,
+        "empty_spatial_fpr": 0.010362399024538943,
+        "pixel_confusion_matrix": [
+          [
+            64930123,
+            679877
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "77fcad3bf53723c1fc84e00b",
+        "pair_id": "an:40elg7",
+        "source_id": "anakin:https://vimeo.com/443438024",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 225,
+        "loss": 1.192915702395969,
+        "bce": 0.20215423816608058,
+        "dice_loss": 0.9907614631123013,
+        "spatial_dice": 0.0037739919476440864,
+        "spatial_iou": 0.0019343156910408728,
+        "pixel_ap": 0.040903519198427926,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 225,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            64107739,
+            45708
+          ],
+          [
+            1453109,
+            3444
+          ]
+        ],
+        "gt_recall": 0.0023644865651987947
+      },
+      {
+        "video_id": "3c6b72e5e3e228688aaf4081",
+        "pair_id": "an:4qwdw4",
+        "source_id": "anakin:https://vimeo.com/63527459",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 150,
+        "loss": 0.038591558088858925,
+        "bce": 0.038591558088858925,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 150,
+        "empty_spatial_fpr": 0.016739163773148148,
+        "pixel_confusion_matrix": [
+          [
+            135925978,
+            2314022
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "e479ce8ed53d7e94ed6e5994",
+        "pair_id": "an:4qwdw4",
+        "source_id": "anakin:https://vimeo.com/63527459",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 150,
+        "loss": 0.7616140802701314,
+        "bce": 0.17805512487888336,
+        "dice_loss": 0.5835589496294658,
+        "spatial_dice": 0.42525866650837246,
+        "spatial_iou": 0.27197381315802543,
+        "pixel_ap": 0.4822932455603787,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 150,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            130236977,
+            4370641
+          ],
+          [
+            1476321,
+            2156061
+          ]
+        ],
+        "gt_recall": 0.5935667008591057
+      },
+      {
+        "video_id": "0fd370e89d2bb7463ab3caef",
+        "pair_id": "an:4z1v27",
+        "source_id": "anakin:https://vimeo.com/36554610",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.3656293193499247,
+        "bce": 0.3656293193499247,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.14227206307870371,
+        "pixel_confusion_matrix": [
+          [
+            23714462,
+            3933538
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "53b1b80891786024f1c4a431",
+        "pair_id": "an:4z1v27",
+        "source_id": "anakin:https://vimeo.com/36554610",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 1.325183234612147,
+        "bce": 0.35858270128568015,
+        "dice_loss": 0.9666005283594131,
+        "spatial_dice": 0.0,
+        "spatial_iou": 0.0,
+        "pixel_ap": 0.0006426921929316361,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 116,
+        "empty_gt_frames": 4,
+        "empty_spatial_fpr": 0.7277484809027777,
+        "pixel_confusion_matrix": [
+          [
+            23825998,
+            3794333
+          ],
+          [
+            27669,
+            0
+          ]
+        ],
+        "gt_recall": 0.0
+      },
+      {
+        "video_id": "652ac1819d4978d95cf8be7d",
+        "pair_id": "an:7e83j7",
+        "source_id": "anakin:https://vimeo.com/62296839",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.008284145911845068,
+        "bce": 0.008284145911845068,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.0033884186921296295,
+        "pixel_confusion_matrix": [
+          [
+            110217268,
+            374732
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "d0214a761f71950ce92e3800",
+        "pair_id": "an:7e83j7",
+        "source_id": "anakin:https://vimeo.com/62296839",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.9891803483168284,
+        "bce": 0.02393076860656341,
+        "dice_loss": 0.9652495821317036,
+        "spatial_dice": 0.009874533037228342,
+        "spatial_iou": 0.005696820243351243,
+        "pixel_ap": 0.1096101005385766,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            109866306,
+            273051
+          ],
+          [
+            449592,
+            3051
+          ]
+        ],
+        "gt_recall": 0.006740411317528383
+      },
+      {
+        "video_id": "fc281d0855741e5645ca3b2f",
+        "pair_id": "an:4xend7",
+        "source_id": "anakin:https://vimeo.com/292924384",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 0.04160473020747304,
+        "bce": 0.04160473020747304,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.01838305362654321,
+        "pixel_confusion_matrix": [
+          [
+            61064427,
+            1143573
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "7bc5c79919c61f5a9097a807",
+        "pair_id": "an:4xend7",
+        "source_id": "anakin:https://vimeo.com/292924384",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 1.026780758301417,
+        "bce": 0.15955602104465166,
+        "dice_loss": 0.8672247489293416,
+        "spatial_dice": 0.1395245400627573,
+        "spatial_iou": 0.08534659283657706,
+        "pixel_ap": 0.1674855930175894,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            59663522,
+            1159413
+          ],
+          [
+            1168242,
+            216823
+          ]
+        ],
+        "gt_recall": 0.1565435557176017
+      },
+      {
+        "video_id": "e0977ac54d4cea022d4eb21c",
+        "pair_id": "an:4vge14",
+        "source_id": "anakin:https://vimeo.com/107895221",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 125,
+        "loss": 0.02049660477042198,
+        "bce": 0.02049660477042198,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 125,
+        "empty_spatial_fpr": 0.012682092013888887,
+        "pixel_confusion_matrix": [
+          [
+            113739023,
+            1460977
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "bedd2fb777f8ad13965aa3c9",
+        "pair_id": "an:4vge14",
+        "source_id": "anakin:https://vimeo.com/107895221",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 125,
+        "loss": 0.9452516360282898,
+        "bce": 0.030328063055872916,
+        "dice_loss": 0.9149235687255859,
+        "spatial_dice": 0.09165368676848386,
+        "spatial_iou": 0.04808098266667226,
+        "pixel_ap": 0.5016787206754939,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 125,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            113123430,
+            1970249
+          ],
+          [
+            8494,
+            97827
+          ]
+        ],
+        "gt_recall": 0.9201098560021068
+      },
+      {
+        "video_id": "7a84454d9388a6acb050138e",
+        "pair_id": "an:4ny267",
+        "source_id": "anakin:https://vimeo.com/625519895",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 125,
+        "loss": 0.9122186627388,
+        "bce": 0.9122186627388,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 125,
+        "empty_spatial_fpr": 0.2047443209876543,
+        "pixel_confusion_matrix": [
+          [
+            51532568,
+            13267432
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "a5e85f2c6c6705749b654db8",
+        "pair_id": "an:4ny267",
+        "source_id": "anakin:https://vimeo.com/625519895",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 125,
+        "loss": 1.7795044193267822,
+        "bce": 0.779678460597992,
+        "dice_loss": 0.9998259453773498,
+        "spatial_dice": 0.0,
+        "spatial_iou": 0.0,
+        "pixel_ap": 0.0017870686294826717,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 125,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            52674094,
+            12022746
+          ],
+          [
+            103160,
+            0
+          ]
+        ],
+        "gt_recall": 0.0
+      },
+      {
+        "video_id": "8efcd7989c34d9d6187d48e8",
+        "pair_id": "an:7og5g4",
+        "source_id": "anakin:https://vimeo.com/80256347",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 125,
+        "loss": 7.167264597956091e-05,
+        "bce": 7.167264597956091e-05,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 125,
+        "empty_spatial_fpr": 1.5538194444444444e-06,
+        "pixel_confusion_matrix": [
+          [
+            115199821,
+            179
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "8df0ed43a97c81ee17328bf3",
+        "pair_id": "an:7og5g4",
+        "source_id": "anakin:https://vimeo.com/80256347",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 125,
+        "loss": 1.327596633911133,
+        "bce": 0.33014709520339963,
+        "dice_loss": 0.997449538230896,
+        "spatial_dice": 0.0003703024021259938,
+        "spatial_iou": 0.00018906891533695237,
+        "pixel_ap": 0.2781300926305038,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 125,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            110485644,
+            416
+          ],
+          [
+            4713188,
+            752
+          ]
+        ],
+        "gt_recall": 0.00015952685015082924
+      },
+      {
+        "video_id": "5d6ceb7f5ce2d27e9f48c029",
+        "pair_id": "an:7p8l14",
+        "source_id": "anakin:https://vimeo.com/338166175",
+        "role": "real",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 0.04900068106750647,
+        "bce": 0.04900068106750647,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.020655285493827162,
+        "pixel_confusion_matrix": [
+          [
+            60923076,
+            1284924
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "59e3e1ac66d035dae5a510f1",
+        "pair_id": "an:7p8l14",
+        "source_id": "anakin:https://vimeo.com/338166175",
+        "role": "fake",
+        "split": "dev",
+        "generator": "splicing",
+        "frames": 120,
+        "loss": 1.0118935743967692,
+        "bce": 0.07767444252967834,
+        "dice_loss": 0.9342191398143769,
+        "spatial_dice": 0.07807873166347624,
+        "spatial_iou": 0.04067682091371872,
+        "pixel_ap": 0.4504083533344525,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            60300347,
+            1832281
+          ],
+          [
+            112,
+            75260
+          ]
+        ],
+        "gt_recall": 0.9985140370429337
+      },
+      {
+        "video_id": "b5f02065b870929ebd9a083e",
+        "pair_id": "an:7ogeg4",
+        "source_id": "anakin:https://vimeo.com/94541446",
+        "role": "real",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 0.1251090654482444,
+        "bce": 0.1251090654482444,
+        "dice_loss": 0.0,
+        "spatial_dice": null,
+        "spatial_iou": null,
+        "pixel_ap": null,
+        "pixel_ap_reason": "not_scheduled_or_no_positive_GT",
+        "positive_gt_frames": 0,
+        "empty_gt_frames": 120,
+        "empty_spatial_fpr": 0.04608546896792189,
+        "pixel_confusion_matrix": [
+          [
+            35018584,
+            1691816
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "gt_recall": null
+      },
+      {
+        "video_id": "1e2e11c5da9e69d58c1ff339",
+        "pair_id": "an:7ogeg4",
+        "source_id": "anakin:https://vimeo.com/94541446",
+        "role": "fake",
+        "split": "dev",
+        "generator": "inpainting",
+        "frames": 120,
+        "loss": 0.5764088441928228,
+        "bce": 0.16739739403128623,
+        "dice_loss": 0.40901145040988923,
+        "spatial_dice": 0.5979281432182689,
+        "spatial_iou": 0.4398251289609309,
+        "pixel_ap": 0.743754190955021,
+        "pixel_ap_reason": null,
+        "positive_gt_frames": 120,
+        "empty_gt_frames": 0,
+        "empty_spatial_fpr": null,
+        "pixel_confusion_matrix": [
+          [
+            33001512,
+            1717604
+          ],
+          [
+            395117,
+            1596167
+          ]
+        ],
+        "gt_recall": 0.8015767715705042
+      }
+    ],
+    "seconds": 296.7495820540935,
+    "pixel_ap_scheduled": 1,
+    "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_spatial_lora_adaptation_pilot_v1/SPATIAL_LORA_ADAPT/best.pt",
+    "checkpoint_sha256": "9d61132561249ea34334e84bd378ed9d62ad5f7fef05b6596d4c000779f5c0e3",
+    "source_best_epoch": 12,
+    "scope": "one frozen inference on new dev; no adaptation"
+  }
+}

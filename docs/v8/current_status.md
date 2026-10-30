@@ -5,16 +5,11 @@
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
 
-## 当前执行：空间监督扩量 RUNNING
+## 已完成：空间监督扩量匹配对照
 
-用户授权ADR-0027/[空间监督扩量](../experiments/v8-spatial-supervision-expansion.md)。实际冻结
-train29/dev20/test_reserved20pair（7282/4946/5041帧），原24/8角色保留；目标train60缺31pair，
-不放宽场景。109候选中21场景排除、19空间对应未解决，69source不跨集合。
-两条件FROZEN_VISUAL/LORA_ADAPT共用官方初始化、固定BN、全部帧和空间loss。
-四次完整pair探针后冻结关闭检查点/chunk4，吞吐6.878→9.983帧/s，保留显存余量；测试保留集不评分。
-38项相关测试通过，代码`2436d58`及冻结清单已提交推送；独立tmux
-`v8_spatial_supervision_expansion_v1`已启动完整单入口。尚无最终新成绩，不逐轮轮询；
-不扩展三维或额外seed，完成与Git交付状态分开记录。
+实际pair数{'train': 29, 'dev': 20, 'test_reserved': 20}，两条件仅比较同一队列上的视觉适配。
+开发Dice增强差+0.063729；详见[完成报告](../experiments/v8-spatial-supervision-expansion.md)。
+实验COMPLETE先写入数据目录，Git交付/远端核验单独记录；test_reserved未评分，不追加实验。
 
 ## 已完成：空间定位LoRA适配
 
