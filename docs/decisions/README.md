@@ -29,3 +29,4 @@
 - [ADR-0024：预训练空间定位与三维时序上下文](0024-v8-pretrained-spatial-context.md)
 - [ADR-0025：固定decoder BN运行统计匹配对照](0025-v8-spatial-context-frozen-bn.md)
 - [ADR-0026：空间定位LoRA适配](0026-v8-spatial-lora-adaptation.md)
+- [ADR-0027：空间监督扩量与匹配视觉适配](0027-v8-spatial-supervision-expansion.md)

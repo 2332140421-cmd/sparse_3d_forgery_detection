@@ -537,3 +537,12 @@ SPATIAL_LORA_ADAPT，从官方已有LoRA/decoder初始化，冻结原DINOv2、�
 骨干始终eval、decoder官方BN统计固定。训练/评分使用在线FP32视觉及可微FP16量化，
 逐chunk即时反传并按完整视频帧数累计pair梯度；完整输入/全部帧/原空间loss不变。
 仅取代本新条件中14.10/14.11的LoRA冻结与缓存视觉路径，不改旧条件和历史结果。
+
+### 14.13 V8空间监督扩量与匹配视觉适配
+
+用户授权按ADR-0027与`docs/experiments/v8-spatial-supervision-expansion.md`执行
+FROZEN_VISUAL/LORA_ADAPT，同一官方初始化、固定BN、全部帧与空间loss；source隔离扩量，
+实际资格不足冻结实际规模，train/dev均扩充才训练，test_reserved不评分。
+新增纯视觉RGB/GT缓存不依赖几何/统计；最多四个计算配置探针后冻结完整pair执行配置。
+旧24pair模型只在新dev一次冻结参考推理。仅取代14.12中本新实验的规模、单条件和计算配置；
+旧方法、旧结果与默认入口保持。实验COMPLETE先记录，Git/网络失败单列，不改原退出历史。

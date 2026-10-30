@@ -89,3 +89,8 @@ component/全帧attention/多前驱因果GRU。只用原ANAKIN48训练/16开发�
 `docs/experiments/v8-spatial-lora-adaptation.md`。单条件在线适配已有LoRA与decoder，
 原骨干冻结eval、decoder BN buffers固定；旧缓存只作初始化核对/冻结对照，不作适配输入。
 不替代前述独立实验成绩或其他入口默认行为。
+
+用户授权`v8-spatial-supervision-expansion` / ADR-0027，完整设计统一见
+`docs/experiments/v8-spatial-supervision-expansion.md`。仅本新子集比较冻结视觉与LoRA适配，
+纯视觉缓存不要求几何/统计，source隔离且保留原角色，test_reserved全程不评分。
+计算探针只改检查点/chunk，不改完整输入、所有帧与pair损失；旧实验默认行为不变。

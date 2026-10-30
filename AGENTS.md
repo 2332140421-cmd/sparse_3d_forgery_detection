@@ -101,3 +101,8 @@ results, or inconsistency between the paper and implementation.
   decoder trainable, backbone eval, and fixed official decoder BN buffers. Preserve
   full-frame pair weighting; old patch caches are parity references only, never
   inputs to the adapted model's training or final scores.
+- Spatial supervision expansion: ADR-0027 and `docs/experiments/v8-spatial-supervision-expansion.md`
+  authorize two matched visual conditions, a source-isolated enlarged research subset,
+  visual-only RGB/GT caches, and at most four full-pair compute probes. Preserve original
+  roles, all frames and loss; never score or extract DINO for test_reserved. Record
+  experiment completion before publication; Git/network failures must not overwrite it.

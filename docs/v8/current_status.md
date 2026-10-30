@@ -1,9 +1,18 @@
 # V8 当前状态与边界
 
-更新2026-10-30。当前工作分支`v8-spatial-lora-adaptation`，既有V8历史基线为远端
+更新2026-10-30。当前工作分支`v8-spatial-supervision-expansion`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
+
+## 当前执行：空间监督扩量准备
+
+用户授权ADR-0027/[空间监督扩量](../experiments/v8-spatial-supervision-expansion.md)。实际冻结
+train29/dev20/test_reserved20pair（7282/4946/5041帧），原24/8角色保留；目标train60缺31pair，
+不放宽场景。109候选中21场景排除、19空间对应未解决，69source不跨集合。
+两条件FROZEN_VISUAL/LORA_ADAPT共用官方初始化、固定BN、全部帧和空间loss。
+四次完整pair探针后冻结关闭检查点/chunk4，吞吐6.878→9.983帧/s，保留显存余量；测试保留集不评分。
+准备必要测试及冻结清单提交后独立执行，尚无最终新成绩；不扩展三维或额外seed。
 
 ## 已完成：空间定位LoRA适配
 

@@ -41,17 +41,18 @@ class RGBVideo:
     def close(self):self.base.close()
 
 
-def checkpoint_blocks(backbone):
+def checkpoint_blocks(backbone,every=1):
     """Checkpoint existing ViT blocks without changing names or upstream files."""
     blocks=[m for name,m in backbone.named_modules() if name.endswith('blocks') and isinstance(m,nn.ModuleList)]
     if len(blocks)!=1:raise ValueError('EXPECTED_ONE_DINO_BLOCK_LIST')
-    for block in blocks[0]:
+    selected=list(blocks[0])[::every]
+    for block in selected:
         original=block.forward
         def forward(*args,_original=original,**kwargs):
             if torch.is_grad_enabled():return checkpoint(_original,*args,use_reentrant=False,**kwargs)
             return _original(*args,**kwargs)
         block.forward=forward
-    return len(blocks[0])
+    return len(selected)
 
 
 class LoRASpatial(SpatialModel):
@@ -104,10 +105,10 @@ def backward_video(model,video,chunk_frames,amp=True):
     return dict(zip(['loss','bce','dice'],parts.tolist()))
 
 
-def pair_update(model,opt,pair,config,out,fit):
+def pair_update(model,opt,pair,config,out,fit,*,video_factory=None):
     started=time.monotonic();model.train();opt.zero_grad(set_to_none=True);losses={k:0. for k in ['loss','bce','dice']}
     for row in sorted(pair,key=lambda r:r['role']):
-        video=RGBVideo(config,out,row,fit)
+        video=(video_factory or RGBVideo)(config,out,row,fit)
         try:
             parts=backward_video(model,video,config['chunk_frames'],config['amp'])
             for key in losses:losses[key]+=parts[key]
@@ -121,8 +122,8 @@ def pair_update(model,opt,pair,config,out,fit):
             'frames':sum(r['actual_frames'] for r in pair)}
 
 
-def evaluation(model,config,out,rows,fit,**kwargs):
-    result=evaluate(model,config,out,rows,fit,video_factory=RGBVideo,**kwargs)
+def evaluation(model,config,out,rows,fit,*,video_factory=None,**kwargs):
+    result=evaluate(model,config,out,rows,fit,video_factory=video_factory or RGBVideo,**kwargs)
     for record in result['records']:
         tn,fp,fn,tp=np.asarray(record['pixel_confusion_matrix']).reshape(-1)
         record['gt_recall']=float(tp/(tp+fn)) if tp+fn else None
@@ -132,11 +133,11 @@ def evaluation(model,config,out,rows,fit,**kwargs):
 
 
 @torch.no_grad()
-def initialization_check(model,config,out,rows,fit):
+def initialization_check(model,config,out,rows,fit,*,video_factory=None):
     model.eval();checks=[]
     for portrait in [False,True]:
         row=next(r for r in rows if r['split']=='train' and r['role']=='fake' and (r['source_hw'][0]>r['source_hw'][1])==portrait)
-        v=RGBVideo(config,out,row,fit);fi=row['actual_frames']//2
+        v=(video_factory or RGBVideo)(config,out,row,fit);fi=row['actual_frames']//2
         try:
             cpu=v.chunk(fi,fi+1)
             with torch.autocast('cuda',dtype=torch.bfloat16):z=model.chunk(cpu,None,None,True,row['mapping256'],row['mapping512'])[2]
@@ -200,8 +201,8 @@ def payload(model,opt,identity,epoch,position,history,online,updates,best,best_e
             'best':best,'best_epoch':best_epoch,'patience_ref':anchor,'stale':stale,'elapsed_s':elapsed}
 
 
-def train(model,config,out,rows,fit,resume=False):
-    folder=out/CONDITION;folder.mkdir(exist_ok=True)
+def train(model,config,out,rows,fit,resume=False,*,condition=CONDITION,video_factory=None):
+    folder=out/condition;folder.mkdir(exist_ok=True)
     identity={'config':config,'manifest_sha256':digest(out/'manifest.json'),'official_load_sha256':digest(out/'official_load.json'),
               'code':{p.name:digest(p) for p in Path(__file__).parent.glob('*.py')},'references':json.loads((out/'baseline_references.json').read_text())}
     if (folder/'summary.json').exists():
@@ -211,7 +212,8 @@ def train(model,config,out,rows,fit,resume=False):
     if len(monitor)!=8:raise ValueError('EXPECTED_ORIGINAL_FOUR_MONITOR_PAIRS')
     pairs={p:[r for r in trainrows if r['pair_id']==p] for p in sorted({r['pair_id'] for r in trainrows})}
     seed_all(SEED);opt=torch.optim.AdamW(model.parameter_groups(config),weight_decay=1e-4)
-    initial=json.loads((Path(config['original_run'])/'epoch0.json').read_text());best=initial['dev']['metrics']['spatial_dice']
+    initial_path=out/'epoch0.json' if (out/'epoch0.json').exists() else Path(config['original_run'])/'epoch0.json'
+    initial=json.loads(initial_path.read_text());best=initial['dev']['metrics']['spatial_dice']
     epoch=position=updates=best_epoch=stale=0;history=[];online=[];anchor=best;elapsed=0.
     last=folder/'last.pt'
     if last.exists():
@@ -227,13 +229,13 @@ def train(model,config,out,rows,fit,resume=False):
     while epoch<30 and stale<8:
         keys=sorted(pairs);random.Random(SEED+epoch).shuffle(keys);torch.cuda.reset_peak_memory_stats()
         for j in range(position,len(keys)):
-            run.progress(out,'train',condition=CONDITION,epoch=epoch+1,pair=j+1,total_pairs=len(keys))
-            online.append(pair_update(model,opt,pairs[keys[j]],config,out,fit));updates+=1
+            run.progress(out,'train',condition=condition,epoch=epoch+1,pair=j+1,total_pairs=len(keys))
+            online.append(pair_update(model,opt,pairs[keys[j]],config,out,fit,video_factory=video_factory));updates+=1
             atomic_torch(last,payload(model,opt,identity,epoch,j+1,history,online,updates,best,best_epoch,anchor,stale,elapsed+time.monotonic()-begin))
             if run.STOP:raise InterruptedError('SAFE_PAIR_BOUNDARY_STOP')
         allocated=torch.cuda.max_memory_allocated();reserved=torch.cuda.max_memory_reserved();bn=model.bn_status()
-        run.progress(out,'evaluate',condition=CONDITION,epoch=epoch+1)
-        tm=evaluation(model,config,out,monitor,fit);dv=evaluation(model,config,out,dev,fit,pixel_ap=(epoch+1)%5==0)
+        run.progress(out,'evaluate',condition=condition,epoch=epoch+1)
+        tm=evaluation(model,config,out,monitor,fit,video_factory=video_factory);dv=evaluation(model,config,out,dev,fit,video_factory=video_factory,pixel_ap=(epoch+1)%5==0)
         dice=dv['metrics']['spatial_dice'];improved=dice>best
         if improved:best=dice;best_epoch=epoch+1
         if dice>anchor+.002:anchor=dice;stale=0
@@ -246,22 +248,22 @@ def train(model,config,out,rows,fit,resume=False):
                 'train_s':sum(r['seconds'] for r in online),'eval_s':tm['seconds']+dv['seconds'],
                 'frames':sum(r['frames'] for r in online),'peak_allocated_bytes':allocated,'peak_reserved_bytes':reserved,'bn_status':bn}
         save(folder/'epoch_metrics'/f'epoch_{epoch+1:02d}.json',{'monitor':tm,'dev':dv,'pair_order':keys,'updates':online})
-        history.append(record);save(folder/'history.json',history);history_csv(folder/'history.csv',history);curves(out,CONDITION,history,train_split='monitor')
+        history.append(record);save(folder/'history.json',history);history_csv(folder/'history.csv',history);curves(out,condition,history,train_split='monitor')
         epoch+=1;position=0;online=[]
         cp=payload(model,opt,identity,epoch,0,history,online,updates,best,best_epoch,anchor,stale,elapsed+time.monotonic()-begin)
         atomic_torch(last,cp)
         if improved:atomic_torch(folder/'best.pt',cp)
         del cp
-        print(f'{CONDITION} epoch={epoch:02d} online={record["online"]["loss"]:.6f} monitor_dice={tm["metrics"]["spatial_dice"]:.6f} dev_dice={dice:.6f} best={best:.6f}@{best_epoch} stale={stale}/8 BN=FIXED',flush=True)
+        print(f'{condition} epoch={epoch:02d} online={record["online"]["loss"]:.6f} monitor_dice={tm["metrics"]["spatial_dice"]:.6f} dev_dice={dice:.6f} best={best:.6f}@{best_epoch} stale={stale}/8 BN=FIXED',flush=True)
     training_elapsed=elapsed+time.monotonic()-begin;metrics={};started=time.monotonic()
     for ck in ['last','best']:
         if ck=='best':model.restore(torch.load(folder/'best.pt',map_location='cpu',weights_only=False)['model'])
-        run.progress(out,'final_metrics',condition=CONDITION,checkpoint=ck)
-        metrics[ck]={split:evaluation(model,config,out,rr,fit,pixel_ap=True,samples=folder/'samples'/ck)
+        run.progress(out,'final_metrics',condition=condition,checkpoint=ck)
+        metrics[ck]={split:evaluation(model,config,out,rr,fit,video_factory=video_factory,pixel_ap=True,samples=folder/'samples'/ck)
                      for split,rr in [('train',trainrows),('dev',dev)]}
     costs={'training_loop_s':training_elapsed,'train_updates_s':sum(r['train_s'] for r in history),'routine_evaluation_s':sum(r['eval_s'] for r in history),
            'final_evaluation_s':time.monotonic()-started,'peak_allocated_bytes':max(r['peak_allocated_bytes'] for r in history),
-           'peak_reserved_bytes':max(r['peak_reserved_bytes'] for r in history),'parameters':json.loads((out/'resource_smoke.json').read_text())['parameters']}
+           'peak_reserved_bytes':max(r['peak_reserved_bytes'] for r in history),'parameters':json.loads((out/'resource_smoke.json').read_text())['parameters'].get(condition,json.loads((out/'resource_smoke.json').read_text())['parameters'])}
     save(folder/'summary.json',{'status':'COMPLETE','best_epoch':best_epoch,'last_epoch':epoch,'updates':updates,'identity':identity,
                                'stop_reason':'patience8_delta0.002' if stale>=8 else 'max30','costs':costs,**metrics})
 
