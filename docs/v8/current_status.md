@@ -1,6 +1,6 @@
 # V8 当前状态与边界
 
-更新2026-10-30。当前工作分支`v8-spatial-supervision-expansion`，既有V8历史基线为远端
+更新2026-10-31。当前工作分支`v8-spatial-supervision-expansion`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
@@ -10,6 +10,8 @@
 实际pair数{'train': 29, 'dev': 20, 'test_reserved': 20}，两条件仅比较同一队列上的视觉适配。
 开发Dice增强差+0.063729；详见[完成报告](../experiments/v8-spatial-supervision-expansion.md)。
 实验COMPLETE先写入数据目录，Git交付/远端核验单独记录；test_reserved未评分，不追加实验。
+结果提交`6c61a889`已核对远端一致，退出码0。完成只读审阅：逐视频11升/1平/8降，
+LoRA仍有8/20条fake Dice低于0.05，训练—开发差距扩大；收益主要来自splicing，不能称为稳定泛化。
 
 ## 已完成：空间定位LoRA适配
 
