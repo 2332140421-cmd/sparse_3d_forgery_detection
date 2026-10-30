@@ -173,16 +173,26 @@ def report(config,out,rows):
     delta={k:summaries['LORA_ADAPT']['best']['dev']['metrics'][k]-summaries['FROZEN_VISUAL']['best']['dev']['metrics'][k] for k in ['spatial_dice','spatial_iou','pixel_ap','gt_recall','real_spatial_fpr']}
     lines.append('同队列LoRA−冻结视觉：'+json.dumps(delta,ensure_ascii=False));distributions={}
     for c,s in summaries.items():
-        distributions[c]=distribution(s['best']['dev']['records'],rows);lines.append(c+'逐视频/分组：'+json.dumps(distributions[c],ensure_ascii=False))
+        distributions[c]=distribution(s['best']['dev']['records'],rows);lines.append(c+'分布/分组：'+json.dumps({k:v for k,v in distributions[c].items() if k!='videos'},ensure_ascii=False))
         gap=s['best']['train']['metrics']['spatial_dice']-s['best']['dev']['metrics']['spatial_dice']
         lines.append(f'{c} best完整train−dev差={gap:+.6f}，曲线monitor仅原4训练pair，不是完整train。实际{s["last_epoch"]}轮/{s["updates"]}更新，成本：'+json.dumps(s['costs'],ensure_ascii=False))
         lines.append(c+'完整fake覆盖/背景：'+json.dumps(lora.recall_metrics(s['best']['dev']),ensure_ascii=False))
+    paired={c:{r['video_id']:r for r in summaries[c]['best']['dev']['records'] if r['role']=='fake'} for c in CONDITIONS}
+    lookup={r['video_id']:r for r in rows}
+    if set(paired[CONDITIONS[0]])!=set(paired[CONDITIONS[1]]):raise ValueError('MATCHED_DEV_IDENTITIES')
+    lines.extend(['','|开发fake|类型|目标面积组|冻结Dice|LoRA Dice|差|','|---|---|---|---:|---:|---:|'])
+    for vid,r in paired[CONDITIONS[0]].items():
+        a=r['spatial_dice'];b=paired[CONDITIONS[1]][vid]['spatial_dice']
+        lines.append('|'+ '|'.join([r['pair_id'],r['generator'],lookup[vid]['area_group'],f'{a:.6f}',f'{b:.6f}',f'{b-a:+.6f}'])+'|')
+    lines.append(f"旧24pair best/12在新dev一次参考评价耗时={reference.get('seconds','未记录')}秒；旧dev Dice0.312192仅历史记录。参考模型与新模型的训练队列、计算配置及选模过程不同，不视作单独扩量的严格因果消融。")
     old_ids={r['video_id'] for r in json.loads((Path(config['original_run'])/'manifest.json').read_text())['rows'] if r['split']=='dev'}
     original8={c:distribution([r for r in s['best']['dev']['records'] if r['video_id'] in old_ids],rows) for c,s in summaries.items()}
     lines.append('原8pair开发子集仅历史接续、不用于选模：'+json.dumps(original8,ensure_ascii=False))
     chosen=[r for r in rows if r['split']=='dev' or r.get('train_monitor')];sample_index(out,chosen,conditions=CONDITIONS,title='扩量同队列冻结视觉 vs LoRA：各自best/last')
     boundaries=boundary_samples(out,rows,conditions=CONDITIONS);lines.append('固定25/50/75%边界（原生2px，仅固定样例）和完整背景统计须分开解释：'+json.dumps(boundaries,ensure_ascii=False))
     lines.append('吞吐实测及外推（非正式耗时）：'+json.dumps(probe,ensure_ascii=False))
+    new_features=[json.loads(p.read_text()) for p in (out/'features').glob('*/complete.json')]
+    lines.append('新增冻结特征成本（仅新train/dev，不含旧缓存或保留测试）：'+json.dumps({'videos':len(new_features),'frames':sum(r['shape'][0] for r in new_features),'seconds':sum(r['seconds'] for r in new_features),'bytes':sum(p.stat().st_size for p in (out/'features').glob('*/patch.npy'))},ensure_ascii=False))
     storage=sum(p.stat().st_size for p in out.rglob('*') if p.is_file() and not p.is_symlink());lines.append(f'报告前新增独立输出存储={storage}字节；旧缓存直接引用，无新MoGe/CoTracker，无逐轮DINO特征。')
     decision='下一步建议：先在更多独立source上验证当前视觉适配收益的稳定性。' if delta['spatial_dice']>0 else '下一步建议：保留冻结视觉基线，优先复核空间监督覆盖与弱目标，不继续增加当前适配能力。'
     lines.extend([decision,'只作单seed描述，不能把背景误报降低本身写成定位改善；不自动执行后续训练或测试评分。'])
@@ -218,7 +228,7 @@ def publish(config,out):
     def git(*args):return subprocess.check_output(['git',*args],cwd=repo,text=True).strip()
     if git('branch','--show-current')!='v8-spatial-supervision-expansion' or git('status','--porcelain'):raise ValueError('PUBLICATION_REQUIRES_CLEAN_TASK_BRANCH')
     r=json.loads((out/'result_summary.json').read_text());doc=repo/'docs/experiments/v8-spatial-supervision-expansion.md'
-    text=doc.read_text().replace('RUNNING；','COMPLETE；').replace('PREFLIGHT_COMPLETE；','COMPLETE；')
+    text=doc.read_text().replace('RUNNING；','COMPLETE；').replace('PREFLIGHT_COMPLETE；','COMPLETE；').replace('尚无本轮最终成绩，最终表及实际成本由完成报告补齐。','本轮最终指标与实际成本见下文完成结果。')
     marker='\n## 完成结果\n';text=text.split(marker)[0]+marker+'\n'+(out/'report_zh.md').read_text();doc.write_text(text)
     summary=repo/'docs/experiments/v8-spatial-supervision-expansion-results.json'
     small={k:r[k] for k in ['status','actual_pairs','delta','distributions','original8','boundary','output_bytes','recommendation']}
