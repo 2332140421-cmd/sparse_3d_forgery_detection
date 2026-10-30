@@ -11,6 +11,9 @@
 开发Dice/IoU/AP/real FP=0.312192/0.246006/0.423351/0.032730；
 相对固定BN冻结视觉Dice差+0.066420。详见[完成报告](../experiments/v8-spatial-lora-adaptation.md)。
 仅视觉适配，不归因于三维；旧资产只读核对通过，不自动追加实验。
+结果提交`d32930d`已push并事后核对本地/远端一致。原流程随后在远端HEAD核验时遇HTTP/2错误，
+原进程退出码1及错误日志保留；现仅将derived状态纠正为COMPLETE/report_complete，
+归档原FAILED记录并补记事后publication核验，不重跑实验或改指标。
 
 ## 已完成：固定decoder BN匹配对照
 

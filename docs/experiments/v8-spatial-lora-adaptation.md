@@ -94,7 +94,22 @@ LoRA/decoder梯度绝对和分别2080.23/496.57、1204.12/380.76，参数均实�
 启动时间`2026-10-30T00:17:54.478864+08:00`，tmux `v8_spatial_lora_adaptation_pilot_v1`。
 无`--resume`，只训练新条件，自动结果交付已启用。日志为输出目录`run.log`，
 实时状态`progress.json`，最终退出码`exit_code.txt`，实际Git交付记录`publication.json`。
-仅在最终评价、报告和交付完成后标记COMPLETE；当前尚无新条件最终指标。
+训练、最终评价、报告和push均已完成，最终指标见下文；原进程在后续远端HEAD核验时因网络错误退出1，
+事后核验及状态纠正见下节。
+
+## 完成状态与真实退出历史（2026-10-30事后核验）
+
+运行PID `1321201`，训练代码`7a3007e`，20轮/480更新，best第12轮；现有summary、
+完成报告、结果JSON及日志核对为同一次运行。结果提交
+`d32930d7ef98170639851fb3675d5c9f9deae728`已成功push；事后只读核验时本地与远端HEAD一致。
+随后发生的是`git ls-remote`的HTTP/2 framing错误，不是训练或评价失败。
+
+已仅将数据目录`progress.json`纠正为`COMPLETE/report_complete`，注明事后核验原因；
+原自动流程未生成`publication.json`，现补记发布已完成及事后远端核验事实。
+原`FAILED`状态（含完整traceback）逐字节归档为`progress.failed.remote_verification.json`。
+`exit_code.txt`仍为 **1**，`run.log`及其中网络错误原样保留；不改称原进程正常退出0。
+报告、指标、history未修改，修正前后SHA256一致；未调用训练、恢复、评价、前端或完整发布入口。
+上述状态与失败记录均留在derived数据目录，不纳入Git。本次仅提交状态说明文档。
 
 ## 完成结果（自动集中汇总）
 
