@@ -1,9 +1,16 @@
 # V8 当前状态与边界
 
-更新2026-10-31。当前工作分支`v8-spatial-supervision-expansion`，既有V8历史基线为远端
+更新2026-10-31。当前工作分支`v8-3d-temporal-detection-core`，既有V8历史基线为远端
 `v8-temporal-supervision-pilot` / `9a9b6b8efc41a0c752b070c440ab3c6a69a4a663`。
 本页取代旧版“当前仍只有窗口队列、下一步先做局部几何”的过时状态说明；
 以下历史实验与新机验证分开陈述，不改历史报告和模型。
+
+## 二维／三维时序结构匹配检测
+
+本轮二维／三维检测实验：PREPARED，尚无正式结果。
+ADR-0028；AF train48/dev20/test20 source pair，176视频137397帧；仅2D/3D三个配对seed。
+从头检测训练，复用V8全帧关系/因果GRU与完整跨块梯度；旧定位结果及ANAKIN保留测试不变。
+代码、真实pair实测和独立启动状态见[本轮实验](../experiments/v8-3d-temporal-detection-core.md)。
 
 ## 已完成：空间监督扩量匹配对照
 

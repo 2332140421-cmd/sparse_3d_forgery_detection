@@ -1,0 +1,703 @@
+{
+  "charades:F19VE": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:V8IGX": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:UMTLM": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:21WN7": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:JVH7Q": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:N3U9S": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:H0L5S": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:IIL9C": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_00.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:DJ87X": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:3W1GP": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:NI15V": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:OP2SS": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:55NRK": {
+    "status": "excluded_prior_scoring",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化",
+    "eligibility_evidence": "docs/experiments/v8-independent-source-test.md:84; historical video scoring; excluded before any current test prediction"
+  },
+  "charades:J6JNK": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:5NV2Z": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:GFK4S": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_01.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:T9Y1N": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:VXOE4": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:F7TG5": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:DO48Z": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:9JZO2": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:AX46Z": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:PPY0W": {
+    "status": "not_matching",
+    "evidence": "固定时刻均无人，人体活动无法确认",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:ONVGA": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_02.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:A3XXB": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:TCJCJ": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:5CN21": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:N86ED": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:LLQBB": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:ECFMO": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:1CYLM": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:B82GJ": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_03.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:EHS68": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:5B9XE": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:3IPI3": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:FYYFX": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:JVLAZ": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:W3SC3": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:KVXJ9": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:Z2KJ5": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_04.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:GIIMN": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:Q57HC": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:BUL4V": {
+    "status": "not_matching",
+    "evidence": "相机视角发生大幅改变",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:TPHRR": {
+    "status": "not_matching",
+    "evidence": "相机视角从人物转向灶台，大幅改变",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:3QGLU": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:U1BQ0": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:WZN0I": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:U896B": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_05.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:N00HR": {
+    "status": "not_matching",
+    "evidence": "多处背景视角变化，不能确认相机稳定",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:MRZ44": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:MJX48": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:5AR9B": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:V6IIE": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:VX7P0": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:WPZQ7": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:1U9TF": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_06.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:GIC6A": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:4C4LC": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:7JSAI": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:P1EK9": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:618HP": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:6E6GF": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:DPBI3": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:OMFOJ": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_07.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:5QJNP": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:EDXBD": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:7WG7A": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:YL612": {
+    "status": "not_matching",
+    "evidence": "原片翻转，排除",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:A1NKP": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:RJIEO": {
+    "status": "not_matching",
+    "evidence": "相机大幅扫向电视",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:T3FJH": {
+    "status": "not_matching",
+    "evidence": "相机明显移动",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:NVBBD": {
+    "status": "not_matching",
+    "evidence": "背景视角明显变化",
+    "sheet": "scene_preview/sheet_08.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:HPEE5": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:U7RVS": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:9LWQ6": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:WJFGC": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:39E0I": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:KFI7N": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:YV0ZX": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:ICQUJ": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_09.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:9LONJ": {
+    "status": "not_matching",
+    "evidence": "原片明显旋转",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:IXY95": {
+    "status": "not_matching",
+    "evidence": "相机跟随移动，背景变化明显",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:GC1Q1": {
+    "status": "not_matching",
+    "evidence": "相机明显移动",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:ZAJAJ": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:E0MK4": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:X8A6H": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:XKU2U": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:ESAIY": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_10.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:UPJWV": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:SLMQF": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:WNKL6": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:04LAX": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:RRDAM": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 4,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:DAS12": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 5,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:9HIE0": {
+    "status": "not_matching",
+    "evidence": "相机视角变化明显",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 6,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:79YH2": {
+    "status": "not_matching",
+    "evidence": "相机明显移动",
+    "sheet": "scene_preview/sheet_11.jpg",
+    "row": 7,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:KA09C": {
+    "status": "matching",
+    "evidence": "原片固定25/50/75%可见人体活动或交互；背景构图稳定或轻微变化，未见主导水烟、翻转或明显切镜",
+    "sheet": "scene_preview/sheet_12.jpg",
+    "row": 0,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:XP305": {
+    "status": "not_matching",
+    "evidence": "背景视角明显变化",
+    "sheet": "scene_preview/sheet_12.jpg",
+    "row": 1,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:P9D7P": {
+    "status": "not_matching",
+    "evidence": "相机明显跟随移动",
+    "sheet": "scene_preview/sheet_12.jpg",
+    "row": 2,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  },
+  "charades:P2DV7": {
+    "status": "not_matching",
+    "evidence": "相机背景视角改变",
+    "sheet": "scene_preview/sheet_12.jpg",
+    "row": 3,
+    "scope": "三时刻原片预审，不能排除未采样时刻的短暂镜头变化"
+  }
+}

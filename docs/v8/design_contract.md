@@ -94,3 +94,11 @@ component/全帧attention/多前驱因果GRU。只用原ANAKIN48训练/16开发�
 `docs/experiments/v8-spatial-supervision-expansion.md`。仅本新子集比较冻结视觉与LoRA适配，
 纯视觉缓存不要求几何/统计，source隔离且保留原角色，test_reserved全程不评分。
 计算探针只改检查点/chunk，不改完整输入、所有帧与pair损失；旧实验默认行为不变。
+
+## 二维／三维时序结构匹配检测独立对照
+
+用户授权ADR-0028，设计及唯一配置见`docs/experiments/v8-3d-temporal-detection-core.md`。
+同冻结ResNet18、跟踪短历史、全内容格/component上限、attention、GRU、容量与损失；
+只改变2D/3D结构坐标和对应位移及其派生分组/关系。二维路径不得读取XYZ派生字段。
+本轮完整视频从头训练六模型，video+0.5frame BCE，不加载旧窗口/定位权重；
+不改其他历史实验或上述窗口级合同，空间定位结果保持只读。

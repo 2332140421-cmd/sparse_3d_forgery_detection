@@ -1,0 +1,15 @@
+{
+  "workspace": "/media/njupt/8FCD3869E2FAB06F/chenyh",
+  "data_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection",
+  "old_run": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_3d_temporal_detection_core_v1",
+  "seeds": [20260909,20260910,20260911],
+  "epochs": 30,
+  "patience": 8,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "chunk_frames": 16,
+  "use_checkpoint": true,
+  "clip_norm": 1,
+  "frame_loss_weight": 0.5
+}

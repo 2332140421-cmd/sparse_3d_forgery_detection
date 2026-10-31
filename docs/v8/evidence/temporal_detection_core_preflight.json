@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "chunk_frames": 16,
+  "checkpoint": 1,
+  "records": [
+    {
+      "condition": "STRUCTURE_2D",
+      "loss": 1.027069178766321,
+      "video_loss": 0.6950748557157183,
+      "frame_loss": 0.6639886461012058,
+      "read_s": 0.14718695916235447,
+      "seconds": 3.110317367129028,
+      "gradient_norm": 0.10032080113887787,
+      "evaluation_s": 0.6252637384459376,
+      "reload_max_error": 1.034905494634586e-11,
+      "last_to_first_chunk_gradient": 2.121907300534076e-06,
+      "peak_allocated_bytes": 525909504,
+      "peak_reserved_bytes": 570425344,
+      "parameters": 320353
+    },
+    {
+      "condition": "STRUCTURE_3D",
+      "loss": 1.0274713852636042,
+      "video_loss": 0.6953725890510143,
+      "frame_loss": 0.66419759242518,
+      "read_s": 0.1388624208047986,
+      "seconds": 2.687136296182871,
+      "gradient_norm": 0.10242762416601181,
+      "evaluation_s": 0.5853451360017061,
+      "reload_max_error": 2.76578759894619e-11,
+      "last_to_first_chunk_gradient": 2.218375129814376e-06,
+      "peak_allocated_bytes": 528795136,
+      "peak_reserved_bytes": 585105408,
+      "parameters": 320353
+    }
+  ],
+  "common_parameter_sha256": "821c18dc24cdfe16eaa7664f307304761dab947b90d01bf8570b165ac301db4c",
+  "full_pair_frames": 1478,
+  "monitor_sources": [
+    "charades:1U9TF",
+    "charades:2074D",
+    "charades:2JR26",
+    "charades:39E0I"
+  ],
+  "budget_seconds": {
+    "preparation_upper_linear_reference": 35572.24138557418,
+    "six_models_max30_updates": 26327.892379717676,
+    "six_models_max30_monitor_dev": 2731.90519961703,
+    "final_best_last_upper_reference": 675.2396245838278
+  },
+  "projection_limit": "one complete training pair, linear estimate; early stopping, IO and shared GPU change actual costs",
+  "smoke_weights": "discarded; formal initialization recreated by seed; temporary diagnostic checkpoints only",
+  "pre_training_manifest_amendment": "Exclude historically scored 55NRK; smoke pair and train/dev unchanged; all-frame projections rescaled only."
+}

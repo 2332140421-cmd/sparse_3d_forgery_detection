@@ -106,3 +106,9 @@ results, or inconsistency between the paper and implementation.
   visual-only RGB/GT caches, and at most four full-pair compute probes. Preserve original
   roles, all frames and loss; never score or extract DINO for test_reserved. Record
   experiment completion before publication; Git/network failures must not overwrite it.
+- Matched temporal detection: ADR-0028 and `docs/experiments/v8-3d-temporal-detection-core.md`
+  authorize only STRUCTURE_2D/STRUCTURE_3D, three paired seeds, fresh detection
+  initialization and AF48/20/20 source pairs. Reuse attention/GRU/full-video gradients;
+  2D grouping/normalization/model inputs must never read XYZ-derived fields.
+  Preserve all content cells when geometry/history is missing. Test best only after
+  all six models finish; no ANAKIN reserved-test access or extra ablations.
