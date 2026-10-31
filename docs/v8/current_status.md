@@ -7,7 +7,7 @@
 
 ## 二维／三维时序结构匹配检测
 
-本轮二维／三维检测实验：PREPARED，尚无正式结果。
+本轮二维／三维检测实验：COMPLETE，六模型最终测试与报告完成；见对应实验文档。
 ADR-0028；AF train48/dev20/test20 source pair，176视频137397帧；仅2D/3D三个配对seed。
 从头检测训练，复用V8全帧关系/因果GRU与完整跨块梯度；旧定位结果及ANAKIN保留测试不变。
 代码、真实pair实测和独立启动状态见[本轮实验](../experiments/v8-3d-temporal-detection-core.md)。
