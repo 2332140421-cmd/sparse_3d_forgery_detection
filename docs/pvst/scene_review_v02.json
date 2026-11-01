@@ -1,0 +1,102 @@
+{
+  "charades:2074D": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:8BCI8": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:DY9AE": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:J1YJ6": {
+    "status": "near_stable",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:NHUV1": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:QNUIU": {
+    "status": "near_stable",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:ZDX0Y": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:ZSHV8": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:44T8B": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:54VBR": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:5GPOJ": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:9R4AQ": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/12973568": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/141132187": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/159805605": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/235273752": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/31603044": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/336385849": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/44388058": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/445264882": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/211093832": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/40886434": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/51633066": {
+    "status": "near_stable",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "anakin:https://vimeo.com/644436285": {
+    "status": "matching_fixed_preview",
+    "scope": "原片PTS25/50/75%实际预审，无fake/分数；未采样时间运动未逐帧人工核查"
+  },
+  "charades:BTW1H": {
+    "status": "excluded",
+    "evidence": "原片由门/钟转向窗帘/婴儿车，明显相机转向；初版清单与预览保留"
+  }
+}

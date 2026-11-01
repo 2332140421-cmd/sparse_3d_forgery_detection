@@ -112,3 +112,12 @@ results, or inconsistency between the paper and implementation.
   2D grouping/normalization/model inputs must never read XYZ-derived fields.
   Preserve all content cells when geometry/history is missing. Test best only after
   all six models finish; no ANAKIN reserved-test access or extra ablations.
+
+## PVST independent method
+
+- ADR-0029 and docs/pvst/design_v02.md define the user-authorized new method.
+- Use research_tools/pvst; never substitute V8 cell means/components or V9 query partitions.
+- Preserve native content pixels, point128/fine256/coarse512, both three-layer causal
+  scales and point-to-pixel bypass. UV must not read XYZ-derived inputs.
+- Exactly two conditions, one seed, AF8/4 and ANAKIN8/4 source pairs. If equivalent
+  execution cannot fit hardware, measure and report RESOURCE_BLOCKED; do not shrink.

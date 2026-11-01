@@ -1,0 +1,929 @@
+{
+  "full_manifest_relative_path": "derived/pvst_point_voxel_v02/manifest.json",
+  "full_manifest_sha256": "945e0400c648ae892a7a6f0733aba21fdcc424c5233fdfcee2192305fe7808fd",
+  "rows": [
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:2074D",
+      "pair_id": "af:2074D",
+      "role": "fake",
+      "video_id": "23ff43433738441e0208f95e",
+      "video_sha256": "d0ff1c8e2ef27d5a4985a6cdd1b06be980b99904cc19f1f235f6619362429ec9",
+      "actual_frames": 547,
+      "source_hw": [
+        360,
+        270
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/2074D+3.30=11.20=charades@train_delete@2074D@243@fcvg.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "39f1377f0c5e97449460ab8905d0fa62d014ef6309ce4d5f925f7b5ae3fa0db7"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:2074D",
+      "pair_id": "af:2074D",
+      "role": "real",
+      "video_id": "579e7711a2f1fc95701a3489",
+      "video_sha256": "752c76d3fc2e6c773dffad66f2c8859ec6ed32d7a8a70f751f4c331f270703f5",
+      "actual_frames": 547,
+      "source_hw": [
+        480,
+        360
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/2074D.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "39f1377f0c5e97449460ab8905d0fa62d014ef6309ce4d5f925f7b5ae3fa0db7"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:8BCI8",
+      "pair_id": "af:8BCI8",
+      "role": "fake",
+      "video_id": "91897668f218bd28ced6d50b",
+      "video_sha256": "a8386b7a4f0b4a830d41ff2079ab4eb51d59b7a4d3cb9178dc67a8c5a15aeaff",
+      "actual_frames": 1052,
+      "source_hw": [
+        480,
+        640
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/8BCI8+0.00=10.60=charades@train_delete@8BCI8@1298@fcvg+21.60=29.40=charades@train_delete@8BCI8@1299@fcvg.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "b6dc67dd118b006c048cb8b961ce081e021c22fb9b5c32def6d0b1b9c332c3ae"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:8BCI8",
+      "pair_id": "af:8BCI8",
+      "role": "real",
+      "video_id": "0b5c2fa5e32e075e850d8d6d",
+      "video_sha256": "275bf7ced7bf2ce703a48e0b94309f823bb702908fdebb62c9da7cd03db65679",
+      "actual_frames": 1052,
+      "source_hw": [
+        360,
+        480
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/8BCI8.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "b6dc67dd118b006c048cb8b961ce081e021c22fb9b5c32def6d0b1b9c332c3ae"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:DY9AE",
+      "pair_id": "af:DY9AE",
+      "role": "fake",
+      "video_id": "9062bbf1fa63ecbbcf097d13",
+      "video_sha256": "6cf18ea2e21564e50b01cf79253bd8d3fd9f9341a1b6177dced7d9e5a50bb250",
+      "actual_frames": 793,
+      "source_hw": [
+        720,
+        406
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/DY9AE+0.00=9.50=charades@train_delete@DY9AE@897@wan+14.10=26.38=charades@train_delete@DY9AE@898@wan.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "ab9860167a03d909063f766d453bff5a1512b6ec9f83304e4d42885810b81858"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:DY9AE",
+      "pair_id": "af:DY9AE",
+      "role": "real",
+      "video_id": "8961013e78b38df464e70177",
+      "video_sha256": "42da99f56bb4e75361db450f7dd45cff1033a610f46cb0cddfec0fb2466b93e1",
+      "actual_frames": 792,
+      "source_hw": [
+        480,
+        270
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/DY9AE.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "afddc35f2b1222fdc1fff8ed73f6bd8e52bcf8c53a88c3ff0bd7877c575ace86"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:J1YJ6",
+      "pair_id": "af:J1YJ6",
+      "role": "fake",
+      "video_id": "41119988141cdb355bdf6920",
+      "video_sha256": "f35f7b2c0a254447c535cddf59a9a72789b25a852dfc06ce406c15b7ae393e5b",
+      "actual_frames": 874,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/J1YJ6+3.60=13.30=charades@train_add@J1YJ6@608@wan.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "0d82b18fa36da692654c71cd81857b4d8b366c411f5f6f37dcf6d2a34209caa3"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:J1YJ6",
+      "pair_id": "af:J1YJ6",
+      "role": "real",
+      "video_id": "bf886623d72e6bb581325e67",
+      "video_sha256": "1cbc7d174966000e1d7d322b11d682fc90f6e554a00030e225c19e6b41ba78f1",
+      "actual_frames": 873,
+      "source_hw": [
+        270,
+        480
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/J1YJ6.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "a228e9f63951f3bf53d56e3468a3d954dc767396598444a8c7eb840208f844a8"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:NHUV1",
+      "pair_id": "af:NHUV1",
+      "role": "fake",
+      "video_id": "78f4d1cdcb7beec374fe462e",
+      "video_sha256": "71945123513ac84574fe2e2cead9689271fe3c6ea669b9c9592add922bf93b38",
+      "actual_frames": 428,
+      "source_hw": [
+        240,
+        426
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/NHUV1+0.00=3.10=charades@train_delete@NHUV1@121@wan.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "9204840e8890d9bad061ec03fccfd2fc83d5a7488dba638c888d37c458d460a9"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:NHUV1",
+      "pair_id": "af:NHUV1",
+      "role": "real",
+      "video_id": "ec467c54039c51236bb972a8",
+      "video_sha256": "e3cdc7dba91774544d06b3d61327a6acac7df04bab2295ae0b6d4e11c7c7108e",
+      "actual_frames": 427,
+      "source_hw": [
+        270,
+        480
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/NHUV1.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "6076ef6d063b1f499020dbb9d7886c8b036e21066d73ede522a39ad4a5fc165f"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:QNUIU",
+      "pair_id": "af:QNUIU",
+      "role": "fake",
+      "video_id": "b5a2de0b00e50a8c0dcea64d",
+      "video_sha256": "89c59fed6a4652b76dd9b60db6012e11e695e57f57354b1a83072e1114580d36",
+      "actual_frames": 908,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/QNUIU+16.60=30.21=charades@train_add@QNUIU@324@wan.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "baee33f88b4f93239883763232fd2a2cebbd2297dd4b9ce82dc9fd5050907eb2"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:QNUIU",
+      "pair_id": "af:QNUIU",
+      "role": "real",
+      "video_id": "34555215ee71d742d52e10bc",
+      "video_sha256": "3dd207500d08e4a13eccecfd884723427ab5991869b4e57e113ebef3d9818640",
+      "actual_frames": 907,
+      "source_hw": [
+        270,
+        480
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/QNUIU.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "3c31d098d6d0e17f04f017a58537ff63f163effc5b83f8d9fc7ef9bc87849eae"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:ZDX0Y",
+      "pair_id": "af:ZDX0Y",
+      "role": "fake",
+      "video_id": "23dbeed4974a36cd43add393",
+      "video_sha256": "66ca7ac428e0cb271ecb8cf825ad2f9738ec8a20fe5499e186388fa70f84fdd2",
+      "actual_frames": 926,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/ZDX0Y+0.00=6.60=charades@train_delete@ZDX0Y@668@fcvg.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "70b7801c92d0aeca1e13ceec6259bf1e0885b7a5487d58114cfc6c3bac8673d8"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:ZDX0Y",
+      "pair_id": "af:ZDX0Y",
+      "role": "real",
+      "video_id": "212989d7c267f586c0ccf2d1",
+      "video_sha256": "98cb11aa51db3a09f5fce4ec72fb3382a58cb12c1b5d11b374b5efb09e84339d",
+      "actual_frames": 926,
+      "source_hw": [
+        270,
+        480
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/ZDX0Y.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "70b7801c92d0aeca1e13ceec6259bf1e0885b7a5487d58114cfc6c3bac8673d8"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:ZSHV8",
+      "pair_id": "af:ZSHV8",
+      "role": "fake",
+      "video_id": "b0eaed65c52e0a88fbc25a6e",
+      "video_sha256": "b2b00cc618e9254a2914b91642db03426045b2446760c9b9e13ba2e1d1df8a56",
+      "actual_frames": 1081,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/ZSHV8+13.50=31.20=charades@train_delete@ZSHV8@1061@fcvg.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "6c75d3411352d5149126c31411e27e2b1b35d1225053e97663be5756fd196c69"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "train",
+      "source_id": "charades:ZSHV8",
+      "pair_id": "af:ZSHV8",
+      "role": "real",
+      "video_id": "6296847e9e9308c561516a5e",
+      "video_sha256": "0d8ff11b0aaa6a5d92b5f3ca268e7486c4a5aea6573d04a8b0c1b0b952efaed9",
+      "actual_frames": 1080,
+      "source_hw": [
+        270,
+        480
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/ZSHV8.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "4ab5b5be2791ebf89e2f3756f0b8e3113eccd0c4d63d17a6f184be4d15b8c8c0"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:44T8B",
+      "pair_id": "af:44T8B",
+      "role": "fake",
+      "video_id": "eca336932d4faae37ddc851f",
+      "video_sha256": "ba154b93288cc533987ad32f8be02505267281762cf21681cccb905ff1a93997",
+      "actual_frames": 712,
+      "source_hw": [
+        480,
+        640
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/44T8B+0.00=3.50=charades@test_delete@44T8B@723@fcvg.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "b76bee6239ed824b26763775ab03b2bb8673da8bdc649769acf03dd673ecc3db"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:44T8B",
+      "pair_id": "af:44T8B",
+      "role": "real",
+      "video_id": "77b52ae60ceb459e8cab443d",
+      "video_sha256": "4be91099dbc7c5478302687b300aae540665ca2d1ec794c8faacbc28dda3b139",
+      "actual_frames": 712,
+      "source_hw": [
+        360,
+        480
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/44T8B.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "b76bee6239ed824b26763775ab03b2bb8673da8bdc649769acf03dd673ecc3db"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:54VBR",
+      "pair_id": "af:54VBR",
+      "role": "fake",
+      "video_id": "1b5d09886b6ab579e0843ce5",
+      "video_sha256": "4da93fccd96788c6d3bc24a583eb4e684c82fa5fd21463c64b520f81961a4734",
+      "actual_frames": 721,
+      "source_hw": [
+        480,
+        640
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/03_fcvg/54VBR+16.30=23.80=charades@train_delete@54VBR@382@fcvg.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "4809ff1e106ad352afdc59e945d9cb68bc57c593a887b3714e7ca83ca19ae87b"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:54VBR",
+      "pair_id": "af:54VBR",
+      "role": "real",
+      "video_id": "9b8eed0860e425653ded3577",
+      "video_sha256": "b2a68d5333f7e40ed478520297782c8be3bef6ef2c5c6e1f1d8afb00a2d25741",
+      "actual_frames": 720,
+      "source_hw": [
+        360,
+        480
+      ],
+      "generator": "fcvg",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/54VBR.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "2614a76b0b8c144017c1115193d6c90735d784d580a1d55639394baaecf6719d"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:5GPOJ",
+      "pair_id": "af:5GPOJ",
+      "role": "fake",
+      "video_id": "773256753840d735a0bf6a99",
+      "video_sha256": "2b9995bb158924616cd265c10392a45aec5a0a40cf62d1cea5a863317148af07",
+      "actual_frames": 756,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/5GPOJ+9.60=14.70=charades@train_delete@5GPOJ@326@wan.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "1076621ab5c4a8c0a4e00f0a392c20dbfd67b70b2c468113ea7aa2cc31161b9c"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:5GPOJ",
+      "pair_id": "af:5GPOJ",
+      "role": "real",
+      "video_id": "54fe4199ac1efb901ddf55bb",
+      "video_sha256": "b5947095d5093908eda9e2d37e863cf3bed99d0471d5e765c926b1b0a1853448",
+      "actual_frames": 756,
+      "source_hw": [
+        270,
+        480
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/5GPOJ.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "a8ec14aef89885e179e2c08053ce5935e28b93696281b06192b735ed48916748"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:9R4AQ",
+      "pair_id": "af:9R4AQ",
+      "role": "fake",
+      "video_id": "ebc293dba90b3c32b014af5b",
+      "video_sha256": "b752f5ff0a047bfd3e9cc0bc69ed115bafdf1cdfea3701213ea0e81575b36710",
+      "actual_frames": 711,
+      "source_hw": [
+        480,
+        640
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/official/a34d4b7b04b0f3f3e26ba900adc367218667c581/video/02_wan/9R4AQ+0.00=4.70=charades@train_add@9R4AQ@791@wan.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "e808ea6d6c4d13fbd72783c335262af800cc3bd97ddb1d7edf7974a62b4f15d6"
+    },
+    {
+      "dataset": "ActivityForensics",
+      "split": "dev",
+      "source_id": "charades:9R4AQ",
+      "pair_id": "af:9R4AQ",
+      "role": "real",
+      "video_id": "455faa1d20d86c7a4e5ac65f",
+      "video_sha256": "24c830fb22d92271fe32e8dae0e032d1a26a0824f7c8d6b8249d0de6cf371495",
+      "actual_frames": 711,
+      "source_hw": [
+        360,
+        480
+      ],
+      "generator": "wan",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/real/charades/9R4AQ.mp4",
+      "official_revision": "a34d4b7b04b0f3f3e26ba900adc367218667c581",
+      "native_pts_sha256": "e808ea6d6c4d13fbd72783c335262af800cc3bd97ddb1d7edf7974a62b4f15d6"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/12973568",
+      "pair_id": "an:7ogg04",
+      "role": "fake",
+      "video_id": "cb41b3d004b6640f6c3b5bb1",
+      "video_sha256": "e354796bbcec2d36d8cd8398b5441dd023610e6f762e18efa2f2f49061640874",
+      "actual_frames": 75,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/7ogg04.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7ogg04.zip",
+      "mask_sha256": "66b20259f3cd411e993af9848affcdc28f8f08bef9d53cc82dfd01d85f841a28",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "598dae9c4f61dbbe7031b4241ea1b44a23f36dd1ef9b95da411dae06db7115ce"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/12973568",
+      "pair_id": "an:7ogg04",
+      "role": "real",
+      "video_id": "c26e3fc1fdc6aabda308ae84",
+      "video_sha256": "4dd8e13597163fdf97a6e2760f74e8d42a42ae2181d5d1da7edafaac5908710a",
+      "actual_frames": 75,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/7ogg04.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7ogg04.zip",
+      "mask_sha256": "66b20259f3cd411e993af9848affcdc28f8f08bef9d53cc82dfd01d85f841a28",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "3a6e90de38fab11fa97fee1e71df98cf1b1e6737ea19dc5867c8f9af45ce8dbe"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/141132187",
+      "pair_id": "an:728qx7",
+      "role": "fake",
+      "video_id": "f02cfe65b813132c7e61618f",
+      "video_sha256": "e3d8d0c7c7b2ad4119a41daf3fb8479de31257cfc452d1f7ae86a8c5cc594861",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/728qx7.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/728qx7.zip",
+      "mask_sha256": "d1efa822cc3dc629804b0a56f7a915f55c3412d40b8f932a1d9356dad9cc12a5",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/141132187",
+      "pair_id": "an:728qx7",
+      "role": "real",
+      "video_id": "8a9691dcdc0248c8ab03723f",
+      "video_sha256": "acdf12e0eced0b2386819cd8072a8f74066ecc50d468f7baad723c99601c38e6",
+      "actual_frames": 150,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/728qx7.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/728qx7.zip",
+      "mask_sha256": "d1efa822cc3dc629804b0a56f7a915f55c3412d40b8f932a1d9356dad9cc12a5",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "3d2671f276ac28f48236240e982a2d75b33250f4eaf8e64c9031db7ace881648"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/159805605",
+      "pair_id": "an:95qvg9",
+      "role": "fake",
+      "video_id": "d74a0e91fefb7a10107172c0",
+      "video_sha256": "09c4aa71cd6cd79cc6e604c7c1a5dce1a31c4a7e781740d2c31288365daaa191",
+      "actual_frames": 100,
+      "source_hw": [
+        540,
+        960
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/95qvg9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/95qvg9.zip",
+      "mask_sha256": "7dd114d63d6e7189e1fe569071fd73ec66ba8568d2a3be443119e825a0446f0a",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "572dd3d27cc8512b1cc9648bc9801cb4a45eae4e1176180726240e463491782f"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/159805605",
+      "pair_id": "an:95qvg9",
+      "role": "real",
+      "video_id": "adcb32286a41e0e3a6fdfdeb",
+      "video_sha256": "0cf00cd899b8ba2a1c8bbdd1362010005776f500a10092529125cdd0c5af77a8",
+      "actual_frames": 100,
+      "source_hw": [
+        540,
+        960
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/95qvg9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/95qvg9.zip",
+      "mask_sha256": "7dd114d63d6e7189e1fe569071fd73ec66ba8568d2a3be443119e825a0446f0a",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "0354565bfc867ed7d1a0bb046c6a5e09352bcff9ea9e251199126aed7922a4e4"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/235273752",
+      "pair_id": "an:4wdo37",
+      "role": "fake",
+      "video_id": "87664e1174a82a8f26ee463f",
+      "video_sha256": "54b0368208163dd00935994a7d17d0482fe8ab8f53104e4f476566cf88b68f53",
+      "actual_frames": 300,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/4wdo37.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4wdo37.zip",
+      "mask_sha256": "e963650eab98dec831fb297a30c431d502aec1394916c825c368e2e622f42094",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "7def5854fd504818524bba086aaa697f501c387cdcfd0151a17cb0b7c044e34b"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/235273752",
+      "pair_id": "an:4wdo37",
+      "role": "real",
+      "video_id": "782426ea0330c7fea684953c",
+      "video_sha256": "2d6484f4d9c6b689bd2bf60b0b9b5b98a6fd31385f0445f33c0b4a40fc8fc0ca",
+      "actual_frames": 300,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/4wdo37.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4wdo37.zip",
+      "mask_sha256": "e963650eab98dec831fb297a30c431d502aec1394916c825c368e2e622f42094",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "e7ba4dbb2c6af4fe95d93df04dd910a608242359281d1ed8db57a2c4f5e8ea0f"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/31603044",
+      "pair_id": "an:40y1x9",
+      "role": "fake",
+      "video_id": "ac8efb162961478dd9f9af22",
+      "video_sha256": "e059ec82bd4328070c1fb03f2e9638ae0b2bba694450d1ca215532b966aacb60",
+      "actual_frames": 150,
+      "source_hw": [
+        640,
+        360
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/40y1x9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/40y1x9.zip",
+      "mask_sha256": "3386b8fba9d8897a0cd4276e891c6476b7497741eaf0aaf033cfa52d2140cab3",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "89bdd950bf8268fa96a4e039bcc8e13f9de9f0494c8cd1bdeba54b50e5a645f3"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/31603044",
+      "pair_id": "an:40y1x9",
+      "role": "real",
+      "video_id": "5412ec415c6dc6000437ff00",
+      "video_sha256": "d0da94053c871c41221303feff9ec9ead282702e456fe6c26e1220bff0b2d807",
+      "actual_frames": 150,
+      "source_hw": [
+        640,
+        360
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/40y1x9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/40y1x9.zip",
+      "mask_sha256": "3386b8fba9d8897a0cd4276e891c6476b7497741eaf0aaf033cfa52d2140cab3",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "04ae951f7e6c93d3fdef059e4ec2df250b5f6d56ba13dc73e8772ae81a2130b0"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/336385849",
+      "pair_id": "an:7p8r14",
+      "role": "fake",
+      "video_id": "f0ba19d9d7098e420eff20ab",
+      "video_sha256": "9b9c0b671a4633904dfeefb3b59296360304a81009a954b0a2b0644fce08d46a",
+      "actual_frames": 78,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/7p8r14.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7p8r14.zip",
+      "mask_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "254d4998ae8a18c95ecfb0f50418851d4e847ff1993f55f859dac2743406a98c"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/336385849",
+      "pair_id": "an:7p8r14",
+      "role": "real",
+      "video_id": "7f6c4de78fd5220b6dbbea63",
+      "video_sha256": "bffd0606140f451a4245da2f32826c3b4892f2a2e6b672187f383e72a9ae9cc5",
+      "actual_frames": 78,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/7p8r14.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7p8r14.zip",
+      "mask_sha256": "8c19167984b450078bd1a220f11d76d25c35c2cf26ae3b11cf005934d9cdccdc",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "bdf7078d5493ab38724b2e234dbe79fae298eb4ab6e5eb324e27a03612cb3234"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/44388058",
+      "pair_id": "an:7e2557",
+      "role": "fake",
+      "video_id": "473cef2b50cd96215bcdcbed",
+      "video_sha256": "b70286cd20ab70ed91747b93ec755327096808c4ea60d07c7b824577a835cd5f",
+      "actual_frames": 96,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/7e2557.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7e2557.zip",
+      "mask_sha256": "7abde1cbba8461c52c639efdc504b84e3c37d6810f0422d46e18f6934e2f84c8",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "ebcd91cbbdc67783704f9f96bbb08ecf360b5cbe5a5bec60d4a3eee2fdcf1bb1"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/44388058",
+      "pair_id": "an:7e2557",
+      "role": "real",
+      "video_id": "7de955b21023a518f9dd2ce0",
+      "video_sha256": "07db53051d2f2c95ec3e901e899d377ffaaa13e182c46110b7fbc2cfbb0770b1",
+      "actual_frames": 96,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/7e2557.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7e2557.zip",
+      "mask_sha256": "7abde1cbba8461c52c639efdc504b84e3c37d6810f0422d46e18f6934e2f84c8",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "1966faeff765dc59e46fdc264c2fbca63dd75ac03b0f4144d0d66000b70a2be0"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/445264882",
+      "pair_id": "an:4z1827",
+      "role": "fake",
+      "video_id": "03940cfef98b2a38304cdd0e",
+      "video_sha256": "8224e63a1c4ef05da7677451f4ad5e79370d17b7a6ac67c37cd46fd586bb0aba",
+      "actual_frames": 120,
+      "source_hw": [
+        540,
+        960
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/4z1827.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4z1827.zip",
+      "mask_sha256": "d61ec74b8f3101e0d7c0a78e39a2cbc37590531f14e5c426e50ed66406311619",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "train",
+      "source_id": "anakin:https://vimeo.com/445264882",
+      "pair_id": "an:4z1827",
+      "role": "real",
+      "video_id": "9d465eb0c15946cd37ad1e72",
+      "video_sha256": "9400cdeb47548346dfd160f6253f13d4955b92f5bb5de31c6f0f5efc80f7a8fc",
+      "actual_frames": 120,
+      "source_hw": [
+        540,
+        960
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/4z1827.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4z1827.zip",
+      "mask_sha256": "d61ec74b8f3101e0d7c0a78e39a2cbc37590531f14e5c426e50ed66406311619",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "1976aab987f4dd7612dd6f84b4967e37c1f9e46349fb759f3e4f952141ddcc3d"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/211093832",
+      "pair_id": "an:7e2e57",
+      "role": "fake",
+      "video_id": "e73bc60d4e2c5b994ee45ba4",
+      "video_sha256": "0ad7c1904e45baa27b7478cd5171b3ddbeec49886b16b47a93dfa690707d7d3e",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/7e2e57.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7e2e57.zip",
+      "mask_sha256": "21e6a41b2768a0c2efa1b95ecae64836d7977ef7a242566324abfd63f5977e6f",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/211093832",
+      "pair_id": "an:7e2e57",
+      "role": "real",
+      "video_id": "d7b7aa3915ac3ddc0bf94b22",
+      "video_sha256": "703eafcafbd3adc9b02c2a23204562e24b36be88929d760c908d724e3d0e3577",
+      "actual_frames": 120,
+      "source_hw": [
+        720,
+        1280
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/7e2e57.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/7e2e57.zip",
+      "mask_sha256": "21e6a41b2768a0c2efa1b95ecae64836d7977ef7a242566324abfd63f5977e6f",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/40886434",
+      "pair_id": "an:4rvro9",
+      "role": "fake",
+      "video_id": "a2a08b465a8cea8a95403ee7",
+      "video_sha256": "75156f442400aa74f19e068755b1cc3b3bf0f89d236127543e94e8faafa60555",
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/4rvro9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4rvro9.zip",
+      "mask_sha256": "1ffad297f8e482cd328a1494f223e24c6a3d3b6e7df89b065a8444b8d8d68496",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/40886434",
+      "pair_id": "an:4rvro9",
+      "role": "real",
+      "video_id": "424b814a818225209898bae7",
+      "video_sha256": "11bfc1b983095b295436c1f89a828eb681c76b466e42faae4daf2388eb43ef0a",
+      "actual_frames": 150,
+      "source_hw": [
+        360,
+        640
+      ],
+      "generator": "splicing",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/4rvro9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4rvro9.zip",
+      "mask_sha256": "1ffad297f8e482cd328a1494f223e24c6a3d3b6e7df89b065a8444b8d8d68496",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "90551032cdc6790e93d10bc9372b2fad5051a3528feb450a202ab1108b16265f"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/51633066",
+      "pair_id": "an:4wgx37",
+      "role": "fake",
+      "video_id": "f2cd41132415857399b19518",
+      "video_sha256": "76e4c9b14229509af55f838d05d5f21cea5c43e71c7e789d27e9adb0b4d23bb3",
+      "actual_frames": 120,
+      "source_hw": [
+        480,
+        640
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/4wgx37.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4wgx37.zip",
+      "mask_sha256": "31c57c9f4616cf83a62b05b4435b232acf4e57bfd52872d8dbc81bf3319854b7",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "abbe9fd3d9631860911aa48ae9b99e4826470ffd92dad81fd0d3cd85867e5269"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/51633066",
+      "pair_id": "an:4wgx37",
+      "role": "real",
+      "video_id": "5c2fda735c71289d10a3de7a",
+      "video_sha256": "0490f70ee85a189ff317db76bb87732e88add5244aa1cdfa47bd176155c7f744",
+      "actual_frames": 120,
+      "source_hw": [
+        480,
+        640
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/4wgx37.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/4wgx37.zip",
+      "mask_sha256": "31c57c9f4616cf83a62b05b4435b232acf4e57bfd52872d8dbc81bf3319854b7",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "ca8209a5d695223abef43d9dce03762a624e301fa6132c39d9d4c130ae5fabb9"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/644436285",
+      "pair_id": "an:95q8g9",
+      "role": "fake",
+      "video_id": "37b22da558e1daee1e72b707",
+      "video_sha256": "6a9ba2d88bd6b7e23078b43a0d640f9d0faaefab6b055a4cf712fe53904e5a03",
+      "actual_frames": 72,
+      "source_hw": [
+        540,
+        960
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/edited/95q8g9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/95q8g9.zip",
+      "mask_sha256": "c36b19a6310559d1f3c85963ec20efb5e3249c78b606f56a9e5af0a89c60b5cd",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "bbddc0ecb6999a04e888f92a3e0a99a7139b6e04a67a844ab9a83f9524d779bc"
+    },
+    {
+      "dataset": "ANAKIN",
+      "split": "dev",
+      "source_id": "anakin:https://vimeo.com/644436285",
+      "pair_id": "an:95q8g9",
+      "role": "real",
+      "video_id": "2ad19f5f828cec54da51b511",
+      "video_sha256": "e8d7b21d25ed63e5f476902f59381c7bdaf7be5c42ab045fcc188a55354a009f",
+      "actual_frames": 72,
+      "source_hw": [
+        540,
+        960
+      ],
+      "generator": "inpainting",
+      "video_path": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/trimmed/95q8g9.mp4",
+      "mask_zip": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/anakin/masks/95q8g9.zip",
+      "mask_sha256": "c36b19a6310559d1f3c85963ec20efb5e3249c78b606f56a9e5af0a89c60b5cd",
+      "official_revision": "978fe26e78ecaaf6562aa249be43c2c690484d0a",
+      "native_pts_sha256": "bbddc0ecb6999a04e888f92a3e0a99a7139b6e04a67a844ab9a83f9524d779bc"
+    }
+  ],
+  "selection_amendment": {
+    "excluded_source": "charades:BTW1H",
+    "reason": "actual original background changes from door/clock to curtain/stroller with clear camera turn",
+    "replacement_source": "charades:QNUIU",
+    "role": "train",
+    "generator": "wan",
+    "no_fake_or_prediction_selection": 1,
+    "previous_manifest_sha256": "80d4422bd1692487adc08018601865f2f974e33ae213f7f519b4238b69dec9a8",
+    "new_manifest_sha256": "945e0400c648ae892a7a6f0733aba21fdcc424c5233fdfcee2192305fe7808fd",
+    "unix_time": 1793566053.0491266
+  }
+}

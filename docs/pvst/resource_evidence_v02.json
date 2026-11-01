@@ -1,0 +1,339 @@
+{
+  "date": "2026-11-02",
+  "GPU": "RTX4090 24564MiB",
+  "tests": "14 passed in 5.22s",
+  "formal_training_started": false,
+  "full_pair_check": "scheduled automatically before formal epoch0; not yet completed",
+  "records": [
+    {
+      "file": "resource_UV_PVST_targets8_offload0_sdpa_route_cache_spatialGT_train_scale_c512_t256.json",
+      "sha256": "79b6b052d33a2ce3e0860523df69d502e310b3bcf5db9c67cf3983e7d9e0d322",
+      "status": "PASS",
+      "condition": "UV_PVST",
+      "targets": 8,
+      "left_halo": 16,
+      "offload_saved_tensors": 0,
+      "video_id": "f02cfe65b813132c7e61618f",
+      "native_hw": [
+        720,
+        1280
+      ],
+      "spatial_GT": 1,
+      "static_routing_cache": 1,
+      "frames": 24,
+      "data_read_and_routing_s": 0.2200648970901966,
+      "seconds_two_updates": 57.44328788574785,
+      "peak_allocated_bytes": 17376263680,
+      "peak_reserved_bytes": 18735955968,
+      "execution": {
+        "tile_size": 256,
+        "attention_chunk": 512,
+        "point_chunk": 32768,
+        "attention_backend": "torch_sdpa"
+      },
+      "parameters": 17821672,
+      "details": [
+        {
+          "step": 1,
+          "loss": 1.7770764827728271,
+          "geometry_gradient_abs_sum": 0.0,
+          "gradient_norm": 15.858739852905273
+        },
+        {
+          "step": 2,
+          "loss": 1.5638008117675781,
+          "geometry_gradient_abs_sum": 0.01905629225075245,
+          "gradient_norm": 12.468697547912598
+        }
+      ],
+      "probe_scale": 1.9888148307800293,
+      "resource_scale_sha256": "1af871b7c418b9bc48d736c66594022b8f308580486e05a841bf39bc3caaff00",
+      "scale_scope": "frozen all-training scale",
+      "occupancy": [
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        },
+        {
+          "fine": 4096,
+          "coarse": 1024,
+          "valid_pixels": 921600,
+          "singleton_voxels": 0,
+          "points_per_voxel_mean": 225.0,
+          "points_per_voxel_max": 240
+        }
+      ],
+      "fine_neighbors": [
+        {
+          "dilation": 1,
+          "nodes": 98304,
+          "edges": 2490900,
+          "neighbors_min": 4,
+          "neighbors_mean": 25.3387451171875,
+          "neighbors_max": 27
+        },
+        {
+          "dilation": 2,
+          "nodes": 98304,
+          "edges": 2382600,
+          "neighbors_min": 4,
+          "neighbors_mean": 24.237060546875,
+          "neighbors_max": 27
+        },
+        {
+          "dilation": 4,
+          "nodes": 98304,
+          "edges": 2166000,
+          "neighbors_min": 4,
+          "neighbors_mean": 22.03369140625,
+          "neighbors_max": 27
+        }
+      ],
+      "coarse_neighbors": [
+        {
+          "dilation": 1,
+          "nodes": 24576,
+          "edges": 609684,
+          "neighbors_min": 4,
+          "neighbors_mean": 24.80810546875,
+          "neighbors_max": 27
+        },
+        {
+          "dilation": 2,
+          "nodes": 24576,
+          "edges": 583176,
+          "neighbors_min": 4,
+          "neighbors_mean": 23.7294921875,
+          "neighbors_max": 27
+        },
+        {
+          "dilation": 4,
+          "nodes": 24576,
+          "edges": 530160,
+          "neighbors_min": 4,
+          "neighbors_mean": 21.572265625,
+          "neighbors_max": 27
+        }
+      ],
+      "FLOPs": "not profiled; node/edge counts recorded, two conditions do not have matched compute",
+      "weights": "discarded; no performance claim"
+    },
+    {
+      "file": "resource_XYZ_PVST_targets8_offload0_sdpa_route_cache_spatialGT_train_scale_c512_t256.json",
+      "sha256": "20930fc454dcac93e8bb422a887955dcf4e31effb0c159d3d5ac9947dd3e25e9",
+      "status": "PASS",
+      "condition": "XYZ_PVST",
+      "targets": 8,
+      "left_halo": 16,
+      "offload_saved_tensors": 0,
+      "video_id": "f02cfe65b813132c7e61618f",
+      "native_hw": [
+        720,
+        1280
+      ],
+      "spatial_GT": 1,
+      "static_routing_cache": 1,
+      "frames": 24,
+      "data_read_and_routing_s": 0.6563021736219525,
+      "seconds_two_updates": 63.190826047211885,
+      "peak_allocated_bytes": 17411791360,
+      "peak_reserved_bytes": 18790481920,
+      "execution": {
+        "tile_size": 256,
+        "attention_chunk": 512,
+        "point_chunk": 32768,
+        "attention_backend": "torch_sdpa"
+      },
+      "parameters": 17821672,
+      "details": [
+        {
+          "step": 1,
+          "loss": 1.7770764827728271,
+          "geometry_gradient_abs_sum": 0.0,
+          "gradient_norm": 15.853181838989258
+        },
+        {
+          "step": 2,
+          "loss": 1.5607538223266602,
+          "geometry_gradient_abs_sum": 0.011745944619178772,
+          "gradient_norm": 12.625276565551758
+        }
+      ],
+      "probe_scale": 1.9888148307800293,
+      "resource_scale_sha256": "1af871b7c418b9bc48d736c66594022b8f308580486e05a841bf39bc3caaff00",
+      "scale_scope": "frozen all-training scale",
+      "occupancy": [
+        {
+          "fine": 5450,
+          "coarse": 1432,
+          "valid_pixels": 921600,
+          "singleton_voxels": 299,
+          "points_per_voxel_mean": 169.1009063720703,
+          "points_per_voxel_max": 2414
+        },
+        {
+          "fine": 5084,
+          "coarse": 1323,
+          "valid_pixels": 921600,
+          "singleton_voxels": 219,
+          "points_per_voxel_mean": 181.2745819091797,
+          "points_per_voxel_max": 2376
+        },
+        {
+          "fine": 4747,
+          "coarse": 1234,
+          "valid_pixels": 921600,
+          "singleton_voxels": 211,
+          "points_per_voxel_mean": 194.14366149902344,
+          "points_per_voxel_max": 2483
+        },
+        {
+          "fine": 4974,
+          "coarse": 1288,
+          "valid_pixels": 921600,
+          "singleton_voxels": 239,
+          "points_per_voxel_mean": 185.28347778320312,
+          "points_per_voxel_max": 2480
+        },
+        {
+          "fine": 4895,
+          "coarse": 1279,
+          "valid_pixels": 921600,
+          "singleton_voxels": 204,
+          "points_per_voxel_mean": 188.27374267578125,
+          "points_per_voxel_max": 2366
+        },
+        {
+          "fine": 4915,
+          "coarse": 1282,
+          "valid_pixels": 921600,
+          "singleton_voxels": 213,
+          "points_per_voxel_mean": 187.50762939453125,
+          "points_per_voxel_max": 2395
+        },
+        {
+          "fine": 5009,
+          "coarse": 1310,
+          "valid_pixels": 921600,
+          "singleton_voxels": 230,
+          "points_per_voxel_mean": 183.98883056640625,
+          "points_per_voxel_max": 2515
+        },
+        {
+          "fine": 5639,
+          "coarse": 1485,
+          "valid_pixels": 921600,
+          "singleton_voxels": 350,
+          "points_per_voxel_mean": 163.4332275390625,
+          "points_per_voxel_max": 2606
+        }
+      ],
+      "fine_neighbors": [
+        {
+          "dilation": 1,
+          "nodes": 127940,
+          "edges": 4480608,
+          "neighbors_min": 2,
+          "neighbors_mean": 35.02116775512695,
+          "neighbors_max": 80
+        },
+        {
+          "dilation": 2,
+          "nodes": 127940,
+          "edges": 4172328,
+          "neighbors_min": 2,
+          "neighbors_mean": 32.61159896850586,
+          "neighbors_max": 79
+        },
+        {
+          "dilation": 4,
+          "nodes": 127940,
+          "edges": 3681842,
+          "neighbors_min": 2,
+          "neighbors_mean": 28.77787971496582,
+          "neighbors_max": 78
+        }
+      ],
+      "coarse_neighbors": [
+        {
+          "dilation": 1,
+          "nodes": 34057,
+          "edges": 1378581,
+          "neighbors_min": 2,
+          "neighbors_mean": 40.4786376953125,
+          "neighbors_max": 81
+        },
+        {
+          "dilation": 2,
+          "nodes": 34057,
+          "edges": 1302452,
+          "neighbors_min": 2,
+          "neighbors_mean": 38.2432975769043,
+          "neighbors_max": 81
+        },
+        {
+          "dilation": 4,
+          "nodes": 34057,
+          "edges": 1167376,
+          "neighbors_min": 2,
+          "neighbors_mean": 34.277122497558594,
+          "neighbors_max": 80
+        }
+      ],
+      "FLOPs": "not profiled; node/edge counts recorded, two conditions do not have matched compute",
+      "weights": "discarded; no performance claim"
+    }
+  ]
+}
