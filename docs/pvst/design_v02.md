@@ -1068,3 +1068,12 @@ PVST共同视觉encoder另为448输入、32×32图像token；两者分辨率不�
 以同一4维实际相对位置/PTS MLP形成加性bias；不限制邻居、不近似softmax。
 关闭dropout时与显式标准attention的输出和q/k/v/bias参数梯度一致，训练dropout仍为0.1。
 最终资源验收单独记录torch_sdpa执行后端，不沿用旧后端验收记录。
+
+### 2026-11-02 FFN执行修复（不改变研究方法）
+
+稀疏层norm2及完整FFN按节点分块，ffn_chunk初始8192，两条件相同；每块训练使用
+non-reentrant activation checkpoint且preserve_rng_state=True。不先构造全量归一化或4D隐藏张量。
+模块名、参数、state_dict、dropout率和全部数据/监督保持，不能宣称旧训练随机掩码逐位不变。
+旧失败版本协议/日志/退出码1独立归档；新执行版本登记为ffn_chunks_v1，严格核对新身份。
+完整pair验收优先XYZ失败路径，随后UV；正式条件顺序仍UV/XYZ，均重新初始化，不继承验收权重。
+资源代表按实际坐标节点计数选择并去重，不按预测/标签或真假难度选择；见ffn_execution_fix_v02.md。

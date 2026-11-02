@@ -111,6 +111,13 @@ def prepare(config,out,rows,progress,limit=None):
         if complete.exists():
             m=json.loads(complete.read_text())
             if m['video_sha256']!=r['video_sha256'] or m['checkpoint_sha256']!=weights:raise ValueError('CACHE_IDENTITY')
+            expected={'prepared_frames':r['actual_frames'],'frames':r['actual_frames'],'native_hw':r['source_hw'],
+                'official_revision':config['official_revision'],'dino_revision':config['dino_revision'],
+                'tokens':'no LoRA; 448 letterbox; image patch tokens only','mapping448':mapping(r['source_hw'],448)}
+            if any(m.get(k)!=v for k,v in expected.items()):raise ValueError('COMPLETE_CACHE_FIELDS_INCOMPATIBLE:'+r['video_id'])
+            rgb=np.load(folder/'rgb.npy',mmap_mode='r');tokens=np.load(folder/'tokens.npy',mmap_mode='r')
+            if rgb.shape!=(r['actual_frames'],*r['source_hw'],3) or rgb.dtype!=np.uint8 or tokens.shape!=(r['actual_frames'],1024,32,32) or tokens.dtype!=np.float16:raise ValueError('COMPLETE_CACHE_HEADER_INCOMPATIBLE:'+r['video_id'])
+            del rgb,tokens
             continue
         folder.mkdir(parents=True,exist_ok=True);h,w=r['source_hw'];n=r['actual_frames'];started=time.monotonic()
         if partial.exists():

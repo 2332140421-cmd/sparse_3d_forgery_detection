@@ -151,16 +151,21 @@ def test_actual_block_distribution_and_all_invalid_fallback():
         result=m([invalid])[0];assert result['pixel_logits'].shape==(1,4) and torch.isfinite(result['frame_logit'])
 
 
-def test_resource_gate_uses_real_json_wire_format(tmp_path):
+def test_resource_gate_rejects_old_execution_and_config_changes(tmp_path):
     from research_tools.pvst.data import save
     from research_tools.pvst.train import resource_passed
+    from research_tools.pvst.probe import execution_signature
     from scripts.prepare_v8_assets import digest
-    cfg={'tile_size':256,'attention_chunk':512,'point_chunk':32768,'target_frames':8,'attention_backend':'torch_sdpa'};save(tmp_path/'scale.json',{'s':2.})
+    cfg={'tile_size':256,'attention_chunk':512,'point_chunk':32768,'target_frames':8,'attention_backend':'torch_sdpa','ffn_chunk':8192,'execution_revision':'ffn_chunks_v1'}
+    save(tmp_path/'scale.json',{'s':2.});save(tmp_path/'manifest.json',{'rows':[]});save(tmp_path/'resource_windows.json',{'representatives':[{'video_id':'v','target_range':[16,24]}]})
     for condition in ['UV_PVST','XYZ_PVST']:
-        r={'condition':condition,'status':'PASS','spatial_GT':True,'static_routing_cache':True,'targets':8,'execution':{k:cfg[k] for k in ['tile_size','attention_chunk','point_chunk','attention_backend']},'resource_scale_sha256':digest(tmp_path/'scale.json')}
-        save(tmp_path/f'resource_{condition}_test.json',r);assert resource_passed(tmp_path,condition,cfg)
-    save(tmp_path/'scale.json',{'s':3.});assert not resource_passed(tmp_path,'XYZ_PVST',cfg)
-    assert resource_passed(tmp_path,'UV_PVST',cfg)
+        path=tmp_path/f'resource_{condition}_ffn_chunks_v1.json'
+        save(path,{'status':'PASS','condition':condition,'targets':8});assert not resource_passed(tmp_path,condition,cfg)
+        r={'condition':condition,'status':'PASS',**execution_signature(cfg),'manifest_sha256':digest(tmp_path/'manifest.json'),
+            'resource_scale_sha256':digest(tmp_path/'scale.json'),'windows_sha256':digest(tmp_path/'resource_windows.json'),'records':[{'video_id':'v','target_range':[16,24]}]}
+        save(path,r);assert resource_passed(tmp_path,condition,cfg)
+        assert not resource_passed(tmp_path,condition,{**cfg,'ffn_chunk':4096})
+        r['implementation_sha256']['temporal.py']='old';save(path,r);assert not resource_passed(tmp_path,condition,cfg)
 
 
 def test_only_static_routing_reuse_has_same_outputs_and_gradients():
@@ -196,3 +201,76 @@ def test_sdpa_matches_standard_relative_bias_attention_and_gradients():
     torch.testing.assert_close(actual,expected,atol=2e-6,rtol=2e-5)
     params=(q,k,v,m.bias[0].weight);ga=torch.autograd.grad(actual.square().sum(),params,retain_graph=True);gb=torch.autograd.grad(expected.square().sum(),params)
     for a,b in zip(ga,gb):torch.testing.assert_close(a,b,atol=2e-5,rtol=2e-4)
+
+
+@__import__('pytest').mark.parametrize('dtype',[torch.float32,torch.bfloat16])
+def test_ffn_chunks_match_whole_outputs_input_and_parameter_gradients(dtype):
+    from contextlib import nullcontext
+    from research_tools.pvst.temporal import SparseLayer
+    torch.manual_seed(1001);a=SparseLayer(256,4,ffn_chunk=99).eval();b=copy.deepcopy(a);b.ffn_chunk=4
+    xa=torch.randn(11,256,dtype=dtype,requires_grad=True);xb=xa.detach().clone().requires_grad_()
+    ctx=lambda:torch.autocast('cpu',dtype=dtype) if dtype==torch.bfloat16 else nullcontext()
+    index=torch.arange(11)[:,None].expand(-1,81);rel=torch.randn(11,81,4)
+    with ctx():ya=a(xa,index,rel);yb=b(xb,index,rel)
+    ya.float().square().mean().backward();yb.float().square().mean().backward()
+    pairs=[(ya,yb),(xa.grad,xb.grad),*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters()) if p.grad is not None]]
+    errors=[float((x-y).abs().max()) for x,y in pairs];print('FFN_PARITY',str(dtype),'output/input/params max_abs',errors)
+    atol,rtol=(2e-6,2e-4) if dtype==torch.float32 else (2e-3,3e-2)
+    for x,y in pairs:torch.testing.assert_close(x,y,atol=atol,rtol=rtol)
+
+
+def test_nested_ffn_checkpoint_preserves_dropout_rng_and_gradients():
+    from research_tools.pvst.temporal import Temporal
+    torch.manual_seed(114);a=Temporal(256,4,chunk=8,ffn_chunk=4).train();b=copy.deepcopy(a)
+    for m in b.layers:m.ffn_checkpoint=False
+    ca=[torch.tensor([[i,0,0] for i in range(5)])]*2
+    xa=[torch.randn(5,256,requires_grad=True) for _ in range(2)];xb=[x.detach().clone().requires_grad_() for x in xa]
+    rng=torch.get_rng_state();ya=torch.cat(a(xa,ca,[0.,.04]));ya.square().mean().backward();after_a=torch.get_rng_state()
+    torch.set_rng_state(rng);yb=torch.cat(b(xb,ca,[0.,.04]));yb.square().mean().backward();after_b=torch.get_rng_state()
+    pairs=[(ya,yb),*[(x.grad,y.grad) for x,y in zip(xa,xb)],*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters())]]
+    errors=[float((x-y).abs().max()) for x,y in pairs];print('NESTED_DROPOUT_CHECKPOINT max_abs',max(errors))
+    for x,y in pairs:
+        assert torch.isfinite(x).all() and torch.isfinite(y).all();torch.testing.assert_close(x,y,atol=2e-6,rtol=2e-4)
+    assert torch.equal(after_a,after_b)
+    assert a.layers[0].ffn[0].weight.grad.abs().sum()>0
+    assert set(a.state_dict())==set(b.state_dict())
+
+
+def test_ffn_execution_config_keeps_parameter_and_state_contract():
+    torch.manual_seed(91);a=PVST('UV_PVST',FakeDecoder(),{**CFG,'ffn_chunk':3})
+    torch.manual_seed(91);b=PVST('XYZ_PVST',FakeDecoder(),{**CFG,'ffn_chunk':8192})
+    assert sum(p.numel() for p in a.parameters())==sum(p.numel() for p in b.parameters())
+    assert list(a.state_dict())==list(b.state_dict())
+    for key in a.state_dict():torch.testing.assert_close(a.state_dict()[key],b.state_dict()[key],rtol=0,atol=0)
+    assert 'coarse_time.layers.0.norm2.weight' in a.state_dict()
+    assert 'coarse_time.layers.0.ffn.0.weight' in a.state_dict()
+    assert 'coarse_time.layers.0.ffn.3.weight' in a.state_dict()
+
+
+def test_complete_cache_reuse_checks_identity_without_frontend(tmp_path,monkeypatch):
+    from research_tools.pvst import data
+    from research_tools.v8.spatial_localization.joint_data import mapping
+    row={'video_id':'v','video_sha256':'video','actual_frames':1,'source_hw':[2,3]};folder=tmp_path/'cache/v';folder.mkdir(parents=True)
+    cfg={'checkpoint':'weights','workspace':str(tmp_path),'checkpoint_sha256':'weight','official_revision':'a','dino_revision':'b'}
+    data.save(folder/'complete.json',{'video_sha256':'video','checkpoint_sha256':'weight','prepared_frames':1,'frames':1,'native_hw':[2,3],
+        'official_revision':'a','dino_revision':'b','tokens':'no LoRA; 448 letterbox; image patch tokens only','mapping448':mapping([2,3],448),'seconds':2.})
+    np.save(folder/'rgb.npy',np.zeros((1,2,3,3),np.uint8));np.save(folder/'tokens.npy',np.zeros((1,1024,32,32),np.float16))
+    monkeypatch.setattr(data,'digest',lambda p:'weight');monkeypatch.setattr(data,'official',lambda *_:(_ for _ in ()).throw(AssertionError('FRONTEND_MUST_NOT_RUN')))
+    monkeypatch.setattr(torch.cuda,'empty_cache',lambda:None)
+    data.prepare(cfg,tmp_path,[row],lambda *_a,**_kw:None)
+    import json,pytest
+    assert json.loads((tmp_path/'preparation_cost.json').read_text())['new_token_frames_this_call']==0
+    value=json.loads((folder/'complete.json').read_text());value['tokens']='LoRA';data.save(folder/'complete.json',value)
+    with pytest.raises(ValueError,match='COMPLETE_CACHE_FIELDS_INCOMPATIBLE'):data.prepare(cfg,tmp_path,[row],lambda *_a,**_kw:None)
+
+
+def test_exact_resource_window_counts_and_representative_dedup(tmp_path,monkeypatch):
+    from research_tools.pvst import data,probe
+    row={'video_id':'cb41b3d004b6640f6c3b5bb1','actual_frames':24,'source_hw':[1,3],'native_pixels':3,'dataset':'ANAKIN','split':'train','role':'fake'}
+    data.save(tmp_path/'manifest.json',{'rows':[row]});data.save(tmp_path/'scale.json',{'s':1.})
+    q=np.array([[[-.01,0,1],[.001,0,1],[.02,0,1]]],np.float32)
+    monkeypatch.setattr(data,'native_dense',lambda *_:(q,np.ones((1,3),bool)))
+    result=probe.scan_windows({'target_frames':8},tmp_path,lambda *_a,**_kw:None)
+    assert len(result['representatives'])==1
+    w=result['representatives'][0];assert w['input_range']==[0,24] and w['target_range']==[16,24]
+    assert w['fine_nodes']==72 and w['coarse_nodes']==48 and len(w['reasons'])==4

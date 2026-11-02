@@ -103,6 +103,19 @@ def report(out,config,rows,summaries):
         a=json.loads((out/'UV_PVST'/f'best_{split}.json').read_text())['datasets'];b=json.loads((out/'XYZ_PVST'/f'best_{split}.json').read_text())['datasets']
         diff[split]={'AF_video_'+k:b['ActivityForensics']['video'][k]-a['ActivityForensics']['video'][k] for k in ['auroc','ap','f1']}
         diff[split].update({'AN_'+k:b['ANAKIN'][k]-a['ANAKIN'][k] for k in ['spatial_dice','spatial_iou','pixel_ap','real_spatial_fpr']})
+    if (out/'execution_revision.json').exists():
+        revision=json.loads((out/'execution_revision.json').read_text());archive=out/revision['previous_archive']
+        lines+=['','## FFN执行修复与成本分账',
+            'norm2与完整FFN按节点分块，ffn_chunk='+str(config['ffn_chunk'])+'；逐块non-reentrant checkpoint并保存RNG。模块参数/state_dict、全部输入覆盖与监督未变。改变dropout分块调用不保证旧执行逐位相同，不改变表达能力。',
+            '旧失败执行及退出码1保留：'+json.dumps(revision,ensure_ascii=False),
+            '原失败版本准备成本：'+(archive/'preparation_cost.json').read_text(),
+            '本次复用缓存核查成本：'+(out/'preparation_cost.json').read_text(),
+            '正确性测试：'+(out/'ffn_correctness.txt').read_text()]
+        scan=json.loads((out/'resource_windows.json').read_text());lines.append('全缓存坐标计数耗时秒：'+str(scan['seconds']))
+        for condition in config['conditions']:
+            r=json.loads((out/f'resource_{condition}_{config["execution_revision"]}.json').read_text())
+            lines.append(condition+'代表窗口验收：'+json.dumps(r,ensure_ascii=False))
+        lines.append('完整pair验收成本与正式训练成本分别列于下文；所有验收权重丢弃，正式模型从原初始化开始。')
     lines+=['','前端成本：'+(out/'preparation_cost.json').read_text(),
         '输出存储（报告前）：逻辑'+str(sum(p.stat().st_size for p in out.rglob('*') if p.is_file()))+'字节；文件系统已分配'+str(sum(p.stat().st_blocks*512 for p in out.rglob('*') if p.is_file()))+'字节；未实测完整FLOPs。',
         '完整pair两次更新与路径梯度检查：'+(out/'full_pair_check.json').read_text(),

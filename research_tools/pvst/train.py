@@ -26,7 +26,7 @@ from research_tools.v8.local_geometry_pilot.runner import atomic_torch,seed_all,
 from research_tools.v8.spatial_localization.metrics import history_csv
 from .data import freeze,save,prepare,fit_scale,decoder_only,Video,preview_originals
 from .model import PVST
-from .probe import parameters
+from .probe import parameters,execution_signature,scan_windows,model_trace
 from .evaluate import evaluate,report
 
 STOP=False
@@ -42,13 +42,20 @@ def frame_weights(y):
     return np.full(n,1/n)
 
 
-def video_backward(model,row,out,config,scale,scaler):
-    started=time.monotonic();video=Video(out,row,model.condition,scale);labels=np.array([video.label(i) for i in range(row['actual_frames'])]);weight=frame_weights(labels);total=np.zeros(4)
+def video_backward(model,row,out,config,scale,scaler,resource_log=None):
+    started=time.monotonic();video=Video(out,row,model.condition,scale);labels=np.array([video.label(i) for i in range(row['actual_frames'])]);weight=frame_weights(labels);total=np.zeros(4);event={"video_id":row["video_id"]}
     try:
         for start in range(0,row['actual_frames'],config['target_frames']):
             if start%80==0:print('VIDEO_BACKWARD',model.condition,row['video_id'],start,'/',row['actual_frames'],flush=True)
             if STOP:raise InterruptedError('STOP_WITHOUT_COMMITTING_PARTIAL_UPDATE')
-            end=min(row['actual_frames'],start+config['target_frames']);left=max(0,start-16);frames=video.frames(left,end,'cuda')
+            if resource_log is not None:torch.cuda.reset_peak_memory_stats()
+            block_started=time.monotonic();end=min(row['actual_frames'],start+config['target_frames']);left=max(0,start-16)
+            event={'video_id':row['video_id'],'target_range':[start,end],'context_range':[left,start],'condition':model.condition}
+            if resource_log is not None:
+                with resource_log.open('a') as log:log.write(json.dumps({**event,'status':'STARTED'})+'\n')
+            frames=video.frames(left,end,'cuda')
+            if resource_log is not None:
+                event.update(fine_nodes=sum(len(f['voxel_meta']['coords']) for f in frames),coarse_nodes=sum(len(f['voxel_meta']['coarse_coords']) for f in frames))
             ctx=torch.autograd.graph.save_on_cpu(pin_memory=True) if config.get('offload_saved_tensors') else nullcontext()
             with ctx,torch.autocast('cuda',dtype=torch.bfloat16,enabled=config['amp']):
                 outputs=model(frames,start-left);loss=outputs[0]['frame_logit'].new_zeros((),dtype=torch.float32);lf=loss.clone();lb=loss.clone();ld=loss.clone()
@@ -62,7 +69,16 @@ def video_backward(model,row,out,config,scale,scaler):
                 loss=.5*(lf+lb+ld)
             if not torch.isfinite(loss):raise FloatingPointError('NONFINITE_VIDEO_CHUNK')
             scaler.scale(loss).backward();total+=np.array([float(loss.detach()),float(lf.detach())*.5,float(lb.detach())*.5,float(ld.detach())*.5])
+            if resource_log is not None:
+                torch.cuda.synchronize()
+                event.update(status='PASS',seconds=time.monotonic()-block_started,peak_allocated_bytes=torch.cuda.max_memory_allocated(),peak_reserved_bytes=torch.cuda.max_memory_reserved(),trace=model_trace(model))
+                with resource_log.open('a') as log:log.write(json.dumps(event)+'\n')
             del frames,outputs,loss,lf,lb,ld
+    except BaseException as e:
+        if resource_log is not None:
+            event.update(status='RESOURCE_BLOCKED' if isinstance(e,torch.OutOfMemoryError) else 'FAILED',error=str(e),trace=model_trace(model),peak_allocated_bytes=torch.cuda.max_memory_allocated(),peak_reserved_bytes=torch.cuda.max_memory_reserved())
+            with resource_log.open('a') as log:log.write(json.dumps(event)+'\n')
+        raise
     finally:video.close()
     return {'loss':total[0],'frame_BCE':total[1],'pixel_BCE':total[2],'Dice_loss':total[3],'seconds':time.monotonic()-started}
 
@@ -84,33 +100,47 @@ def smoke_pair(config,out,rows,scale,progress):
     denominators are exactly the formal ones. Discard all resulting weights.
     """
     target=out/'full_pair_check.json'
-    if target.exists():return json.loads(target.read_text())
+    identity=json.loads((out/'protocol.json').read_text())
+    if target.exists():
+        previous=json.loads(target.read_text())
+        if previous.get('identity')!=identity or previous.get('status')!='PASS':raise ValueError('FULL_PAIR_CHECK_IDENTITY')
+        return previous
     af=next(r for r in rows if r['dataset']=='ActivityForensics' and r['split']=='train')
     an=next(r for r in rows if r['dataset']=='ANAKIN' and r['split']=='train')
     pair=[r for r in rows if r['source_id']==an['source_id']]
     result=[];initial=None
-    for c in config['conditions']:
-        m=build(config,c).train();sha=initialization_hash(m)
+    # Check the previously failing XYZ path first; formal condition order stays UV/XYZ.
+    for c in reversed(config['conditions']):
+        check_started=time.monotonic();m=build(config,c).train();sha=initialization_hash(m)
         if initial and initial!=sha:raise ValueError('UNMATCHED_INITIAL_PARAMETERS')
         initial=sha;opt=torch.optim.AdamW(parameters(config,m),weight_decay=config['weight_decay']);scaler=torch.amp.GradScaler('cuda',enabled=False);steps=[]
         for i,anrow in enumerate(pair):
             opt.zero_grad(set_to_none=True);progress('full_pair_check',condition=c,step=i+1)
-            terms=[video_backward(m,r,out,config,scale,scaler) for r in [af,anrow]]
+            resource_log=out/f'full_pair_{c}_step{i+1}.jsonl'
+            terms=[video_backward(m,r,out,config,scale,scaler,resource_log) for r in [af,anrow]]
             scaler.unscale_(opt);grad=float(m.geo[0].weight.grad.abs().sum()) if m.geo[0].weight.grad is not None else 0
             torch.nn.utils.clip_grad_norm_(m.parameters(),1,error_if_nonfinite=True);scaler.step(opt);scaler.update();m.check_bn()
             paths={'geometry':m.geo[0].weight,'VFE':m.vfe[0].weight,'fine_attention':m.fine_time.layers[0].qkv.weight,'coarse_attention':m.coarse_time.layers[0].qkv.weight}
             gradients={key:float(value.grad.abs().sum()) if value.grad is not None else 0. for key,value in paths.items()}
             if i==1 and any(v<=0 for v in gradients.values()):raise ValueError('FULL_STRUCTURE_PATH_NOT_TRAINED:'+str(gradients))
-            steps.append({'update':i+1,'geometry_gradient':grad,'path_gradients':gradients,'terms':terms})
+            steps.append({'update':i+1,'geometry_gradient':grad,'path_gradients':gradients,'terms':terms,'peak_allocated_bytes':torch.cuda.max_memory_allocated(),'peak_reserved_bytes':torch.cuda.max_memory_reserved()})
         if steps[-1]['geometry_gradient']<=0:raise ValueError('GEOMETRY_NOT_TRAINED')
+        torch.cuda.reset_peak_memory_stats();evaluation_start=time.monotonic()
         predicted=evaluate(m,[af,*pair],out,config,scale,pixel_ap=True,progress=progress)
         file=out/(c+'_smoke.pt');atomic_torch(file,{'model':m.state_dict()});n=build(config,c);n.load_state_dict(torch.load(file,map_location='cpu',weights_only=False)['model'])
         again=evaluate(n,[af,*pair],out,config,scale,pixel_ap=False,progress=progress)
-        error=max(abs(a['logit']-b['logit']) for a,b in zip(predicted['records'],again['records']))
+        error=max(abs(x-y) for a,b in zip(predicted['records'],again['records']) for x,y in zip(a['frame_scores'],b['frame_scores']))
+        for a,b in zip(predicted['records'],again['records']):
+            for key in ['spatial_dice','spatial_iou','GT_recall','empty_spatial_fpr']:
+                if a[key] is not None and abs(a[key]-b[key])>1e-8:raise ValueError('SPATIAL_RELOAD_PARITY:'+key)
         if error>1e-5:raise ValueError('CHECKPOINT_RELOAD_PARITY')
-        result.append({'condition':c,'initial_sha256':sha,'steps':steps,'reload_error':error,'native_mapping':'predictions and masks already native HxW','parameters':sum(p.numel() for p in m.parameters())})
+        entry={'condition':c,'initial_sha256':sha,'steps':steps,'reload_error':error,'native_mapping':'predictions and masks already native HxW','parameters':sum(p.numel() for p in m.parameters()),'seconds':time.monotonic()-check_started,'evaluation_and_reload_s':time.monotonic()-evaluation_start,'evaluation_reload_peak_allocated_bytes':torch.cuda.max_memory_allocated(),'evaluation_reload_peak_reserved_bytes':torch.cuda.max_memory_reserved(),'identity':identity}
+        if entry['parameters']!=17821672:raise ValueError('PARAMETER_COUNT_CHANGED')
+        blocks=[json.loads(line) for i in [1,2] for line in (out/f'full_pair_{c}_step{i}.jsonl').read_text().splitlines() if json.loads(line)['status']=='PASS']
+        entry.update(peak_allocated_bytes=max(entry['evaluation_reload_peak_allocated_bytes'],max(b['peak_allocated_bytes'] for b in blocks),max(b['peak_allocated_bytes'] for b in steps)),peak_reserved_bytes=max(entry['evaluation_reload_peak_reserved_bytes'],max(b['peak_reserved_bytes'] for b in blocks),max(b['peak_reserved_bytes'] for b in steps)),peak_block=max(blocks,key=lambda b:b['peak_allocated_bytes']))
+        save(out/f'full_pair_{c}.json',{'status':'PASS',**entry});result.append(entry)
         del n,m,opt;file.unlink();torch.cuda.empty_cache()
-    save(target,{'status':'PASS','records':result,'smoke_weights':'discarded; formal models reinitialized'});return result
+    save(target,{'status':'PASS','identity':identity,'records':result,'smoke_weights':'discarded; formal models reinitialized'});return result
 
 
 def train_condition(config,out,rows,scale,c,identity,progress,resume):
@@ -199,7 +229,7 @@ def publish(out):
             for split in ['train','dev']:
                 value=json.loads((out/condition/f'{name}_{split}.json').read_text());compact['metrics'][condition][name][split]={k:value[k] for k in ['epoch','checkpoint_sha256','datasets','voxel_summary']}
     small=repo/'docs/pvst/results_v02.json';small.write_text(json.dumps(compact,ensure_ascii=False,indent=2)+'\n');paths.append(small)
-    p=repo/'docs/pvst/current_status.md';s=p.read_text();s=s.replace('状态READY_TO_RUN（代码与资源验收通过，尚无正式PVST成绩）','状态COMPLETE（两模型训练与epoch0/best/last评价完成）');s+='\n最终状态COMPLETE；两模型全部评价完成，见[结果](results_v02.md)。\n';p.write_text(s);paths.append(p)
+    p=repo/'docs/pvst/current_status.md';s=p.read_text();s='\n'.join('状态COMPLETE（两模型训练与epoch0/best/last评价完成）' if line.startswith('状态') else line for line in s.split('\n'));s+='\n最终状态COMPLETE；两模型全部评价完成，见[结果](results_v02.md)。\n';p.write_text(s);paths.append(p)
     import shutil
     for c in ['UV_PVST','XYZ_PVST']:
         p=repo/'docs/pvst'/f'{c.lower()}_curves.png';shutil.copyfile(out/c/'curves.png',p);paths.append(p)
@@ -212,15 +242,15 @@ def publish(out):
 
 
 def resource_passed(out,condition,config):
-    # Existing writer encodes Python bool as0/1; accept its actual wire format.
-    for path in out.glob('resource_'+condition+'_*.json'):
-        r=json.loads(path.read_text())
-        if r.get('status')!='PASS' or r.get('condition')!=condition or r.get('spatial_GT')!=1 or r.get('static_routing_cache')!=1:continue
-        if r.get('targets')!=config['target_frames']:continue
-        if r.get('execution')!={k:config[k] for k in ['tile_size','attention_chunk','point_chunk','attention_backend']}:continue
-        if condition=='XYZ_PVST' and r.get('resource_scale_sha256')!=digest(out/'scale.json'):continue
-        return True
-    return False
+    path=out/f'resource_{condition}_{config["execution_revision"]}.json'
+    if not path.exists():return False
+    r=json.loads(path.read_text())
+    if r.get('status')!='PASS' or r.get('condition')!=condition:return False
+    if any(r.get(k)!=v for k,v in execution_signature(config).items()):return False
+    if r.get('manifest_sha256')!=digest(out/'manifest.json') or r.get('resource_scale_sha256')!=digest(out/'scale.json'):return False
+    if not (out/'resource_windows.json').exists() or r.get('windows_sha256')!=digest(out/'resource_windows.json'):return False
+    windows=json.loads((out/'resource_windows.json').read_text())['representatives']
+    return [(a['video_id'],a['target_range']) for a in r.get('records',[])]==[(a['video_id'],a['target_range']) for a in windows]
 
 
 def main():
@@ -231,31 +261,36 @@ def main():
     torch.set_num_threads(4);signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
     def progress(stage,**kw):
         if STOP:raise InterruptedError('SAFE_STAGE_BOUNDARY_STOP')
-        save(o/'progress.json',{'status':'RUNNING','stage':stage,'pid':os.getpid(),'unix_time':time.time(),**kw});print('PROGRESS',stage,kw,flush=True)
+        save(o/'progress.json',{'status':'RUNNING','stage':stage,'pid':os.getpid(),'unix_time':time.time(),'execution_revision':c['execution_revision'],**kw});print('PROGRESS',stage,kw,flush=True)
     try:
+        if not (o/'protocol.json').exists():
+            registration=json.loads((o/'execution_revision.json').read_text())
+            if registration['execution_revision']!=c['execution_revision'] or registration['new_config_sha256']!=digest(a.config):raise ValueError('UNREGISTERED_EXECUTION_REVISION')
+            if any(list((o/cond).glob('*.pt')) for cond in c['conditions']):raise ValueError('EXISTING_FORMAL_CHECKPOINT_WITHOUT_PROTOCOL')
         rows=freeze(c,o)
         frozen_manifest=json.loads(Path('docs/pvst/manifest_v02.json').read_text())
         if digest(o/'manifest.json')!=frozen_manifest['full_manifest_sha256']:raise ValueError('FROZEN_MANIFEST_CHANGED')
         if c['conditions']!=['UV_PVST','XYZ_PVST'] or c['seed']!=20260909:raise ValueError('FROZEN_TWO_CONDITION_SEED')
         if not (o/'original_preview/selection.json').exists():progress('original_preview');preview_originals(o,rows)
         progress('scale_fit');scale=fit_scale(c,o,rows)
-        missing=[cond for cond in c['conditions'] if not resource_passed(o,cond,c)]
-        if missing:
-            largest=max([r for r in rows if r['split']=='train'],key=lambda r:(r['native_pixels'],r['dataset']=='ANAKIN' and r['role']=='fake'))
-            prepare(c,o,[largest],progress,limit=16+c['target_frames'])
-            for cond in missing:
-                progress('maximum_native_resource_check',condition=cond)
-                result=subprocess.run([sys.executable,'-u','-m','research_tools.pvst.probe','--config',str(a.config),'--condition',cond,'--targets',str(c['target_frames'])])
-                if result.returncode or not resource_passed(o,cond,c):raise RuntimeError('RESOURCE_GATE_NOT_PASSED:'+cond+'; see preserved resource JSON/log')
         progress('prepare');prepare(c,o,rows,progress)
-        identity={'config_sha256':digest(a.config),'manifest_sha256':digest(o/'manifest.json'),'scale_sha256':digest(o/'scale.json'),
+        identity={'execution_revision':c['execution_revision'],'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'config_sha256':digest(a.config),'manifest_sha256':digest(o/'manifest.json'),'scale_sha256':digest(o/'scale.json'),
             'code_sha256':{p.name:digest(p) for p in Path(__file__).parent.glob('*.py')}}
         if (o/'protocol.json').exists() and json.loads((o/'protocol.json').read_text())!=identity:raise ValueError('PROTOCOL_CHANGED')
         save(o/'protocol.json',identity);smoke_pair(c,o,rows,scale,progress)
+        progress('resource_windows');scan_windows(c,o,progress)
+        for cond in c['conditions']:
+            if resource_passed(o,cond,c):continue
+            progress('representative_resources',condition=cond)
+            result=subprocess.run([sys.executable,'-u','-m','research_tools.pvst.probe','--config',str(a.config),'--condition',cond])
+            if result.returncode or not resource_passed(o,cond,c):raise RuntimeError('RESOURCE_GATE_NOT_PASSED:'+cond+'; see resource evidence')
+        if identity['code_sha256']!={p.name:digest(p) for p in Path(__file__).parent.glob('*.py')} or identity['config_sha256']!=digest(a.config):raise ValueError('EXECUTION_CHANGED_DURING_CHECKS')
+        if subprocess.check_output(['git','status','--porcelain'],text=True).strip():raise ValueError('FORMAL_TRAINING_REQUIRES_CLEAN_COMMIT')
+        if subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()!=identity['source_commit']:raise ValueError('SOURCE_COMMIT_CHANGED_DURING_CHECKS')
         summaries=[train_condition(c,o,rows,scale,cond,identity,progress,a.resume) for cond in c['conditions']]
-        report(o,c,rows,summaries);save(o/'progress.json',{'status':'COMPLETE','stage':'report_complete','completed_models':2,'planned_models':2,'pid':os.getpid(),'unix_time':time.time()})
+        report(o,c,rows,summaries);save(o/'progress.json',{'status':'COMPLETE','stage':'report_complete','completed_models':2,'planned_models':2,'execution_revision':c['execution_revision'],'pid':os.getpid(),'unix_time':time.time()})
     except BaseException as e:
-        save(o/'progress.json',{'status':'RESOURCE_BLOCKED' if 'RESOURCE_GATE' in str(e) or isinstance(e,torch.OutOfMemoryError) else 'STOPPED_SAFE' if isinstance(e,InterruptedError) else 'FAILED','error':str(e),'traceback':traceback.format_exc()});raise
+        save(o/'progress.json',{'status':'RESOURCE_BLOCKED' if 'RESOURCE_GATE' in str(e) or isinstance(e,torch.OutOfMemoryError) else 'STOPPED_SAFE' if isinstance(e,InterruptedError) else 'FAILED','execution_revision':c['execution_revision'],'error':str(e),'traceback':traceback.format_exc()});raise
     try:publish(o)
     except BaseException as e:
         previous=json.loads((o/'publication.json').read_text()) if (o/'publication.json').exists() else {}
@@ -269,4 +304,4 @@ if __name__=='__main__':
         p=argparse.ArgumentParser(add_help=False);p.add_argument('--config',type=Path,default=Path('docs/pvst/config_v02.json'));a,_=p.parse_known_args();o=Path(json.loads(a.config.read_text())['output'])
         if o.exists():
             (o/'exit_code.txt').write_text(str(status)+'\n')
-            with (o/'exit_history.jsonl').open('a') as f:f.write(json.dumps({'pid':os.getpid(),'exit_code':status,'unix_time':time.time()})+'\n')
+            with (o/'exit_history.jsonl').open('a') as f:f.write(json.dumps({'pid':os.getpid(),'execution_revision':json.loads(a.config.read_text())['execution_revision'],'exit_code':status,'unix_time':time.time()})+'\n')
