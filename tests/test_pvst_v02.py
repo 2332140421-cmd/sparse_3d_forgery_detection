@@ -4,8 +4,41 @@ import torch
 import numpy as np
 from torch import nn
 from research_tools.pvst.geometry import voxelize,scatter_mean,scatter_max,local_tiled
-from research_tools.pvst.temporal import neighbors,Temporal
+from research_tools.pvst.temporal import Neighborhood,Temporal
 from research_tools.pvst.model import PVST,LocalResidual
+
+# Frozen pre-compact mathematical reference, tests only; never a runtime route.
+import itertools
+def reference_neighbors(coords,dilation,pts,chunk=2048):
+    """Exact injective integer keys and searchsorted; no truncation or empty nodes."""
+    device=coords[0].device;lengths=[len(c) for c in coords];offset=[0]
+    for n in lengths:offset.append(offset[-1]+n)
+    if not offset[-1]:return torch.empty(0,81,dtype=torch.long,device=device),torch.empty(0,81,4,device=device)
+    allc=torch.cat(coords);lo=allc.amin(0)-1;span=allc.amax(0)-lo+2
+    volume=int(span.prod())
+    if volume*len(coords)>=2**62:raise ValueError('EXACT_NEIGHBOR_KEY_OVERFLOW')
+    def key(c,t):
+        a=c-lo;return ((a[...,0]*span[1]+a[...,1])*span[2]+a[...,2])+t*volume
+    times=torch.repeat_interleave(torch.arange(len(coords),device=device),torch.tensor(lengths,device=device))
+    keys=key(allc,times);sorted_keys,order=keys.sort();offsets=torch.tensor(list(itertools.product([-1,0,1],repeat=3)),device=device)
+    offsets=offsets.repeat(3,1);lag=torch.tensor([0]*27+[dilation]*27+[2*dilation]*27,device=device)
+    indices=[];relative=[]
+    for ti,c in enumerate(coords):
+        for start in range(0,len(c),chunk):
+            base=c[start:start+chunk];candidate=base[:,None]+offsets[None];tt=ti-lag[None].expand(len(base),-1)
+            wanted=key(candidate,tt);pos=torch.searchsorted(sorted_keys,wanted);safe=pos.clamp(max=len(sorted_keys)-1)
+            inside=((candidate>=lo)&(candidate<lo+span)).all(-1)
+            valid=(tt>=0)&inside&(pos<len(sorted_keys))&(sorted_keys[safe]==wanted)
+            idx=torch.where(valid,order[safe],-1)
+            dt=torch.tensor([pts[max(0,ti-int(v))]-pts[ti] for v in lag.cpu().tolist()],device=device,dtype=torch.float32)
+            rel=torch.cat((offsets.float()[None].expand(len(base),-1,-1),dt[None,:,None].expand(len(base),-1,1)),-1)
+            indices.append(idx);relative.append(rel)
+    return torch.cat(indices),torch.cat(relative)
+
+
+def neighbors(coords,dilation,pts):
+    graph=Neighborhood(coords,pts);index,frame=graph.query(0,len(graph.coords),dilation)
+    return index,graph.relative[dilation][frame]
 
 CFG={'point_chunk':256,'tile_size':4,'attention_chunk':32}
 
@@ -196,7 +229,7 @@ def test_sdpa_matches_standard_relative_bias_attention_and_gradients():
     from research_tools.pvst.temporal import SparseLayer
     torch.manual_seed(619);m=SparseLayer(256,4).eval();q=torch.randn(7,4,64,requires_grad=True);k=torch.randn(13,4,64,requires_grad=True);v=torch.randn(13,4,64,requires_grad=True)
     idx=torch.randint(0,13,(7,81));idx[:,70:]=-1;rel=torch.randn(7,81,4)
-    actual=m.attend(q,k,v,idx,rel);score=(q[:,None]*k[idx.clamp_min(0)]).sum(-1)/8+m.bias(rel)
+    actual=m.attend(q,k,v,idx,m.bias(rel));score=(q[:,None]*k[idx.clamp_min(0)]).sum(-1)/8+m.bias(rel)
     score=score.masked_fill((idx<0)[...,None],-torch.inf);expected=(score.softmax(1)[...,None]*v[idx.clamp_min(0)]).sum(1).reshape(7,256)
     torch.testing.assert_close(actual,expected,atol=2e-6,rtol=2e-5)
     params=(q,k,v,m.bias[0].weight);ga=torch.autograd.grad(actual.square().sum(),params,retain_graph=True);gb=torch.autograd.grad(expected.square().sum(),params)
@@ -210,8 +243,8 @@ def test_ffn_chunks_match_whole_outputs_input_and_parameter_gradients(dtype):
     torch.manual_seed(1001);a=SparseLayer(256,4,ffn_chunk=99).eval();b=copy.deepcopy(a);b.ffn_chunk=4
     xa=torch.randn(11,256,dtype=dtype,requires_grad=True);xb=xa.detach().clone().requires_grad_()
     ctx=lambda:torch.autocast('cpu',dtype=dtype) if dtype==torch.bfloat16 else nullcontext()
-    index=torch.arange(11)[:,None].expand(-1,81);rel=torch.randn(11,81,4)
-    with ctx():ya=a(xa,index,rel);yb=b(xb,index,rel)
+    graph=Neighborhood([torch.stack((torch.arange(11),torch.zeros(11,dtype=torch.long),torch.zeros(11,dtype=torch.long)),-1)],[0.])
+    with ctx():ya=a(xa,graph,1);yb=b(xb,graph,1)
     ya.float().square().mean().backward();yb.float().square().mean().backward()
     pairs=[(ya,yb),(xa.grad,xb.grad),*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters()) if p.grad is not None]]
     errors=[float((x-y).abs().max()) for x,y in pairs];print('FFN_PARITY',str(dtype),'output/input/params max_abs',errors)
@@ -271,9 +304,9 @@ def test_exact_resource_window_counts_and_representative_dedup(tmp_path,monkeypa
     q=np.array([[[-.01,0,1],[.001,0,1],[.02,0,1]]],np.float32)
     monkeypatch.setattr(data,'native_dense',lambda *_:(q,np.ones((1,3),bool)))
     result=probe.scan_windows({'target_frames':8},tmp_path,lambda *_a,**_kw:None)
-    assert len(result['representatives'])==1
+    assert len(result['representatives'])==2
     w=result['representatives'][0];assert w['input_range']==[0,24] and w['target_range']==[16,24]
-    assert w['fine_nodes']==72 and w['coarse_nodes']==48 and len(w['reasons'])==4
+    assert w['fine_nodes']==72 and w['coarse_nodes']==48 and len(w['reasons'])==3
 
 
 @__import__('pytest').mark.parametrize('dtype',[torch.float32,torch.bfloat16])
@@ -281,12 +314,12 @@ def test_attention_projection_chunks_match_original_whole_formula(dtype):
     from contextlib import nullcontext
     from research_tools.pvst.temporal import SparseLayer
     torch.manual_seed(883);a=SparseLayer(512,8,chunk=4,ffn_chunk=4).eval();b=copy.deepcopy(a)
-    xa=torch.randn(11,512,dtype=dtype,requires_grad=True);xb=xa.detach().clone().requires_grad_();index=torch.arange(11)[:,None].expand(-1,81);rel=torch.randn(11,81,4)
+    xa=torch.randn(11,512,dtype=dtype,requires_grad=True);xb=xa.detach().clone().requires_grad_();coords=[torch.stack((torch.arange(11),torch.zeros(11,dtype=torch.long),torch.zeros(11,dtype=torch.long)),-1)];graph=Neighborhood(coords,[0.]);index,rel=reference_neighbors(coords,1,[0.])
     ctx=lambda:torch.autocast('cpu',dtype=dtype) if dtype==torch.bfloat16 else nullcontext()
     with ctx():
-        ya=a(xa,index,rel)
+        ya=a(xa,graph,1)
         q,k,v=b.qkv(b.norm(xb)).reshape(11,3,8,64).unbind(1)
-        h=xb+b.drop(b.proj(b.attend(q,k,v,index,rel)));yb=h+b.ffn(b.norm2(h))
+        h=xb+b.drop(b.proj(b.attend(q,k,v,index,b.bias(rel))));yb=h+b.ffn(b.norm2(h))
     ya.float().square().mean().backward();yb.float().square().mean().backward()
     pairs=[(ya,yb),(xa.grad,xb.grad),*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters())]]
     errors=[float((x-y).abs().max()) for x,y in pairs];print('OUTPUT_PROJECTION_PARITY',str(dtype),'output/input/params max_abs',errors)
@@ -307,3 +340,50 @@ def test_all_node_checkpoints_preserve_training_dropout_rng(monkeypatch):
     for x,y in pairs:
         assert torch.isfinite(x).all() and torch.isfinite(y).all();torch.testing.assert_close(x,y,atol=2e-6,rtol=2e-4)
     assert torch.equal(end_a,end_b)
+
+
+def test_compact_adjacency_matches_old_across_frames_and_tail():
+    coords=[torch.tensor([[-2,0,0],[-1,0,0],[0,0,0]]),torch.empty(0,3,dtype=torch.long),torch.tensor([[0,0,0],[5,-3,1]]),torch.tensor([[-1,0,0],[0,0,0]])]
+    pts=[0.,.017,.081,.25];graph=Neighborhood(coords,pts)
+    for d in [1,2,4]:
+        old_i,old_r=reference_neighbors(coords,d,pts);indices=[];relations=[]
+        for start in range(0,len(graph.coords),4):
+            i,f=graph.query(start,min(start+4,len(graph.coords)),d);indices.append(i);relations.append(graph.relative[d][f])
+        assert torch.equal(torch.cat(indices),old_i)
+        torch.testing.assert_close(torch.cat(relations),old_r,rtol=0,atol=0)
+    assert graph.relative[1].shape==(4,81,4)
+
+
+def test_offload_outer_layer_inputs_once_without_replicated_kv(monkeypatch):
+    from contextlib import contextmanager
+    captured=[]
+    @contextmanager
+    def track(pin_memory):
+        def pack(x):captured.append(tuple(x.shape));return x
+        with torch.autograd.graph.saved_tensors_hooks(pack,lambda x:x):yield
+    monkeypatch.setattr(torch.autograd.graph,'save_on_cpu',track)
+    torch.manual_seed(775);m=Temporal(256,4,chunk=2,ffn_chunk=3,offload_saved_tensors=True).train()
+    coords=[torch.tensor([[i,0,0] for i in range(5)])];x=[torch.randn(5,256,requires_grad=True)]
+    torch.cat(m(x,coords,[0.])).square().mean().backward()
+    assert [a for a in captured if a!=(0,)]==[(5,256)]*3
+    assert torch.isfinite(x[0].grad).all()
+
+
+@__import__('pytest').mark.parametrize('dilation',[1,2,4])
+@__import__('pytest').mark.parametrize('dtype',[torch.float32,torch.bfloat16])
+def test_shared_relation_bias_and_on_demand_graph_match_old_gradients(dilation,dtype):
+    from contextlib import nullcontext
+    from research_tools.pvst.temporal import SparseLayer
+    torch.manual_seed(558);a=SparseLayer(256,4,chunk=4,ffn_chunk=3).eval();b=copy.deepcopy(a)
+    coords=[torch.tensor([[-2,0,0],[-1,0,0],[0,0,0]]),torch.tensor([[0,0,0],[4,-2,1]]),torch.tensor([[-1,0,0],[0,0,0]])];pts=[0.,.031,.17]
+    graph=Neighborhood(coords,pts);index,relative=reference_neighbors(coords,dilation,pts)
+    x=torch.randn(7,256,dtype=dtype,requires_grad=True);y=x.detach().clone().requires_grad_()
+    ctx=lambda:torch.autocast('cpu',dtype=dtype) if dtype==torch.bfloat16 else nullcontext()
+    with ctx():
+        actual=a(x,graph,dilation);q,k,v=b.qkv(b.norm(y)).reshape(7,3,4,64).unbind(1)
+        h=y+b.drop(b.proj(b.attend(q,k,v,index,b.bias(relative.to(q.dtype)))));expected=h+b.ffn(b.norm2(h))
+    actual.float().square().mean().backward();expected.float().square().mean().backward()
+    pairs=[(actual,expected),(x.grad,y.grad),*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters())]]
+    errors=[float((x-y).abs().max()) for x,y in pairs];print('COMPACT_OLD_PARITY',dilation,str(dtype),'output/input/parameters',[*errors[:2],max(errors[2:])])
+    atol,rtol=(3e-6,3e-4) if dtype==torch.float32 else (2e-3,3e-2)
+    for u,v in pairs:torch.testing.assert_close(u,v,atol=atol,rtol=rtol)

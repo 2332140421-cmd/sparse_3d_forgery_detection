@@ -46,7 +46,7 @@ class PVST(nn.Module):
         self.context_tokens=nn.Parameter(torch.randn(8,512)*.02)
         self.context_read=nn.MultiheadAttention(512,8,.1,batch_first=True)
         self.context_write=nn.MultiheadAttention(512,8,.1,batch_first=True);self.context_norm=LayerNorm(512)
-        self.fine_time=Temporal(256,4,config['attention_chunk'],config.get('ffn_chunk',8192));self.coarse_time=Temporal(512,8,config['attention_chunk'],config.get('ffn_chunk',8192))
+        self.fine_time=Temporal(256,4,config['attention_chunk'],config.get('ffn_chunk',8192),config.get('offload_saved_tensors',False));self.coarse_time=Temporal(512,8,config['attention_chunk'],config.get('ffn_chunk',8192),config.get('offload_saved_tensors',False))
         self.coarse_projection=nn.Linear(512,256);self.fuse=mlp(256,512,256)
         self.pixel_projection=nn.Linear(512,128);self.pixel_local=LocalResidual();self.pixel_out=nn.Linear(128,1)
         self.frame_visual=nn.Sequential(nn.Linear(256,128),nn.GELU(),nn.Linear(128,1))

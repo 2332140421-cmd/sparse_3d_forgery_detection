@@ -48,7 +48,7 @@ def model_trace(model):
             for name,module in [('fine_time',model.fine_time),('coarse_time',model.coarse_time)]}
 
 
-def scan_windows(config,out,progress):
+def scan_windows(config,out,progress,source=None):
     """Count exact native occupied coords only; no frontend or model inference.
 
     All48 cached videos, actual target8/left16 windows. Scalar injective keys
@@ -57,12 +57,13 @@ def scan_windows(config,out,progress):
     import numpy as np
     from .data import native_dense
     from scripts.prepare_v8_assets import digest
-    path=out/'resource_windows.json';identity={'manifest_sha256':digest(out/'manifest.json'),'scale_sha256':digest(out/'scale.json'),'target_frames':config['target_frames'],'left_halo':16,'counter':'native_floor_exact_v1'}
+    source=out if source is None else source
+    path=out/'resource_windows.json';identity={'manifest_sha256':digest(source/'manifest.json'),'scale_sha256':digest(source/'scale.json'),'target_frames':config['target_frames'],'left_halo':16,'counter':'native_floor_exact_v1'}
     if path.exists():
         saved=json.loads(path.read_text())
         if saved['identity']!=identity:raise ValueError('RESOURCE_WINDOW_IDENTITY_CHANGED')
         return saved
-    rows=json.loads((out/'manifest.json').read_text())['rows'];scale=json.loads((out/'scale.json').read_text())['s'];records=[];started=time.monotonic()
+    rows=json.loads((source/'manifest.json').read_text())['rows'];scale=json.loads((source/'scale.json').read_text())['s'];records=[];started=time.monotonic()
     def unique_count(coords):
         if not len(coords):return 0
         lo=coords.min(0);span=coords.max(0)-lo+1
@@ -84,8 +85,8 @@ def scan_windows(config,out,progress):
     # Keep high resolution, the previously failing video, and BOTH fine/coarse maxima.
     largest=max([r for r in rows if r['split']=='train'],key=lambda r:(r['native_pixels'],r['dataset']=='ANAKIN' and r['role']=='fake'))
     candidates=[('original_high_resolution',next(w for w in records if w['video_id']==largest['video_id'] and w['target_range'][0]==16)),
-        ('known_failed_video',max([w for w in records if w['video_id']=='cb41b3d004b6640f6c3b5bb1'],key=lambda w:w['coarse_nodes'])),
-        ('max_fine_nodes',max(records,key=lambda w:w['fine_nodes'])),('max_coarse_nodes',max(records,key=lambda w:w['coarse_nodes']))]
+        ('known_failed_window',next(w for w in records if w['video_id']=='cb41b3d004b6640f6c3b5bb1' and w['target_range']==[0,8])),
+        ('max_fine_nodes_full_history',max([w for w in records if w['context_range'][1]-w['context_range'][0]==16 and w['target_range'][1]-w['target_range'][0]==8],key=lambda w:w['fine_nodes'])),('max_coarse_nodes_full_history',max([w for w in records if w['context_range'][1]-w['context_range'][0]==16 and w['target_range'][1]-w['target_range'][0]==8],key=lambda w:w['coarse_nodes']))]
     chosen={}
     for reason,w in candidates:
         key=(w['video_id'],*w['target_range']);chosen.setdefault(key,{**w,'reasons':[]})['reasons'].append(reason)

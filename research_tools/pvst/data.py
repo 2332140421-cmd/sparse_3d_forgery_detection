@@ -229,13 +229,16 @@ class Video:
             if i in self._frames:result.append(self._frames[i]);continue
             if self.condition=='UV_PVST':q=uv;valid=np.ones((h,w),bool)
             else:
-                q,valid=native_dense(self.row,i);q=q/self.scale
-            frame={'rgb':torch.from_numpy(np.array(self.rgb[i],copy=True)).to(device),'tokens':torch.from_numpy(np.array(self.tokens[i],copy=True)).to(device),
-                'q':torch.from_numpy(q).to(device),'valid':torch.from_numpy(valid).to(device),
-                'uv':torch.from_numpy(uv[...,:2]).to(device),'pts':self.row['pts'][i]['pts_s'],
-                'mapping448':mapping([h,w],448)}
+                with torch.profiler.record_function('pvst.native_geometry_read'):
+                    q,valid=native_dense(self.row,i);q=q/self.scale
+            with torch.profiler.record_function('pvst.input_transfer'):
+                frame={'rgb':torch.from_numpy(np.array(self.rgb[i],copy=True)).to(device),'tokens':torch.from_numpy(np.array(self.tokens[i],copy=True)).to(device),
+                    'q':torch.from_numpy(q).to(device),'valid':torch.from_numpy(valid).to(device),
+                    'uv':torch.from_numpy(uv[...,:2]).to(device),'pts':self.row['pts'][i]['pts_s'],
+                    'mapping448':mapping([h,w],448)}
             from .geometry import voxelize
-            frame['voxel_meta']=voxelize(frame['q'],frame['valid'],1/32 if self.condition=='UV_PVST' else 1/64)
+            with torch.profiler.record_function('pvst.voxelization'):
+                frame['voxel_meta']=voxelize(frame['q'],frame['valid'],1/32 if self.condition=='UV_PVST' else 1/64)
             self._frames[i]=frame;result.append(frame)
         return result
 

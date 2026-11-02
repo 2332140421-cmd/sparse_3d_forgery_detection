@@ -1,10 +1,12 @@
 # PVST v0.2 当前状态
 
 2026-11-02；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
-状态RESOURCE_BLOCKED（node_chunks_v2在XYZ完整pair检查再次OOM，退出码1，正式模型0/2；等待用户下一步指示）
+状态RESOURCE_CHECK_RUNNING（独立紧凑执行限定验收；不启动正式训练，正式模型0/2）
 
 完整规格：[design_v02.md](design_v02.md)；方法决策：[ADR-0029](../decisions/0029-pvst-point-voxel-v02.md)。
-最新运行报错：[node_chunks_v2报告](failure_report_node_chunks_v2.md)。本轮仅生成报告，不继续优化或重启。
+本轮限定资源验收：[紧凑执行说明](compact_execution_check_v1.md)。原训练入口本轮不调用。
+
+最新历史运行报错：[node_chunks_v2报告](failure_report_node_chunks_v2.md)。该失败记录保持不变；本轮另用独立资源目录验收。
 
 这是一套独立PVST实现，不覆盖旧V8/V9。实际运行状态以数据目录progress.json为准；本页记录新执行版本；旧失败原因见[报错报告](failure_report_v02.md)，修复范围与验收口径见[FFN执行修复](ffn_execution_fix_v02.md)。
 
