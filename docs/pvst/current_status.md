@@ -1,7 +1,7 @@
 # PVST v0.2 当前状态
 
 2026-11-02；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
-状态VALIDATION_READY（FFN分块执行修复已实现；新版本完整视频与代表窗口验收待运行，正式模型0/2）
+状态VALIDATION_READY（node_chunks_v2补齐attention输出投影/dropout/残差分块；新版本验收待运行，正式模型0/2）
 
 完整规格：[design_v02.md](design_v02.md)；方法决策：[ADR-0029](../decisions/0029-pvst-point-voxel-v02.md)。
 这是一套独立PVST实现，不覆盖旧V8/V9。实际运行状态以数据目录progress.json为准；本页记录新执行版本；旧失败原因见[报错报告](failure_report_v02.md)，修复范围与验收口径见[FFN执行修复](ffn_execution_fix_v02.md)。
@@ -39,17 +39,17 @@ export CUDA_VISIBLE_DEVICES=0
 /media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/bin/python -u -m research_tools.pvst.train --config docs/pvst/config_v02.json
 ```
 
-独立tmux会话：`pvst_point_voxel_v02_ffn`，用 `tmux attach -t pvst_point_voxel_v02_ffn` 查看实时日志。
+独立tmux会话：`pvst_point_voxel_v02_nodes`，用 `tmux attach -t pvst_point_voxel_v02_nodes` 查看实时日志。
 不要重复启动；恢复仅在核查实际退出原因与安全checkpoint后使用显式--resume。
 
 绝对输出目录：
 `/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/`
 
-- `execution_revision.json`：本次`ffn_chunks_v1`登记；旧协议/状态/日志/退出码1归档在`execution_history/initial_8477da4/`，根exit_history继续追加。
+- `execution_revision.json`：本次`node_chunks_v2`登记；旧协议/状态/日志/退出码1归档在`execution_history/initial_8477da4/`，根exit_history继续追加。
 - `protocol.json`：新代码/config/manifest/scale/commit身份，严格匹配，未关闭检查。
 - `launch.json`：当前执行实际启动时间、源码commit、命令和PID入口。
 - `run.log`：准备、每80目标帧及评价进度；`progress.json`：当前阶段，不要求Codex持续轮询。
-- `full_pair_check.json`：新协议下两条件完整视频检查（另有逐条件摘要与逐块JSONL）；`resource_windows.json`：全缓存坐标计数及代表；`resource_*_ffn_chunks_v1.json`：新资源门槛；`UV_PVST/`、`XYZ_PVST/`：各自checkpoint/history/指标与固定预览。
+- `full_pair_check.json`：新协议下两条件完整视频检查（另有逐条件摘要与逐块JSONL）；`resource_windows.json`：全缓存坐标计数及代表；`resource_*_node_chunks_v2.json`：新资源门槛；`UV_PVST/`、`XYZ_PVST/`：各自checkpoint/history/指标与固定预览。
 - `report_zh.md`、`result_summary.json`：仅完成后生成的正式结论。
 - `exit_code.txt`、`exit_history.jsonl`保留Python真实退出历史；tmux包装的`process_exit_code.txt`还覆盖系统终止情形。
 - `publication.json`：发布状态与实验状态独立；Git网络失败不把已完成实验改成训练失败，也不触发重训。

@@ -104,9 +104,9 @@ def report(out,config,rows,summaries):
         diff[split]={'AF_video_'+k:b['ActivityForensics']['video'][k]-a['ActivityForensics']['video'][k] for k in ['auroc','ap','f1']}
         diff[split].update({'AN_'+k:b['ANAKIN'][k]-a['ANAKIN'][k] for k in ['spatial_dice','spatial_iou','pixel_ap','real_spatial_fpr']})
     if (out/'execution_revision.json').exists():
-        revision=json.loads((out/'execution_revision.json').read_text());archive=out/revision['previous_archive']
+        revision=json.loads((out/'execution_revision.json').read_text());archive=out/revision.get('initial_archive',revision['previous_archive'])
         lines+=['','## FFN执行修复与成本分账',
-            'norm2与完整FFN按节点分块，ffn_chunk='+str(config['ffn_chunk'])+'；逐块non-reentrant checkpoint并保存RNG。模块参数/state_dict、全部输入覆盖与监督未变。改变dropout分块调用不保证旧执行逐位相同，不改变表达能力。',
+            'norm2/FFN及attention输出投影、dropout、残差均按节点分块，ffn_chunk='+str(config['ffn_chunk'])+'；逐块non-reentrant checkpoint并保存RNG。模块参数/state_dict、全部输入覆盖与监督未变。改变dropout分块调用不保证旧执行逐位相同，不改变表达能力。',
             '旧失败执行及退出码1保留：'+json.dumps(revision,ensure_ascii=False),
             '原失败版本准备成本：'+(archive/'preparation_cost.json').read_text(),
             '本次复用缓存核查成本：'+(out/'preparation_cost.json').read_text(),

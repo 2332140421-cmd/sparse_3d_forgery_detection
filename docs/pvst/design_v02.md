@@ -1077,3 +1077,7 @@ non-reentrant activation checkpoint且preserve_rng_state=True。不先构造全�
 旧失败版本协议/日志/退出码1独立归档；新执行版本登记为ffn_chunks_v1，严格核对新身份。
 完整pair验收优先XYZ失败路径，随后UV；正式条件顺序仍UV/XYZ，均重新初始化，不继承验收权重。
 资源代表按实际坐标节点计数选择并去重，不按预测/标签或真假难度选择；见ffn_execution_fix_v02.md。
+
+node_chunks_v2仅补齐同类逐节点attention输出projection/dropout/residual分块，将其与query attention同块重算。
+ffn_chunk8192、attention_chunk512不变；不增加参数，不删节点/邻居，不改变监督。
+ffn_chunks_v1的第二次OOM证据保留；完整验收仍是正式训练的前置条件，见FFN执行修复文档。

@@ -63,3 +63,28 @@ FP32使用atol=2e-6/rtol=2e-4，BF16使用atol=2e-3/rtol=3e-2；不把BF16与FP3
 当前输出目录不变；`run.log/progress.json/launch.json/exit_code.txt`记录新版本；历史原件在上述归档。
 结束后自动生成`report_zh.md/result_summary.json`，结果文档普通commit/push；计算COMPLETE与publication状态独立。
 如果再次资源不足，保留具体算子与退出历史；不自动改模型、缩目标/halo或重训旧结果。
+
+## 第二次OOM与同类执行补修：node_chunks_v2
+
+ffn_chunks_v1未完成验收，退出码1，墙时3762.245秒；不是正式训练成本。
+逐块证据已精确定位：ANAKIN fake `cb41b3d004b6640f6c3b5bb1` 的target `[0,8)`、context `[0,0)`，
+fine节点1,020,328、coarse节点780,798，BF16；coarse第三层dilation4的attention输出投影后的Dropout报OOM。
+前两层FFN已执行到尾块；新的申请764 MiB，空闲714.69 MiB，进程约21.60 GiB，PyTorch allocated约20.60 GiB。
+逐块max allocated为22,525,029,376字节，max reserved为23,148,363,776字节；这些是峰值统计，区别于异常时当前占用。
+这是原提示允许继续修复的同类逐节点执行物化问题，不将第一次FFN修复通过单测误称为完整资源验收通过。
+
+本次仅将已有query块的attention结果立即进行同权重projection、同概率dropout并加本块残差，然后拼接最终D维输出。
+attention、projection/dropout/residual作为同一小块checkpoint，保存RNG；不再先构造全量attention拼接、全量投影和全量dropout中间量。
+FFN仍为8192节点分块；attention_chunk仍512。参数、模块名、全部邻居、数据/目标/halo等不变。
+同分块新实现checkpoint全开/全关的dropout/RNG与梯度比较通过，不宣称与旧随机调用序列逐位相同。
+
+23项测试通过（CPU，5.83秒）。新增整层与原未分块公式对比：
+FP32前向最大误差5.9605e-7、输入梯度3.4925e-10、参数梯度1.8626e-9；
+BF16前向和输入梯度0、参数梯度3.0518e-5。全部节点checkpoint开启/关闭、dropout开启的最大输出/梯度差2.3283e-9，RNG终态一致。
+没有增加可训练参数，state_dict键契约测试继续通过。
+
+第二次失败的原协议、日志、逐块JSONL、状态与退出码1原字节归档在
+`execution_history/ffn_chunks_v1_81312af/`，第一版归档仍保留。根exit_history保留全部真实退出事件。
+新协议严格重建为node_chunks_v2，旧资源PASS不放行。
+仍须重新完成XYZ/UV完整pair与代表窗口资源验收，不能将这次23项单测当成GPU验收；正式模型仍0/2。
+新tmux入口为`pvst_point_voxel_v02_nodes`；实际进度仍以progress.json为准。

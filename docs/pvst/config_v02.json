@@ -42,5 +42,5 @@
   "initialization": "official spatial checkpoint base DINO weights without any LoRA tensors or merging; trained localization decoder before predictor; no V8 detector weights",
   "attention_backend": "torch_sdpa",
   "ffn_chunk": 8192,
-  "execution_revision": "ffn_chunks_v1"
+  "execution_revision": "node_chunks_v2"
 }

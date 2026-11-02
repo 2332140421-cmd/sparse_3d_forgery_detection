@@ -274,3 +274,36 @@ def test_exact_resource_window_counts_and_representative_dedup(tmp_path,monkeypa
     assert len(result['representatives'])==1
     w=result['representatives'][0];assert w['input_range']==[0,24] and w['target_range']==[16,24]
     assert w['fine_nodes']==72 and w['coarse_nodes']==48 and len(w['reasons'])==4
+
+
+@__import__('pytest').mark.parametrize('dtype',[torch.float32,torch.bfloat16])
+def test_attention_projection_chunks_match_original_whole_formula(dtype):
+    from contextlib import nullcontext
+    from research_tools.pvst.temporal import SparseLayer
+    torch.manual_seed(883);a=SparseLayer(512,8,chunk=4,ffn_chunk=4).eval();b=copy.deepcopy(a)
+    xa=torch.randn(11,512,dtype=dtype,requires_grad=True);xb=xa.detach().clone().requires_grad_();index=torch.arange(11)[:,None].expand(-1,81);rel=torch.randn(11,81,4)
+    ctx=lambda:torch.autocast('cpu',dtype=dtype) if dtype==torch.bfloat16 else nullcontext()
+    with ctx():
+        ya=a(xa,index,rel)
+        q,k,v=b.qkv(b.norm(xb)).reshape(11,3,8,64).unbind(1)
+        h=xb+b.drop(b.proj(b.attend(q,k,v,index,rel)));yb=h+b.ffn(b.norm2(h))
+    ya.float().square().mean().backward();yb.float().square().mean().backward()
+    pairs=[(ya,yb),(xa.grad,xb.grad),*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters())]]
+    errors=[float((x-y).abs().max()) for x,y in pairs];print('OUTPUT_PROJECTION_PARITY',str(dtype),'output/input/params max_abs',errors)
+    atol,rtol=(2e-6,2e-4) if dtype==torch.float32 else (2e-3,3e-2)
+    for x,y in pairs:torch.testing.assert_close(x,y,atol=atol,rtol=rtol)
+
+
+def test_all_node_checkpoints_preserve_training_dropout_rng(monkeypatch):
+    from research_tools.pvst import temporal
+    torch.manual_seed(452);a=temporal.Temporal(256,4,chunk=4,ffn_chunk=4).train();b=copy.deepcopy(a)
+    coords=[torch.tensor([[i,0,0] for i in range(5)])]*2
+    xa=[torch.randn(5,256,requires_grad=True) for _ in range(2)];xb=[x.detach().clone().requires_grad_() for x in xa]
+    rng=torch.get_rng_state();ya=torch.cat(a(xa,coords,[0.,.04]));ya.square().mean().backward();end_a=torch.get_rng_state()
+    monkeypatch.setattr(temporal,'checkpoint',lambda fn,*args,**kwargs:fn(*args))
+    torch.set_rng_state(rng);yb=torch.cat(b(xb,coords,[0.,.04]));yb.square().mean().backward();end_b=torch.get_rng_state()
+    pairs=[(ya,yb),*[(x.grad,y.grad) for x,y in zip(xa,xb)],*[(p.grad,q.grad) for p,q in zip(a.parameters(),b.parameters())]]
+    print('ALL_NODE_CHECKPOINT_PARITY max_abs',max(float((x-y).abs().max()) for x,y in pairs))
+    for x,y in pairs:
+        assert torch.isfinite(x).all() and torch.isfinite(y).all();torch.testing.assert_close(x,y,atol=2e-6,rtol=2e-4)
+    assert torch.equal(end_a,end_b)

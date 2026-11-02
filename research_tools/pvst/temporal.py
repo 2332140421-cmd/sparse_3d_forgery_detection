@@ -50,6 +50,10 @@ class SparseLayer(nn.Module):
         result=F.scaled_dot_product_attention(q[:,:,None,:],kk,vv,attn_mask=bias,
             dropout_p=self.drop.p if self.drop.training else 0.)
         return result[:,:,0].reshape(len(q),self.dim)
+    def attention_block(self,residual,q,k,v,index,rel):
+        attended=self.attend(q,k,v,index,rel)
+        self.last_execution={'operation':'attention projection+dropout+residual block','input_shape':list(attended.shape),'dtype':str(attended.dtype)}
+        return residual+self.drop(self.proj(attended))
     def ffn_block(self,x):
         self.last_execution={'operation':'norm2+FFN block','input_shape':list(x.shape),'hidden_shape':[len(x),4*self.dim],'dtype':str(x.dtype)}
         return self.ffn(self.norm2(x))
@@ -58,10 +62,10 @@ class SparseLayer(nn.Module):
         self.last_execution={'operation':'norm+QKV','input_shape':list(x.shape),'dtype':str(x.dtype)}
         q,k,v=self.qkv(self.norm(x)).reshape(len(x),3,self.heads,64).unbind(1);values=[]
         for start in range(0,len(x),self.chunk):
-            args=(q[start:start+self.chunk],k,v,index[start:start+self.chunk],relative[start:start+self.chunk])
-            y=checkpoint(self.attend,*args,use_reentrant=False) if self.training else self.attend(*args)
+            args=(x[start:start+self.chunk],q[start:start+self.chunk],k,v,index[start:start+self.chunk],relative[start:start+self.chunk])
+            y=checkpoint(self.attention_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.attention_block(*args)
             values.append(y)
-        x=x+self.drop(self.proj(torch.cat(values)))
+        x=torch.cat(values)
         values=[]
         self.last_execution={'operation':'norm2+FFN','input_shape':list(x.shape),'dtype':str(x.dtype),
             'ffn_chunk':self.ffn_chunk,'hidden_shape_upper_bound':[min(len(x),self.ffn_chunk),4*self.dim]}
