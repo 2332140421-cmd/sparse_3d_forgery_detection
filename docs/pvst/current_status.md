@@ -1,9 +1,11 @@
 # PVST v0.2 当前状态
 
 2026-11-02；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
-状态VALIDATION_READY（node_chunks_v2补齐attention输出投影/dropout/残差分块；新版本验收待运行，正式模型0/2）
+状态RESOURCE_BLOCKED（node_chunks_v2在XYZ完整pair检查再次OOM，退出码1，正式模型0/2；等待用户下一步指示）
 
 完整规格：[design_v02.md](design_v02.md)；方法决策：[ADR-0029](../decisions/0029-pvst-point-voxel-v02.md)。
+最新运行报错：[node_chunks_v2报告](failure_report_node_chunks_v2.md)。本轮仅生成报告，不继续优化或重启。
+
 这是一套独立PVST实现，不覆盖旧V8/V9。实际运行状态以数据目录progress.json为准；本页记录新执行版本；旧失败原因见[报错报告](failure_report_v02.md)，修复范围与验收口径见[FFN执行修复](ffn_execution_fix_v02.md)。
 
 固定数据：[身份清单](manifest_v02.json)、[场景预审](scene_review_v02.json)。
@@ -24,7 +26,7 @@ BF16、target8+left16、空间tile256/halo1、attention query512、point32768、
 新版本必要测试、缓存复用和协议检查见FFN修复文档。先重做XYZ、UV完整pair：每次有效更新仍先AF完整视频再ANAKIN完整视频；
 随后仅对原高分辨率、失败样本和全48缓存fine/coarse最大节点窗口去重验收。全部通过才进入正式epoch0。
 
-后台会依次完成：复用缓存核验 → full-pair checks（XYZ先） → 全缓存坐标计数 → 代表窗口资源验收 → UV_PVST → XYZ_PVST → epoch0/best/last完整训练及开发评价 → 中文报告 → 普通Git发布。
+原计划后台流程如下（本次已退出，本轮不续跑）：复用缓存核验 → full-pair checks（XYZ先） → 全缓存坐标计数 → 代表窗口资源验收 → UV_PVST → XYZ_PVST → epoch0/best/last完整训练及开发评价 → 中文报告 → 普通Git发布。
 每条件seed20260909，最多30轮/每轮16更新，patience8；仅AF开发视频AUROC选best（包括epoch0，平分取早）。
 不增加条件、不用测试集；仅train/dev坐标用于资源计数，不用标签或分数选代表。检查失败保留错误并停止，不自动削减规格。
 
