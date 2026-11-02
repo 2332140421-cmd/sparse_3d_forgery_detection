@@ -1,10 +1,10 @@
 # PVST v0.2 当前状态
 
 2026-11-02；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
-状态READY_TO_RUN（代码与资源验收通过，尚无正式PVST成绩）
+状态RESOURCE_BLOCKED（2026-11-02首次运行在XYZ完整视频检查中OOM，退出码1，未进入正式训练）
 
 完整规格：[design_v02.md](design_v02.md)；方法决策：[ADR-0029](../decisions/0029-pvst-point-voxel-v02.md)。
-这是一套独立PVST实现，不覆盖旧V8/V9。实际运行状态以数据目录progress.json为准；本页为启动前冻结记录。
+这是一套独立PVST实现，不覆盖旧V8/V9。实际运行状态以数据目录progress.json为准；本页保留启动配置并记录本次退出；完整原因见[报错报告](failure_report_v02.md)。
 
 固定数据：[身份清单](manifest_v02.json)、[场景预审](scene_review_v02.json)。
 AF训练8 pair/16视频/13,213帧，开发4 pair/8视频/5,799帧；
