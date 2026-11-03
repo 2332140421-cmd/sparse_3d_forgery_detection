@@ -188,10 +188,12 @@ def fit_scale(config,out,rows):
 
 
 class Video:
-    def __init__(self,out,row,condition,scale):
+    def __init__(self,out,row,condition,scale,config=None):
         import zipfile
         from scripts.review_anakin import numeric_members
-        self.row=row;self.condition=condition;self.scale=scale;self._frames={};p=out/'cache'/row['video_id']
+        from .geometry import voxel_size
+        config=config or {};self.h=voxel_size(config,condition)
+        self.row=row;self.condition=condition;self.scale=scale;self._frames={};p=Path(config.get('cache_root',out/'cache'))/row['video_id']
         self.rgb=np.load(p/'rgb.npy',mmap_mode='r');self.tokens=np.load(p/'tokens.npy',mmap_mode='r')
         meta=p/'complete.json' if (p/'complete.json').exists() else p/'partial.json'
         state=json.loads(meta.read_text())
@@ -238,7 +240,7 @@ class Video:
                     'mapping448':mapping([h,w],448)}
             from .geometry import voxelize
             with torch.profiler.record_function('pvst.voxelization'):
-                frame['voxel_meta']=voxelize(frame['q'],frame['valid'],1/32 if self.condition=='UV_PVST' else 1/64)
+                frame['voxel_meta']=voxelize(frame['q'],frame['valid'],self.h)
             self._frames[i]=frame;result.append(frame)
         return result
 
@@ -262,3 +264,29 @@ def preview_originals(out,rows):
             records.append({'source_id':r['source_id'],'video_id':r['video_id'],'sheet':target.name,'row':j,'frame_indices':indices})
         cv2.imwrite(str(target),sheet)
     save(dest/'selection.json',{'rule':'all selected original real videos, native PTS 25/50/75%; no fake/model selection','rows':records})
+
+
+def select_clips(rows,out,config,scale):
+    """Freeze <=4 distinct stride8 targets/video using training GT/time only."""
+    rng=random.Random(config['seed']);clips=[]
+    for r in sorted([r for r in rows if r['split']=='train'],key=lambda r:r['video_id']):
+        v=Video(out,r,'UV_PVST',scale,config)
+        try:labels=[v.label(i) for i in range(r['actual_frames'])]
+        finally:v.close()
+        starts=list(range(0,len(labels),8));n=min(config['clips_per_video'],len(starts));selected=[];fallback=False
+        def spread(pool,k):
+            # Sorted temporal strata, one seeded actual candidate per stratum.
+            return [rng.choice(list(a)) for a in np.array_split(sorted(pool),min(k,len(pool))) if len(a)] if k and len(pool) else []
+        if r['dataset']=='ActivityForensics' and r['role']=='fake':
+            positive=[s for s in starts if any(labels[s:s+8])];negative=[s for s in starts if not any(labels[s:s+8])]
+            selected=spread(positive,(n+1)//2)+spread(negative,n//2)
+            if len(selected)<n:selected+=spread([s for s in starts if s not in selected],n-len(selected));fallback=True
+        else:selected=spread(starts,n)
+        for start in sorted(selected):
+            end=min(start+8,len(labels));left=max(0,start-16)
+            clips.append({'video_id':r['video_id'],'source_id':r['source_id'],'dataset':r['dataset'],'role':r['role'],
+                'target_range':[int(start),int(end)],'context_range':[int(left),int(start)],'input_range':[int(left),int(end)],
+                'input_pts_s':[p['pts_s'] for p in r['pts'][left:end]],'frame_labels':labels[start:end],
+                'label_source':'official AF PTS intervals' if r['dataset']=='ActivityForensics' else 'actual spatial mask foreground (real=zero)',
+                'shortage_filled_from_other_candidates':fallback})
+    return clips

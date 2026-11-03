@@ -121,3 +121,9 @@ results, or inconsistency between the paper and implementation.
   scales and point-to-pixel bypass. UV must not read XYZ-derived inputs.
 - Exactly two conditions, one seed, AF8/4 and ANAKIN8/4 source pairs. If equivalent
   execution cannot fit hardware, measure and report RESOURCE_BLOCKED; do not shrink.
+- PVST v0.3: ADR-0030 and docs/pvst/design_v03.md explicitly supersede only
+  v0.3's XYZ voxel scale, full-video update/coverage and training budget from v0.2.
+  Select the finest authorized training-coordinate-budget scale; never cap nodes.
+  Preserve every valid point and the native point bypass; only one epoch per condition.
+  Use the separate v03 entry, shared read-only caches, frozen clips and complete-video
+  evaluation. Resource failure stops training; retain v0.2 evidence unchanged.

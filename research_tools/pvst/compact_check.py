@@ -47,14 +47,15 @@ def window_loss(model,frames,start,gt,labels,epsilon):
     return torch.stack([losses(p,g,y,epsilon)[0] for p,g,y in zip(pred,gt,labels)]).mean()
 
 
-def worker(config,out,window,condition,offload,chunk,profile=False):
+def worker(config,out,window,condition,offload,chunk,profile=False,source=None):
+    source=SOURCE if source is None else source
     seed_all(config['seed']);torch.set_num_threads(4)
     c={**config,'attention_chunk':chunk,'offload_saved_tensors':offload}
     model=PVST(condition,decoder_only(c),c).cuda().train();opt=torch.optim.AdamW(parameters(c,model),weight_decay=c['weight_decay'])
     count=sum(p.numel() for p in model.parameters());keys_sha=hashlib.sha256('\n'.join(model.state_dict()).encode()).hexdigest()
     if count!=17821672 or keys_sha!='31beab46b45b34ed53ff89a70293a0e9e93abb86721dc51902e9c4c1808af665':raise ValueError('MODEL_IDENTITY_CHANGED')
-    rows=json.loads((SOURCE/'manifest.json').read_text())['rows'];row=next(r for r in rows if r['video_id']==window['video_id']);scale=json.loads((SOURCE/'scale.json').read_text())['s']
-    left,end=window['input_range'];start=window['target_range'][0];video=Video(SOURCE,row,condition,scale)
+    rows=json.loads((source/'manifest.json').read_text())['rows'];row=next(r for r in rows if r['video_id']==window['video_id']);scale=json.loads((source/'scale.json').read_text())['s']
+    left,end=window['input_range'];start=window['target_range'][0];video=Video(source,row,condition,scale,c)
     result={'window':window,'condition':condition,'offload':offload,'attention_chunk':chunk,'ffn_chunk':c['ffn_chunk'],'profiled':profile,
         'parameters':count,'state_dict_keys_sha256':keys_sha,'host_before':host_memory(),'updates':[],'loss_scope':'window-only loss, two microbatches per smoke update; NOT formal video update; weights discarded'}
     tick=time.monotonic();torch.cuda.reset_peak_memory_stats();phase='input';prof=None

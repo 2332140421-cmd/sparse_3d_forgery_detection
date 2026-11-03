@@ -1,7 +1,11 @@
-# PVST v0.2 当前状态
+# PVST v0.2 当前状态PREPARING（v0.3训练坐标尺度筛选；未启动一轮训练）
 
-2026-11-03；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
+2026-11-03；分支 `pvst-point-voxel-v03`；v0.3起点 `29205c78c85ad5a3e23237b7cf8aae4690fbbc70`。
 状态RESOURCE_BLOCKED（紧凑执行限定验收已结束；最大完整历史窗口GPU及卸载均OOM，正式模型0/2）
+
+本轮设计：[v0.3尺度与片段协议](design_v03.md)；旧v0.2规格与失败历史以下保留。
+
+## v0.2历史记录（以下保留为背景，不是v0.3待运行流程）
 
 完整规格：[design_v02.md](design_v02.md)；方法决策：[ADR-0029](../decisions/0029-pvst-point-voxel-v02.md)。
 本轮限定资源验收：[最终资源与吞吐报告](compact_execution_results_v1.md)、[紧凑执行说明](compact_execution_check_v1.md)。31项测试通过；原失败窗口通过两次更新，最大节点窗口在fine第一层全量LayerNorm的FP32转换申请8.01GiB失败，卸载未解决。任务已退出，不放行4090正式训练。

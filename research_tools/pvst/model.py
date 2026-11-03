@@ -8,7 +8,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
-from .geometry import LayerNorm,voxelize,scatter_mean,scatter_max,local_tiled,tiles
+from .geometry import voxel_size,LayerNorm,voxelize,scatter_mean,scatter_max,local_tiled,tiles
 from .temporal import Temporal
 
 
@@ -34,7 +34,7 @@ class PVST(nn.Module):
     def __init__(self,condition,decoder,config):
         super().__init__()
         if condition not in ['UV_PVST','XYZ_PVST']:raise ValueError(condition)
-        self.condition=condition;self.h=1/32 if condition=='UV_PVST' else 1/64;self.config=config;self.decoder=decoder
+        self.condition=condition;self.h=voxel_size(config,condition);self.config=config;self.decoder=decoder
         self.geo=mlp(9,64,128);self.geo_local=LocalResidual()
         self.vfe=mlp(256,128,128);self.block=mlp(257,256,256)
         self.visual_projection=nn.Conv2d(32,128,1)
@@ -53,6 +53,8 @@ class PVST(nn.Module):
         self.frame_residual=nn.Sequential(nn.Linear(1024,256),nn.GELU(),LayerNorm(256),nn.Linear(256,128),nn.GELU(),LayerNorm(128),nn.Linear(128,1))
         nn.init.zeros_(self.pixel_out.weight);nn.init.zeros_(self.pixel_out.bias)
         nn.init.zeros_(self.frame_residual[-1].weight);nn.init.zeros_(self.frame_residual[-1].bias)
+        for temporal in [self.fine_time,self.coarse_time]:
+            for layer in temporal.layers:layer.qkv_chunk=config.get('qkv_chunk',0)
         self._bn={k:v.detach().cpu().clone() for k,v in self.decoder.named_buffers()}
         self.train(False)
     def train(self,mode=True):
@@ -143,6 +145,7 @@ class PVST(nn.Module):
     def forward(self,frames,target_start=0):
         # q/valid supplied by condition-specific data loader. UV never opens XYZ.
         meta=[f['voxel_meta'] if 'voxel_meta' in f else voxelize(f['q'],f['valid'],self.h) for f in frames]
+        if any(m.get('voxel_size',self.h)!=self.h for m in meta):raise ValueError('VOXEL_METADATA_SCALE_MISMATCH')
         decoded=[]
         for f in frames:
             fn=lambda token:self.decode(token)

@@ -44,7 +44,7 @@ class Neighborhood:
 
 class SparseLayer(nn.Module):
     def __init__(self,dim,heads,chunk=128,ffn_chunk=8192):
-        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.ffn_checkpoint=True;self.last_execution={}
+        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.ffn_checkpoint=True;self.last_execution={}
         if ffn_chunk<=0:raise ValueError("FFN_CHUNK_MUST_BE_POSITIVE")
         self.norm=LayerNorm(dim);self.qkv=nn.Linear(dim,dim*3);self.bias=nn.Sequential(nn.Linear(4,64),nn.GELU(),nn.Linear(64,heads))
         self.proj=nn.Linear(dim,dim);self.drop=nn.Dropout(.1);self.norm2=LayerNorm(dim)
@@ -68,10 +68,21 @@ class SparseLayer(nn.Module):
     def ffn_block(self,x):
         self.last_execution={'operation':'norm2+FFN block','input_shape':list(x.shape),'hidden_shape':[len(x),4*self.dim],'dtype':str(x.dtype)}
         return x+self.ffn(self.norm2(x))
+    def norm_qkv(self,x):
+        return self.qkv(self.norm(x))
     def forward(self,x,graph,dilation):
         if not len(x):return x
         self.last_execution={'operation':'norm+QKV','input_shape':list(x.shape),'dtype':str(x.dtype)}
-        q,k,v=self.qkv(self.norm(x)).reshape(len(x),3,self.heads,64).unbind(1)
+        if self.qkv_chunk:
+            parts=[]
+            for start in range(0,len(x),self.qkv_chunk):
+                part=x[start:start+self.qkv_chunk]
+                value=checkpoint(self.norm_qkv,part,use_reentrant=False,preserve_rng_state=True) if self.training else self.norm_qkv(part)
+                parts.append(value)
+            projected=torch.cat(parts);del parts,value
+        else:projected=self.norm_qkv(x)  # historical v0.2 execution
+        q,k,v=projected.reshape(len(x),3,self.heads,64).unbind(1)
+        del projected
         bias=self.bias(graph.relative[dilation].to(q.dtype));values=[]
         for start in range(0,len(x),self.chunk):
             end=min(start+self.chunk,len(x));args=(x[start:end],q[start:end],k,v,bias,graph,start,end,dilation)

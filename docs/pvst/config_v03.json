@@ -1,0 +1,64 @@
+{
+  "protocol": "pvst-point-voxel-v03",
+  "workspace": "/media/njupt/8FCD3869E2FAB06F/chenyh",
+  "source_run": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v03",
+  "official_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/AINPAINT-CVIU26",
+  "dino_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/dinov2-ainpaint",
+  "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
+  "checkpoint_sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
+  "seed": 20260909,
+  "chunk_frames": 2,
+  "feature_chunk": 2,
+  "epochs": 1,
+  "amp": true,
+  "target_frames": 8,
+  "time_halo": 16,
+  "patience": 8,
+  "min_delta": 0,
+  "lr_decoder": 1e-05,
+  "lr_new": 0.0001,
+  "weight_decay": 0.0001,
+  "clip_norm": 1,
+  "dice_epsilon": 1.0,
+  "visual_size": 448,
+  "tile_size": 256,
+  "attention_chunk": 512,
+  "point_chunk": 32768,
+  "geometry_scale_estimator": "median of every 16th valid positive Z in decode/frame/row-major order from training only",
+  "conditions": [
+    "UV_PVST",
+    "XYZ_PVST"
+  ],
+  "amp_dtype": "bfloat16",
+  "excluded_original_scene_sources": [
+    "charades:BTW1H"
+  ],
+  "scene_policy": "Original-only 25/50/75% PTS review; fixed or mild smooth camera; exclude clear large view turn; keep ordinary human motion. Shuffle full original-role/type candidate bucket with fixed seed BEFORE exclusions.",
+  "frozen_encoder_parameters": 304372736,
+  "official_revision": "753ae1b700b054c97e15569718690211e36cdf53",
+  "dino_revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+  "decoder_feature_channels": 32,
+  "initialization": "official spatial checkpoint base DINO weights without any LoRA tensors or merging; trained localization decoder before predictor; no V8 detector weights",
+  "attention_backend": "torch_sdpa",
+  "ffn_chunk": 8192,
+  "execution_revision": "v03",
+  "cache_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/cache",
+  "asset_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02",
+  "voxel_sizes": {
+    "UV_PVST": 0.03125,
+    "XYZ_PVST": null
+  },
+  "voxel_candidates": [
+    0.03125,
+    0.0625,
+    0.125
+  ],
+  "voxel_budget": {
+    "fine": 200000,
+    "coarse": 50000
+  },
+  "qkv_chunk": 8192,
+  "clips_per_video": 4,
+  "offload_saved_tensors": false
+}

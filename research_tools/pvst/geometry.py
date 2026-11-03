@@ -11,6 +11,13 @@ class LayerNorm(nn.LayerNorm):
                             self.bias.float() if self.bias is not None else None,self.eps).to(x.dtype)
 
 
+def voxel_size(config,condition):
+    """One source for reader/model/routing; absent config preserves v0.2."""
+    value=config.get("voxel_sizes",{}).get(condition,1/32 if condition=="UV_PVST" else 1/64)
+    if value is None or value<=0:raise ValueError("VOXEL_SCALE_NOT_FROZEN")
+    return float(value)
+
+
 def scatter_mean(x,index,count=None):
     n=int(index.max())+1 if len(index) else 0
     if count is None:count=torch.bincount(index,minlength=n)
@@ -31,7 +38,7 @@ def voxelize(q,valid,h):
     centers=(coords.to(q.dtype)+.5)*h;mean=scatter_mean(points,index,count)
     x=torch.cat((points,(points-centers[index])/h,(points-mean[index])/h),-1)
     coarse,parent=torch.unique(torch.div(coords,2,rounding_mode='floor'),dim=0,sorted=True,return_inverse=True)
-    return {'ids':ids,'index':index,'count':count,'coords':coords,'centers':centers,'input':x,
+    return {'voxel_size':h,'ids':ids,'index':index,'count':count,'coords':coords,'centers':centers,'input':x,
             'coarse_coords':coarse,'parent':parent,'coarse_centers':(coarse.to(q.dtype)+.5)*(2*h)}
 
 

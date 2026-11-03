@@ -140,3 +140,73 @@ def main():
     c=json.loads(a.config.read_text());representative_resources(c,Path(c['output']),a.condition)
 
 if __name__=='__main__':main()
+
+
+def select_v03_scale(config,out,progress):
+    """Training-only occupancy budget, then frozen-scale train/dev audit.
+
+    Caller v03 CLI; output small per-frame/window counts and frozen config.
+    Existing v0.2 scanner fixes h=1/64, so cannot select the v0.3 scale.
+    No geometry/features are generated or retained here.
+    """
+    import numpy as np
+    from .data import native_dense
+    from scripts.prepare_v8_assets import digest
+    source=Path(config['asset_root']);rows=json.loads((source/'manifest.json').read_text())['rows']
+    scale=json.loads((source/'scale.json').read_text())['s'];out.mkdir(parents=True,exist_ok=True)
+    identity={'manifest':digest(source/'manifest.json'),'scale':digest(source/'scale.json'),'candidates':config['voxel_candidates'],'budget':config['voxel_budget'],'counter':'v03_exact_native_float32_floor_v1'}
+    final=out/'scale_selection.json'
+    if final.exists():
+        saved=json.loads(final.read_text())
+        if saved['identity']!=identity:raise ValueError('SCALE_SELECTION_IDENTITY')
+        return saved
+    def unique(c):
+        if not len(c):return c
+        lo=c.min(0);span=c.max(0)-lo+1
+        if int(span[0])*int(span[1])*int(span[2])>=2**62:raise ValueError('COUNT_KEY_OVERFLOW')
+        a=c-lo;key=(a[:,0]*span[1]+a[:,1])*span[2]+a[:,2]
+        return c[np.unique(key,return_index=True)[1]]
+    def count_row(r,hs):
+        p=out/'coordinate_counts'/f'{r["video_id"]}.json';sig={**identity,'video_id':r['video_id'],'video_sha256':r['video_sha256'],'hs':hs}
+        if p.exists():
+            data=json.loads(p.read_text())
+            if data['identity']!=sig:raise ValueError('COORDINATE_COUNT_IDENTITY')
+            return data['counts']
+        tick=time.monotonic();counts=[]
+        for i in range(r['actual_frames']):
+            q,v=native_dense(r,i);q=q/scale
+            coords=unique(np.floor(q[v]/np.float32(hs[0])).astype(np.int64));levels=[len(coords)]
+            # Power-of-two nested floors preserve negative coordinates exactly.
+            for _ in range(len(hs)):
+                coords=unique(coords//2);levels.append(len(coords))
+            counts.append(levels)
+        save(p,{'identity':sig,'counts':counts,'seconds':time.monotonic()-tick});return counts
+    def windows(r,counts,j,h):
+        arr=np.asarray(counts,np.int64)[:,j:j+2];pre=np.concatenate((np.zeros((1,2),np.int64),arr.cumsum(0)));result=[]
+        for start in range(0,r['actual_frames'],8):
+            end=min(start+8,r['actual_frames']);left=max(0,start-16);n=pre[end]-pre[left]
+            result.append({'video_id':r['video_id'],'split':r['split'],'dataset':r['dataset'],'native_hw':r['source_hw'],'target_range':[start,end],'context_range':[left,start],'input_range':[left,end],'fine_nodes':int(n[0]),'coarse_nodes':int(n[1]),'voxel_size':h})
+        return result
+    started=time.monotonic();train={};hs=config['voxel_candidates']
+    for ri,r in enumerate([r for r in rows if r['split']=='train']):
+        progress('scale_train_count',video_index=ri,video=r['video_id']);train[r['video_id']]=count_row(r,hs)
+    candidates=[];chosen=None;selected=[]
+    for j,h in enumerate(hs):
+        ww=[w for r in rows if r['split']=='train' for w in windows(r,train[r['video_id']],j,h)]
+        record={'h':h,'fine_max':max(w['fine_nodes'] for w in ww),'coarse_max':max(w['coarse_nodes'] for w in ww)}
+        record['within_budget']=record['fine_max']<=config['voxel_budget']['fine'] and record['coarse_max']<=config['voxel_budget']['coarse'];candidates.append(record)
+        if chosen is None and record['within_budget']:chosen=h;selected=ww
+    result={'identity':identity,'candidates':candidates,'selected_h':chosen,'selection_scope':'training coordinates only; no dev labels/scores','status':'SELECTED' if chosen else 'RESOURCE_BLOCKED'}
+    save(out/'training_scale_candidates.json',result)
+    if chosen is not None:
+        for ri,r in enumerate([r for r in rows if r['split']=='dev']):
+            progress('frozen_scale_dev_count',video_index=ri,video=r['video_id']);selected+=windows(r,count_row(r,[chosen]),0,chosen)
+        full=[w for w in selected if w['context_range'][1]-w['context_range'][0]==16 and w['target_range'][1]-w['target_range'][0]==8]
+        worst=max(full,key=lambda w:max(w['fine_nodes']/200000,w['coarse_nodes']/50000))
+        old=max([w for w in full if w['video_id']=='87664e1174a82a8f26ee463f'],key=lambda w:w['fine_nodes'])
+        high=max(full,key=lambda w:(w['native_hw'][0]*w['native_hw'][1],w['fine_nodes']))
+        reps={}
+        for reason,w in [('highest_normalized_node_load',worst),('old_max_video',old),('high_native_pixels',high)]:
+            key=(w['video_id'],*w['target_range']);reps.setdefault(key,{**w,'reasons':[]})['reasons'].append(reason)
+        result.update(windows=selected,representatives=list(reps.values()))
+    result['seconds']=time.monotonic()-started;save(final,result);return result

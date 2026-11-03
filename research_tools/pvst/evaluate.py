@@ -18,7 +18,7 @@ def evaluate(model,rows,out,config,scale,*,pixel_ap=True,samples=None,progress=N
     for ri,r in enumerate(rows):
         print('EVALUATE_VIDEO',model.condition,r['dataset'],r['split'],r['video_id'],r['actual_frames'],flush=True)
         if progress:progress('evaluation',condition=model.condition,video_index=ri,video=r['video_id'],dataset=r['dataset'],split=r['split'])
-        v=Video(out,r,model.condition,scale);scores=[];yy=[];dice=[];iou=[];ap=[];empty=[];recall=[];confusion=np.zeros((2,2),np.int64)
+        v=Video(out,r,model.condition,scale,config);scores=[];yy=[];dice=[];iou=[];ap=[];empty=[];recall=[];confusion=np.zeros((2,2),np.int64)
         times=np.asarray([p['pts_s'] for p in r['pts']]);selected={int(np.argmin(abs(times-(times[0]+x*(times[-1]-times[0]))))) for x in [.25,.5,.75]}
         for start in range(0,r['actual_frames'],config['target_frames']):
             if progress and start%80==0:progress('evaluation',condition=model.condition,video=r['video_id'],frames=start,total=r['actual_frames'],dataset=r['dataset'],split=r['split'])
@@ -34,7 +34,7 @@ def evaluate(model,rows,out,config,scale,*,pixel_ap=True,samples=None,progress=N
                         dice.append(m['dice']);iou.append(m['iou']);recall.append(np.count_nonzero((z>=0)&gt)/np.count_nonzero(gt))
                         if pixel_ap:ap.append(float(average_precision_score(gt.reshape(-1),z.reshape(-1))))
                     else:empty.append(m['empty_fpr'])
-                if samples and i in selected:
+                if samples and i in selected and r['video_id'] in config.get('sample_video_ids',[r['video_id']]):
                     samples.mkdir(parents=True,exist_ok=True)
                     image=np.array(v.rgb[i]);gtimg=np.zeros_like(image) if gt is None else np.repeat((gt*255).astype(np.uint8)[...,None],3,-1)
                     probability=1/(1+np.exp(-np.clip(z,-60,60)));heat=cv2.applyColorMap((probability*255).astype(np.uint8),cv2.COLORMAP_TURBO)[:,:,::-1]
