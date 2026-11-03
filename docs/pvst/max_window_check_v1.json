@@ -4823,5 +4823,15 @@
       "note": "per-frame voxel memberships concatenated; not a cross-time spatial union"
     }
   },
-  "formal_models_completed": 0
+  "formal_models_completed": 0,
+  "actual_fine_nodes": 2970629,
+  "actual_coarse_nodes": 1488042,
+  "completed_stage_seconds": {
+    "forward": 61.72569076158106,
+    "backward": null,
+    "update": null
+  },
+  "memory_scope": "TIMEOUT: last observed cumulative CUDA allocator peak, not a completed-update peak",
+  "backward_observed_lower_bound_s": 827.7764795273542,
+  "sampled_min_device_free_mib": 88
 }
