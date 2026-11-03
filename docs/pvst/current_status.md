@@ -1,10 +1,10 @@
 # PVST v0.2 当前状态
 
-2026-11-02；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
-状态RESOURCE_CHECK_RUNNING（独立紧凑执行限定验收；不启动正式训练，正式模型0/2）
+2026-11-03；分支 `pvst-point-voxel-v02`；起点 `8258caf33126bcc35b06e403ea51d348e23062b1`。
+状态RESOURCE_BLOCKED（紧凑执行限定验收已结束；最大完整历史窗口GPU及卸载均OOM，正式模型0/2）
 
 完整规格：[design_v02.md](design_v02.md)；方法决策：[ADR-0029](../decisions/0029-pvst-point-voxel-v02.md)。
-本轮限定资源验收：[紧凑执行说明](compact_execution_check_v1.md)。原训练入口本轮不调用。
+本轮限定资源验收：[最终资源与吞吐报告](compact_execution_results_v1.md)、[紧凑执行说明](compact_execution_check_v1.md)。31项测试通过；原失败窗口通过两次更新，最大节点窗口在fine第一层全量LayerNorm的FP32转换申请8.01GiB失败，卸载未解决。任务已退出，不放行4090正式训练。
 
 最新历史运行报错：[node_chunks_v2报告](failure_report_node_chunks_v2.md)。该失败记录保持不变；本轮另用独立资源目录验收。
 
@@ -25,14 +25,14 @@ MoGe沿用真实稠密256输出回映至原生分辨率，不重新运行，不�
 BF16、target8+left16、空间tile256/halo1、attention query512、point32768、ffn_chunk8192；标准SDPA与显式注意力的输出及梯度等价。
 仅复用当前窗口无参数路由，所有参数相关特征重算并完整反向。
 旧版14项测试及720×1280资源证据仅是历史准备记录，不能用于新版本放行。
-新版本必要测试、缓存复用和协议检查见FFN修复文档。先重做XYZ、UV完整pair：每次有效更新仍先AF完整视频再ANAKIN完整视频；
+以下为上次node_chunks_v2失败执行的验收要求，并非本轮待执行任务。新版本必要测试、缓存复用和协议检查见FFN修复文档。原定重做XYZ、UV完整pair：每次有效更新仍先AF完整视频再ANAKIN完整视频；
 随后仅对原高分辨率、失败样本和全48缓存fine/coarse最大节点窗口去重验收。全部通过才进入正式epoch0。
 
 原计划后台流程如下（本次已退出，本轮不续跑）：复用缓存核验 → full-pair checks（XYZ先） → 全缓存坐标计数 → 代表窗口资源验收 → UV_PVST → XYZ_PVST → epoch0/best/last完整训练及开发评价 → 中文报告 → 普通Git发布。
 每条件seed20260909，最多30轮/每轮16更新，patience8；仅AF开发视频AUROC选best（包括epoch0，平分取早）。
 不增加条件、不用测试集；仅train/dev坐标用于资源计数，不用标签或分数选代表。检查失败保留错误并停止，不自动削减规格。
 
-运行使用既有个人环境，仓库根目录执行：
+以下保留原正式训练命令用于历史复现，本轮不得启动；本轮限定入口见紧凑执行说明：
 
 ```bash
 export PYTHONPATH=/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8-ainpaint-packages:.
@@ -43,7 +43,7 @@ export CUDA_VISIBLE_DEVICES=0
 /media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/bin/python -u -m research_tools.pvst.train --config docs/pvst/config_v02.json
 ```
 
-独立tmux会话：`pvst_point_voxel_v02_nodes`，用 `tmux attach -t pvst_point_voxel_v02_nodes` 查看实时日志。
+历史独立tmux会话（已退出）：`pvst_point_voxel_v02_nodes`，用 `tmux attach -t pvst_point_voxel_v02_nodes` 查看实时日志。
 不要重复启动；恢复仅在核查实际退出原因与安全checkpoint后使用显式--resume。
 
 绝对输出目录：

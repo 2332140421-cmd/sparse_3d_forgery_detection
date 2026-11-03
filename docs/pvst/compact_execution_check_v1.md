@@ -46,7 +46,7 @@ attention512、FFN8192起步；同一代表最多一次更大attention2048短测
 输出绝对目录：
 `/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_compact_execution_check_v1/`
 
-progress.json、case_*.json/log、resource_windows.json、profiler_summary.json、result_summary.json、report_zh.md。
+progress.json、case_*.json/log、resource_windows.json、result_summary.json、report_zh.md；只有完成对应短测才产生profiler_summary.json。
 记录code/config/manifest/scale/缓存metadata身份。原失败目录不改状态、协议或退出码。
 
-资源结论与成本由实际结果补齐；即使验收通过，本轮也不启动正式训练。
+最终结果见[资源与吞吐报告](compact_execution_results_v1.md)。限定验收已结束，RESOURCE_BLOCKED、退出码1，正式0/2。原失败首8帧窗口通过，最大完整历史窗口GPU和CPU卸载均在全量LayerNorm转换OOM；因此未执行2048短测及profiler，不重新启动入口或正式训练。

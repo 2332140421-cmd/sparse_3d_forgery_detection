@@ -1,0 +1,1027 @@
+{
+  "source_commit": "514521adb3879fa9e92418f3d95895fa9df8b134",
+  "status": "RESOURCE_BLOCKED",
+  "formal_models_completed": 0,
+  "identity": {
+    "config": {
+      "protocol": "pvst-point-voxel-v02",
+      "workspace": "/media/njupt/8FCD3869E2FAB06F/chenyh",
+      "source_run": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
+      "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02",
+      "official_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/AINPAINT-CVIU26",
+      "dino_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/dinov2-ainpaint",
+      "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
+      "checkpoint_sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
+      "seed": 20260909,
+      "chunk_frames": 2,
+      "feature_chunk": 2,
+      "epochs": 30,
+      "amp": 1,
+      "target_frames": 8,
+      "time_halo": 16,
+      "patience": 8,
+      "min_delta": 0,
+      "lr_decoder": 1e-05,
+      "lr_new": 0.0001,
+      "weight_decay": 0.0001,
+      "clip_norm": 1,
+      "dice_epsilon": 1.0,
+      "visual_size": 448,
+      "tile_size": 256,
+      "attention_chunk": 512,
+      "point_chunk": 32768,
+      "geometry_scale_estimator": "median of every 16th valid positive Z in decode/frame/row-major order from training only",
+      "conditions": [
+        "UV_PVST",
+        "XYZ_PVST"
+      ],
+      "amp_dtype": "bfloat16",
+      "excluded_original_scene_sources": [
+        "charades:BTW1H"
+      ],
+      "scene_policy": "Original-only 25/50/75% PTS review; fixed or mild smooth camera; exclude clear large view turn; keep ordinary human motion. Shuffle full original-role/type candidate bucket with fixed seed BEFORE exclusions.",
+      "frozen_encoder_parameters": 304372736,
+      "official_revision": "753ae1b700b054c97e15569718690211e36cdf53",
+      "dino_revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+      "decoder_feature_channels": 32,
+      "initialization": "official spatial checkpoint base DINO weights without any LoRA tensors or merging; trained localization decoder before predictor; no V8 detector weights",
+      "attention_backend": "torch_sdpa",
+      "ffn_chunk": 8192,
+      "execution_revision": "compact_v1"
+    },
+    "manifest_sha256": "945e0400c648ae892a7a6f0733aba21fdcc424c5233fdfcee2192305fe7808fd",
+    "scale_sha256": "1af871b7c418b9bc48d736c66594022b8f308580486e05a841bf39bc3caaff00",
+    "code_sha256": {
+      "compact_check.py": "f5e4864b609841fe6542e0cf22a8a69f7b94b619f2c9ef8b956d436e34033983",
+      "data.py": "1406861edec71c1f2c49ee5cc6af73867d24a05f1bdb3da23cb923958b07adb7",
+      "evaluate.py": "617b487392c3499d6b98d462a2946d9557576e4773f02cd1ee87627382ae9d77",
+      "geometry.py": "db54f0443e484751096a226387ed30ae9d586f7ebc5e3e610545cdf177bcc36d",
+      "model.py": "bdcfdf76304b249e6384d53c0a80c9f07c606efb10db1537c97e56d3d8215a08",
+      "probe.py": "97e3c1e01d8cdb6e1c04f6ef17640a40b02f9fb1fb7fbcbeaa37de61ad1a02db",
+      "temporal.py": "268c097c11d476e60518076873da636e991960c19ec758eb57892b67df88b0c2",
+      "train.py": "d7c123647ed9660539496a087da36873ce46646b5b1dcfec1011d2d3a42f681d",
+      "__init__.py": "50cd1ee7ddc72c1b6f8b22bd8ab2f847c56a39abc8a167f2b54415edb9623972"
+    }
+  },
+  "representatives": [
+    {
+      "video_id": "f02cfe65b813132c7e61618f",
+      "dataset": "ANAKIN",
+      "split": "train",
+      "target_range": [
+        16,
+        24
+      ],
+      "context_range": [
+        0,
+        16
+      ],
+      "input_range": [
+        0,
+        24
+      ],
+      "fine_nodes": 127940,
+      "coarse_nodes": 34057,
+      "native_hw": [
+        720,
+        1280
+      ],
+      "reasons": [
+        "original_high_resolution"
+      ]
+    },
+    {
+      "video_id": "cb41b3d004b6640f6c3b5bb1",
+      "dataset": "ANAKIN",
+      "split": "train",
+      "target_range": [
+        0,
+        8
+      ],
+      "context_range": [
+        0,
+        0
+      ],
+      "input_range": [
+        0,
+        8
+      ],
+      "fine_nodes": 1020328,
+      "coarse_nodes": 780798,
+      "native_hw": [
+        360,
+        640
+      ],
+      "reasons": [
+        "known_failed_window"
+      ]
+    },
+    {
+      "video_id": "87664e1174a82a8f26ee463f",
+      "dataset": "ANAKIN",
+      "split": "train",
+      "target_range": [
+        216,
+        224
+      ],
+      "context_range": [
+        200,
+        216
+      ],
+      "input_range": [
+        200,
+        224
+      ],
+      "fine_nodes": 8394824,
+      "coarse_nodes": 6533459,
+      "native_hw": [
+        720,
+        1280
+      ],
+      "reasons": [
+        "max_fine_nodes_full_history",
+        "max_coarse_nodes_full_history"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "window": {
+        "video_id": "cb41b3d004b6640f6c3b5bb1",
+        "target_range": [
+          0,
+          8
+        ],
+        "context_range": [
+          0,
+          0
+        ],
+        "input_range": [
+          0,
+          8
+        ],
+        "reasons": [
+          "known_failure"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 0,
+      "status": "PASS",
+      "fine_nodes": 1020328,
+      "coarse_nodes": 780798,
+      "total_s": 2025.3433649512008,
+      "peak_allocated_bytes": 15774275584,
+      "peak_reserved_bytes": 23391633408,
+      "host_before": {
+        "available_bytes": 51419414528,
+        "rss_peak_bytes": 702898176
+      },
+      "host_after": {
+        "available_bytes": 49705009152,
+        "rss_peak_bytes": 2780061696
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 14.1909736328125,
+          "backward_s": 995.86134375,
+          "optimizer_s": 0.03693740349262953,
+          "total_s": 1010.2809449937195,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 502.54046630859375
+          },
+          "gradient_norm": 14.257512092590332,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 13.81743115234375,
+          "backward_s": 997.51915625,
+          "optimizer_s": 0.004450277425348759,
+          "total_s": 1011.5316014839336,
+          "path_gradients": {
+            "geometry": 0.012487422674894333,
+            "VFE": 0.7140560150146484,
+            "fine_qkv": 0.19168195128440857,
+            "coarse_qkv": 0.31024354696273804,
+            "decoder": 490.34051513671875
+          },
+          "gradient_norm": 11.282837867736816,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "f02cfe65b813132c7e61618f",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          16,
+          24
+        ],
+        "context_range": [
+          0,
+          16
+        ],
+        "input_range": [
+          0,
+          24
+        ],
+        "fine_nodes": 127940,
+        "coarse_nodes": 34057,
+        "native_hw": [
+          720,
+          1280
+        ],
+        "reasons": [
+          "original_high_resolution"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 0,
+      "status": "PASS",
+      "fine_nodes": 127940,
+      "coarse_nodes": 34057,
+      "total_s": 132.88443896267563,
+      "peak_allocated_bytes": 17373533184,
+      "peak_reserved_bytes": 18712887296,
+      "host_before": {
+        "available_bytes": 52518838272,
+        "rss_peak_bytes": 702353408
+      },
+      "host_after": {
+        "available_bytes": 50954014720,
+        "rss_peak_bytes": 2285912064
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 4.065680419921875,
+          "backward_s": 61.041599609375,
+          "optimizer_s": 0.032116251066327095,
+          "total_s": 65.1804001731798,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 800.8211669921875
+          },
+          "gradient_norm": 15.50196647644043,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 3.88058349609375,
+          "backward_s": 61.276001953125,
+          "optimizer_s": 0.00397102627903223,
+          "total_s": 65.19929011911154,
+          "path_gradients": {
+            "geometry": 0.011276952922344208,
+            "VFE": 0.7327481508255005,
+            "fine_qkv": 0.252895712852478,
+            "coarse_qkv": 0.41600754857063293,
+            "decoder": 879.7986450195312
+          },
+          "gradient_norm": 12.531609535217285,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "f02cfe65b813132c7e61618f",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          16,
+          24
+        ],
+        "context_range": [
+          0,
+          16
+        ],
+        "input_range": [
+          0,
+          24
+        ],
+        "fine_nodes": 127940,
+        "coarse_nodes": 34057,
+        "native_hw": [
+          720,
+          1280
+        ],
+        "reasons": [
+          "original_high_resolution"
+        ]
+      },
+      "condition": "UV_PVST",
+      "offload": 0,
+      "status": "PASS",
+      "fine_nodes": 98304,
+      "coarse_nodes": 24576,
+      "total_s": 119.88658273033798,
+      "peak_allocated_bytes": 17338005504,
+      "peak_reserved_bytes": 18679332864,
+      "host_before": {
+        "available_bytes": 52076617728,
+        "rss_peak_bytes": 703135744
+      },
+      "host_after": {
+        "available_bytes": 50826416128,
+        "rss_peak_bytes": 2265759744
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 3.694793701171875,
+          "backward_s": 55.465806640625,
+          "optimizer_s": 0.03435576520860195,
+          "total_s": 59.23100084159523,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 678.3814086914062
+          },
+          "gradient_norm": 15.500042915344238,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 3.525410888671875,
+          "backward_s": 55.351396484375,
+          "optimizer_s": 0.0037955204024910927,
+          "total_s": 58.91491020936519,
+          "path_gradients": {
+            "geometry": 0.019706591963768005,
+            "VFE": 0.7618792057037354,
+            "fine_qkv": 0.26972708106040955,
+            "coarse_qkv": 0.4693326950073242,
+            "decoder": 577.4937744140625
+          },
+          "gradient_norm": 12.306490898132324,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "cb41b3d004b6640f6c3b5bb1",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          0,
+          8
+        ],
+        "context_range": [
+          0,
+          0
+        ],
+        "input_range": [
+          0,
+          8
+        ],
+        "fine_nodes": 1020328,
+        "coarse_nodes": 780798,
+        "native_hw": [
+          360,
+          640
+        ],
+        "reasons": [
+          "known_failed_window"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 0,
+      "status": "PASS",
+      "fine_nodes": 1020328,
+      "coarse_nodes": 780798,
+      "total_s": 2055.836257006973,
+      "peak_allocated_bytes": 15774275584,
+      "peak_reserved_bytes": 23391633408,
+      "host_before": {
+        "available_bytes": 51710115840,
+        "rss_peak_bytes": 702046208
+      },
+      "host_after": {
+        "available_bytes": 50207510528,
+        "rss_peak_bytes": 2790236160
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 14.20029541015625,
+          "backward_s": 1011.60725,
+          "optimizer_s": 0.03627221006900072,
+          "total_s": 1026.0291498722509,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 502.54254150390625
+          },
+          "gradient_norm": 14.258238792419434,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 13.77146484375,
+          "backward_s": 1012.31365625,
+          "optimizer_s": 0.00464797206223011,
+          "total_s": 1026.2582714902237,
+          "path_gradients": {
+            "geometry": 0.012365803122520447,
+            "VFE": 0.7168983221054077,
+            "fine_qkv": 0.19143517315387726,
+            "coarse_qkv": 0.311076283454895,
+            "decoder": 489.76666259765625
+          },
+          "gradient_norm": 11.28357982635498,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "cb41b3d004b6640f6c3b5bb1",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          0,
+          8
+        ],
+        "context_range": [
+          0,
+          0
+        ],
+        "input_range": [
+          0,
+          8
+        ],
+        "fine_nodes": 1020328,
+        "coarse_nodes": 780798,
+        "native_hw": [
+          360,
+          640
+        ],
+        "reasons": [
+          "known_failed_window"
+        ]
+      },
+      "condition": "UV_PVST",
+      "offload": 0,
+      "status": "PASS",
+      "fine_nodes": 32768,
+      "coarse_nodes": 8192,
+      "total_s": 31.215242635458708,
+      "peak_allocated_bytes": 4560328704,
+      "peak_reserved_bytes": 5012193280,
+      "host_before": {
+        "available_bytes": 51840745472,
+        "rss_peak_bytes": 702865408
+      },
+      "host_after": {
+        "available_bytes": 50873040896,
+        "rss_peak_bytes": 2006540288
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 0.8387634887695312,
+          "backward_s": 14.7472353515625,
+          "optimizer_s": 0.041318164207041264,
+          "total_s": 15.634314816445112,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 504.70501708984375
+          },
+          "gradient_norm": 14.17068099975586,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 0.5309207153320312,
+          "backward_s": 14.70704296875,
+          "optimizer_s": 0.003681604750454426,
+          "total_s": 15.247533803805709,
+          "path_gradients": {
+            "geometry": 0.018434474244713783,
+            "VFE": 0.8408699035644531,
+            "fine_qkv": 0.24798548221588135,
+            "coarse_qkv": 0.426523894071579,
+            "decoder": 467.583740234375
+          },
+          "gradient_norm": 11.276103973388672,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "87664e1174a82a8f26ee463f",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          216,
+          224
+        ],
+        "context_range": [
+          200,
+          216
+        ],
+        "input_range": [
+          200,
+          224
+        ],
+        "fine_nodes": 8394824,
+        "coarse_nodes": 6533459,
+        "native_hw": [
+          720,
+          1280
+        ],
+        "reasons": [
+          "max_fine_nodes_full_history",
+          "max_coarse_nodes_full_history"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 0,
+      "status": "RESOURCE_BLOCKED",
+      "fine_nodes": 8394824,
+      "coarse_nodes": 6533459,
+      "total_s": 5.744877744466066,
+      "peak_allocated_bytes": 22024745472,
+      "peak_reserved_bytes": 23121100800,
+      "host_before": {
+        "available_bytes": 51817893888,
+        "rss_peak_bytes": 704561152
+      },
+      "host_after": {
+        "available_bytes": 50596532224,
+        "rss_peak_bytes": 2264199168
+      },
+      "updates": []
+    },
+    {
+      "window": {
+        "video_id": "f02cfe65b813132c7e61618f",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          16,
+          24
+        ],
+        "context_range": [
+          0,
+          16
+        ],
+        "input_range": [
+          0,
+          24
+        ],
+        "fine_nodes": 127940,
+        "coarse_nodes": 34057,
+        "native_hw": [
+          720,
+          1280
+        ],
+        "reasons": [
+          "original_high_resolution"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 1,
+      "status": "PASS",
+      "fine_nodes": 127940,
+      "coarse_nodes": 34057,
+      "total_s": 133.14208770170808,
+      "peak_allocated_bytes": 17373533184,
+      "peak_reserved_bytes": 18712887296,
+      "host_before": {
+        "available_bytes": 51875229696,
+        "rss_peak_bytes": 703369216
+      },
+      "host_after": {
+        "available_bytes": 50901405696,
+        "rss_peak_bytes": 2683244544
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 4.067484619140625,
+          "backward_s": 61.482787109375,
+          "optimizer_s": 0.03454991150647402,
+          "total_s": 65.62496588565409,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 800.8427734375
+          },
+          "gradient_norm": 15.501786231994629,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 3.8275191650390625,
+          "backward_s": 61.40326171875,
+          "optimizer_s": 0.004116544499993324,
+          "total_s": 65.27481335401535,
+          "path_gradients": {
+            "geometry": 0.011187512427568436,
+            "VFE": 0.729322612285614,
+            "fine_qkv": 0.25205209851264954,
+            "coarse_qkv": 0.4162346422672272,
+            "decoder": 873.8311767578125
+          },
+          "gradient_norm": 12.510503768920898,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "f02cfe65b813132c7e61618f",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          16,
+          24
+        ],
+        "context_range": [
+          0,
+          16
+        ],
+        "input_range": [
+          0,
+          24
+        ],
+        "fine_nodes": 127940,
+        "coarse_nodes": 34057,
+        "native_hw": [
+          720,
+          1280
+        ],
+        "reasons": [
+          "original_high_resolution"
+        ]
+      },
+      "condition": "UV_PVST",
+      "offload": 1,
+      "status": "PASS",
+      "fine_nodes": 98304,
+      "coarse_nodes": 24576,
+      "total_s": 120.17057243455201,
+      "peak_allocated_bytes": 17338005504,
+      "peak_reserved_bytes": 18700304384,
+      "host_before": {
+        "available_bytes": 52173496320,
+        "rss_peak_bytes": 703033344
+      },
+      "host_after": {
+        "available_bytes": 50458664960,
+        "rss_peak_bytes": 2582167552
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 3.77218359375,
+          "backward_s": 55.492328125,
+          "optimizer_s": 0.033612157218158245,
+          "total_s": 59.332886224612594,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 678.3471069335938
+          },
+          "gradient_norm": 15.49974250793457,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 3.5219818115234376,
+          "backward_s": 55.590505859375,
+          "optimizer_s": 0.003961521200835705,
+          "total_s": 59.1511354027316,
+          "path_gradients": {
+            "geometry": 0.019265970215201378,
+            "VFE": 0.7495251893997192,
+            "fine_qkv": 0.2612590193748474,
+            "coarse_qkv": 0.43717458844184875,
+            "decoder": 602.7957153320312
+          },
+          "gradient_norm": 12.313410758972168,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "cb41b3d004b6640f6c3b5bb1",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          0,
+          8
+        ],
+        "context_range": [
+          0,
+          0
+        ],
+        "input_range": [
+          0,
+          8
+        ],
+        "fine_nodes": 1020328,
+        "coarse_nodes": 780798,
+        "native_hw": [
+          360,
+          640
+        ],
+        "reasons": [
+          "known_failed_window"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 1,
+      "status": "PASS",
+      "fine_nodes": 1020328,
+      "coarse_nodes": 780798,
+      "total_s": 2060.3109373869374,
+      "peak_allocated_bytes": 12607977472,
+      "peak_reserved_bytes": 18595446784,
+      "host_before": {
+        "available_bytes": 51746263040,
+        "rss_peak_bytes": 702787584
+      },
+      "host_after": {
+        "available_bytes": 45155295232,
+        "rss_peak_bytes": 7647313920
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 16.170875,
+          "backward_s": 1013.40040625,
+          "optimizer_s": 0.035413725301623344,
+          "total_s": 1029.805365294218,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 502.5474548339844
+          },
+          "gradient_norm": 14.257976531982422,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 14.09470849609375,
+          "backward_s": 1012.65625,
+          "optimizer_s": 0.004468763247132301,
+          "total_s": 1026.9506872063503,
+          "path_gradients": {
+            "geometry": 0.012366031296551228,
+            "VFE": 0.7133158445358276,
+            "fine_qkv": 0.19206708669662476,
+            "coarse_qkv": 0.31185591220855713,
+            "decoder": 487.08477783203125
+          },
+          "gradient_norm": 11.286388397216797,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "cb41b3d004b6640f6c3b5bb1",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          0,
+          8
+        ],
+        "context_range": [
+          0,
+          0
+        ],
+        "input_range": [
+          0,
+          8
+        ],
+        "fine_nodes": 1020328,
+        "coarse_nodes": 780798,
+        "native_hw": [
+          360,
+          640
+        ],
+        "reasons": [
+          "known_failed_window"
+        ]
+      },
+      "condition": "UV_PVST",
+      "offload": 1,
+      "status": "PASS",
+      "fine_nodes": 32768,
+      "coarse_nodes": 8192,
+      "total_s": 31.197073478251696,
+      "peak_allocated_bytes": 4560328704,
+      "peak_reserved_bytes": 5012193280,
+      "host_before": {
+        "available_bytes": 51401740288,
+        "rss_peak_bytes": 702201856
+      },
+      "host_after": {
+        "available_bytes": 50280374272,
+        "rss_peak_bytes": 2097680384
+      },
+      "updates": [
+        {
+          "update": 1,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 0.8405686645507813,
+          "backward_s": 14.7421962890625,
+          "optimizer_s": 0.04150034300982952,
+          "total_s": 15.63206446543336,
+          "path_gradients": {
+            "geometry": 0.0,
+            "VFE": 0.0,
+            "fine_qkv": 0.0,
+            "coarse_qkv": 0.0,
+            "decoder": 504.70013427734375
+          },
+          "gradient_norm": 14.169288635253906,
+          "adam_initialized": 1
+        },
+        {
+          "update": 2,
+          "microbatches": 2,
+          "had_prior_gradients": [
+            0,
+            1
+          ],
+          "forward_s": 0.5315818786621094,
+          "backward_s": 14.69322509765625,
+          "optimizer_s": 0.003910429775714874,
+          "total_s": 15.234695181250572,
+          "path_gradients": {
+            "geometry": 0.018488649278879166,
+            "VFE": 0.8409003615379333,
+            "fine_qkv": 0.2492753565311432,
+            "coarse_qkv": 0.42695772647857666,
+            "decoder": 431.50323486328125
+          },
+          "gradient_norm": 11.258733749389648,
+          "adam_initialized": 1
+        }
+      ]
+    },
+    {
+      "window": {
+        "video_id": "87664e1174a82a8f26ee463f",
+        "dataset": "ANAKIN",
+        "split": "train",
+        "target_range": [
+          216,
+          224
+        ],
+        "context_range": [
+          200,
+          216
+        ],
+        "input_range": [
+          200,
+          224
+        ],
+        "fine_nodes": 8394824,
+        "coarse_nodes": 6533459,
+        "native_hw": [
+          720,
+          1280
+        ],
+        "reasons": [
+          "max_fine_nodes_full_history",
+          "max_coarse_nodes_full_history"
+        ]
+      },
+      "condition": "XYZ_PVST",
+      "offload": 1,
+      "status": "RESOURCE_BLOCKED",
+      "fine_nodes": 8394824,
+      "coarse_nodes": 6533459,
+      "total_s": 7.16925461217761,
+      "peak_allocated_bytes": 22024745472,
+      "peak_reserved_bytes": 23121100800,
+      "host_before": {
+        "available_bytes": 51310084096,
+        "rss_peak_bytes": 703885312
+      },
+      "host_after": {
+        "available_bytes": 42114527232,
+        "rss_peak_bytes": 10891710464
+      },
+      "updates": []
+    }
+  ],
+  "main_elapsed_s": 5613.531015528366,
+  "scan_seconds": 888.8067355081439
+}
