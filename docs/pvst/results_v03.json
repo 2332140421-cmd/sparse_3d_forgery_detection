@@ -1,0 +1,290 @@
+{
+  "status": "RESOURCE_BLOCKED",
+  "formal_models_completed": 0,
+  "source_commit": "feb85286751f5ddc8587d11f79c854a50a4602c0",
+  "config": {
+    "protocol": "pvst-point-voxel-v03",
+    "workspace": "/media/njupt/8FCD3869E2FAB06F/chenyh",
+    "source_run": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
+    "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v03",
+    "official_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/AINPAINT-CVIU26",
+    "dino_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/dinov2-ainpaint",
+    "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
+    "checkpoint_sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
+    "seed": 20260909,
+    "chunk_frames": 2,
+    "feature_chunk": 2,
+    "epochs": 1,
+    "amp": 1,
+    "target_frames": 8,
+    "time_halo": 16,
+    "patience": 8,
+    "min_delta": 0,
+    "lr_decoder": 1e-05,
+    "lr_new": 0.0001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "dice_epsilon": 1.0,
+    "visual_size": 448,
+    "tile_size": 256,
+    "attention_chunk": 512,
+    "point_chunk": 32768,
+    "geometry_scale_estimator": "median of every 16th valid positive Z in decode/frame/row-major order from training only",
+    "conditions": [
+      "UV_PVST",
+      "XYZ_PVST"
+    ],
+    "amp_dtype": "bfloat16",
+    "excluded_original_scene_sources": [
+      "charades:BTW1H"
+    ],
+    "scene_policy": "Original-only 25/50/75% PTS review; fixed or mild smooth camera; exclude clear large view turn; keep ordinary human motion. Shuffle full original-role/type candidate bucket with fixed seed BEFORE exclusions.",
+    "frozen_encoder_parameters": 304372736,
+    "official_revision": "753ae1b700b054c97e15569718690211e36cdf53",
+    "dino_revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "decoder_feature_channels": 32,
+    "initialization": "official spatial checkpoint base DINO weights without any LoRA tensors or merging; trained localization decoder before predictor; no V8 detector weights",
+    "attention_backend": "torch_sdpa",
+    "ffn_chunk": 8192,
+    "execution_revision": "v03",
+    "cache_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/cache",
+    "asset_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02",
+    "voxel_sizes": {
+      "UV_PVST": 0.03125,
+      "XYZ_PVST": null
+    },
+    "voxel_candidates": [
+      0.03125,
+      0.0625,
+      0.125
+    ],
+    "voxel_budget": {
+      "fine": 200000,
+      "coarse": 50000
+    },
+    "qkv_chunk": 8192,
+    "clips_per_video": 4,
+    "offload_saved_tensors": 0
+  },
+  "summaries": [],
+  "metrics": {},
+  "scale_candidates": [
+    {
+      "h": 0.03125,
+      "fine_max": 6533459,
+      "coarse_max": 4907360,
+      "within_budget": 0
+    },
+    {
+      "h": 0.0625,
+      "fine_max": 4907360,
+      "coarse_max": 2970629,
+      "within_budget": 0
+    },
+    {
+      "h": 0.125,
+      "fine_max": 2970629,
+      "coarse_max": 1488042,
+      "within_budget": 0
+    }
+  ],
+  "budget_audit": {
+    "scope": "XYZ training coordinates only; UV exact native UV lattice counts; no dev XYZ read",
+    "XYZ": [
+      {
+        "h": 0.03125,
+        "windows": 1932,
+        "distribution": {
+          "fine": [
+            1593.0,
+            97744.0,
+            3257015.49999999,
+            6533459.0
+          ],
+          "coarse": [
+            430.0,
+            27365.5,
+            1955117.7499999995,
+            4907360.0
+          ]
+        },
+        "fine_max_window": {
+          "video_id": "87664e1174a82a8f26ee463f",
+          "target_range": [
+            216,
+            224
+          ],
+          "context_range": [
+            200,
+            216
+          ],
+          "native_hw": [
+            720,
+            1280
+          ],
+          "fine": 6533459,
+          "coarse": 4793480
+        },
+        "coarse_max_window": {
+          "video_id": "87664e1174a82a8f26ee463f",
+          "target_range": [
+            112,
+            120
+          ],
+          "context_range": [
+            96,
+            112
+          ],
+          "native_hw": [
+            720,
+            1280
+          ],
+          "fine": 6483334,
+          "coarse": 4907360
+        }
+      },
+      {
+        "h": 0.0625,
+        "windows": 1932,
+        "distribution": {
+          "fine": [
+            430.0,
+            27365.5,
+            1955117.7499999995,
+            4907360.0
+          ],
+          "coarse": [
+            110.0,
+            7176.5,
+            1078222.5999999975,
+            2970629.0
+          ]
+        },
+        "fine_max_window": {
+          "video_id": "87664e1174a82a8f26ee463f",
+          "target_range": [
+            112,
+            120
+          ],
+          "context_range": [
+            96,
+            112
+          ],
+          "native_hw": [
+            720,
+            1280
+          ],
+          "fine": 4907360,
+          "coarse": 2926082
+        },
+        "coarse_max_window": {
+          "video_id": "782426ea0330c7fea684953c",
+          "target_range": [
+            120,
+            128
+          ],
+          "context_range": [
+            104,
+            120
+          ],
+          "native_hw": [
+            720,
+            1280
+          ],
+          "fine": 4890355,
+          "coarse": 2970629
+        }
+      },
+      {
+        "h": 0.125,
+        "windows": 1932,
+        "distribution": {
+          "fine": [
+            110.0,
+            7176.5,
+            1078222.5999999975,
+            2970629.0
+          ],
+          "coarse": [
+            50.0,
+            1872.5,
+            552412.599999999,
+            1488042.0
+          ]
+        },
+        "fine_max_window": {
+          "video_id": "782426ea0330c7fea684953c",
+          "target_range": [
+            120,
+            128
+          ],
+          "context_range": [
+            104,
+            120
+          ],
+          "native_hw": [
+            720,
+            1280
+          ],
+          "fine": 2970629,
+          "coarse": 1488042
+        },
+        "coarse_max_window": {
+          "video_id": "782426ea0330c7fea684953c",
+          "target_range": [
+            120,
+            128
+          ],
+          "context_range": [
+            104,
+            120
+          ],
+          "native_hw": [
+            720,
+            1280
+          ],
+          "fine": 2970629,
+          "coarse": 1488042
+        }
+      }
+    ],
+    "UV": {
+      "train": {
+        "h": 0.03125,
+        "windows": 1932,
+        "fine_min_median_p95_max": [
+          32768.0,
+          98304.0,
+          98304.0,
+          98304.0
+        ],
+        "coarse_min_median_p95_max": [
+          8192.0,
+          24576.0,
+          24576.0,
+          24576.0
+        ]
+      },
+      "dev": {
+        "h": 0.03125,
+        "windows": 843,
+        "fine_min_median_p95_max": [
+          32768.0,
+          98304.0,
+          98304.0,
+          98304.0
+        ],
+        "coarse_min_median_p95_max": [
+          8192.0,
+          24576.0,
+          24576.0,
+          24576.0
+        ]
+      }
+    }
+  },
+  "clips": 0,
+  "resource_seconds": 0,
+  "count_seconds": 489.2232668567449,
+  "error": "Traceback (most recent call last):\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/pvst/v03.py\", line 242, in main\n    if counts['selected_h'] is None:status='RESOURCE_BLOCKED';raise RuntimeError('NO_AUTHORIZED_SCALE_WITHIN_BUDGET')\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: NO_AUTHORIZED_SCALE_WITHIN_BUDGET\n"
+}

@@ -1,7 +1,7 @@
 # PVST v0.2 当前状态PREPARING（v0.3训练坐标尺度筛选；未启动一轮训练）
 
 2026-11-03；分支 `pvst-point-voxel-v03`；v0.3起点 `29205c78c85ad5a3e23237b7cf8aae4690fbbc70`。
-状态RESOURCE_BLOCKED（紧凑执行限定验收已结束；最大完整历史窗口GPU及卸载均OOM，正式模型0/2）
+状态RESOURCE_BLOCKED（v0.3；仅两条件各一轮上限；见[结果](results_v03.md)）
 
 本轮设计：[v0.3尺度与片段协议](design_v03.md)；旧v0.2规格与失败历史以下保留。
 
