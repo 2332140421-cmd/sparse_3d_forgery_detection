@@ -45,7 +45,7 @@ class Neighborhood:
 
 class SparseLayer(nn.Module):
     def __init__(self,dim,heads,chunk=128,ffn_chunk=8192):
-        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.head_qkv_stream=False;self.node_split=False;self.blocking_execution={};self.ffn_checkpoint=True;self.last_execution={}
+        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.head_qkv_stream=False;self.node_split=False;self.blocking_execution={};self.copy_trace=None;self.lifetime_trace=None;self.ffn_checkpoint=True;self.last_execution={}
         if ffn_chunk<=0:raise ValueError("FFN_CHUNK_MUST_BE_POSITIVE")
         self.norm=LayerNorm(dim);self.qkv=nn.Linear(dim,dim*3);self.bias=nn.Sequential(nn.Linear(4,64),nn.GELU(),nn.Linear(64,heads))
         self.proj=nn.Linear(dim,dim);self.drop=nn.Dropout(.1);self.norm2=LayerNorm(dim)
@@ -93,11 +93,11 @@ class SparseLayer(nn.Module):
             args=(part,weight,offset)
             value=checkpoint(self.norm_qkv_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.norm_qkv_head(*args)
             parts.append(value)
-        projected=torch.cat(parts);del parts,value,weight,offset,args
+        projected=torch.cat(parts);del parts,value,weight,offset,args,part
         self.qkv_execution['heads'][str(head)]={'head':head,'row_ranges':ranges,'shape':list(projected.shape),'dtype':str(projected.dtype),'bytes':projected.numel()*projected.element_size()}
         self.last_execution={'operation':'streamed head sparse attention','head':head,'qkv_shape':list(projected.shape),'dtype':str(projected.dtype)}
         q,k,v=projected.reshape(len(x),3,64).unbind(1)
-        return sparse_head(q,k,v,bias,crow,col,relation,head,self.drop.p,self.drop.training)
+        return sparse_head(q,k,v,bias,crow,col,relation,head,self.drop.p,self.drop.training,trace=self.copy_trace)
     def forward(self,x,graph,dilation):
         if not len(x):return x
         self.blocking_execution={}
@@ -143,7 +143,10 @@ class SparseLayer(nn.Module):
                     h=checkpoint(sparse_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else sparse_head(*args)
                 metadata={'head':head,'source_device':str(h.device),'dtype':str(h.dtype),'shape':list(h.shape)}
                 tick=time.monotonic()
-                heads.append(h.to(device='cpu',non_blocking=False) if self.head_output_offload else h)
+                if self.copy_trace:self.copy_trace('head_output_before',h,head)
+                stored=h.to(device='cpu',non_blocking=False) if self.head_output_offload else h
+                if self.copy_trace:self.copy_trace('head_output_after',stored,head)
+                heads.append(stored);del stored
                 self.head_storage['copy_to_cpu_s']+=time.monotonic()-tick if self.head_output_offload else 0.
                 metadata.update(stored_device=str(heads[-1].device),requires_grad=heads[-1].requires_grad,grad_fn=type(heads[-1].grad_fn).__name__ if heads[-1].grad_fn else None)
                 key='cpu_bytes' if self.head_output_offload else 'gpu_list_bytes'
@@ -158,22 +161,29 @@ class SparseLayer(nn.Module):
             del heads
             self.head_storage['before_gpu_return']=memory()
             self.last_execution={'operation':'head stack return to GPU','input_shape':list(attended.shape),'dtype':str(attended.dtype)}
+            if self.copy_trace:self.copy_trace('attended_before',attended,None)
             tick=time.monotonic();attended=attended.to(device=x.device,non_blocking=False)
+            if self.copy_trace:self.copy_trace('attended_after',attended,None)
             self.head_storage.update(return_to_gpu_s=time.monotonic()-tick,after_gpu_return=memory())
             del crow,col,relation
             for xb,ab in zip(self.node_parts(x,self.chunk,'projection_x'),self.node_parts(attended,self.chunk,'projection_attended')):
                 args=(xb,ab)
                 y=checkpoint(self.project_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.project_block(*args)
                 values.append(y)
+            if self.lifetime_trace:self.lifetime_trace('projection_before_name_delete',{'attended':attended,'xb':xb,'ab':ab})
             del attended
+            if self.lifetime_trace:self.lifetime_trace('projection_name_deleted_views_live',{'xb':xb,'ab':ab,'args_ab':args[1]})
+            del xb,ab,args
+            if self.lifetime_trace:self.lifetime_trace('projection_views_deleted',{})
         else:
             for start in range(0,len(x),self.chunk):
                 end=min(start+self.chunk,len(x));args=(x[start:end],q[start:end],k,v,bias,graph,start,end,dilation)
                 y=checkpoint(self.attention_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.attention_block(*args)
                 values.append(y)
-        x=torch.cat(values)
+        x=torch.cat(values);values.clear()
         if not self.head_qkv_stream:del q,k,v
-        del bias,y,args
+        del bias,y
+        if not self.sparse_edge_attention:del args
         values=[]
         self.last_execution={'operation':'norm2+FFN','input_shape':list(x.shape),'dtype':str(x.dtype),
             'ffn_chunk':self.ffn_chunk,'hidden_shape_upper_bound':[min(len(x),self.ffn_chunk),4*self.dim]}
@@ -181,7 +191,11 @@ class SparseLayer(nn.Module):
             # Bound method, node order/chunk/tail and norm+FFN remain identical.
             y=checkpoint(self.ffn_block,part,use_reentrant=False,preserve_rng_state=True) if self.training and self.ffn_checkpoint else self.ffn_block(part)
             values.append(y)
-        return torch.cat(values)
+        if self.lifetime_trace:self.lifetime_trace('FFN_before_cleanup',{'x':x,'part':part})
+        del part,x
+        if self.lifetime_trace:self.lifetime_trace('FFN_views_deleted',{})
+        output=torch.cat(values);del values,y
+        return output
 
 
 class Temporal(nn.Module):

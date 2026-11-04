@@ -96,13 +96,13 @@ def member_stats(count):
 
 
 
-def candidate_layers(model,require_execution=False,require_offload=False,require_stream=False,require_split=False):
+def candidate_layers(model,require_execution=False,require_offload=False,require_stream=False,require_split=False,expected_nodes=None):
     from . import sparse_attention
     import types
     head=sparse_attention.sparse_head
     if not isinstance(head,types.FunctionType) or head.__module__!=sparse_attention.__name__:raise ValueError('SPARSE_HEAD_WRAPPED_OR_REPLACED')
     evidence=[]
-    for name,width,nodes in [('fine_time',256,EXPECTED[0]),('coarse_time',512,EXPECTED[1])]:
+    for name,width,nodes in [('fine_time',256,(expected_nodes or EXPECTED)[0]),('coarse_time',512,(expected_nodes or EXPECTED)[1])]:
         module=getattr(model,name)
         if len(module.layers)!=3:raise ValueError('TEMPORAL_LAYER_COUNT')
         for index,(layer,dilation) in enumerate(zip(module.layers,[1,2,4])):
@@ -135,7 +135,7 @@ def candidate_layers(model,require_execution=False,require_offload=False,require
 
 
 def worker(out):
-    started=time.monotonic();spec=read(out/'identity.json');c=spec['config'];row=spec['row'];scale=spec['global_scale'];stages=[];phase='worker_start';m=None;v=None;done=threading.Event();lock=threading.Lock();trace={}
+    started=time.monotonic();spec=read(out/'identity.json');c=spec['config'];row=spec['row'];scale=spec['global_scale'];stages=[];phase='worker_start';update_index=0;m=None;opt=None;v=None;done=threading.Event();lock=threading.Lock();trace={}
     # Timer includes Python imports, construction, input and the single update.
     import torch
     from .train import build
@@ -144,7 +144,7 @@ def worker(out):
     from .v03 import clip_terms
     torch.set_num_threads(4);torch.cuda.reset_peak_memory_stats()
     def snapshot():
-        return {'phase':phase,'elapsed_s':time.monotonic()-started,'peak_allocated_bytes':torch.cuda.max_memory_allocated(),'peak_reserved_bytes':torch.cuda.max_memory_reserved(),'allocated_bytes':torch.cuda.memory_allocated(),'reserved_bytes':torch.cuda.memory_reserved(),'host':host(),'trace':model_trace(m) if m else {}}
+        return {'phase':phase,'update_index':update_index,'elapsed_s':time.monotonic()-started,'peak_allocated_bytes':torch.cuda.max_memory_allocated(),'peak_reserved_bytes':torch.cuda.max_memory_reserved(),'allocated_bytes':torch.cuda.memory_allocated(),'reserved_bytes':torch.cuda.memory_reserved(),'host':host(),'trace':model_trace(m) if m else {}}
     def boundary(name,seconds=None,**kw):
         event={**snapshot(),'stage':name,'stage_s':seconds,**kw};stages.append(event)
         with lock:save(out/'stages.json',stages);save(out/'live.json',event)
@@ -152,21 +152,26 @@ def worker(out):
     def monitor():
         while not done.wait(5):
             with lock:save(out/'live.json',snapshot())
-    boundary('worker_start');thread=threading.Thread(target=monitor,daemon=True);thread.start();result={}
+    boundary('worker_start');thread=threading.Thread(target=monitor,daemon=True);thread.start();result={'updates':0,'update_records':[],'optimizer_step_calls':0}
+    condition=spec.get('condition','XYZ_PVST');lo,hi=spec.get('input_range',[104,128]);start,end=spec.get('target_range',[120,128])
+    expected_nodes=spec.get('expected_nodes',EXPECTED)
     try:
-        tick=time.monotonic();phase='model_build';m=build(c,'XYZ_PVST').train();opt=torch.optim.AdamW(parameters(c,m),weight_decay=c['weight_decay'])
+        tick=time.monotonic();phase='model_build';m=build(c,condition).train();opt=torch.optim.AdamW(parameters(c,m),weight_decay=c['weight_decay'])
         if sum(p.numel() for p in m.parameters())!=17821672:raise ValueError('PARAMETER_COUNT_CHANGED')
         keys=hashlib.sha256('\n'.join(m.state_dict()).encode()).hexdigest()
         if keys!='31beab46b45b34ed53ff89a70293a0e9e93abb86721dc51902e9c4c1808af665':raise ValueError('STATE_DICT_CHANGED')
         if c.get('sparse_edge_attention'):
             if os.environ.get('CUDA_LAUNCH_BLOCKING') not in [None,'','0'] or any(mod._forward_hooks or mod._forward_pre_hooks or mod._backward_hooks for mod in m.modules()):raise ValueError('DIAGNOSTIC_HOOK_OR_BLOCKING_ENABLED')
             result['candidate_build_evidence']=candidate_layers(m,require_offload=c.get('head_output_offload',False),require_stream=c.get('head_qkv_stream',False),require_split=c.get('node_split',False))
+        if spec.get('lifetime_trace'):
+            from .tensor_lifetime_check import configure_trace
+            configure_trace(m,out,lambda:{'phase':phase,'update_index':update_index})
         m.check_bn();torch.cuda.synchronize();boundary('model_built',time.monotonic()-tick,parameters=17821672,candidate_layers=result.get('candidate_build_evidence'))
-        phase='data_geometry';tick=time.monotonic();v=Video(Path(c['asset_root']),row,'XYZ_PVST',scale,c);fs=v.frames(104,128,'cuda')
+        phase='data_geometry';tick=time.monotonic();v=Video(Path(c['asset_root']),row,condition,scale,c);fs=v.frames(lo,hi,'cuda')
         fine=sum(len(f['voxel_meta']['coords']) for f in fs);coarse=sum(len(f['voxel_meta']['coarse_coords']) for f in fs)
         result.update(fine_nodes=fine,coarse_nodes=coarse)
-        if (fine,coarse)!=EXPECTED:raise ValueError('WINDOW_OCCUPANCY_MISMATCH:'+str((fine,coarse)))
-        if [f['pts'] for f in fs]!=[r['pts_s'] for r in row['pts'][104:128]]:raise ValueError('PTS_MISMATCH')
+        if expected_nodes is not None and (fine,coarse)!=tuple(expected_nodes):raise ValueError('WINDOW_OCCUPANCY_MISMATCH:'+str((fine,coarse)))
+        if [f['pts'] for f in fs]!=[r['pts_s'] for r in row['pts'][lo:hi]]:raise ValueError('PTS_MISMATCH')
         if not c.get('sparse_edge_attention'):
             occupancy=[]
             for i,f in enumerate(fs,104):
@@ -176,28 +181,35 @@ def worker(out):
                     coords=meta['coords'];record['sampled_fine_centers']=(coords[::max(1,len(coords)//10000)].float().cpu().numpy()*.125+.0625).tolist()
                 occupancy.append(record)
             save(out/'occupancy.json',occupancy)
-        gt=[v.gt(i) for i in range(120,128)];labels=[v.label(i) for i in range(120,128)]
+        gt=[v.gt(i) for i in range(start,end)];labels=[v.label(i) for i in range(start,end)]
+        if spec.get('require_nonempty_gt') and not any(g is not None and bool(g.any()) for g in gt):raise ValueError('NONEMPTY_GT_REQUIRED')
         torch.cuda.synchronize();boundary('data_loaded',time.monotonic()-tick,fine_nodes=fine,coarse_nodes=coarse,q_dtype=str(fs[0]['q'].dtype),token_dtype=str(fs[0]['tokens'].dtype),rgb_dtype=str(fs[0]['rgb'].dtype),target_labels=labels,spatial_gt='zero mask for ANAKIN real' if row['role']=='real' else 'actual masks')
-        opt.zero_grad(set_to_none=True);phase='forward';tick=time.monotonic()
-        with torch.autocast('cuda',dtype=torch.bfloat16):
-            pred=m(fs,16);terms=clip_terms(pred,gt,labels,c['dice_epsilon']);loss=terms[0]
-        if not torch.isfinite(terms).all():raise ValueError('NONFINITE_LOSS')
-        if len(pred)!=8 or any(tuple(p['pixel_logits'].shape)!=(720,1280) for p in pred):raise ValueError('NATIVE_OUTPUT_COVERAGE')
-        result['loss_components']=dict(zip(['total','frame_BCE','pixel_BCE','soft_Dice_loss'],terms.float().tolist()))
-        if c.get('sparse_edge_attention'):result['forward_edge_evidence']=candidate_layers(m,True,require_offload=c.get('head_output_offload',False),require_stream=c.get('head_qkv_stream',False),require_split=c.get('node_split',False))
-        torch.cuda.synchronize();boundary('forward_complete',time.monotonic()-tick,finite_loss=True,output_dtype=str(pred[0]['pixel_logits'].dtype),loss_components=result['loss_components'],candidate_layers=result.get('forward_edge_evidence'))
-        phase='backward';tick=time.monotonic();loss.backward();torch.cuda.synchronize();boundary('backward_complete',time.monotonic()-tick)
-        phase='gradient_clip_update';tick=time.monotonic();paths={'geometry':m.geo[0].weight,'VFE':m.vfe[0].weight,'fine_qkv':m.fine_time.layers[0].qkv.weight,'coarse_qkv':m.coarse_time.layers[0].qkv.weight,'decoder':m.decoder.proj.weight,'pixel_output':m.pixel_out.weight,'frame_output':m.frame_residual[-1].weight}
-        gradients={k:{'exists':p.grad is not None,'finite':bool(torch.isfinite(p.grad).all()) if p.grad is not None else None,'norm':float(p.grad.float().norm()) if p.grad is not None else None} for k,p in paths.items()}
-        selected={'pixel_output':m.pixel_out.weight,'frame_visual_output':m.frame_visual[-1].weight,'decoder_predictor':m.decoder.predictor.weight}
-        before={k:np.asarray(p.tolist()) for k,p in selected.items()}
-        norm=float(torch.nn.utils.clip_grad_norm_(m.parameters(),c['clip_norm'],error_if_nonfinite=True));opt.step();m.check_bn();torch.cuda.synchronize()
-        changes={k:float(np.linalg.norm(np.asarray(p.tolist())-before[k])) for k,p in selected.items()}
-        changed=any(value>0 for value in changes.values())
-        if not changed or not opt.state:raise ValueError('NO_REAL_ADAM_UPDATE')
-        result.update(parameter_update_verified=changed,parameter_delta_norms=changes)
-        boundary('update_complete',time.monotonic()-tick,gradients=gradients,gradient_norm=norm,optimizer_state_parameters=len(opt.state),parameter_delta_norms=changes,parameter_update_verified=changed)
-        result.update(status='PASS',updates=1,gradients=gradients,optimizer_state_parameters=len(opt.state),weights='discarded; no checkpoint saved')
+        for update_index in range(1,spec.get('updates_requested',1)+1):
+            opt.zero_grad(set_to_none=True);phase='forward';tick=time.monotonic()
+            with torch.autocast('cuda',dtype=torch.bfloat16):
+                pred=m(fs,start-lo);terms=clip_terms(pred,gt,labels,c['dice_epsilon']);loss=terms[0]
+            if not torch.isfinite(terms).all():raise ValueError('NONFINITE_LOSS')
+            if len(pred)!=end-start or any(tuple(p['pixel_logits'].shape)!=tuple(row['source_hw']) for p in pred):raise ValueError('NATIVE_OUTPUT_COVERAGE')
+            result['loss_components']=dict(zip(['total','frame_BCE','pixel_BCE','soft_Dice_loss'],terms.float().tolist()))
+            if c.get('sparse_edge_attention'):result['forward_edge_evidence']=candidate_layers(m,True,require_offload=c.get('head_output_offload',False),require_stream=c.get('head_qkv_stream',False),require_split=c.get('node_split',False),expected_nodes=(fine,coarse))
+            torch.cuda.synchronize();boundary('forward_complete',time.monotonic()-tick,finite_loss=True,output_dtype=str(pred[0]['pixel_logits'].dtype),loss_components=result['loss_components'],candidate_layers=result.get('forward_edge_evidence'))
+            phase='backward';tick=time.monotonic();loss.backward();torch.cuda.synchronize();boundary('backward_complete',time.monotonic()-tick)
+            phase='gradient_clip_update';tick=time.monotonic();paths={'geometry':m.geo[0].weight,'VFE':m.vfe[0].weight,'fine_qkv':m.fine_time.layers[0].qkv.weight,'coarse_qkv':m.coarse_time.layers[0].qkv.weight,'decoder':m.decoder.proj.weight,'pixel_output':m.pixel_out.weight,'frame_output':m.frame_residual[-1].weight}
+            gradients={k:{'exists':p.grad is not None,'finite':bool(torch.isfinite(p.grad).all()) if p.grad is not None else None,'norm':float(p.grad.float().norm()) if p.grad is not None else None} for k,p in paths.items()}
+            selected={'pixel_output':m.pixel_out.weight,'frame_visual_output':m.frame_visual[-1].weight,'decoder_predictor':m.decoder.predictor.weight}
+            before={k:np.asarray(p.tolist()) for k,p in selected.items()}
+            if spec.get('lifetime_trace') and any(not g['exists'] or not g['finite'] for g in gradients.values()):raise ValueError('REQUIRED_GRADIENT_MISSING_OR_NONFINITE')
+            norm=float(torch.nn.utils.clip_grad_norm_(m.parameters(),c['clip_norm'],error_if_nonfinite=True));opt.step();result['optimizer_step_calls']+=1;m.check_bn();torch.cuda.synchronize()
+            changes={k:float(np.linalg.norm(np.asarray(p.tolist())-before[k])) for k,p in selected.items()}
+            changed=any(value>0 for value in changes.values())
+            if not changed or not opt.state:raise ValueError('NO_REAL_ADAM_UPDATE')
+            result.update(parameter_update_verified=changed,parameter_delta_norms=changes)
+            boundary('update_complete',time.monotonic()-tick,gradients=gradients,gradient_norm=norm,optimizer_state_parameters=len(opt.state),parameter_delta_norms=changes,parameter_update_verified=changed)
+            result['updates']=update_index
+            result['update_records'].append({'update':update_index,'loss_components':result['loss_components'],'gradients':gradients,'gradient_norm':norm,'optimizer_state_parameters':len(opt.state),'parameter_delta_norms':changes,'elapsed_s':time.monotonic()-started})
+            result.update(gradients=gradients,optimizer_state_parameters=len(opt.state),weights='discarded; no checkpoint saved')
+            del pred,terms,loss
+        result['status']='PASS'
     except BaseException as e:
         tb=e.__traceback__;context=[]
         while tb is not None:
@@ -206,9 +218,10 @@ def worker(out):
                 loc=frame.f_locals;q0=loc.get('q',loc.get('x'));col0=loc.get('col')
                 context.append({'function':frame.f_code.co_name,'head':loc.get('head'),'q_shape':list(q0.shape) if q0 is not None else None,'edges':len(col0) if col0 is not None else None,'dtype':str(q0.dtype) if q0 is not None else None})
             tb=tb.tb_next
+        if opt is not None:result['optimizer_state_parameters']=len(opt.state)
         result['failure_operator_context']=context
         del tb
-        result.update(status='OOM' if isinstance(e,torch.OutOfMemoryError) else 'FAILED',updates=0,error=str(e),traceback=traceback.format_exc(),failure_phase=phase)
+        result.update(status='OOM' if isinstance(e,torch.OutOfMemoryError) else 'FAILED',updates=result.get('updates',0),error=str(e),traceback=traceback.format_exc(),failure_phase=phase)
     finally:
         done.set();thread.join(timeout=6)
         with lock:result.update(snapshot(),stages=stages);save(out/'worker_result.json',result)

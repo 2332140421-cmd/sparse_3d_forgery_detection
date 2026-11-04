@@ -106,7 +106,9 @@ def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):
     emit('head_start',q)
     # Public differentiable values(); no _values(), detach or dense conversion.
     with torch.autocast(device_type=q.device.type,enabled=False):
-        qf,kf,vf=q.float().contiguous(),k.float().contiguous(),v.float().contiguous()
+        emit('Q_before_float',q);qf=q.float();emit('Q_after_float',qf);qf=qf.contiguous()
+        emit('K_before_float',k);kf=k.float();emit('K_after_float',kf);kf=kf.contiguous()
+        emit('V_before_float',v);vf=v.float();emit('V_after_float',vf);vf=vf.contiguous()
         pad=intersection_padding(len(qf),len(kf))
         if pad:
             kf=torch.cat((kf,kf.new_zeros((pad,kf.shape[1]))),0)
@@ -128,4 +130,6 @@ def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):
         del dropped
         emit('CSR_weights_complete',matrix)
         result=torch.sparse.mm(matrix,vf);emit('sparse_mm_complete',result)
-        return result.to(q.dtype)
+        emit('result_before_dtype',result)
+        output=result.to(q.dtype);emit('result_after_dtype',output)
+        return output
