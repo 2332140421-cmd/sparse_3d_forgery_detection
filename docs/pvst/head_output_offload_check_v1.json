@@ -1,0 +1,2643 @@
+{
+  "status": "OOM",
+  "source_commit": "7791399153899d20cb50f7d4ecfa92846459e4b2",
+  "small_gpu_wall_s": 11.35923863016069,
+  "full_window_entered": true,
+  "formal_models_completed": 0,
+  "processes": [
+    {
+      "name": "regression",
+      "pid": 53218,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 2.7688378766179085,
+      "timeout_s": 300.0,
+      "samples": []
+    },
+    {
+      "name": "gpu",
+      "pid": 53404,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 4.119973625056446,
+      "timeout_s": 297.2311621233821,
+      "samples": []
+    },
+    {
+      "name": "cpu",
+      "pid": 53618,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 4.470427128486335,
+      "timeout_s": 293.11118849832565,
+      "samples": []
+    }
+  ],
+  "regression": {
+    "status": "PASS",
+    "comparisons": [
+      {
+        "dtype": "torch.float32",
+        "dim": 256,
+        "dropout": 0,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.8748538494110107,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008137366967275739,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015801230911165476,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001818771823309362,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0020918655209243298,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0034389845095574856,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00019507415709085763,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00011126066237920895,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0006451799999922514,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.3283064365386963e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0019312280928716063,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004914973396807909,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0013504879316315055,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0009049799991771579,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0014123993460088968,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010215719230473042,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0032861344516277313,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004363003186881542,
+            "relative_to_max": 0.0
+          }
+        },
+        "state_dict_keys_unchanged": true,
+        "parameters_unchanged": true,
+        "no_dense_logical": true,
+        "storage": [
+          {
+            "enabled": false,
+            "cpu_bytes": 0,
+            "gpu_list_bytes": 41984,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 15146496,
+                "reserved_bytes": 29360128
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 15157248,
+                "reserved_bytes": 29360128
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 15168000,
+                "reserved_bytes": 29360128
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 15178752,
+                "reserved_bytes": 29360128
+              }
+            ],
+            "copy_to_cpu_s": 0.0,
+            "before_stack": {
+              "allocated_bytes": 15178752,
+              "reserved_bytes": 29360128
+            },
+            "stack_device": "cuda:0",
+            "stack_dtype": "torch.float32",
+            "stack_s": 8.030235767364502e-05,
+            "stack_bytes": 41984,
+            "before_gpu_return": {
+              "allocated_bytes": 15177728,
+              "reserved_bytes": 29360128
+            },
+            "return_to_gpu_s": 2.9494985938072205e-06,
+            "after_gpu_return": {
+              "allocated_bytes": 15177728,
+              "reserved_bytes": 29360128
+            }
+          },
+          {
+            "enabled": true,
+            "cpu_bytes": 41984,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 33554432
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 33554432
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 33554432
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 33554432
+              }
+            ],
+            "copy_to_cpu_s": 0.00022889208048582077,
+            "before_stack": {
+              "allocated_bytes": 26901504,
+              "reserved_bytes": 33554432
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.float32",
+            "stack_s": 5.2104704082012177e-05,
+            "stack_bytes": 41984,
+            "before_gpu_return": {
+              "allocated_bytes": 26901504,
+              "reserved_bytes": 33554432
+            },
+            "return_to_gpu_s": 3.0343420803546906e-05,
+            "after_gpu_return": {
+              "allocated_bytes": 26943488,
+              "reserved_bytes": 33554432
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.945078134536743,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008167126798070967,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001787353539839387,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0018744160188362002,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021303060930222273,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.003231619717553258,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003040992596652359,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010481740173418075,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008615317055955529,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.3283064365386963e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021351731847971678,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004878594074398279,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015348800225183368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010165807325392962,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015975169371813536,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001267007552087307,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035513639450073242,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004949982278048992,
+            "relative_to_max": 0.0
+          }
+        },
+        "state_dict_keys_unchanged": true,
+        "parameters_unchanged": true,
+        "no_dense_logical": true,
+        "storage": [
+          {
+            "enabled": false,
+            "cpu_bytes": 0,
+            "gpu_list_bytes": 41984,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 23666176,
+                "reserved_bytes": 39845888
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 23676928,
+                "reserved_bytes": 39845888
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 23687680,
+                "reserved_bytes": 39845888
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "SparseAddmmBackward0",
+                "allocated_bytes": 23698432,
+                "reserved_bytes": 39845888
+              }
+            ],
+            "copy_to_cpu_s": 0.0,
+            "before_stack": {
+              "allocated_bytes": 23698432,
+              "reserved_bytes": 39845888
+            },
+            "stack_device": "cuda:0",
+            "stack_dtype": "torch.float32",
+            "stack_s": 4.2786821722984314e-05,
+            "stack_bytes": 41984,
+            "before_gpu_return": {
+              "allocated_bytes": 23697408,
+              "reserved_bytes": 39845888
+            },
+            "return_to_gpu_s": 2.551823854446411e-06,
+            "after_gpu_return": {
+              "allocated_bytes": 23697408,
+              "reserved_bytes": 39845888
+            }
+          },
+          {
+            "enabled": true,
+            "cpu_bytes": 41984,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 39845888
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 39845888
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 39845888
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.float32",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 26901504,
+                "reserved_bytes": 39845888
+              }
+            ],
+            "copy_to_cpu_s": 0.0001493636518716812,
+            "before_stack": {
+              "allocated_bytes": 26901504,
+              "reserved_bytes": 39845888
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.float32",
+            "stack_s": 4.929210990667343e-05,
+            "stack_bytes": 41984,
+            "before_gpu_return": {
+              "allocated_bytes": 26901504,
+              "reserved_bytes": 39845888
+            },
+            "return_to_gpu_s": 0.0005419142544269562,
+            "after_gpu_return": {
+              "allocated_bytes": 26943488,
+              "reserved_bytes": 39845888
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 4.125,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004024505615234375,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004858916508965194,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008225589990615845,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00113677978515625,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001312255859375,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00021839141845703125,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 7.82012939453125e-05,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00049591064453125,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.250075340270996e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001220703125,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.002777099609375,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008649532101117074,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0005074664950370789,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.000865936279296875,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00060272216796875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00177764892578125,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0025634765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "state_dict_keys_unchanged": true,
+        "parameters_unchanged": true,
+        "no_dense_logical": true,
+        "storage": [
+          {
+            "enabled": false,
+            "cpu_bytes": 0,
+            "gpu_list_bytes": 41984,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44142592,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44148224,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44153856,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44159488,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 4,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44165120,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 5,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44170752,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 6,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44176384,
+                "reserved_bytes": 60817408
+              },
+              {
+                "head": 7,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cuda:0",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 44182016,
+                "reserved_bytes": 60817408
+              }
+            ],
+            "copy_to_cpu_s": 0.0,
+            "before_stack": {
+              "allocated_bytes": 44182016,
+              "reserved_bytes": 60817408
+            },
+            "stack_device": "cuda:0",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 4.06922772526741e-05,
+            "stack_bytes": 41984,
+            "before_gpu_return": {
+              "allocated_bytes": 44178944,
+              "reserved_bytes": 60817408
+            },
+            "return_to_gpu_s": 2.716667950153351e-06,
+            "after_gpu_return": {
+              "allocated_bytes": 44178944,
+              "reserved_bytes": 60817408
+            }
+          },
+          {
+            "enabled": true,
+            "cpu_bytes": 41984,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 4,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 5,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 6,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              },
+              {
+                "head": 7,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  41,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 56834560,
+                "reserved_bytes": 81788928
+              }
+            ],
+            "copy_to_cpu_s": 0.00018979795277118683,
+            "before_stack": {
+              "allocated_bytes": 56834560,
+              "reserved_bytes": 81788928
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 4.731770604848862e-05,
+            "stack_bytes": 41984,
+            "before_gpu_return": {
+              "allocated_bytes": 56834560,
+              "reserved_bytes": 81788928
+            },
+            "return_to_gpu_s": 2.6202760636806488e-05,
+            "after_gpu_return": {
+              "allocated_bytes": 56876544,
+              "reserved_bytes": 81788928
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "gpu": {
+    "nodes": 131072,
+    "edges": 7475256,
+    "checks": {
+      "rowptr_length": true,
+      "starts_zero": true,
+      "monotone": true,
+      "ends_nnz": true,
+      "col_range": true,
+      "sorted_unique": true,
+      "relation_range": true,
+      "relation_frame": true
+    },
+    "crow_dtype": "torch.int64",
+    "col_dtype": "torch.int64",
+    "relation_dtype": "torch.int64",
+    "logical_elements": 17179869184,
+    "graph_s": 0.2884111125022173,
+    "head_output_offload": false,
+    "forward_head_storage": {
+      "enabled": false,
+      "cpu_bytes": 0,
+      "gpu_list_bytes": 134217728,
+      "heads": [
+        {
+          "head": 0,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 710804992,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 1,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 727582208,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 2,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 744359424,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 3,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 761136640,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 4,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 777913856,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 5,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 794691072,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 6,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 811468288,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 7,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 828245504,
+          "reserved_bytes": 2657091584
+        }
+      ],
+      "copy_to_cpu_s": 0.0,
+      "before_stack": {
+        "allocated_bytes": 828245504,
+        "reserved_bytes": 2657091584
+      },
+      "stack_device": "cuda:0",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 1.8319115042686462e-05,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 828245504,
+        "reserved_bytes": 2657091584
+      },
+      "return_to_gpu_s": 2.137385308742523e-06,
+      "after_gpu_return": {
+        "allocated_bytes": 828245504,
+        "reserved_bytes": 2657091584
+      }
+    },
+    "backward_head_storage": {
+      "enabled": false,
+      "cpu_bytes": 0,
+      "gpu_list_bytes": 134217728,
+      "heads": [
+        {
+          "head": 0,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 979327488,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 1,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 996104704,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 2,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 1012881920,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 3,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 1029659136,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 4,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 1046436352,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 5,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 1063213568,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 6,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 1079990784,
+          "reserved_bytes": 2657091584
+        },
+        {
+          "head": 7,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 1096768000,
+          "reserved_bytes": 2657091584
+        }
+      ],
+      "copy_to_cpu_s": 0.0,
+      "before_stack": {
+        "allocated_bytes": 1096768000,
+        "reserved_bytes": 2657091584
+      },
+      "stack_device": "cuda:0",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 2.3288652300834656e-05,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 1096768000,
+        "reserved_bytes": 2657091584
+      },
+      "return_to_gpu_s": 2.175569534301758e-06,
+      "after_gpu_return": {
+        "allocated_bytes": 1096768000,
+        "reserved_bytes": 2657091584
+      }
+    },
+    "measurement_host": {
+      "available_bytes": 50983518208,
+      "rss_bytes": 1497083904,
+      "peak_rss_bytes": 1493684224
+    },
+    "status": "PASS",
+    "kind": "gpu",
+    "dim": 512,
+    "heads": 8,
+    "head_dim": 64,
+    "forward_s": 0.10104958154261112,
+    "backward_s": 0.6569454278796911,
+    "baseline_allocated_bytes": 169137152,
+    "peak_allocated_bytes": 2447296512,
+    "peak_reserved_bytes": 2678063104,
+    "dropout": 0.1,
+    "outer_checkpoint": true,
+    "precision": "BF16 outer / FP32 sparse core",
+    "softmax_saved": "FP32 probabilities E + CSR crow; bridge saves crow/col, no values or dense matrix copy",
+    "process_host_after_snapshots": {
+      "available_bytes": 50944147456,
+      "rss_bytes": 1518825472,
+      "peak_rss_bytes": 1515442176
+    }
+  },
+  "cpu": {
+    "nodes": 131072,
+    "edges": 7475256,
+    "checks": {
+      "rowptr_length": true,
+      "starts_zero": true,
+      "monotone": true,
+      "ends_nnz": true,
+      "col_range": true,
+      "sorted_unique": true,
+      "relation_range": true,
+      "relation_frame": true
+    },
+    "crow_dtype": "torch.int64",
+    "col_dtype": "torch.int64",
+    "relation_dtype": "torch.int64",
+    "logical_elements": 17179869184,
+    "graph_s": 0.2851447816938162,
+    "head_output_offload": true,
+    "forward_head_storage": {
+      "enabled": true,
+      "cpu_bytes": 134217728,
+      "gpu_list_bytes": 0,
+      "heads": [
+        {
+          "head": 0,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 1,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 2,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 3,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 4,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 5,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 6,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 7,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 694027776,
+          "reserved_bytes": 2761949184
+        }
+      ],
+      "copy_to_cpu_s": 0.026527988724410534,
+      "before_stack": {
+        "allocated_bytes": 694027776,
+        "reserved_bytes": 2761949184
+      },
+      "stack_device": "cpu",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 0.0119103342294693,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 694027776,
+        "reserved_bytes": 2761949184
+      },
+      "return_to_gpu_s": 0.010990818031132221,
+      "after_gpu_return": {
+        "allocated_bytes": 828245504,
+        "reserved_bytes": 2761949184
+      }
+    },
+    "backward_head_storage": {
+      "enabled": true,
+      "cpu_bytes": 134217728,
+      "gpu_list_bytes": 0,
+      "heads": [
+        {
+          "head": 0,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 1,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 2,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 3,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 4,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 5,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 6,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        },
+        {
+          "head": 7,
+          "source_device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            131072,
+            64
+          ],
+          "stored_device": "cpu",
+          "requires_grad": true,
+          "grad_fn": "ToCopyBackward0",
+          "allocated_bytes": 962550272,
+          "reserved_bytes": 2761949184
+        }
+      ],
+      "copy_to_cpu_s": 0.04480756912380457,
+      "before_stack": {
+        "allocated_bytes": 962550272,
+        "reserved_bytes": 2761949184
+      },
+      "stack_device": "cpu",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 0.01525382325053215,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 962550272,
+        "reserved_bytes": 2761949184
+      },
+      "return_to_gpu_s": 0.009854448959231377,
+      "after_gpu_return": {
+        "allocated_bytes": 1096768000,
+        "reserved_bytes": 2761949184
+      }
+    },
+    "measurement_host": {
+      "available_bytes": 50366590976,
+      "rss_bytes": 1903394816,
+      "peak_rss_bytes": 2033070080
+    },
+    "status": "PASS",
+    "kind": "cpu",
+    "dim": 512,
+    "heads": 8,
+    "head_dim": 64,
+    "forward_s": 0.15599167812615633,
+    "backward_s": 0.7738356562331319,
+    "baseline_allocated_bytes": 169137152,
+    "peak_allocated_bytes": 2396964864,
+    "peak_reserved_bytes": 2761949184,
+    "dropout": 0.1,
+    "outer_checkpoint": true,
+    "precision": "BF16 outer / FP32 sparse core",
+    "softmax_saved": "FP32 probabilities E + CSR crow; bridge saves crow/col, no values or dense matrix copy",
+    "process_host_after_snapshots": {
+      "available_bytes": 50376454144,
+      "rss_bytes": 1904787456,
+      "peak_rss_bytes": 2033070080
+    }
+  },
+  "paired_check": {
+    "output_rows": {
+      "max_abs": 0.0,
+      "reference_max_abs": 4.125,
+      "relative_to_max": 0.0
+    },
+    "input_gradient_rows": {
+      "max_abs": 0.0,
+      "reference_max_abs": 1.2293457984924316e-07,
+      "relative_to_max": 0.0
+    },
+    "norm.weight": {
+      "max_abs": 1.278749550692737e-09,
+      "reference_max_abs": 2.345000575587619e-05,
+      "relative_to_max": 5.4530884299348335e-05
+    },
+    "norm.bias": {
+      "max_abs": 1.775333657860756e-09,
+      "reference_max_abs": 0.0002966161700896919,
+      "relative_to_max": 5.985289532003343e-06
+    },
+    "qkv.weight": {
+      "max_abs": 1.1920928955078125e-07,
+      "reference_max_abs": 1.519918441772461e-05,
+      "relative_to_max": 0.00784313725490196
+    },
+    "qkv.bias": {
+      "max_abs": 4.76837158203125e-07,
+      "reference_max_abs": 0.00061798095703125,
+      "relative_to_max": 0.0007716049382716049
+    },
+    "bias.0.weight": {
+      "max_abs": 5.960464477539063e-08,
+      "reference_max_abs": 1.8596649169921875e-05,
+      "relative_to_max": 0.003205128205128205
+    },
+    "bias.0.bias": {
+      "max_abs": 1.4901161193847656e-08,
+      "reference_max_abs": 1.4483928680419922e-05,
+      "relative_to_max": 0.00102880658436214
+    },
+    "bias.2.weight": {
+      "max_abs": 5.960464477539063e-08,
+      "reference_max_abs": 6.389617919921875e-05,
+      "relative_to_max": 0.0009328358208955224
+    },
+    "bias.2.bias": {
+      "max_abs": 8.149072527885437e-09,
+      "reference_max_abs": 6.100162863731384e-08,
+      "relative_to_max": 0.13358778625954199
+    },
+    "proj.weight": {
+      "max_abs": 2.384185791015625e-07,
+      "reference_max_abs": 5.53131103515625e-05,
+      "relative_to_max": 0.004310344827586207
+    },
+    "proj.bias": {
+      "max_abs": 0.0,
+      "reference_max_abs": 0.00103759765625,
+      "relative_to_max": 0.0
+    },
+    "norm2.weight": {
+      "max_abs": 7.421476766467094e-10,
+      "reference_max_abs": 0.00031939923064783216,
+      "relative_to_max": 2.323573776747751e-06
+    },
+    "norm2.bias": {
+      "max_abs": 8.87666828930378e-10,
+      "reference_max_abs": 0.0002966000174637884,
+      "relative_to_max": 2.992807743306193e-06
+    },
+    "ffn.0.weight": {
+      "max_abs": 4.76837158203125e-07,
+      "reference_max_abs": 8.106231689453125e-05,
+      "relative_to_max": 0.0058823529411764705
+    },
+    "ffn.0.bias": {
+      "max_abs": 1.1920928955078125e-07,
+      "reference_max_abs": 0.0002498626708984375,
+      "relative_to_max": 0.00047709923664122136
+    },
+    "ffn.3.weight": {
+      "max_abs": 9.5367431640625e-07,
+      "reference_max_abs": 0.0002803802490234375,
+      "relative_to_max": 0.003401360544217687
+    },
+    "ffn.3.bias": {
+      "max_abs": 0.0,
+      "reference_max_abs": 0.0010833740234375,
+      "relative_to_max": 0.0
+    }
+  },
+  "full_window": {
+    "status": "OOM",
+    "gpu_start": {
+      "unix_time": 1793816210.2721224,
+      "worker_pid": null,
+      "gpu_total_free_used_util": "24564, 22859, 1214, 7",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "gpu_after": {
+      "unix_time": 1793816281.8766775,
+      "worker_pid": 53910,
+      "gpu_total_free_used_util": "24564, 22857, 1216, 13",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "source_commit": "7791399153899d20cb50f7d4ecfa92846459e4b2",
+    "formal_models_completed": 0,
+    "worker_gpu_released": true,
+    "process": {
+      "pid": 53910,
+      "returncode": 2,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 71.57329954579473,
+      "timeout_s": 900
+    },
+    "worker": {
+      "candidate_build_evidence": [
+        {
+          "layer": "fine_time.0",
+          "width": 256,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "fine_time.1",
+          "width": 256,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "fine_time.2",
+          "width": 256,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "coarse_time.0",
+          "width": 512,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "coarse_time.1",
+          "width": 512,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "coarse_time.2",
+          "width": 512,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        }
+      ],
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "loss_components": {
+        "total": 1.7414692640304565,
+        "frame_BCE": 0.7357272505760193,
+        "pixel_BCE": 0.005926134530454874,
+        "soft_Dice_loss": 0.9998159408569336
+      },
+      "forward_edge_evidence": [
+        {
+          "layer": "fine_time.0",
+          "width": 256,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 2970629,
+          "edges": 37042228,
+          "average_degree": 12.46948979492222,
+          "topology_bytes": 616440688,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 4,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1520962048,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15504064000,
+                "reserved_bytes": 22601007104
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15504064000,
+                "reserved_bytes": 22601007104
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15504064000,
+                "reserved_bytes": 22601007104
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15504064000,
+                "reserved_bytes": 22601007104
+              }
+            ],
+            "copy_to_cpu_s": 0.4766872292384505,
+            "before_stack": {
+              "allocated_bytes": 15504064000,
+              "reserved_bytes": 22601007104
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.12471432331949472,
+            "stack_bytes": 1520962048,
+            "before_gpu_return": {
+              "allocated_bytes": 15504064000,
+              "reserved_bytes": 22601007104
+            },
+            "return_to_gpu_s": 0.11547521408647299,
+            "after_gpu_return": {
+              "allocated_bytes": 17025026048,
+              "reserved_bytes": 22601007104
+            }
+          }
+        },
+        {
+          "layer": "fine_time.1",
+          "width": 256,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 2970629,
+          "edges": 31105643,
+          "average_degree": 10.471062862444283,
+          "topology_bytes": 521455328,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 4,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1520962048,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15410658304,
+                "reserved_bytes": 22005415936
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15410658304,
+                "reserved_bytes": 22005415936
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15410658304,
+                "reserved_bytes": 22005415936
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15410658304,
+                "reserved_bytes": 22005415936
+              }
+            ],
+            "copy_to_cpu_s": 0.49095727130770683,
+            "before_stack": {
+              "allocated_bytes": 15410658304,
+              "reserved_bytes": 22005415936
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.13953468576073647,
+            "stack_bytes": 1520962048,
+            "before_gpu_return": {
+              "allocated_bytes": 15410658304,
+              "reserved_bytes": 22005415936
+            },
+            "return_to_gpu_s": 0.1167380204424262,
+            "after_gpu_return": {
+              "allocated_bytes": 16931620352,
+              "reserved_bytes": 22005415936
+            }
+          }
+        },
+        {
+          "layer": "fine_time.2",
+          "width": 256,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 2970629,
+          "edges": 28847555,
+          "average_degree": 9.710924858001453,
+          "topology_bytes": 485325920,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 4,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1520962048,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15376109056,
+                "reserved_bytes": 22322085888
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15376109056,
+                "reserved_bytes": 22322085888
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15376109056,
+                "reserved_bytes": 22322085888
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  2970629,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 15376109056,
+                "reserved_bytes": 22322085888
+              }
+            ],
+            "copy_to_cpu_s": 0.48929439671337605,
+            "before_stack": {
+              "allocated_bytes": 15376109056,
+              "reserved_bytes": 22322085888
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.12813711073249578,
+            "stack_bytes": 1520962048,
+            "before_gpu_return": {
+              "allocated_bytes": 15376109056,
+              "reserved_bytes": 22322085888
+            },
+            "return_to_gpu_s": 0.11631681863218546,
+            "after_gpu_return": {
+              "allocated_bytes": 16897071104,
+              "reserved_bytes": 22322085888
+            }
+          }
+        },
+        {
+          "layer": "coarse_time.0",
+          "width": 512,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 1488042,
+          "edges": 26982715,
+          "average_degree": 18.13303320739603,
+          "topology_bytes": 443627784,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 8,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1523755008,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 4,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 5,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 6,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              },
+              {
+                "head": 7,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16928942592,
+                "reserved_bytes": 23100129280
+              }
+            ],
+            "copy_to_cpu_s": 0.5072170002385974,
+            "before_stack": {
+              "allocated_bytes": 16928942592,
+              "reserved_bytes": 23100129280
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.13542144652456045,
+            "stack_bytes": 1523755008,
+            "before_gpu_return": {
+              "allocated_bytes": 16928942592,
+              "reserved_bytes": 23100129280
+            },
+            "return_to_gpu_s": 0.11490681488066912,
+            "after_gpu_return": {
+              "allocated_bytes": 18452697600,
+              "reserved_bytes": 23100129280
+            }
+          }
+        },
+        {
+          "layer": "coarse_time.1",
+          "width": 512,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 1488042,
+          "edges": 22781330,
+          "average_degree": 15.309601476302417,
+          "topology_bytes": 376405624,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 8,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1523755008,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 4,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 5,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 6,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              },
+              {
+                "head": 7,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16868024320,
+                "reserved_bytes": 23146266624
+              }
+            ],
+            "copy_to_cpu_s": 0.5032061208039522,
+            "before_stack": {
+              "allocated_bytes": 16868024320,
+              "reserved_bytes": 23146266624
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.14113640412688255,
+            "stack_bytes": 1523755008,
+            "before_gpu_return": {
+              "allocated_bytes": 16868024320,
+              "reserved_bytes": 23146266624
+            },
+            "return_to_gpu_s": 0.1215404849499464,
+            "after_gpu_return": {
+              "allocated_bytes": 18391779328,
+              "reserved_bytes": 23146266624
+            }
+          }
+        },
+        {
+          "layer": "coarse_time.2",
+          "width": 512,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 1488042,
+          "edges": 20707343,
+          "average_degree": 13.915832348818112,
+          "topology_bytes": 343221832,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 8,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1523755008,
+            "gpu_list_bytes": 0,
+            "heads": [
+              {
+                "head": 0,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 1,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 2,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 3,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 4,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 5,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 6,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              },
+              {
+                "head": 7,
+                "source_device": "cuda:0",
+                "dtype": "torch.bfloat16",
+                "shape": [
+                  1488042,
+                  64
+                ],
+                "stored_device": "cpu",
+                "requires_grad": true,
+                "grad_fn": "ToCopyBackward0",
+                "allocated_bytes": 16841143808,
+                "reserved_bytes": 23190306816
+              }
+            ],
+            "copy_to_cpu_s": 0.6247881324961782,
+            "before_stack": {
+              "allocated_bytes": 16841143808,
+              "reserved_bytes": 23190306816
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.15938414633274078,
+            "stack_bytes": 1523755008,
+            "before_gpu_return": {
+              "allocated_bytes": 16841143808,
+              "reserved_bytes": 23190306816
+            },
+            "return_to_gpu_s": 0.13357342779636383,
+            "after_gpu_return": {
+              "allocated_bytes": 18364898816,
+              "reserved_bytes": 23190306816
+            }
+          }
+        }
+      ],
+      "failure_operator_context": [],
+      "status": "OOM",
+      "updates": 0,
+      "error": "CUDA out of memory. Tried to allocate 4.25 GiB. GPU 0 has a total capacity of 23.51 GiB of which 625.31 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 21.68 GiB memory in use. Of the allocated memory 20.87 GiB is allocated by PyTorch, and 344.85 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+      "failure_phase": "backward",
+      "phase": "backward",
+      "elapsed_s": 69.6474349591881,
+      "peak_allocated_bytes": 22415039488,
+      "peak_reserved_bytes": 23418896384,
+      "allocated_bytes": 14609521152,
+      "reserved_bytes": 22772973568,
+      "host": {
+        "available_bytes": 35480539136,
+        "rss_bytes": 17421811712,
+        "peak_rss_bytes": 18867466240
+      }
+    },
+    "stages": [
+      {
+        "phase": "worker_start",
+        "elapsed_s": 1.9906111005693674,
+        "peak_allocated_bytes": 0,
+        "peak_reserved_bytes": 0,
+        "allocated_bytes": 0,
+        "reserved_bytes": 0,
+        "host": {
+          "available_bytes": 51558051840,
+          "rss_bytes": 552144896,
+          "peak_rss_bytes": 546320384
+        },
+        "stage": "worker_start",
+        "stage_s": null
+      },
+      {
+        "phase": "model_build",
+        "elapsed_s": 2.7769251642748713,
+        "peak_allocated_bytes": 71308288,
+        "peak_reserved_bytes": 85983232,
+        "allocated_bytes": 71308288,
+        "reserved_bytes": 85983232,
+        "host": {
+          "available_bytes": 51405520896,
+          "rss_bytes": 726335488,
+          "peak_rss_bytes": 722280448
+        },
+        "stage": "model_built",
+        "stage_s": 0.7850326234474778,
+        "parameters": 17821672
+      },
+      {
+        "phase": "data_geometry",
+        "elapsed_s": 3.3956950586289167,
+        "peak_allocated_bytes": 1755244032,
+        "peak_reserved_bytes": 1839202304,
+        "allocated_bytes": 1715809280,
+        "reserved_bytes": 1839202304,
+        "host": {
+          "available_bytes": 50877296640,
+          "rss_bytes": 1376587776,
+          "peak_rss_bytes": 1397047296
+        },
+        "stage": "data_loaded",
+        "stage_s": 0.6178060239180923,
+        "fine_nodes": 2970629,
+        "coarse_nodes": 1488042,
+        "q_dtype": "torch.float32",
+        "token_dtype": "torch.float16",
+        "rgb_dtype": "torch.uint8",
+        "target_labels": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "spatial_gt": "zero mask for ANAKIN real"
+      },
+      {
+        "phase": "forward",
+        "elapsed_s": 24.038516241125762,
+        "peak_allocated_bytes": 21069711360,
+        "peak_reserved_bytes": 23418896384,
+        "allocated_bytes": 13998760448,
+        "reserved_bytes": 23190306816,
+        "host": {
+          "available_bytes": 37354041344,
+          "rss_bytes": 15664136192,
+          "peak_rss_bytes": 18596335616
+        },
+        "stage": "forward_complete",
+        "stage_s": 20.640938526950777,
+        "finite_loss": true,
+        "output_dtype": "torch.float32",
+        "loss_components": {
+          "total": 1.7414692640304565,
+          "frame_BCE": 0.7357272505760193,
+          "pixel_BCE": 0.005926134530454874,
+          "soft_Dice_loss": 0.9998159408569336
+        }
+      }
+    ],
+    "last_live": {
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "loss_components": {
+        "total": 1.7414692640304565,
+        "frame_BCE": 0.7357272505760193,
+        "pixel_BCE": 0.005926134530454874,
+        "soft_Dice_loss": 0.9998159408569336
+      },
+      "failure_operator_context": [],
+      "status": "OOM",
+      "updates": 0,
+      "error": "CUDA out of memory. Tried to allocate 4.25 GiB. GPU 0 has a total capacity of 23.51 GiB of which 625.31 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 21.68 GiB memory in use. Of the allocated memory 20.87 GiB is allocated by PyTorch, and 344.85 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+      "failure_phase": "backward",
+      "phase": "backward",
+      "elapsed_s": 69.6474349591881,
+      "peak_allocated_bytes": 22415039488,
+      "peak_reserved_bytes": 23418896384,
+      "allocated_bytes": 14609521152,
+      "reserved_bytes": 22772973568,
+      "host": {
+        "available_bytes": 35480539136,
+        "rss_bytes": 17421811712,
+        "peak_rss_bytes": 18867466240
+      }
+    }
+  }
+}

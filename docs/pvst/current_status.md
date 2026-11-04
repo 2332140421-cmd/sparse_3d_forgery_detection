@@ -76,3 +76,5 @@ export CUDA_VISIBLE_DEVICES=0
 2026-11-05 CSR行softmax检查：REPRESENTATION_BLOCKED；直接CSR构造反向在CUDA稠密化，未运行大单层/完整窗口；正式模型0/2。见[报告](csr_softmax_check_v1.md)。
 
 2026-11-05 CSR values桥接限定验收：OOM；正式模型仍0/2。见[报告](csr_values_bridge_check_v1.md)。
+
+逐head输出CPU暂存限定验收：OOM；正式模型仍0/2。见[报告](head_output_offload_check_v1.md)。
