@@ -1,6 +1,7 @@
 """All occupied27-neighborhoods at t,t-d,t-2d, true PTS bias, d=1/2/4."""
 import itertools
 import torch
+import time
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
@@ -44,7 +45,7 @@ class Neighborhood:
 
 class SparseLayer(nn.Module):
     def __init__(self,dim,heads,chunk=128,ffn_chunk=8192):
-        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.ffn_checkpoint=True;self.last_execution={}
+        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.ffn_checkpoint=True;self.last_execution={}
         if ffn_chunk<=0:raise ValueError("FFN_CHUNK_MUST_BE_POSITIVE")
         self.norm=LayerNorm(dim);self.qkv=nn.Linear(dim,dim*3);self.bias=nn.Sequential(nn.Linear(4,64),nn.GELU(),nn.Linear(64,heads))
         self.proj=nn.Linear(dim,dim);self.drop=nn.Dropout(.1);self.norm2=LayerNorm(dim)
@@ -95,14 +96,34 @@ class SparseLayer(nn.Module):
                 'backend':BACKEND,'softmax_impl':'research_tools.pvst.sparse_attention.CSRSoftmax','values_bridge':'research_tools.pvst.sparse_attention.CSRFromValues','head_impl':sparse_head.__module__+'.'+sparse_head.__name__,
                 'logical_padding_columns':intersection_padding(len(x),len(x)),'completed_heads':0}
             heads=[]
+            self.head_storage={'enabled':self.head_output_offload,'cpu_bytes':0,'gpu_list_bytes':0,'heads':[],'copy_to_cpu_s':0.}
+            def memory():
+                return {'allocated_bytes':torch.cuda.memory_allocated(x.device),'reserved_bytes':torch.cuda.memory_reserved(x.device)} if x.is_cuda else {}
             for head in range(self.heads):
                 self.last_execution={'operation':'FP32 sparse head','head':head,'input_shape':[len(x),64],
                     'logical_shape':[len(x),len(x)+self.edge_stats['logical_padding_columns']],'storage_dtype':str(q.dtype)}
                 args=(q[:,head],k[:,head],v[:,head],bias,crow,col,relation,head,self.drop.p,self.drop.training)
                 h=checkpoint(sparse_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else sparse_head(*args)
-                heads.append(h);self.edge_stats['completed_heads']+=1
+                metadata={'head':head,'source_device':str(h.device),'dtype':str(h.dtype),'shape':list(h.shape)}
+                tick=time.monotonic()
+                heads.append(h.to(device='cpu',non_blocking=False) if self.head_output_offload else h)
+                self.head_storage['copy_to_cpu_s']+=time.monotonic()-tick if self.head_output_offload else 0.
+                metadata.update(stored_device=str(heads[-1].device),requires_grad=heads[-1].requires_grad,grad_fn=type(heads[-1].grad_fn).__name__ if heads[-1].grad_fn else None)
+                key='cpu_bytes' if self.head_output_offload else 'gpu_list_bytes'
+                self.head_storage[key]+=h.numel()*h.element_size()
+                del h  # The list owns CPU outputs only when offloading.
+                metadata.update(memory());self.head_storage['heads'].append(metadata)
+                self.edge_stats['completed_heads']+=1
+            self.last_execution={'operation':'CPU head stack' if self.head_output_offload else 'GPU head stack','input_shape':[len(x),self.heads,64]}
+            self.head_storage['before_stack']=memory();tick=time.monotonic()
             attended=torch.stack(heads,1).reshape(len(x),self.dim)
-            del heads,h,crow,col,relation
+            self.head_storage.update(stack_device=str(attended.device),stack_dtype=str(attended.dtype),stack_s=time.monotonic()-tick,stack_bytes=attended.numel()*attended.element_size())
+            del heads
+            self.head_storage['before_gpu_return']=memory()
+            self.last_execution={'operation':'head stack return to GPU','input_shape':list(attended.shape),'dtype':str(attended.dtype)}
+            tick=time.monotonic();attended=attended.to(device=x.device,non_blocking=False)
+            self.head_storage.update(return_to_gpu_s=time.monotonic()-tick,after_gpu_return=memory())
+            del crow,col,relation
             for start in range(0,len(x),self.chunk):
                 args=(x[start:start+self.chunk],attended[start:start+self.chunk])
                 y=checkpoint(self.project_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.project_block(*args)

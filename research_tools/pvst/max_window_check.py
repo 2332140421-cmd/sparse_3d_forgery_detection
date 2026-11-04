@@ -25,6 +25,7 @@ BASE=Path('/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection
 OUT=BASE/'pvst_v03_max_window_check_v1'
 SPARSE_OUT=BASE/'pvst_v03_sparse_max_window_check_v1'
 BRIDGE_OUT=BASE/'pvst_csr_values_bridge_check_v1'/'full_window'
+HEAD_OUT=BASE/'pvst_head_output_offload_check_v1'/'full_window'
 VIDEO='782426ea0330c7fea684953c'
 EXPECTED=(2970629,1488042)
 
@@ -93,7 +94,7 @@ def member_stats(count):
 
 
 
-def candidate_layers(model,require_execution=False):
+def candidate_layers(model,require_execution=False,require_offload=False):
     from . import sparse_attention
     import types
     head=sparse_attention.sparse_head
@@ -104,12 +105,18 @@ def candidate_layers(model,require_execution=False):
         if len(module.layers)!=3:raise ValueError('TEMPORAL_LAYER_COUNT')
         for index,(layer,dilation) in enumerate(zip(module.layers,[1,2,4])):
             if not layer.sparse_edge_attention or layer.dim!=width or layer.qkv_chunk!=8192 or layer.chunk!=512 or layer.ffn_chunk!=8192:raise ValueError('CANDIDATE_NOT_ENABLED_ALL_SIX')
+            if require_offload and not layer.head_output_offload:raise ValueError('HEAD_OFFLOAD_NOT_ENABLED_ALL_SIX')
             row={'layer':name+'.'+str(index),'width':width,'dilation':dilation,'enabled':True,'head_source_sha256':sha(Path(sparse_attention.__file__))}
             if require_execution:
                 stat=getattr(layer,'edge_stats',None)
                 if not stat or stat.get('completed_heads')!=layer.heads or stat.get('nodes')!=nodes or stat.get('dilation')!=dilation or stat.get('head_impl')!=head.__module__+'.'+head.__name__:raise ValueError('MISSING_ACTUAL_SPARSE_EXECUTION:'+row['layer'])
                 if stat.get('backend')!=sparse_attention.BACKEND or stat.get('softmax_impl')!='research_tools.pvst.sparse_attention.CSRSoftmax' or stat.get('values_bridge')!='research_tools.pvst.sparse_attention.CSRFromValues':raise ValueError('SPARSE_BACKEND_MISMATCH')
                 row.update(stat)
+                if require_offload:
+                    storage=getattr(layer,'head_storage',{})
+                    if not storage.get('enabled') or storage.get('stack_device')!='cpu' or storage.get('gpu_list_bytes')!=0 or len(storage.get('heads',[]))!=layer.heads:raise ValueError('MISSING_ACTUAL_HEAD_OFFLOAD:'+row['layer'])
+                    if any(h['stored_device']!='cpu' or h['source_device']!='cuda:0' or h['dtype']!='torch.bfloat16' or not h['requires_grad'] or h['grad_fn']!='ToCopyBackward0' for h in storage['heads']):raise ValueError('HEAD_OFFLOAD_GRADIENT_OR_DTYPE')
+                    row['head_storage']=storage
             evidence.append(row)
     return evidence
 
@@ -140,7 +147,7 @@ def worker(out):
         if keys!='31beab46b45b34ed53ff89a70293a0e9e93abb86721dc51902e9c4c1808af665':raise ValueError('STATE_DICT_CHANGED')
         if c.get('sparse_edge_attention'):
             if os.environ.get('CUDA_LAUNCH_BLOCKING') not in [None,'','0'] or any(mod._forward_hooks or mod._forward_pre_hooks or mod._backward_hooks for mod in m.modules()):raise ValueError('DIAGNOSTIC_HOOK_OR_BLOCKING_ENABLED')
-            result['candidate_build_evidence']=candidate_layers(m)
+            result['candidate_build_evidence']=candidate_layers(m,require_offload=c.get('head_output_offload',False))
         m.check_bn();torch.cuda.synchronize();boundary('model_built',time.monotonic()-tick,parameters=17821672,candidate_layers=result.get('candidate_build_evidence'))
         phase='data_geometry';tick=time.monotonic();v=Video(Path(c['asset_root']),row,'XYZ_PVST',scale,c);fs=v.frames(104,128,'cuda')
         fine=sum(len(f['voxel_meta']['coords']) for f in fs);coarse=sum(len(f['voxel_meta']['coarse_coords']) for f in fs)
@@ -164,7 +171,7 @@ def worker(out):
         if not torch.isfinite(terms).all():raise ValueError('NONFINITE_LOSS')
         if len(pred)!=8 or any(tuple(p['pixel_logits'].shape)!=(720,1280) for p in pred):raise ValueError('NATIVE_OUTPUT_COVERAGE')
         result['loss_components']=dict(zip(['total','frame_BCE','pixel_BCE','soft_Dice_loss'],terms.float().tolist()))
-        if c.get('sparse_edge_attention'):result['forward_edge_evidence']=candidate_layers(m,True)
+        if c.get('sparse_edge_attention'):result['forward_edge_evidence']=candidate_layers(m,True,require_offload=c.get('head_output_offload',False))
         torch.cuda.synchronize();boundary('forward_complete',time.monotonic()-tick,finite_loss=True,output_dtype=str(pred[0]['pixel_logits'].dtype),loss_components=result['loss_components'],candidate_layers=result.get('forward_edge_evidence'))
         phase='backward';tick=time.monotonic();loss.backward();torch.cuda.synchronize();boundary('backward_complete',time.monotonic()-tick)
         phase='gradient_clip_update';tick=time.monotonic();paths={'geometry':m.geo[0].weight,'VFE':m.vfe[0].weight,'fine_qkv':m.fine_time.layers[0].qkv.weight,'coarse_qkv':m.coarse_time.layers[0].qkv.weight,'decoder':m.decoder.proj.weight,'pixel_output':m.pixel_out.weight,'frame_output':m.frame_residual[-1].weight}
@@ -346,14 +353,17 @@ def publish(out,result,sparse=False):
 
 def main():
     global OUT
-    p=argparse.ArgumentParser();p.add_argument('--worker',action='store_true');p.add_argument('--sparse',action='store_true');p.add_argument('--values-bridge',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--worker',action='store_true');p.add_argument('--sparse',action='store_true');p.add_argument('--values-bridge',action='store_true');p.add_argument('--head-output-offload',action='store_true');a=p.parse_args()
+    if a.head_output_offload:a.values_bridge=True
     if a.values_bridge:a.sparse=True
     if a.sparse:OUT=SPARSE_OUT
     if a.values_bridge:OUT=BRIDGE_OUT
+    if a.head_output_offload:OUT=HEAD_OUT
     if a.worker:raise SystemExit(worker(OUT))
     OUT.mkdir(parents=True,exist_ok=True)
     with (OUT/'run.lock').open('w') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);spec=identity(sparse=a.sparse)
+        if a.head_output_offload:spec['config']['head_output_offload']=True
         if (OUT/'identity.json').exists():
             previous=read(OUT/'identity.json');previous.pop('source_commit',None)
             if previous!=json.loads(json.dumps(spec)):raise ValueError('CHECK_IDENTITY_CHANGED')
@@ -363,7 +373,7 @@ def main():
         if dirty:raise ValueError('RESOURCE_SOURCE_NOT_COMMITTED')
         spec['source_commit']=git('rev-parse','HEAD');save(OUT/'identity.json',spec)
         save(OUT/'progress.json',{'status':'RUNNING','stage':'bounded_worker','pid':os.getpid()})
-        startgpu=gpu_sample(None);command=[sys.executable,'-u','-m','research_tools.pvst.max_window_check','--worker']+(['--values-bridge'] if a.values_bridge else ['--sparse'] if a.sparse else [])
+        startgpu=gpu_sample(None);command=[sys.executable,'-u','-m','research_tools.pvst.max_window_check','--worker']+(['--head-output-offload'] if a.head_output_offload else ['--values-bridge'] if a.values_bridge else ['--sparse'] if a.sparse else [])
         proc=bounded_process(command,900,OUT/'worker.log',gpu_sample)
         w=read(OUT/'worker_result.json') if (OUT/'worker_result.json').exists() else {};live=read(OUT/'live.json') if (OUT/'live.json').exists() else {}
         if not w and (OUT/'stages.json').exists():w={'stages':read(OUT/'stages.json')}
