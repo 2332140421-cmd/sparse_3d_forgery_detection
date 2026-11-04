@@ -1,6 +1,17 @@
 # PVST v0.3 固定CSR values梯度桥接验收
 
 2026-11-05；状态 **OOM**；正式模型仍0/2，不启动训练或性能评价。
+
+**结论：桥接与小图表示验证通过，单层峰值下降，但最大窗口仍在反向重计算时OOM，未完成AdamW。**
+
+本次失败定位到 **coarse_time第3层（dilation4）、head=6（从0计，第7个head）的 `torch.sparse.mm(matrix,vf)`**。调用栈及异常帧实际记录q shape=[1,488,042,64]、E=20,707,343；该E/N对应已记录coarse dilation4。按该head配置，CSR逻辑shape=[1,488,042,1,488,042]、FP32 V=[1,488,042,64]，无逻辑填充列。具体内部申请张量未单独观测，不把申请量直接当作已证实的内部张量身份。
+
+申请 **364 MiB** 时设备剩余 **298.12 MiB**；错误瞬间PyTorch allocated约20.96 GiB、reserved未分配578.56 MiB。本轮已观测allocated峰值 **21.174 GiB**，reserved峰值 **21.818 GiB**；完整更新未完成，不能将其称为完整更新峰值上界。
+
+前向 **16.768秒**；反向未完成，从前向阶段落盘到worker末态约 **43.816秒**（含异常处理/收尾，不是完整反向耗时）；AdamW未执行。worker至末态 **63.921秒**，父进程总墙时 **65.496秒**，真实退出码 **2**，无终止信号，非TIMEOUT。末态RSS **14.813 GiB**、主机可用 **34.493 GiB**。
+
+已确认本轮softmax/values表示修复有效，但新的峰值落在稀疏聚合重计算；不建议进入两条件各一轮。**唯一下一步建议：先对该SpMM重计算边界做限定的张量存活与峰值排查。** 本轮不继续修改、不重试，不把结果泛化为“三维方法不可行”。
+
 ## 修复与结构
 
 原直接CSR构造的SparseCompressedTensorBackward0会_to_dense，再提取values梯度。新增CSRFromValues只封装固定结构构造：A[row_e,col_e]=v_e；其反向从真实CSR上游梯度返回对应边的grad_values。shape/crow/col均核对，不凭nnz假定顺序；CUDA结构核对用异步断言，避免每head主机同步。非空结构改变明确报错，不静默匹配或稠密化；本路径实测CSR结构完全一致。
@@ -49,6 +60,8 @@ CSRSoftmax仅保存p/crow；桥接仅保存crow/col引用和逻辑shape。临时
 小图包含非均匀PTS、负坐标、不同帧节点/空帧、跨帧query与尾块；FP32覆盖三种dilation，BF16覆盖512/8head。TorchDispatch检查前向、完整反向及checkpoint重计算，拒绝_to_dense和逻辑N×N/N×(N+padding)张量，同时允许正常N×D特征。普通与强制逻辑padding两条小图均检查；没有重做旧SIGFPE定位。
 布局通过：True；padding布局通过：True；dropout/checkpoint：{"dropout": 0.1, "max_output_error": 0.0, "finite_gradients": true, "checkpoint_rng": "PASS"}。
 全部参数误差及相对参考最大幅度保留JSON；CPU直接相关检查见cpu_tests.txt。无新增模型参数/state_dict键。
+单层实测allocated峰值从2.4317降至2.2792 GiB，下降 **6.27%**（约156.1 MiB）；反向0.837250→0.653441秒。该结论只针对下列同输入匹配单层，不能外推为整模型峰值下降。
+
 ## 唯一规模单层内存与速度
 
 实际131,072节点、dim512、8head、head_dim64，四帧真实已验证坐标图/非均匀PTS；旧COO候选仅作tests中的本次参考。两者独立进程、同seed/权重/输入/dropout.1/BF16/FP32/内外checkpoint，一次预热后各一次非profiler同步计时。
@@ -349,3 +362,5 @@ torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 364.00 MiB. GPU 0 
 不建议直接进入两条件各一轮。未达到完整更新放行条件；按本轮停止条件结束，不继续叠加优化或重试。已观测峰值不代表完整更新峰值上界。
 错误/门槛：无
 源码：`a6199da86044401bbaa551a377ea800d8ee64ea6`；产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_csr_values_bridge_check_v1`。缓存/前端/视觉特征均复用，不读测试集，不下载，不做坐标审计或预览；验收权重与优化器丢弃，无checkpoint。原报告、退出历史、正式config和用户无关JSON保持；计算与publication分列。
+
+21项直接相关CPU检查通过（3.30秒）；CUDA小型三个子进程累计11.558秒，前置极小探针另未单列墙时，不补测。原报告/退出记录/正式config及用户无关JSON经SHA核对未改动。完整窗口设备采样曲线：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_csr_values_bridge_check_v1/full_window/resource_curve.png`。

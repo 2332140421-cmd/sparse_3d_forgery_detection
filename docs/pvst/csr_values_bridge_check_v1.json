@@ -984,5 +984,17 @@
         "peak_rss_bytes": 15899230208
       }
     }
+  },
+  "conclusion": {
+    "bridge_layout_validated": true,
+    "single_layer_peak_reduction_fraction": 0.06269442731889141,
+    "full_window_status": "OOM",
+    "failure_layer": "coarse_time.2/dilation4",
+    "failure_head_zero_based": 6,
+    "failure_operator": "checkpoint recompute torch.sparse.mm",
+    "failure_requested_MiB": 364,
+    "failure_free_MiB": 298.12,
+    "adamw_updates": 0,
+    "next_step": "bounded tensor-lifetime and memory-peak audit at sparse.mm recomputation boundary; no new run this round"
   }
 }
