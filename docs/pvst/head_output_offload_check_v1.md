@@ -3,6 +3,15 @@
 状态：**OOM**；正式模型仍0/2。本轮只有存储路径变化，无训练、评价或前端/冻结视觉提取。
 新增默认关闭head_output_offload：GPU逐head原CSRSoftmax/CSRFromValues/SpMM及checkpoint → 保留autograd的同步to(cpu) → CPU按原head顺序stack/reshape → 完整attended一次同步回GPU。dtype不变，不用detach/no_grad，不改QKV/索引/初始化/损失/宽度/像素/点/节点/边/上下文。CPU列表没有GPU输出引用；成员变量只记标量/字符串，不记Tensor。
 原已验证外层saved-tensor CPU卸载、BF16/逐head FP32、SIGFPE padding、dropout和checkpoint RNG保持。正式config XYZ=null且无新开关字段，正式默认False。
+
+**最终结论：正确性和匹配单层通过；唯一完整窗口OOM，AdamW更新0次。暂不建议在当前4090上进入两条件各一轮。**
+
+本次明确失败于反向的外层checkpoint重计算：`Temporal.apply → SparseLayer.forward → projected=torch.cat(parts)`。保存的活动层是 **coarse_time第3层（dilation4，512维，N=1,488,042）**。此时尚在norm+QKV拼接，**不对应某个正在执行的head**；上轮coarse第7head SpMM不是本次报错位置。拟拼接shape为 **[1,488,042,1,536]、BF16，约4.257 GiB**，由节点数和QKV宽度推导；cat未成功，不冒称已有该输出Tensor。
+
+CUDA报错申请 **4.25 GiB** 时仅余 **625.31 MiB**；错误瞬间PyTorch allocated20.87 GiB、reserved未分配344.85 MiB。已观测allocated/reserved峰值 **20.876/21.811 GiB**。完整更新未完成，这不是完整更新峰值上界。
+
+前向 **20.641秒**；反向未完成，从前向阶段结束至worker末态约 **45.609秒**（含异常处理/收尾，不能当完整反向耗时）；梯度检查/裁剪、AdamW及优化器状态建立均未到达。worker至末态 **69.647秒**，父进程总墙时 **71.573秒**，真实退出码 **2**，无终止信号，非TIMEOUT。主机进程峰值RSS **17.572 GiB**，末态RSS **16.225 GiB**、主机可用 **33.044 GiB**。
+
 ## 正确性
 
 沿用FP32输出atol2e-5/rtol2e-4、梯度atol2e-5/rtol3e-3；BF16输出.04/.03、梯度.003/.08，不事后放宽。小图含非均匀PTS、空帧、负坐标和尾块，当前CSR＋桥接GPU拼接与CPU暂存逐项全量对比。
@@ -22,6 +31,11 @@
 |cpu|0.155992|0.773836|2.2323/2.5723|1.8934|128.0|cpu|
 
 head_storage中CPU字节数为实际拷贝Tensor的numel×element_size累计，不能与CPU进程峰值RSS等同；CPU heads和CPU stack曾短暂同时存在。D2H/CPU stack/H2D耗时、每head后allocated/reserved和回传前后内存保留JSON，只记数值，不增加额外同步或逐head落盘。
+
+实际存储证据：匹配单层GPU拼接的head列表累计128 MiB；CPU路径列表GPU字节为0，CPU payload128 MiB。GPU路径各head后allocated依次增加16 MiB；CPU路径八次均为694,027,776字节不增长，最后相差恰好128 MiB。CPU stack完成后GPU allocated仍为694,027,776，完整attended回传后变为828,245,504字节（增加128 MiB）。这些是实际阶段记录，不只凭调用.cpu()或形状估算。
+
+整层allocated峰值只下降 **48 MiB（2.06%）**，不是128 MiB；因为全局峰值还有QKV和稀疏/反向临时量。reserved反而2.494→2.572 GiB，因此不以reserved变化宣称节省。匹配单层测量期峰值RSS约1.391→1.893 GiB；包含报告快照后的进程峰值另在JSON保留。
+
 大图配对核对全部参数梯度，输出/输入梯度取固定每2048节点一行共64行；小图逐元素全量，未将大图抽样称全量。配对误差：
 ```json
 {
@@ -169,3 +183,13 @@ head_storage中CPU字节数为实际拷贝Tensor的numel×element_size累计，�
 未完成完整更新，不建议直接进入两条件各一轮。按本轮限定停止，不自动改SpMM、索引类型、尺度或其他存储，不追加训练或资源测试。
 错误/门槛：无
 执行源码：`7791399153899d20cb50f7d4ecfa92846459e4b2`。本轮产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_head_output_offload_check_v1`。原报告/错误/退出码/协议/config和缓存不覆盖；用户无关JSON保留。验收权重丢弃，不保存checkpoint；计算状态与publication.json单列。
+
+本轮8项直接相关CPU检查通过（3.39秒）。CUDA小图FP32/dropout关闭、FP32/dropout开启、BF16/dropout开启三组输出/输入/全部参数梯度最大误差均0；大图固定64行输出/输入梯度误差0，全部参数梯度最大误差9.536743e-7，满足冻结容差。
+
+六层前向CPU head payload每fine层1.4165 GiB、每coarse层1.4191 GiB，累计 **8.5068 GiB**。这是实际CPU Tensor字节的累计传输量，**不是8.51 GiB同时驻留，也不是进程峰值RSS**；每层CPU stack另分配同等字节，短暂与heads重叠后释放。
+
+六层前向阻塞D2H调用累计 **3.092秒**，CPU stack **0.828秒**，H2D **0.719秒**。D2H阻塞时间含等待此前排队GPU计算，不等于纯PCIe传输耗时，不据此计算带宽。匹配单层的前向和反向均变慢，完整前向较上次16.768秒增至20.641秒；两次失败点不同，不能计算精确完整更新加速/减速比。
+
+**对4090的判断：CPU暂存有效移除了head输出累计GPU驻留，但剩余阻塞已是coarse QKV重算拼接的4.25GiB申请；当前配置仍未通过一次真实更新。保持停止，不自动实施QKV、SpMM、索引、尺度或其他修改。**
+
+完整调用栈与资源曲线位于`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_head_output_offload_check_v1/full_window`。原报告、退出历史、config和用户JSON均经SHA核对未改动。
