@@ -45,7 +45,7 @@ class Neighborhood:
 
 class SparseLayer(nn.Module):
     def __init__(self,dim,heads,chunk=128,ffn_chunk=8192):
-        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.ffn_checkpoint=True;self.last_execution={}
+        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.head_qkv_stream=False;self.ffn_checkpoint=True;self.last_execution={}
         if ffn_chunk<=0:raise ValueError("FFN_CHUNK_MUST_BE_POSITIVE")
         self.norm=LayerNorm(dim);self.qkv=nn.Linear(dim,dim*3);self.bias=nn.Sequential(nn.Linear(4,64),nn.GELU(),nn.Linear(64,heads))
         self.proj=nn.Linear(dim,dim);self.drop=nn.Dropout(.1);self.norm2=LayerNorm(dim)
@@ -73,20 +73,46 @@ class SparseLayer(nn.Module):
         return x+self.ffn(self.norm2(x))
     def norm_qkv(self,x):
         return self.qkv(self.norm(x))
+    def norm_qkv_head(self,x,weight,bias):
+        # Normalization is still over full D, with the existing FP32 accumulator.
+        return F.linear(self.norm(x),weight,bias)
+    def streamed_head(self,x,bias,crow,col,relation,head):
+        from .sparse_attention import sparse_head
+        self.last_execution={'operation':'head norm+QKV','head':head,'input_shape':list(x.shape),'qkv_chunk':self.qkv_chunk}
+        ranges=[(base+head*64,base+(head+1)*64) for base in [0,self.dim,2*self.dim]]
+        weight=torch.cat([self.qkv.weight[a:b] for a,b in ranges])
+        offset=torch.cat([self.qkv.bias[a:b] for a,b in ranges])
+        parts=[]
+        for start in range(0,len(x),self.qkv_chunk):
+            args=(x[start:start+self.qkv_chunk],weight,offset)
+            value=checkpoint(self.norm_qkv_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.norm_qkv_head(*args)
+            parts.append(value)
+        projected=torch.cat(parts);del parts,value,weight,offset,args
+        self.qkv_execution['heads'][str(head)]={'head':head,'row_ranges':ranges,'shape':list(projected.shape),'dtype':str(projected.dtype),'bytes':projected.numel()*projected.element_size()}
+        self.last_execution={'operation':'streamed head sparse attention','head':head,'qkv_shape':list(projected.shape),'dtype':str(projected.dtype)}
+        q,k,v=projected.reshape(len(x),3,64).unbind(1)
+        return sparse_head(q,k,v,bias,crow,col,relation,head,self.drop.p,self.drop.training)
     def forward(self,x,graph,dilation):
         if not len(x):return x
-        self.last_execution={'operation':'norm+QKV','input_shape':list(x.shape),'dtype':str(x.dtype)}
-        if self.qkv_chunk:
-            parts=[]
-            for start in range(0,len(x),self.qkv_chunk):
-                part=x[start:start+self.qkv_chunk]
-                value=checkpoint(self.norm_qkv,part,use_reentrant=False,preserve_rng_state=True) if self.training else self.norm_qkv(part)
-                parts.append(value)
-            projected=torch.cat(parts);del parts,value
-        else:projected=self.norm_qkv(x)  # historical v0.2 execution
-        q,k,v=projected.reshape(len(x),3,self.heads,64).unbind(1)
-        del projected
-        bias=self.bias(graph.relative[dilation].to(q.dtype));values=[]
+        self.qkv_execution={'stream':self.head_qkv_stream,'heads':{},'full_activation_materialized':False}
+        if self.head_qkv_stream:
+            if not self.sparse_edge_attention or not self.head_output_offload or self.qkv_chunk<=0:raise ValueError('STREAM_REQUIRES_CSR_CPU_HEADS_AND_NODE_CHUNK')
+            bias_dtype=torch.get_autocast_dtype(x.device.type) if torch.is_autocast_enabled(x.device.type) else x.dtype
+        else:
+            self.last_execution={'operation':'norm+QKV','input_shape':list(x.shape),'dtype':str(x.dtype)}
+            if self.qkv_chunk:
+                parts=[]
+                for start in range(0,len(x),self.qkv_chunk):
+                    part=x[start:start+self.qkv_chunk]
+                    value=checkpoint(self.norm_qkv,part,use_reentrant=False,preserve_rng_state=True) if self.training else self.norm_qkv(part)
+                    parts.append(value)
+                projected=torch.cat(parts);del parts,value
+            else:projected=self.norm_qkv(x)  # historical v0.2 execution
+            q,k,v=projected.reshape(len(x),3,self.heads,64).unbind(1)
+            del projected
+            bias_dtype=q.dtype
+            self.qkv_execution.update(full_activation_materialized=True,full_shape=[len(x),3*self.dim],dtype=str(q.dtype))
+        bias=self.bias(graph.relative[dilation].to(bias_dtype));values=[]
         if self.sparse_edge_attention:
             from .sparse_attention import edge_topology,sparse_head,intersection_padding,BACKEND
             self.last_execution={'operation':'CSR edge topology','nodes':len(x),'dtype':str(x.dtype)}
@@ -101,9 +127,13 @@ class SparseLayer(nn.Module):
                 return {'allocated_bytes':torch.cuda.memory_allocated(x.device),'reserved_bytes':torch.cuda.memory_reserved(x.device)} if x.is_cuda else {}
             for head in range(self.heads):
                 self.last_execution={'operation':'FP32 sparse head','head':head,'input_shape':[len(x),64],
-                    'logical_shape':[len(x),len(x)+self.edge_stats['logical_padding_columns']],'storage_dtype':str(q.dtype)}
-                args=(q[:,head],k[:,head],v[:,head],bias,crow,col,relation,head,self.drop.p,self.drop.training)
-                h=checkpoint(sparse_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else sparse_head(*args)
+                    'logical_shape':[len(x),len(x)+self.edge_stats['logical_padding_columns']],'storage_dtype':str(bias_dtype)}
+                if self.head_qkv_stream:
+                    args=(x,bias,crow,col,relation,head)
+                    h=checkpoint(self.streamed_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.streamed_head(*args)
+                else:
+                    args=(q[:,head],k[:,head],v[:,head],bias,crow,col,relation,head,self.drop.p,self.drop.training)
+                    h=checkpoint(sparse_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else sparse_head(*args)
                 metadata={'head':head,'source_device':str(h.device),'dtype':str(h.dtype),'shape':list(h.shape)}
                 tick=time.monotonic()
                 heads.append(h.to(device='cpu',non_blocking=False) if self.head_output_offload else h)
@@ -135,7 +165,8 @@ class SparseLayer(nn.Module):
                 y=checkpoint(self.attention_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.attention_block(*args)
                 values.append(y)
         x=torch.cat(values)
-        del q,k,v,bias,y,args
+        if not self.head_qkv_stream:del q,k,v
+        del bias,y,args
         values=[]
         self.last_execution={'operation':'norm2+FFN','input_shape':list(x.shape),'dtype':str(x.dtype),
             'ffn_chunk':self.ffn_chunk,'hidden_shape_upper_bound':[min(len(x),self.ffn_chunk),4*self.dim]}
