@@ -56,3 +56,14 @@ def test_fatal_signal_never_passes_full_window_gate():
     assert failed['status']=='FAILED' and not failed['full_window_allowed'] and failed['process']['returncode']==-8
     timed=finalize_layer({'status':'LAYER_PASS','full_window_allowed':True},{'timed_out':True,'returncode':-15})
     assert timed['status']=='TIMEOUT' and not timed['full_window_allowed']
+
+
+def test_optional_stage_trace_does_not_modify_values_or_gradients():
+    from research_tools.pvst.sparse_attention import sparse_head
+    q=torch.randn(3,64,requires_grad=True);k=torch.randn_like(q,requires_grad=True);v=torch.randn_like(q,requires_grad=True);bias=torch.randn(1,81,1,requires_grad=True)
+    crow=torch.tensor([0,2,4,6]);col=torch.tensor([0,1,1,2,0,2]);relation=torch.arange(6);events=[]
+    a=sparse_head(q,k,v,bias,crow,col,relation,0,0.,False)
+    b=sparse_head(q,k,v,bias,crow,col,relation,0,0.,False,trace=lambda stage,tensor,head:events.append(stage))
+    torch.testing.assert_close(a,b);ga=torch.autograd.grad(a.sum(),[q,k,v,bias],retain_graph=True);gb=torch.autograd.grad(b.sum(),[q,k,v,bias])
+    for x,y in zip(ga,gb):torch.testing.assert_close(x,y)
+    assert events[0]=='head_start' and events[-1]=='sparse_mm_complete' and 'softmax_start' in events
