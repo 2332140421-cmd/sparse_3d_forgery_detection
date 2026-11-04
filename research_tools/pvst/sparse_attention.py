@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 
 
+
 def edge_topology(graph,dilation,chunk):
     """CSR columns sorted within rows; relation IDs follow the same permutation."""
     degrees=[];columns=[];relations=[];n=len(graph.coords)
@@ -30,6 +31,40 @@ def intersection_padding(rows,columns):
     neither row softmax nor output, and requires no indexed full-K/V copies.
     """
     return int(rows>0 and columns>0 and (rows*columns)%(1<<32)==0)
+
+
+
+class CSRSoftmax(torch.autograd.Function):
+    """First-order row softmax; save only probabilities and CSR offsets.
+
+    Caller sparse_head. A regular autograd max/exp/divide chain retains several
+    E-length buffers; the analytic derivative needs only p and row membership.
+    FP64 is retained for gradcheck; the real head always supplies FP32.
+    """
+    @staticmethod
+    def forward(ctx,logits,crow):
+        if not logits.numel():
+            p=logits.clone()
+        else:
+            rows=torch.repeat_interleave(crow.diff(),output_size=logits.numel())
+            maximum=torch.segment_reduce(logits,'max',offsets=crow)
+            p=torch.exp(logits-maximum[rows]);del maximum
+            denominator=torch.segment_reduce(p,'sum',offsets=crow)
+            # p is fresh private storage inside this Function, no upstream alias.
+            p.div_(denominator[rows]);del denominator,rows
+        ctx.save_for_backward(p,crow)
+        return p
+
+    @staticmethod
+    @torch.autograd.function.once_differentiable
+    def backward(ctx,grad):
+        p,crow=ctx.saved_tensors
+        if not p.numel():return grad.clone(),None
+        rows=torch.repeat_interleave(crow.diff(),output_size=p.numel())
+        weighted=p*grad
+        total=torch.segment_reduce(weighted,'sum',offsets=crow);del weighted
+        result=p*(grad-total[rows])
+        return result,None
 
 
 def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):

@@ -1,0 +1,9 @@
+# CSR行softmax限定检查
+
+仅修改行softmax及其必要验证。CSRSoftmax使用segment_reduce及解析一阶梯度，保存p/crow；不更改模型参数、邻居、尺度、精度或dropout。CPU FP64 gradcheck、空行/单邻居/极值及保存内容测试通过。
+
+CPU布局回归已发现直接CSR构造的反向调用_to_dense。因此先在极小CUDA图核实；若确认，则按表示正确性门槛停止，131,072节点内存对比和900秒窗口均不启动。不为绕过这一额外问题擅自增加CSR构造或SpMM自定义反向。
+
+候选head仅留tests作为小型复现，正式sparse_head保持原实现；sparse_edge_attention仍默认关闭，正式XYZ尺度null。独立入口`python -m research_tools.pvst.csr_softmax_check`复用已有bounded_process，CUDA诊断子进程最多298秒，不自动重试。输出为derived/pvst_csr_softmax_check_v1；自动报告并普通commit/push。
+
+CPU直接相关检查18项通过，其中阻塞回归明确验证当前CSR构造反向会稠密化；不能将此误写为候选表示约束已通过。预声明容差沿用sparse_attention_check.TOLERANCES，若表示核对失败不开展大规模显存检查。
