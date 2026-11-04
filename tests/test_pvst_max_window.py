@@ -33,3 +33,22 @@ def test_membership_singletons_and_frame_sum_not_spatial_union():
     records=[{'fine':member_stats(np.array([1,1,3]))},{'fine':member_stats(np.array([1,2,2]))}]
     total=summarize_hist(records,'fine');assert total['nodes']==6 and total['points']==10 and total['singleton_fraction']==.5
     assert records[0]['fine']['count_quantiles_exact'][0]==1 and records[0]['fine']['count_quantiles_exact'][-1]==3
+
+
+def test_sparse_candidate_requires_all_six_actual_layers():
+    from types import SimpleNamespace
+    import pytest
+    from research_tools.pvst.max_window_check import candidate_layers,EXPECTED
+    from research_tools.pvst.temporal import SparseLayer
+    fine=[SparseLayer(256,4,512,8192) for _ in range(3)]
+    coarse=[SparseLayer(512,8,512,8192) for _ in range(3)]
+    model=SimpleNamespace(fine_time=SimpleNamespace(layers=fine),coarse_time=SimpleNamespace(layers=coarse))
+    for l in fine+coarse:l.sparse_edge_attention=True;l.qkv_chunk=8192
+    assert len(candidate_layers(model))==6
+    with pytest.raises(ValueError,match='MISSING_ACTUAL'):candidate_layers(model,True)
+    for layers,n in zip([fine,coarse],EXPECTED):
+        for l,d in zip(layers,[1,2,4]):
+            l.edge_stats={'nodes':n,'dilation':d,'completed_heads':l.heads,'head_impl':'research_tools.pvst.sparse_attention.sparse_head','backend':'CSR sampled_addmm/COO softmax/CSR mm FP32 per head'}
+    assert len(candidate_layers(model,True))==6
+    coarse[-1].sparse_edge_attention=False
+    with pytest.raises(ValueError,match='CANDIDATE_NOT_ENABLED'):candidate_layers(model)

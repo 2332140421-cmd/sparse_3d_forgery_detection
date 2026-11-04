@@ -87,15 +87,20 @@ class SparseLayer(nn.Module):
         del projected
         bias=self.bias(graph.relative[dilation].to(q.dtype));values=[]
         if self.sparse_edge_attention:
-            from .sparse_attention import edge_topology,sparse_head
+            from .sparse_attention import edge_topology,sparse_head,intersection_padding
+            self.last_execution={'operation':'CSR edge topology','nodes':len(x),'dtype':str(x.dtype)}
             crow,col,relation=edge_topology(graph,dilation,self.chunk)
             self.edge_stats={'nodes':len(x),'edges':len(col),'average_degree':len(col)/len(x),
-                'topology_bytes':sum(a.numel()*a.element_size() for a in [crow,col,relation]),'dilation':dilation}
+                'topology_bytes':sum(a.numel()*a.element_size() for a in [crow,col,relation]),'dilation':dilation,
+                'backend':'CSR sampled_addmm/COO softmax/CSR mm FP32 per head','head_impl':sparse_head.__module__+'.'+sparse_head.__name__,
+                'logical_padding_columns':intersection_padding(len(x),len(x)),'completed_heads':0}
             heads=[]
             for head in range(self.heads):
+                self.last_execution={'operation':'FP32 sparse head','head':head,'input_shape':[len(x),64],
+                    'logical_shape':[len(x),len(x)+self.edge_stats['logical_padding_columns']],'storage_dtype':str(q.dtype)}
                 args=(q[:,head],k[:,head],v[:,head],bias,crow,col,relation,head,self.drop.p,self.drop.training)
                 h=checkpoint(sparse_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else sparse_head(*args)
-                heads.append(h)
+                heads.append(h);self.edge_stats['completed_heads']+=1
             attended=torch.stack(heads,1).reshape(len(x),self.dim)
             del heads,h,crow,col,relation
             for start in range(0,len(x),self.chunk):

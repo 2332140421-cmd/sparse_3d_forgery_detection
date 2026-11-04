@@ -44,7 +44,8 @@ def execution_signature(config):
 
 
 def model_trace(model):
-    return {name:{'active_layer':getattr(module,'active_layer',None),'layers':[m.last_execution for m in module.layers]}
+    return {name:{'active_layer':getattr(module,'active_layer',None),'layers':[m.last_execution for m in module.layers],
+            'edge_stats':[getattr(m,'edge_stats',None) for m in module.layers]}
             for name,module in [('fine_time',model.fine_time),('coarse_time',model.coarse_time)]}
 
 
