@@ -3,6 +3,19 @@
 **状态：OOM；正式模型0/2。** 无正式训练、前端提取或效果评价。
 实现：保留原qkv Linear及参数身份，当前head可微选择Q/K/V各64行，合为192行权重；每8192节点仍对完整D维执行原FP32累积LayerNorm，再F.linear。当前head分块归一化/投影和CSR attention处于同一非重入checkpoint，节点块另用原checkpoint；head作为显式参数传入，重计算不读取循环尾值。
 只物化当前[N,192]，不在head间缓存QKV、不复制完整x、不创建新的Parameter。当前head输出沿用同步CPU暂存/CPU stack/完整attended回GPU，保留CSRSoftmax、CSRFromValues、SIGFPE填充列、BF16外层/逐head FP32、dropout及外层saved-tensor CPU卸载。新开关默认False，只允许CSR＋CPU head路径，不静默回退；正式XYZ仍null。
+
+**结论：逐head QKV实现与正确性检查通过，单层allocated峰值下降30.87%；唯一完整窗口仍OOM，真实AdamW更新0次。**
+
+本轮已消除旧全量QKV物化：完整前向fine三层各4head、coarse三层各8head均记录head_qkv_stream=True、full_activation_materialized=False。当前head实际QKV形状fine=[2,970,629,192]、coarse=[1,488,042,192]，均BF16，分别1,140,721,536字节（约1.0624GiB）/571,408,128字节（约0.5322GiB）；不是把8192节点chunk变小后仍cat全部head。小图dispatch还核对了反向重算不生成全节点[N,3D]激活。
+
+**新的失败位置精度有限：**调用栈仅到 `_C._EngineBase.run_backward`，没有Python层的QKV/SpMM调用帧，failure_operator_context为空。最后活动状态为coarse dilation1的norm2+FFN块重算（块shape [8192,512]、hidden [8192,2048]）；这是最近重算记录，**不能据此认定实际失败层、head或底层算子**。原生反向请求 **1.42GiB** 时设备剩 **861.50MiB**；不凭申请量反推出某个[N,D]梯度缓冲。没有重复GPU测试或开启新的profiler来补证。
+
+前向 **21.780秒**；反向未完成，从前向阶段结束至worker末态约 **116.580秒**（含异常处理/收尾，不能当作完整反向耗时）；关键梯度检查/裁剪、AdamW和优化器状态建立均未到达。worker至末态 **141.697秒**，父进程总墙时 **144.296秒**；真实退出码 **2**，无终止信号，非TIMEOUT。
+
+已观测GPU allocated/reserved峰值 **21.112/21.793GiB**，不能视为完整更新峰值上界。主机峰值RSS **17.921GiB**，末态RSS **15.090GiB**、可用 **33.905GiB**。
+
+**当前4090仍未通过一次真实更新，不建议直接进入两条件训练。若下一轮继续，应先定位本次原生反向1.42GiB申请的具体算子，而不是继续假定全量QKV或SpMM。** 本轮停止，不实施新的定位工具或资源优化。
+
 ## 正确性
 
 沿用FP32输出atol2e-5/rtol2e-4、梯度2e-5/3e-3，BF16输出.04/.03、梯度.003/.08，不放宽。小图全量比较输出/输入/全部参数梯度；参数身份、键和数量不变；各head原qkv参数行梯度范数非零。CPU单独检查完整D LayerNorm及Q/K/V选行/排列、尾块、关闭路径与默认值。
@@ -69,3 +82,9 @@ worker至末态=141.69727745093405秒，父进程总墙时=144.29580196924508秒
 结论：尚未完成规定窗口一次真实更新，不建议直接训练；按本轮停止条件结束，不追加SpMM/索引/尺度/其他优化。
 错误/门槛：无
 源码：`8ceedb3ccf1fcf3a755991ce042fcf588273e6a9`；产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_head_qkv_stream_check_v1`。冻结缓存复用，无下载/前端/视觉重提取、坐标审计/预览或效果指标，验收权重丢弃无checkpoint。原报告、协议、退出码、config和用户无关JSON保留，正式模型0/2；计算与发布分列。
+
+本轮12项直接相关CPU检查通过（4.62秒）；CUDA四组小图：FP32输出最大绝对误差4.76837e-7、输入梯度1.16415e-10、参数梯度3.49246e-10；BF16输出误差0、输入梯度3.81470e-6、参数梯度1.04904e-5，均满足冻结容差。对应相对参考最大幅度与每head原qkv行梯度范数保留JSON。
+
+匹配单层旧/新测量期峰值RSS分别 **1.9841/1.9819GiB**；全量QKV实际[131072,1536] BF16为384MiB，逐head[131072,192]为48MiB。单层峰值下降不是只按这两个形状估算，而由allocated实测确认。前向/反向分别0.183609→0.222360秒、0.781172→0.867027秒，重复归一化/小GEMM与checkpoint的执行成本存在，但未开展逐算子profiling，不虚构开销占比。
+
+大图固定64行输出误差0、输入梯度最大误差1.396984e-9，全部参数梯度最大误差4.947186e-6。原报告/退出历史/正式config及用户无关JSON经SHA核对未改。完整窗口资源曲线：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_head_qkv_stream_check_v1/full_window/resource_curve.png`。

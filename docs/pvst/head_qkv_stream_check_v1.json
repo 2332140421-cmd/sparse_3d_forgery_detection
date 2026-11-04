@@ -165,13 +165,20 @@
             "head_shape_events": 0,
             "forward": {
               "stream": false,
-              "heads": {},
               "full_activation_materialized": true,
               "full_shape": [
                 41,
                 768
               ],
-              "dtype": "torch.float32"
+              "dtype": "torch.float32",
+              "head_summary": {
+                "count": 0,
+                "ids": [],
+                "shapes": [],
+                "dtypes": [],
+                "bytes_each": [],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           },
           {
@@ -179,101 +186,29 @@
             "head_shape_events": 16,
             "forward": {
               "stream": true,
-              "heads": {
-                "0": {
-                  "head": 0,
-                  "row_ranges": [
-                    [
-                      0,
-                      64
-                    ],
-                    [
-                      256,
-                      320
-                    ],
-                    [
-                      512,
-                      576
-                    ]
-                  ],
-                  "shape": [
+              "full_activation_materialized": false,
+              "head_summary": {
+                "count": 4,
+                "ids": [
+                  "0",
+                  "1",
+                  "2",
+                  "3"
+                ],
+                "shapes": [
+                  [
                     41,
                     192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "1": {
-                  "head": 1,
-                  "row_ranges": [
-                    [
-                      64,
-                      128
-                    ],
-                    [
-                      320,
-                      384
-                    ],
-                    [
-                      576,
-                      640
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "2": {
-                  "head": 2,
-                  "row_ranges": [
-                    [
-                      128,
-                      192
-                    ],
-                    [
-                      384,
-                      448
-                    ],
-                    [
-                      640,
-                      704
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "3": {
-                  "head": 3,
-                  "row_ranges": [
-                    [
-                      192,
-                      256
-                    ],
-                    [
-                      448,
-                      512
-                    ],
-                    [
-                      704,
-                      768
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                }
-              },
-              "full_activation_materialized": false
+                  ]
+                ],
+                "dtypes": [
+                  "torch.float32"
+                ],
+                "bytes_each": [
+                  31488
+                ],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           }
         ]
@@ -424,13 +359,20 @@
             "head_shape_events": 0,
             "forward": {
               "stream": false,
-              "heads": {},
               "full_activation_materialized": true,
               "full_shape": [
                 41,
                 1536
               ],
-              "dtype": "torch.float32"
+              "dtype": "torch.float32",
+              "head_summary": {
+                "count": 0,
+                "ids": [],
+                "shapes": [],
+                "dtypes": [],
+                "bytes_each": [],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           },
           {
@@ -438,193 +380,33 @@
             "head_shape_events": 32,
             "forward": {
               "stream": true,
-              "heads": {
-                "0": {
-                  "head": 0,
-                  "row_ranges": [
-                    [
-                      0,
-                      64
-                    ],
-                    [
-                      512,
-                      576
-                    ],
-                    [
-                      1024,
-                      1088
-                    ]
-                  ],
-                  "shape": [
+              "full_activation_materialized": false,
+              "head_summary": {
+                "count": 8,
+                "ids": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7"
+                ],
+                "shapes": [
+                  [
                     41,
                     192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "1": {
-                  "head": 1,
-                  "row_ranges": [
-                    [
-                      64,
-                      128
-                    ],
-                    [
-                      576,
-                      640
-                    ],
-                    [
-                      1088,
-                      1152
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "2": {
-                  "head": 2,
-                  "row_ranges": [
-                    [
-                      128,
-                      192
-                    ],
-                    [
-                      640,
-                      704
-                    ],
-                    [
-                      1152,
-                      1216
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "3": {
-                  "head": 3,
-                  "row_ranges": [
-                    [
-                      192,
-                      256
-                    ],
-                    [
-                      704,
-                      768
-                    ],
-                    [
-                      1216,
-                      1280
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "4": {
-                  "head": 4,
-                  "row_ranges": [
-                    [
-                      256,
-                      320
-                    ],
-                    [
-                      768,
-                      832
-                    ],
-                    [
-                      1280,
-                      1344
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "5": {
-                  "head": 5,
-                  "row_ranges": [
-                    [
-                      320,
-                      384
-                    ],
-                    [
-                      832,
-                      896
-                    ],
-                    [
-                      1344,
-                      1408
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "6": {
-                  "head": 6,
-                  "row_ranges": [
-                    [
-                      384,
-                      448
-                    ],
-                    [
-                      896,
-                      960
-                    ],
-                    [
-                      1408,
-                      1472
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                },
-                "7": {
-                  "head": 7,
-                  "row_ranges": [
-                    [
-                      448,
-                      512
-                    ],
-                    [
-                      960,
-                      1024
-                    ],
-                    [
-                      1472,
-                      1536
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.float32",
-                  "bytes": 31488
-                }
-              },
-              "full_activation_materialized": false
+                  ]
+                ],
+                "dtypes": [
+                  "torch.float32"
+                ],
+                "bytes_each": [
+                  31488
+                ],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           }
         ]
@@ -755,13 +537,20 @@
             "head_shape_events": 0,
             "forward": {
               "stream": false,
-              "heads": {},
               "full_activation_materialized": true,
               "full_shape": [
                 41,
                 768
               ],
-              "dtype": "torch.bfloat16"
+              "dtype": "torch.bfloat16",
+              "head_summary": {
+                "count": 0,
+                "ids": [],
+                "shapes": [],
+                "dtypes": [],
+                "bytes_each": [],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           },
           {
@@ -769,101 +558,29 @@
             "head_shape_events": 16,
             "forward": {
               "stream": true,
-              "heads": {
-                "0": {
-                  "head": 0,
-                  "row_ranges": [
-                    [
-                      0,
-                      64
-                    ],
-                    [
-                      256,
-                      320
-                    ],
-                    [
-                      512,
-                      576
-                    ]
-                  ],
-                  "shape": [
+              "full_activation_materialized": false,
+              "head_summary": {
+                "count": 4,
+                "ids": [
+                  "0",
+                  "1",
+                  "2",
+                  "3"
+                ],
+                "shapes": [
+                  [
                     41,
                     192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "1": {
-                  "head": 1,
-                  "row_ranges": [
-                    [
-                      64,
-                      128
-                    ],
-                    [
-                      320,
-                      384
-                    ],
-                    [
-                      576,
-                      640
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "2": {
-                  "head": 2,
-                  "row_ranges": [
-                    [
-                      128,
-                      192
-                    ],
-                    [
-                      384,
-                      448
-                    ],
-                    [
-                      640,
-                      704
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "3": {
-                  "head": 3,
-                  "row_ranges": [
-                    [
-                      192,
-                      256
-                    ],
-                    [
-                      448,
-                      512
-                    ],
-                    [
-                      704,
-                      768
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                }
-              },
-              "full_activation_materialized": false
+                  ]
+                ],
+                "dtypes": [
+                  "torch.bfloat16"
+                ],
+                "bytes_each": [
+                  15744
+                ],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           }
         ]
@@ -1014,13 +731,20 @@
             "head_shape_events": 0,
             "forward": {
               "stream": false,
-              "heads": {},
               "full_activation_materialized": true,
               "full_shape": [
                 41,
                 1536
               ],
-              "dtype": "torch.bfloat16"
+              "dtype": "torch.bfloat16",
+              "head_summary": {
+                "count": 0,
+                "ids": [],
+                "shapes": [],
+                "dtypes": [],
+                "bytes_each": [],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           },
           {
@@ -1028,193 +752,33 @@
             "head_shape_events": 32,
             "forward": {
               "stream": true,
-              "heads": {
-                "0": {
-                  "head": 0,
-                  "row_ranges": [
-                    [
-                      0,
-                      64
-                    ],
-                    [
-                      512,
-                      576
-                    ],
-                    [
-                      1024,
-                      1088
-                    ]
-                  ],
-                  "shape": [
+              "full_activation_materialized": false,
+              "head_summary": {
+                "count": 8,
+                "ids": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7"
+                ],
+                "shapes": [
+                  [
                     41,
                     192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "1": {
-                  "head": 1,
-                  "row_ranges": [
-                    [
-                      64,
-                      128
-                    ],
-                    [
-                      576,
-                      640
-                    ],
-                    [
-                      1088,
-                      1152
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "2": {
-                  "head": 2,
-                  "row_ranges": [
-                    [
-                      128,
-                      192
-                    ],
-                    [
-                      640,
-                      704
-                    ],
-                    [
-                      1152,
-                      1216
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "3": {
-                  "head": 3,
-                  "row_ranges": [
-                    [
-                      192,
-                      256
-                    ],
-                    [
-                      704,
-                      768
-                    ],
-                    [
-                      1216,
-                      1280
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "4": {
-                  "head": 4,
-                  "row_ranges": [
-                    [
-                      256,
-                      320
-                    ],
-                    [
-                      768,
-                      832
-                    ],
-                    [
-                      1280,
-                      1344
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "5": {
-                  "head": 5,
-                  "row_ranges": [
-                    [
-                      320,
-                      384
-                    ],
-                    [
-                      832,
-                      896
-                    ],
-                    [
-                      1344,
-                      1408
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "6": {
-                  "head": 6,
-                  "row_ranges": [
-                    [
-                      384,
-                      448
-                    ],
-                    [
-                      896,
-                      960
-                    ],
-                    [
-                      1408,
-                      1472
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                },
-                "7": {
-                  "head": 7,
-                  "row_ranges": [
-                    [
-                      448,
-                      512
-                    ],
-                    [
-                      960,
-                      1024
-                    ],
-                    [
-                      1472,
-                      1536
-                    ]
-                  ],
-                  "shape": [
-                    41,
-                    192
-                  ],
-                  "dtype": "torch.bfloat16",
-                  "bytes": 15744
-                }
-              },
-              "full_activation_materialized": false
+                  ]
+                ],
+                "dtypes": [
+                  "torch.bfloat16"
+                ],
+                "bytes_each": [
+                  15744
+                ],
+                "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+              }
             }
           }
         ]
@@ -1242,23 +806,37 @@
     "head_qkv_stream": false,
     "forward_qkv_execution": {
       "stream": false,
-      "heads": {},
       "full_activation_materialized": true,
       "full_shape": [
         131072,
         1536
       ],
-      "dtype": "torch.bfloat16"
+      "dtype": "torch.bfloat16",
+      "head_summary": {
+        "count": 0,
+        "ids": [],
+        "shapes": [],
+        "dtypes": [],
+        "bytes_each": [],
+        "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+      }
     },
     "backward_qkv_execution": {
       "stream": false,
-      "heads": {},
       "full_activation_materialized": true,
       "full_shape": [
         131072,
         1536
       ],
-      "dtype": "torch.bfloat16"
+      "dtype": "torch.bfloat16",
+      "head_summary": {
+        "count": 0,
+        "ids": [],
+        "shapes": [],
+        "dtypes": [],
+        "bytes_each": [],
+        "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+      }
     },
     "head_output_offload": true,
     "forward_head_storage": {
@@ -1357,383 +935,63 @@
     "head_qkv_stream": true,
     "forward_qkv_execution": {
       "stream": true,
-      "heads": {
-        "0": {
-          "head": 0,
-          "row_ranges": [
-            [
-              0,
-              64
-            ],
-            [
-              512,
-              576
-            ],
-            [
-              1024,
-              1088
-            ]
-          ],
-          "shape": [
+      "full_activation_materialized": false,
+      "head_summary": {
+        "count": 8,
+        "ids": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "shapes": [
+          [
             131072,
             192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "1": {
-          "head": 1,
-          "row_ranges": [
-            [
-              64,
-              128
-            ],
-            [
-              576,
-              640
-            ],
-            [
-              1088,
-              1152
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "2": {
-          "head": 2,
-          "row_ranges": [
-            [
-              128,
-              192
-            ],
-            [
-              640,
-              704
-            ],
-            [
-              1152,
-              1216
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "3": {
-          "head": 3,
-          "row_ranges": [
-            [
-              192,
-              256
-            ],
-            [
-              704,
-              768
-            ],
-            [
-              1216,
-              1280
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "4": {
-          "head": 4,
-          "row_ranges": [
-            [
-              256,
-              320
-            ],
-            [
-              768,
-              832
-            ],
-            [
-              1280,
-              1344
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "5": {
-          "head": 5,
-          "row_ranges": [
-            [
-              320,
-              384
-            ],
-            [
-              832,
-              896
-            ],
-            [
-              1344,
-              1408
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "6": {
-          "head": 6,
-          "row_ranges": [
-            [
-              384,
-              448
-            ],
-            [
-              896,
-              960
-            ],
-            [
-              1408,
-              1472
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "7": {
-          "head": 7,
-          "row_ranges": [
-            [
-              448,
-              512
-            ],
-            [
-              960,
-              1024
-            ],
-            [
-              1472,
-              1536
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        }
-      },
-      "full_activation_materialized": false
+          ]
+        ],
+        "dtypes": [
+          "torch.bfloat16"
+        ],
+        "bytes_each": [
+          50331648
+        ],
+        "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+      }
     },
     "backward_qkv_execution": {
       "stream": true,
-      "heads": {
-        "0": {
-          "head": 0,
-          "row_ranges": [
-            [
-              0,
-              64
-            ],
-            [
-              512,
-              576
-            ],
-            [
-              1024,
-              1088
-            ]
-          ],
-          "shape": [
+      "full_activation_materialized": false,
+      "head_summary": {
+        "count": 8,
+        "ids": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "shapes": [
+          [
             131072,
             192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "1": {
-          "head": 1,
-          "row_ranges": [
-            [
-              64,
-              128
-            ],
-            [
-              576,
-              640
-            ],
-            [
-              1088,
-              1152
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "2": {
-          "head": 2,
-          "row_ranges": [
-            [
-              128,
-              192
-            ],
-            [
-              640,
-              704
-            ],
-            [
-              1152,
-              1216
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "3": {
-          "head": 3,
-          "row_ranges": [
-            [
-              192,
-              256
-            ],
-            [
-              704,
-              768
-            ],
-            [
-              1216,
-              1280
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "4": {
-          "head": 4,
-          "row_ranges": [
-            [
-              256,
-              320
-            ],
-            [
-              768,
-              832
-            ],
-            [
-              1280,
-              1344
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "5": {
-          "head": 5,
-          "row_ranges": [
-            [
-              320,
-              384
-            ],
-            [
-              832,
-              896
-            ],
-            [
-              1344,
-              1408
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "6": {
-          "head": 6,
-          "row_ranges": [
-            [
-              384,
-              448
-            ],
-            [
-              896,
-              960
-            ],
-            [
-              1408,
-              1472
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        },
-        "7": {
-          "head": 7,
-          "row_ranges": [
-            [
-              448,
-              512
-            ],
-            [
-              960,
-              1024
-            ],
-            [
-              1472,
-              1536
-            ]
-          ],
-          "shape": [
-            131072,
-            192
-          ],
-          "dtype": "torch.bfloat16",
-          "bytes": 50331648
-        }
-      },
-      "full_activation_materialized": false
+          ]
+        ],
+        "dtypes": [
+          "torch.bfloat16"
+        ],
+        "bytes_each": [
+          50331648
+        ],
+        "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+      }
     },
     "head_output_offload": true,
     "forward_head_storage": {
@@ -2025,101 +1283,29 @@
           },
           "qkv_execution": {
             "stream": true,
-            "heads": {
-              "0": {
-                "head": 0,
-                "row_ranges": [
-                  [
-                    0,
-                    64
-                  ],
-                  [
-                    256,
-                    320
-                  ],
-                  [
-                    512,
-                    576
-                  ]
-                ],
-                "shape": [
+            "full_activation_materialized": false,
+            "head_summary": {
+              "count": 4,
+              "ids": [
+                "0",
+                "1",
+                "2",
+                "3"
+              ],
+              "shapes": [
+                [
                   2970629,
                   192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "1": {
-                "head": 1,
-                "row_ranges": [
-                  [
-                    64,
-                    128
-                  ],
-                  [
-                    320,
-                    384
-                  ],
-                  [
-                    576,
-                    640
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "2": {
-                "head": 2,
-                "row_ranges": [
-                  [
-                    128,
-                    192
-                  ],
-                  [
-                    384,
-                    448
-                  ],
-                  [
-                    640,
-                    704
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "3": {
-                "head": 3,
-                "row_ranges": [
-                  [
-                    192,
-                    256
-                  ],
-                  [
-                    448,
-                    512
-                  ],
-                  [
-                    704,
-                    768
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              }
-            },
-            "full_activation_materialized": false
+                ]
+              ],
+              "dtypes": [
+                "torch.bfloat16"
+              ],
+              "bytes_each": [
+                1140721536
+              ],
+              "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+            }
           }
         },
         {
@@ -2165,101 +1351,29 @@
           },
           "qkv_execution": {
             "stream": true,
-            "heads": {
-              "0": {
-                "head": 0,
-                "row_ranges": [
-                  [
-                    0,
-                    64
-                  ],
-                  [
-                    256,
-                    320
-                  ],
-                  [
-                    512,
-                    576
-                  ]
-                ],
-                "shape": [
+            "full_activation_materialized": false,
+            "head_summary": {
+              "count": 4,
+              "ids": [
+                "0",
+                "1",
+                "2",
+                "3"
+              ],
+              "shapes": [
+                [
                   2970629,
                   192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "1": {
-                "head": 1,
-                "row_ranges": [
-                  [
-                    64,
-                    128
-                  ],
-                  [
-                    320,
-                    384
-                  ],
-                  [
-                    576,
-                    640
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "2": {
-                "head": 2,
-                "row_ranges": [
-                  [
-                    128,
-                    192
-                  ],
-                  [
-                    384,
-                    448
-                  ],
-                  [
-                    640,
-                    704
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "3": {
-                "head": 3,
-                "row_ranges": [
-                  [
-                    192,
-                    256
-                  ],
-                  [
-                    448,
-                    512
-                  ],
-                  [
-                    704,
-                    768
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              }
-            },
-            "full_activation_materialized": false
+                ]
+              ],
+              "dtypes": [
+                "torch.bfloat16"
+              ],
+              "bytes_each": [
+                1140721536
+              ],
+              "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+            }
           }
         },
         {
@@ -2305,101 +1419,29 @@
           },
           "qkv_execution": {
             "stream": true,
-            "heads": {
-              "0": {
-                "head": 0,
-                "row_ranges": [
-                  [
-                    0,
-                    64
-                  ],
-                  [
-                    256,
-                    320
-                  ],
-                  [
-                    512,
-                    576
-                  ]
-                ],
-                "shape": [
+            "full_activation_materialized": false,
+            "head_summary": {
+              "count": 4,
+              "ids": [
+                "0",
+                "1",
+                "2",
+                "3"
+              ],
+              "shapes": [
+                [
                   2970629,
                   192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "1": {
-                "head": 1,
-                "row_ranges": [
-                  [
-                    64,
-                    128
-                  ],
-                  [
-                    320,
-                    384
-                  ],
-                  [
-                    576,
-                    640
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "2": {
-                "head": 2,
-                "row_ranges": [
-                  [
-                    128,
-                    192
-                  ],
-                  [
-                    384,
-                    448
-                  ],
-                  [
-                    640,
-                    704
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              },
-              "3": {
-                "head": 3,
-                "row_ranges": [
-                  [
-                    192,
-                    256
-                  ],
-                  [
-                    448,
-                    512
-                  ],
-                  [
-                    704,
-                    768
-                  ]
-                ],
-                "shape": [
-                  2970629,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 1140721536
-              }
-            },
-            "full_activation_materialized": false
+                ]
+              ],
+              "dtypes": [
+                "torch.bfloat16"
+              ],
+              "bytes_each": [
+                1140721536
+              ],
+              "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+            }
           }
         },
         {
@@ -2445,193 +1487,33 @@
           },
           "qkv_execution": {
             "stream": true,
-            "heads": {
-              "0": {
-                "head": 0,
-                "row_ranges": [
-                  [
-                    0,
-                    64
-                  ],
-                  [
-                    512,
-                    576
-                  ],
-                  [
-                    1024,
-                    1088
-                  ]
-                ],
-                "shape": [
+            "full_activation_materialized": false,
+            "head_summary": {
+              "count": 8,
+              "ids": [
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7"
+              ],
+              "shapes": [
+                [
                   1488042,
                   192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "1": {
-                "head": 1,
-                "row_ranges": [
-                  [
-                    64,
-                    128
-                  ],
-                  [
-                    576,
-                    640
-                  ],
-                  [
-                    1088,
-                    1152
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "2": {
-                "head": 2,
-                "row_ranges": [
-                  [
-                    128,
-                    192
-                  ],
-                  [
-                    640,
-                    704
-                  ],
-                  [
-                    1152,
-                    1216
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "3": {
-                "head": 3,
-                "row_ranges": [
-                  [
-                    192,
-                    256
-                  ],
-                  [
-                    704,
-                    768
-                  ],
-                  [
-                    1216,
-                    1280
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "4": {
-                "head": 4,
-                "row_ranges": [
-                  [
-                    256,
-                    320
-                  ],
-                  [
-                    768,
-                    832
-                  ],
-                  [
-                    1280,
-                    1344
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "5": {
-                "head": 5,
-                "row_ranges": [
-                  [
-                    320,
-                    384
-                  ],
-                  [
-                    832,
-                    896
-                  ],
-                  [
-                    1344,
-                    1408
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "6": {
-                "head": 6,
-                "row_ranges": [
-                  [
-                    384,
-                    448
-                  ],
-                  [
-                    896,
-                    960
-                  ],
-                  [
-                    1408,
-                    1472
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "7": {
-                "head": 7,
-                "row_ranges": [
-                  [
-                    448,
-                    512
-                  ],
-                  [
-                    960,
-                    1024
-                  ],
-                  [
-                    1472,
-                    1536
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              }
-            },
-            "full_activation_materialized": false
+                ]
+              ],
+              "dtypes": [
+                "torch.bfloat16"
+              ],
+              "bytes_each": [
+                571408128
+              ],
+              "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+            }
           }
         },
         {
@@ -2677,193 +1559,33 @@
           },
           "qkv_execution": {
             "stream": true,
-            "heads": {
-              "0": {
-                "head": 0,
-                "row_ranges": [
-                  [
-                    0,
-                    64
-                  ],
-                  [
-                    512,
-                    576
-                  ],
-                  [
-                    1024,
-                    1088
-                  ]
-                ],
-                "shape": [
+            "full_activation_materialized": false,
+            "head_summary": {
+              "count": 8,
+              "ids": [
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7"
+              ],
+              "shapes": [
+                [
                   1488042,
                   192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "1": {
-                "head": 1,
-                "row_ranges": [
-                  [
-                    64,
-                    128
-                  ],
-                  [
-                    576,
-                    640
-                  ],
-                  [
-                    1088,
-                    1152
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "2": {
-                "head": 2,
-                "row_ranges": [
-                  [
-                    128,
-                    192
-                  ],
-                  [
-                    640,
-                    704
-                  ],
-                  [
-                    1152,
-                    1216
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "3": {
-                "head": 3,
-                "row_ranges": [
-                  [
-                    192,
-                    256
-                  ],
-                  [
-                    704,
-                    768
-                  ],
-                  [
-                    1216,
-                    1280
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "4": {
-                "head": 4,
-                "row_ranges": [
-                  [
-                    256,
-                    320
-                  ],
-                  [
-                    768,
-                    832
-                  ],
-                  [
-                    1280,
-                    1344
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "5": {
-                "head": 5,
-                "row_ranges": [
-                  [
-                    320,
-                    384
-                  ],
-                  [
-                    832,
-                    896
-                  ],
-                  [
-                    1344,
-                    1408
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "6": {
-                "head": 6,
-                "row_ranges": [
-                  [
-                    384,
-                    448
-                  ],
-                  [
-                    896,
-                    960
-                  ],
-                  [
-                    1408,
-                    1472
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "7": {
-                "head": 7,
-                "row_ranges": [
-                  [
-                    448,
-                    512
-                  ],
-                  [
-                    960,
-                    1024
-                  ],
-                  [
-                    1472,
-                    1536
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              }
-            },
-            "full_activation_materialized": false
+                ]
+              ],
+              "dtypes": [
+                "torch.bfloat16"
+              ],
+              "bytes_each": [
+                571408128
+              ],
+              "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+            }
           }
         },
         {
@@ -2909,193 +1631,33 @@
           },
           "qkv_execution": {
             "stream": true,
-            "heads": {
-              "0": {
-                "head": 0,
-                "row_ranges": [
-                  [
-                    0,
-                    64
-                  ],
-                  [
-                    512,
-                    576
-                  ],
-                  [
-                    1024,
-                    1088
-                  ]
-                ],
-                "shape": [
+            "full_activation_materialized": false,
+            "head_summary": {
+              "count": 8,
+              "ids": [
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7"
+              ],
+              "shapes": [
+                [
                   1488042,
                   192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "1": {
-                "head": 1,
-                "row_ranges": [
-                  [
-                    64,
-                    128
-                  ],
-                  [
-                    576,
-                    640
-                  ],
-                  [
-                    1088,
-                    1152
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "2": {
-                "head": 2,
-                "row_ranges": [
-                  [
-                    128,
-                    192
-                  ],
-                  [
-                    640,
-                    704
-                  ],
-                  [
-                    1152,
-                    1216
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "3": {
-                "head": 3,
-                "row_ranges": [
-                  [
-                    192,
-                    256
-                  ],
-                  [
-                    704,
-                    768
-                  ],
-                  [
-                    1216,
-                    1280
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "4": {
-                "head": 4,
-                "row_ranges": [
-                  [
-                    256,
-                    320
-                  ],
-                  [
-                    768,
-                    832
-                  ],
-                  [
-                    1280,
-                    1344
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "5": {
-                "head": 5,
-                "row_ranges": [
-                  [
-                    320,
-                    384
-                  ],
-                  [
-                    832,
-                    896
-                  ],
-                  [
-                    1344,
-                    1408
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "6": {
-                "head": 6,
-                "row_ranges": [
-                  [
-                    384,
-                    448
-                  ],
-                  [
-                    896,
-                    960
-                  ],
-                  [
-                    1408,
-                    1472
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              },
-              "7": {
-                "head": 7,
-                "row_ranges": [
-                  [
-                    448,
-                    512
-                  ],
-                  [
-                    960,
-                    1024
-                  ],
-                  [
-                    1472,
-                    1536
-                  ]
-                ],
-                "shape": [
-                  1488042,
-                  192
-                ],
-                "dtype": "torch.bfloat16",
-                "bytes": 571408128
-              }
-            },
-            "full_activation_materialized": false
+                ]
+              ],
+              "dtypes": [
+                "torch.bfloat16"
+              ],
+              "bytes_each": [
+                571408128
+              ],
+              "row_mapping": "Q[h*64:(h+1)*64], K[D+h*64:D+(h+1)*64], V[2D+h*64:2D+(h+1)*64]"
+            }
           }
         }
       ],
@@ -3229,5 +1791,17 @@
         "peak_rss_bytes": 19242926080
       }
     }
+  },
+  "conclusion": {
+    "status": "OOM",
+    "full_N_3D_activation_eliminated": true,
+    "single_layer_peak_reduction_fraction": 0.30865401079503463,
+    "failure_phase": "backward",
+    "failure_operator": "native autograd engine; inner operator not captured",
+    "failure_layer_head": "unresolved; latest activity coarse dilation1 norm2+FFN is not proof of failing operator",
+    "requested_GiB": 1.42,
+    "free_MiB": 861.5,
+    "adamw_updates": 0,
+    "next_step": "remain stopped; if continued later, identify the native backward allocation without assuming QKV or SpMM"
   }
 }
