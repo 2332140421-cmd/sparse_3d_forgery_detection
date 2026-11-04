@@ -107,7 +107,7 @@ def run_case(name,spec,timeout):
     w=read(out/'worker_result.json') if (out/'worker_result.json').exists() else {'stages':read(out/'stages.json') if (out/'stages.json').exists() else []}
     w['updates']=max(w.get('updates',0),sum(s['stage']=='update_complete' for s in w.get('stages',[])))
     status='TIMEOUT' if process['timed_out'] else w.get('status','FAILED')
-    if status=='PASS' and process['returncode']!=0:status='FAILED'
+    if status=='PASS' and (process['returncode']!=0 or w['updates']!=spec.get('updates_requested',1)):status='FAILED'
     result={'status':status,'source_commit':spec['source_commit'],'process':process,'worker':w,'gpu_start':start,'gpu_after':gpu_sample(process['pid']),'pending_copies':read(out/'pending_copies.json') if (out/'pending_copies.json').exists() else []}
     save(out/'result.json',result);(out/'exit_code.txt').write_text(str(process['returncode'])+'\n');return result
 
