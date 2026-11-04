@@ -44,7 +44,7 @@ class Neighborhood:
 
 class SparseLayer(nn.Module):
     def __init__(self,dim,heads,chunk=128,ffn_chunk=8192):
-        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.ffn_checkpoint=True;self.last_execution={}
+        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.ffn_checkpoint=True;self.last_execution={}
         if ffn_chunk<=0:raise ValueError("FFN_CHUNK_MUST_BE_POSITIVE")
         self.norm=LayerNorm(dim);self.qkv=nn.Linear(dim,dim*3);self.bias=nn.Sequential(nn.Linear(4,64),nn.GELU(),nn.Linear(64,heads))
         self.proj=nn.Linear(dim,dim);self.drop=nn.Dropout(.1);self.norm2=LayerNorm(dim)
@@ -65,6 +65,8 @@ class SparseLayer(nn.Module):
         attended=self.attend(q,k,v,index,bias[frame])
         self.last_execution={'operation':'attention projection+dropout+residual block','input_shape':list(attended.shape),'dtype':str(attended.dtype)}
         return residual+self.drop(self.proj(attended))
+    def project_block(self,x,attended):
+        return x+self.drop(self.proj(attended))
     def ffn_block(self,x):
         self.last_execution={'operation':'norm2+FFN block','input_shape':list(x.shape),'hidden_shape':[len(x),4*self.dim],'dtype':str(x.dtype)}
         return x+self.ffn(self.norm2(x))
@@ -84,10 +86,28 @@ class SparseLayer(nn.Module):
         q,k,v=projected.reshape(len(x),3,self.heads,64).unbind(1)
         del projected
         bias=self.bias(graph.relative[dilation].to(q.dtype));values=[]
-        for start in range(0,len(x),self.chunk):
-            end=min(start+self.chunk,len(x));args=(x[start:end],q[start:end],k,v,bias,graph,start,end,dilation)
-            y=checkpoint(self.attention_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.attention_block(*args)
-            values.append(y)
+        if self.sparse_edge_attention:
+            from .sparse_attention import edge_topology,sparse_head
+            crow,col,relation=edge_topology(graph,dilation,self.chunk)
+            self.edge_stats={'nodes':len(x),'edges':len(col),'average_degree':len(col)/len(x),
+                'topology_bytes':sum(a.numel()*a.element_size() for a in [crow,col,relation]),'dilation':dilation}
+            heads=[]
+            for head in range(self.heads):
+                args=(q[:,head],k[:,head],v[:,head],bias,crow,col,relation,head,self.drop.p,self.drop.training)
+                h=checkpoint(sparse_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else sparse_head(*args)
+                heads.append(h)
+            attended=torch.stack(heads,1).reshape(len(x),self.dim)
+            del heads,h,crow,col,relation
+            for start in range(0,len(x),self.chunk):
+                args=(x[start:start+self.chunk],attended[start:start+self.chunk])
+                y=checkpoint(self.project_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.project_block(*args)
+                values.append(y)
+            del attended
+        else:
+            for start in range(0,len(x),self.chunk):
+                end=min(start+self.chunk,len(x));args=(x[start:end],q[start:end],k,v,bias,graph,start,end,dilation)
+                y=checkpoint(self.attention_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.attention_block(*args)
+                values.append(y)
         x=torch.cat(values)
         del q,k,v,bias,y,args
         values=[]

@@ -54,7 +54,8 @@ class PVST(nn.Module):
         nn.init.zeros_(self.pixel_out.weight);nn.init.zeros_(self.pixel_out.bias)
         nn.init.zeros_(self.frame_residual[-1].weight);nn.init.zeros_(self.frame_residual[-1].bias)
         for temporal in [self.fine_time,self.coarse_time]:
-            for layer in temporal.layers:layer.qkv_chunk=config.get('qkv_chunk',0)
+            for layer in temporal.layers:
+                layer.qkv_chunk=config.get('qkv_chunk',0);layer.sparse_edge_attention=config.get('sparse_edge_attention',False)
         self._bn={k:v.detach().cpu().clone() for k,v in self.decoder.named_buffers()}
         self.train(False)
     def train(self,mode=True):
