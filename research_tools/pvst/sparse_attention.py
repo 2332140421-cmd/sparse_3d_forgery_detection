@@ -22,6 +22,16 @@ def edge_topology(graph,dilation,chunk):
     return crow,col,relation
 
 
+
+def intersection_padding(rows,columns):
+    """torch2.5 sparse intersection's int accumulator must not wrap to zero.
+
+    One unused logical column is storage padding, never a node/edge. It changes
+    neither row softmax nor output, and requires no indexed full-K/V copies.
+    """
+    return int(rows>0 and columns>0 and (rows*columns)%(1<<32)==0)
+
+
 def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):
     def emit(stage,tensor):
         if trace is not None:trace(stage,tensor,head)
@@ -29,8 +39,12 @@ def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):
     # Public differentiable values(); no _values(), detach or dense conversion.
     with torch.autocast(device_type=q.device.type,enabled=False):
         qf,kf,vf=q.float().contiguous(),k.float().contiguous(),v.float().contiguous()
+        pad=intersection_padding(len(qf),len(kf))
+        if pad:
+            kf=torch.cat((kf,kf.new_zeros((pad,kf.shape[1]))),0)
+            vf=torch.cat((vf,vf.new_zeros((pad,vf.shape[1]))),0)
         emit('FP32_contiguous',qf)
-        mask=torch.sparse_csr_tensor(crow,col,qf.new_ones(len(col)),size=(len(q),len(k)))
+        mask=torch.sparse_csr_tensor(crow,col,qf.new_ones(len(col)),size=(len(q),len(kf)))
         emit('CSR_created',mask)
         scores=torch.sparse.sampled_addmm(mask,qf,kf.T,beta=0,alpha=q.shape[-1]**-.5)
         emit('sampled_addmm_complete',scores)

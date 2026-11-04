@@ -67,3 +67,41 @@ def test_optional_stage_trace_does_not_modify_values_or_gradients():
     torch.testing.assert_close(a,b);ga=torch.autograd.grad(a.sum(),[q,k,v,bias],retain_graph=True);gb=torch.autograd.grad(b.sum(),[q,k,v,bias])
     for x,y in zip(ga,gb):torch.testing.assert_close(x,y)
     assert events[0]=='head_start' and events[-1]=='sparse_mm_complete' and 'softmax_start' in events
+
+
+def test_intersection_integer_boundary_and_unused_column_semantics(monkeypatch):
+    from research_tools.pvst import sparse_attention
+    from research_tools.pvst.sparse_attention_check import compare,dropout_check
+    assert sparse_attention.intersection_padding(65536,65536)==1
+    assert sparse_attention.intersection_padding(131072,131072)==1
+    assert sparse_attention.intersection_padding(65535,65535)==0
+    assert sparse_attention.intersection_padding(2970629,2970629)==0
+    for n in [65536,131072]:assert n*(n+1)%(1<<32)!=0
+    # Exercise the exact padding branch on tiny legal PTS/empty-frame graphs.
+    monkeypatch.setattr(sparse_attention,'intersection_padding',lambda rows,cols:1)
+    compare(torch.float32,256,1,'cpu')
+    compare(torch.bfloat16,512,1,'cpu')
+    dropout_check('cpu')
+
+
+def test_padding_keeps_gradients_and_does_not_create_dense_matrix(monkeypatch):
+    from torch.utils._python_dispatch import TorchDispatchMode
+    from research_tools.pvst import sparse_attention
+    monkeypatch.setattr(sparse_attention,'intersection_padding',lambda rows,cols:1)
+    class NoDenseLogicalMatrix(TorchDispatchMode):
+        def __torch_dispatch__(self,func,types,args=(),kwargs=None):
+            out=func(*args,**(kwargs or {}))
+            for t in out if isinstance(out,(list,tuple)) else [out]:
+                assert not(isinstance(t,torch.Tensor) and t.layout==torch.strided and tuple(t.shape) in [(17,17),(17,18),(18,17)])
+            return out
+    q=torch.randn(17,64,requires_grad=True);k=torch.randn_like(q,requires_grad=True);v=torch.randn_like(q,requires_grad=True);bias=torch.randn(1,81,1,requires_grad=True)
+    with NoDenseLogicalMatrix():
+        y=sparse_attention.sparse_head(q,k,v,bias,torch.arange(18),torch.arange(17),torch.arange(17),0,0.,False)
+        y.square().mean().backward()
+    assert all(x.grad is not None and torch.isfinite(x.grad).all() for x in [q,k,v,bias])
+
+
+def test_larger_validation_graph_has_actual_requested_nodes():
+    from research_tools.pvst.sparse_sigfpe import make_graph
+    graph=make_graph(131072,'cpu')
+    assert len(graph.coords)==131072 and graph.lengths==[32768]*4

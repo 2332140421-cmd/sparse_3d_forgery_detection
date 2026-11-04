@@ -34,7 +34,7 @@ def validate_graph(graph):
     crow,col,relation=edge_topology(graph,1,512);n=len(graph.coords);degree=crow.diff();rows=torch.repeat_interleave(torch.arange(n,device=col.device),degree)
     checks={'rowptr_length':len(crow)==n+1,'starts_zero':int(crow[0])==0,'monotone':bool((degree>=0).all()),'ends_nnz':int(crow[-1])==len(col),'col_range':bool(((col>=0)&(col<n)).all()),'sorted_unique':bool(((rows[1:]!=rows[:-1])|(col[1:]>col[:-1])).all()),'relation_range':bool(((relation>=0)&(relation<4*81)).all()),'relation_frame':bool((relation//81==torch.bucketize(rows,graph.boundaries,right=True)).all())}
     if not all(checks.values()):raise ValueError('CSR_INVALID:'+str(checks))
-    if n==65536 and len(col)!=3658104:raise ValueError('ACTUAL_EDGE_COUNT_MISMATCH')
+    if len(col)!={65536:3658104,131072:7475256}[n]:raise ValueError('ACTUAL_EDGE_COUNT_MISMATCH')
     return {'nodes':n,'edges':len(col),'checks':checks,'crow_dtype':str(crow.dtype),'col_dtype':str(col.dtype),'relation_dtype':str(relation.dtype),'logical_elements':n*n}
 
 
@@ -94,11 +94,81 @@ def run_minimal():
     save(stage/'process.json',process);budget['spent_worker_wall_s']+=process['wall_s'];save(OUT/'budget.json',budget)
 
 
+
+def regression_worker():
+    import torch
+    from torch.utils._python_dispatch import TorchDispatchMode
+    from . import sparse_attention
+    from .sparse_attention_check import compare,dropout_check
+    torch.set_num_threads(4);sparse_attention.intersection_padding=lambda rows,cols:1
+    class NoDense(TorchDispatchMode):
+        def __torch_dispatch__(self,func,types,args=(),kwargs=None):
+            result=func(*args,**(kwargs or {}))
+            for t in result if isinstance(result,(tuple,list)) else [result]:
+                if isinstance(t,torch.Tensor) and t.layout==torch.strided and tuple(t.shape) in [(41,41),(41,42),(42,41)]:raise ValueError('DENSE_LOGICAL_MATRIX:'+str(func))
+            return result
+    result={'status':'PASS','forced_padding_on_small_graph':True,'comparisons':[]}
+    with NoDense():
+        for dtype,dim in [(torch.float32,256),(torch.bfloat16,512)]:result['comparisons'].append(compare(dtype,dim,1,'cuda'))
+        result['dropout']=dropout_check('cuda')
+    save(OUT/'regression.json',result)
+
+
+def validation_worker(n,dim):
+    import torch
+    from torch.utils.checkpoint import checkpoint
+    from .temporal import SparseLayer
+    from .sparse_attention import intersection_padding
+    torch.set_num_threads(4);torch.manual_seed(20260909);tick=time.monotonic();graph=make_graph(n,'cuda');record=validate_graph(graph);torch.cuda.synchronize();graph_s=time.monotonic()-tick
+    model=SparseLayer(dim,dim//64,512,8192).cuda().train();model.qkv_chunk=8192;model.sparse_edge_attention=True
+    x=torch.randn(n,dim,device='cuda',dtype=torch.bfloat16,requires_grad=True)
+    def run():
+        model.zero_grad(set_to_none=True);x.grad=None
+        with torch.autocast('cuda',dtype=torch.bfloat16):y=checkpoint(model,x,graph,1,use_reentrant=False,preserve_rng_state=True);loss=y.square().mean()
+        return y,loss
+    y,loss=run();loss.backward();torch.cuda.synchronize();del y,loss
+    model.zero_grad(set_to_none=True);x.grad=None;baseline=torch.cuda.memory_allocated();torch.cuda.reset_peak_memory_stats();torch.cuda.synchronize();tick=time.monotonic();y,loss=run();torch.cuda.synchronize();forward=time.monotonic()-tick
+    tick=time.monotonic();loss.backward();torch.cuda.synchronize();backward=time.monotonic()-tick
+    gradients={'input':bool(x.grad is not None and torch.isfinite(x.grad).all())}
+    gradients.update({k:bool(v.grad is not None and torch.isfinite(v.grad).all()) for k,v in model.named_parameters()})
+    if not all(gradients.values()) or not torch.isfinite(loss):raise ValueError('NONFINITE_RESULT')
+    record.update(status='PASS',dim=dim,logical_shape=[n,n+intersection_padding(n,n)],actual_nodes=n,graph_s=graph_s,forward_s=forward,backward_s=backward,finite_gradients=gradients,baseline_allocated_bytes=baseline,peak_allocated_bytes=torch.cuda.max_memory_allocated(),peak_reserved_bytes=torch.cuda.max_memory_reserved(),diagnostic_hooks=False,launch_blocking=os.environ.get('CUDA_LAUNCH_BLOCKING'),dropout=.1,outer_checkpoint=True)
+    save(OUT/f'validation_{n}_{dim}.json',record)
+
+
+def run_validation():
+    if (OUT/'validation_summary.json').exists():raise RuntimeError('Validation exists; no repeat')
+    budget=json.loads((OUT/'budget.json').read_text());results=[]
+    identity={'source_commit':git('rev-parse','HEAD'),'code_sha256':{p.name:sha(p) for p in Path(__file__).parent.glob('*.py')}};save(OUT/'validation_identity.json',identity)
+    stages=[('regression',['--regression-worker'],OUT/'regression.json'),('65536_256',['--validation-worker','65536','256'],OUT/'validation_65536_256.json'),('65536_512',['--validation-worker','65536','512'],OUT/'validation_65536_512.json'),('131072_512',['--validation-worker','131072','512'],OUT/'validation_131072_512.json')]
+    status='FIX_VALIDATED'
+    for name,args,path in stages:
+        remaining=budget['limit_s']-budget['spent_worker_wall_s']
+        if remaining<=0:status='TIMEOUT';break
+        folder=OUT/name;folder.mkdir(exist_ok=True)
+        if path.exists() or (folder/'process.json').exists() or (folder/'launch.json').exists():raise RuntimeError('Stage already exists; no retry')
+        command=[sys.executable,'-u','-m','research_tools.pvst.sparse_sigfpe',*args];process=bounded_process(command,remaining,folder/'worker.log');save(folder/'process.json',process);budget['spent_worker_wall_s']+=process['wall_s'];save(OUT/'budget.json',budget)
+        result=json.loads(path.read_text()) if path.exists() else {};results.append({'stage':name,'process':process,'result':result})
+        save(OUT/'validation_progress.json',{'stage':name,'results':results})
+        if process['timed_out']:status='TIMEOUT';break
+        if process['returncode']!=0 or result.get('status')!='PASS':status=result.get('status','FAILED');break
+    save(OUT/'validation_summary.json',{'status':status,'results':results,'budget':budget,'full_model_attempts':0,'formal_models_completed':0});save(OUT/'progress.json',{'status':status,'stage':'validation_finished','formal_models_completed':0})
+
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--diagnostic-worker',action='store_true');p.add_argument('--minimal',action='store_true');p.add_argument('--minimal-worker',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--diagnostic-worker',action='store_true');p.add_argument('--minimal',action='store_true');p.add_argument('--minimal-worker',action='store_true');p.add_argument('--regression-worker',action='store_true');p.add_argument('--validation-worker',nargs=2,type=int);p.add_argument('--validate',action='store_true');a=p.parse_args()
     if a.diagnostic_worker:diagnose()
     elif a.minimal_worker:minimal_worker()
     elif a.minimal:run_minimal()
+    elif a.regression_worker:regression_worker()
+    elif a.validation_worker:
+        try:validation_worker(*a.validation_worker)
+        except Exception as error:
+            import torch
+            n,dim=a.validation_worker
+            save(OUT/f'validation_{n}_{dim}.json',{'status':'OOM' if isinstance(error,torch.OutOfMemoryError) else 'FAILED','error':str(error),'traceback':traceback.format_exc()})
+            raise
+    elif a.validate:run_validation()
     else:run_diagnostic()
 
 if __name__=='__main__':main()
