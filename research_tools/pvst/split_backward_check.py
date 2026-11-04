@@ -70,7 +70,7 @@ def report(r):
     if f:
         lines+=['','六层实际split入口：','```json',json.dumps([{k:v for k,v in row.items() if k in ['layer','nodes','edges','completed_heads','blocking_execution']} for row in w.get('forward_edge_evidence',[])],ensure_ascii=False,indent=2),'```',
             '关键梯度、内存和失败上下文：','```json',json.dumps({k:w.get(k) for k in ['gradients','parameter_delta_norms','host','peak_allocated_bytes','peak_reserved_bytes','failure_operator_context']},ensure_ascii=False,indent=2),'```']
-    lines+=['','诊断仅增加C++错误栈，符号化/错误收尾可能增加成本，不能把诊断墙时当无诊断吞吐。候选验收不启用CPP诊断环境或全程profiler。两个worker均原父进程900秒限时，不重试；未完成阶段不填0，失败观测峰值不冒充完整更新上界。',
+    lines+=['','诊断仅增加C++错误栈，符号化/错误收尾可能增加成本，不能把诊断墙时当无诊断吞吐。候选验收也保留仅异常时生成的C++错误栈，不启用allocator history或全程profiler；如失败，总墙时含错误符号化/收尾成本。两个worker均原父进程900秒限时，不重试；未完成阶段不填0，失败观测峰值不冒充完整更新上界。',
         '结论：'+('规定最大窗口一次真实AdamW更新通过；仅此窗口，不代表全队列/正式尺度冻结，需结合成本和余量再判断训练，本轮不启动。' if r['status']=='PASS' else '未完成规定最大窗口一次更新，不建议直接正式训练；本轮停止，不再叠加其他优化。'),
         '错误/门槛：'+str(r.get('reason','无')),'产物：`'+str(OUT)+'`。原资产/协议/失败日志/退出码/config和用户无关JSON保留，权重丢弃无checkpoint，正式模型0/2；计算与Git发布分列。']
     text='\n'.join(lines)+'\n';(OUT/'report_zh.md').write_text(text);(ROOT/'docs/pvst/split_backward_check_v1.md').write_text(text)
