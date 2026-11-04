@@ -75,9 +75,30 @@ def run_diagnostic():
     save(OUT/'progress.json',{'status':'DIAGNOSTIC_FINISHED','process':process,'formal_models_completed':0})
 
 
+
+def minimal_worker():
+    import torch
+    faulthandler.enable(all_threads=True)
+    index=torch.tensor([[0],[0]],device='cuda')
+    a=torch.sparse_coo_tensor(index,torch.ones(1,device='cuda'),(65536,65536)).coalesce()
+    b=torch.sparse_coo_tensor(index,torch.full((1,),2.,device='cuda'),(65536,65536)).coalesce()
+    print('MINIMAL: CUDA sparse COO mul, N65536, E1 each, both coalesced, int64',flush=True)
+    y=a*b;torch.cuda.synchronize();print('MINIMAL COMPLETE',y.values(),flush=True)
+
+
+def run_minimal():
+    stage=OUT/'minimal';stage.mkdir(exist_ok=True)
+    if (stage/'process.json').exists():raise RuntimeError('Minimal evidence exists; do not repeat')
+    budget=json.loads((OUT/'budget.json').read_text());remaining=budget['limit_s']-budget['spent_worker_wall_s']
+    process=bounded_process([sys.executable,'-u','-m','research_tools.pvst.sparse_sigfpe','--minimal-worker'],min(20,remaining),stage/'worker.log')
+    save(stage/'process.json',process);budget['spent_worker_wall_s']+=process['wall_s'];save(OUT/'budget.json',budget)
+
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--diagnostic-worker',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--diagnostic-worker',action='store_true');p.add_argument('--minimal',action='store_true');p.add_argument('--minimal-worker',action='store_true');a=p.parse_args()
     if a.diagnostic_worker:diagnose()
+    elif a.minimal_worker:minimal_worker()
+    elif a.minimal:run_minimal()
     else:run_diagnostic()
 
 if __name__=='__main__':main()
