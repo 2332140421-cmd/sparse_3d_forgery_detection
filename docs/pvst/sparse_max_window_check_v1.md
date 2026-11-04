@@ -17,7 +17,8 @@ attention512 / QKV8192 / FFN8192 / point32768 / tile256；原外层checkpoint CP
 |data_loaded|0.6211445834487677|3.215|1.635/1.713|1.598/1.713|1.271/47.390|
 |forward_complete|18.0643613897264|21.281|20.870/21.809|13.037/21.637|14.562/35.350|
 
-六层构建核对：6/6；完成前向的运行证据如下。未完成层不冒称通过。
+六层构建核对：6/6；完成前向的运行证据如下。全部fine层完成4/4head，coarse层完成8/8head，实际后端均为当前修复后的稀疏核心；当前节点数不触发逻辑填充，因此六层均0列。
+
 |层|dilation|节点|有效边E|平均度|拓扑MiB|完成head|逻辑填充列|
 |---|---:|---:|---:|---:|---:|---:|---:|
 |fine_time.0|1|2970629|37042228|12.469|587.884|4|0|
@@ -41,184 +42,14 @@ attention512 / QKV8192 / FFN8192 / point32768 / tile256；原外层checkpoint CP
   "optimizer_state_parameters": null
 }
 ```
-末次状态与失败位置（已观测峰值不是未完成更新的峰值上界）：
-```json
-{
-  "phase": "backward",
-  "elapsed_s": 65.55915680062026,
-  "peak_allocated_bytes": 22812468736,
-  "peak_reserved_bytes": 23416799232,
-  "host": {
-    "available_bytes": 37161975808,
-    "rss_bytes": 15883857920,
-    "peak_rss_bytes": 15879180288
-  },
-  "trace": {
-    "fine_time": {
-      "active_layer": {
-        "dilation": 4,
-        "nodes": 2970629,
-        "width": 256,
-        "dtype": "torch.bfloat16"
-      },
-      "layers": [
-        {
-          "operation": "norm2+FFN block",
-          "input_shape": [
-            5125,
-            256
-          ],
-          "hidden_shape": [
-            5125,
-            1024
-          ],
-          "dtype": "torch.bfloat16"
-        },
-        {
-          "operation": "norm2+FFN block",
-          "input_shape": [
-            5125,
-            256
-          ],
-          "hidden_shape": [
-            5125,
-            1024
-          ],
-          "dtype": "torch.bfloat16"
-        },
-        {
-          "operation": "norm2+FFN block",
-          "input_shape": [
-            5125,
-            256
-          ],
-          "hidden_shape": [
-            5125,
-            1024
-          ],
-          "dtype": "torch.bfloat16"
-        }
-      ],
-      "edge_stats": [
-        {
-          "nodes": 2970629,
-          "edges": 37042228,
-          "average_degree": 12.46948979492222,
-          "topology_bytes": 616440688,
-          "dilation": 1,
-          "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-          "logical_padding_columns": 0,
-          "completed_heads": 4
-        },
-        {
-          "nodes": 2970629,
-          "edges": 31105643,
-          "average_degree": 10.471062862444283,
-          "topology_bytes": 521455328,
-          "dilation": 2,
-          "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-          "logical_padding_columns": 0,
-          "completed_heads": 4
-        },
-        {
-          "nodes": 2970629,
-          "edges": 28847555,
-          "average_degree": 9.710924858001453,
-          "topology_bytes": 485325920,
-          "dilation": 4,
-          "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-          "logical_padding_columns": 0,
-          "completed_heads": 4
-        }
-      ]
-    },
-    "coarse_time": {
-      "active_layer": {
-        "dilation": 4,
-        "nodes": 1488042,
-        "width": 512,
-        "dtype": "torch.bfloat16"
-      },
-      "layers": [
-        {
-          "operation": "norm2+FFN block",
-          "input_shape": [
-            5290,
-            512
-          ],
-          "hidden_shape": [
-            5290,
-            2048
-          ],
-          "dtype": "torch.bfloat16"
-        },
-        {
-          "operation": "norm2+FFN block",
-          "input_shape": [
-            5290,
-            512
-          ],
-          "hidden_shape": [
-            5290,
-            2048
-          ],
-          "dtype": "torch.bfloat16"
-        },
-        {
-          "operation": "norm2+FFN block",
-          "input_shape": [
-            8192,
-            512
-          ],
-          "hidden_shape": [
-            8192,
-            2048
-          ],
-          "dtype": "torch.bfloat16"
-        }
-      ],
-      "edge_stats": [
-        {
-          "nodes": 1488042,
-          "edges": 26982715,
-          "average_degree": 18.13303320739603,
-          "topology_bytes": 443627784,
-          "dilation": 1,
-          "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-          "logical_padding_columns": 0,
-          "completed_heads": 8
-        },
-        {
-          "nodes": 1488042,
-          "edges": 22781330,
-          "average_degree": 15.309601476302417,
-          "topology_bytes": 376405624,
-          "dilation": 2,
-          "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-          "logical_padding_columns": 0,
-          "completed_heads": 8
-        },
-        {
-          "nodes": 1488042,
-          "edges": 20707343,
-          "average_degree": 13.915832348818112,
-          "topology_bytes": 343221832,
-          "dilation": 4,
-          "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-          "logical_padding_columns": 0,
-          "completed_heads": 8
-        }
-      ]
-    }
-  }
-}
-```
+失败定位：反向checkpoint重计算中的 `sparse_head → torch.sparse.softmax(scores, dim=1)`；不是新的SIGFPE，也不是TIMEOUT。申请316.00 MiB时设备仅剩174.00 MiB；错误信息记录PyTorch allocated21.08 GiB、reserved未分配571.67 MiB。全程已观测峰值allocated **21.246 GiB**、reserved **21.809 GiB**，不能当作完整更新峰值上界。
+
+前向 **18.064秒**；反向未完成，从前向阶段结束到捕获失败并落盘末态约 **44.278秒**（包含异常处理，不是完整反向耗时）；AdamW未执行。worker从启动至末态 **65.559秒**；父进程含等待和收尾 **67.171秒**。
+
+末态主机RSS **14.793 GiB**、可用 **34.610 GiB**。没有主机内存不足证据。最后活动层记录为coarse dilation4、N=1,488,042、E=20,707,343；该层逻辑稀疏矩阵shape为[1,488,042,1,488,042]、单head Q/K/V为[N,64]、scores为FP32。这是已保存层状态对应的形状，不是额外hook捕获的OOM张量；准确失败head和内部申请张量shape未记录，不据316 MiB反推为已证实。
+
+参数17,821,672和state_dict键核对通过。关键分支梯度检查、裁剪、优化器状态建立及参数差值核对均未到达；不能报告为已通过或零梯度。四项入口CPU检查通过，没有重复单层GPU测试。
+
 错误与调用栈：
 ```
 Traceback (most recent call last):
@@ -266,3 +97,5 @@ torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 316.00 MiB. GPU 0 
 本次真实CUDA OOM，停止；不建议直接进入两条件各一轮。先根据明确失败算子与内存证据决定下一步，本轮不继续修复。
 旧日志/退出码/缓存及正式配置保持原样；新模型和优化器丢弃，无checkpoint保存。计算状态与publication.json中的Git发布状态分开。
 独立产物目录：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_v03_sparse_max_window_check_v1`；resource_curve.png为约5秒设备采样；result.json、stages.json、live.json保留完整证据。
+
+本轮没有坐标审计、原图预览或缓存重建。原记录与正式配置及用户无关JSON经SHA核对未改动。建议下一步先针对稀疏softmax重计算的峰值存储做有界排查，暂不进入两条件各一轮；本轮停止，不实施该建议。

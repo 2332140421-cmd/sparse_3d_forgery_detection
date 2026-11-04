@@ -2,71 +2,195 @@
   "status": "OOM",
   "source_commit": "a1c3cdc2e2f566e4d3a6a0513ffb53d7fc6267a0",
   "video_id": "782426ea0330c7fea684953c",
-  "config": {
-    "protocol": "pvst-point-voxel-v03",
-    "workspace": "/media/njupt/8FCD3869E2FAB06F/chenyh",
-    "source_run": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/v8_joint_spatial_pilot_v1",
-    "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v03",
-    "official_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/AINPAINT-CVIU26",
-    "dino_code": "/media/njupt/8FCD3869E2FAB06F/chenyh/external/dinov2-ainpaint",
-    "checkpoint": "/media/njupt/8FCD3869E2FAB06F/chenyh/weights/ainpaint/spatial_opn_sttn_noreal_loconly_v1.pt",
-    "checkpoint_sha256": "6f6210b10a9b09aabd2dbb139e8797cd68e786a7591440af6d7dca4ba9e58cc7",
-    "seed": 20260909,
-    "chunk_frames": 2,
-    "feature_chunk": 2,
-    "epochs": 1,
-    "amp": true,
-    "target_frames": 8,
-    "time_halo": 16,
-    "patience": 8,
-    "min_delta": 0,
-    "lr_decoder": 1e-05,
-    "lr_new": 0.0001,
-    "weight_decay": 0.0001,
-    "clip_norm": 1,
-    "dice_epsilon": 1.0,
-    "visual_size": 448,
-    "tile_size": 256,
-    "attention_chunk": 512,
-    "point_chunk": 32768,
-    "geometry_scale_estimator": "median of every 16th valid positive Z in decode/frame/row-major order from training only",
-    "conditions": [
-      "UV_PVST",
-      "XYZ_PVST"
-    ],
-    "amp_dtype": "bfloat16",
-    "excluded_original_scene_sources": [
-      "charades:BTW1H"
-    ],
-    "scene_policy": "Original-only 25/50/75% PTS review; fixed or mild smooth camera; exclude clear large view turn; keep ordinary human motion. Shuffle full original-role/type candidate bucket with fixed seed BEFORE exclusions.",
-    "frozen_encoder_parameters": 304372736,
-    "official_revision": "753ae1b700b054c97e15569718690211e36cdf53",
-    "dino_revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
-    "decoder_feature_channels": 32,
-    "initialization": "official spatial checkpoint base DINO weights without any LoRA tensors or merging; trained localization decoder before predictor; no V8 detector weights",
-    "attention_backend": "torch_sdpa",
-    "ffn_chunk": 8192,
-    "execution_revision": "v03",
-    "cache_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/cache",
-    "asset_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02",
-    "voxel_sizes": {
-      "UV_PVST": 0.03125,
-      "XYZ_PVST": 0.125
+  "fine_nodes": 2970629,
+  "coarse_nodes": 1488042,
+  "candidate_layers": [
+    {
+      "layer": "fine_time.0",
+      "width": 256,
+      "dilation": 1,
+      "enabled": true,
+      "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
+      "nodes": 2970629,
+      "edges": 37042228,
+      "average_degree": 12.46948979492222,
+      "topology_bytes": 616440688,
+      "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
+      "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+      "logical_padding_columns": 0,
+      "completed_heads": 4
     },
-    "voxel_candidates": [
-      0.03125,
-      0.0625,
-      0.125
-    ],
-    "voxel_budget": {
-      "fine": 200000,
-      "coarse": 50000
+    {
+      "layer": "fine_time.1",
+      "width": 256,
+      "dilation": 2,
+      "enabled": true,
+      "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
+      "nodes": 2970629,
+      "edges": 31105643,
+      "average_degree": 10.471062862444283,
+      "topology_bytes": 521455328,
+      "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
+      "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+      "logical_padding_columns": 0,
+      "completed_heads": 4
     },
-    "qkv_chunk": 8192,
-    "clips_per_video": 4,
-    "offload_saved_tensors": true,
-    "sparse_edge_attention": true
+    {
+      "layer": "fine_time.2",
+      "width": 256,
+      "dilation": 4,
+      "enabled": true,
+      "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
+      "nodes": 2970629,
+      "edges": 28847555,
+      "average_degree": 9.710924858001453,
+      "topology_bytes": 485325920,
+      "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
+      "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+      "logical_padding_columns": 0,
+      "completed_heads": 4
+    },
+    {
+      "layer": "coarse_time.0",
+      "width": 512,
+      "dilation": 1,
+      "enabled": true,
+      "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
+      "nodes": 1488042,
+      "edges": 26982715,
+      "average_degree": 18.13303320739603,
+      "topology_bytes": 443627784,
+      "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
+      "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+      "logical_padding_columns": 0,
+      "completed_heads": 8
+    },
+    {
+      "layer": "coarse_time.1",
+      "width": 512,
+      "dilation": 2,
+      "enabled": true,
+      "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
+      "nodes": 1488042,
+      "edges": 22781330,
+      "average_degree": 15.309601476302417,
+      "topology_bytes": 376405624,
+      "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
+      "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+      "logical_padding_columns": 0,
+      "completed_heads": 8
+    },
+    {
+      "layer": "coarse_time.2",
+      "width": 512,
+      "dilation": 4,
+      "enabled": true,
+      "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
+      "nodes": 1488042,
+      "edges": 20707343,
+      "average_degree": 13.915832348818112,
+      "topology_bytes": 343221832,
+      "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
+      "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+      "logical_padding_columns": 0,
+      "completed_heads": 8
+    }
+  ],
+  "stages": [
+    {
+      "phase": "worker_start",
+      "elapsed_s": 1.806662148796022,
+      "peak_allocated_bytes": 0,
+      "peak_reserved_bytes": 0,
+      "allocated_bytes": 0,
+      "reserved_bytes": 0,
+      "host": {
+        "available_bytes": 51494535168,
+        "rss_bytes": 552255488,
+        "peak_rss_bytes": 548020224
+      },
+      "stage": "worker_start",
+      "stage_s": null
+    },
+    {
+      "phase": "model_build",
+      "elapsed_s": 2.5928599759936333,
+      "peak_allocated_bytes": 71308288,
+      "peak_reserved_bytes": 85983232,
+      "allocated_bytes": 71308288,
+      "reserved_bytes": 85983232,
+      "host": {
+        "available_bytes": 51371728896,
+        "rss_bytes": 726417408,
+        "peak_rss_bytes": 723546112
+      },
+      "stage": "model_built",
+      "stage_s": 0.7822061814367771,
+      "parameters": 17821672
+    },
+    {
+      "phase": "data_geometry",
+      "elapsed_s": 3.2150107957422733,
+      "peak_allocated_bytes": 1755244032,
+      "peak_reserved_bytes": 1839202304,
+      "allocated_bytes": 1715809280,
+      "reserved_bytes": 1839202304,
+      "host": {
+        "available_bytes": 50885046272,
+        "rss_bytes": 1365016576,
+        "peak_rss_bytes": 1386512384
+      },
+      "stage": "data_loaded",
+      "stage_s": 0.6211445834487677,
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "q_dtype": "torch.float32",
+      "token_dtype": "torch.float16",
+      "rgb_dtype": "torch.uint8",
+      "target_labels": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "spatial_gt": "zero mask for ANAKIN real"
+    },
+    {
+      "phase": "forward",
+      "elapsed_s": 21.28077779058367,
+      "peak_allocated_bytes": 22409504256,
+      "peak_reserved_bytes": 23416799232,
+      "allocated_bytes": 13998760448,
+      "reserved_bytes": 23232249856,
+      "host": {
+        "available_bytes": 37956771840,
+        "rss_bytes": 15635415040,
+        "peak_rss_bytes": 15630667776
+      },
+      "stage": "forward_complete",
+      "stage_s": 18.0643613897264,
+      "finite_loss": true,
+      "output_dtype": "torch.float32",
+      "loss_components": {
+        "total": 1.7414692640304565,
+        "frame_BCE": 0.7357272505760193,
+        "pixel_BCE": 0.005926134530454874,
+        "soft_Dice_loss": 0.9998159408569336
+      }
+    }
+  ],
+  "peak_allocated_bytes": 22812468736,
+  "peak_reserved_bytes": 23416799232,
+  "host": {
+    "available_bytes": 37161975808,
+    "rss_bytes": 15883857920,
+    "peak_rss_bytes": 15879180288
   },
+  "worker_elapsed_s": 65.55915680062026,
   "process": {
     "pid": 3818469,
     "returncode": 2,
@@ -75,1557 +199,14 @@
     "wall_s": 67.17134683858603,
     "timeout_s": 900
   },
-  "gpu_start": {
-    "unix_time": 1793806798.4032412,
-    "worker_pid": null,
-    "gpu_total_free_used_util": "24564, 22845, 1227, 10",
-    "compute_pid_mib": "3903557, 507"
-  },
-  "gpu_after": {
-    "unix_time": 1793806865.6137257,
-    "worker_pid": 3818469,
-    "gpu_total_free_used_util": "24564, 22846, 1227, 7",
-    "compute_pid_mib": "3903557, 507"
-  },
-  "worker": {
-    "candidate_build_evidence": [
-      {
-        "layer": "fine_time.0",
-        "width": 256,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "fine_time.1",
-        "width": 256,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "fine_time.2",
-        "width": 256,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "coarse_time.0",
-        "width": 512,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "coarse_time.1",
-        "width": 512,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "coarse_time.2",
-        "width": 512,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      }
-    ],
-    "fine_nodes": 2970629,
-    "coarse_nodes": 1488042,
-    "loss_components": {
-      "total": 1.7414692640304565,
-      "frame_BCE": 0.7357272505760193,
-      "pixel_BCE": 0.005926134530454874,
-      "soft_Dice_loss": 0.9998159408569336
-    },
-    "forward_edge_evidence": [
-      {
-        "layer": "fine_time.0",
-        "width": 256,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 2970629,
-        "edges": 37042228,
-        "average_degree": 12.46948979492222,
-        "topology_bytes": 616440688,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 4
-      },
-      {
-        "layer": "fine_time.1",
-        "width": 256,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 2970629,
-        "edges": 31105643,
-        "average_degree": 10.471062862444283,
-        "topology_bytes": 521455328,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 4
-      },
-      {
-        "layer": "fine_time.2",
-        "width": 256,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 2970629,
-        "edges": 28847555,
-        "average_degree": 9.710924858001453,
-        "topology_bytes": 485325920,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 4
-      },
-      {
-        "layer": "coarse_time.0",
-        "width": 512,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 1488042,
-        "edges": 26982715,
-        "average_degree": 18.13303320739603,
-        "topology_bytes": 443627784,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 8
-      },
-      {
-        "layer": "coarse_time.1",
-        "width": 512,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 1488042,
-        "edges": 22781330,
-        "average_degree": 15.309601476302417,
-        "topology_bytes": 376405624,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 8
-      },
-      {
-        "layer": "coarse_time.2",
-        "width": 512,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 1488042,
-        "edges": 20707343,
-        "average_degree": 13.915832348818112,
-        "topology_bytes": 343221832,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 8
-      }
-    ],
-    "status": "OOM",
-    "updates": 0,
-    "error": "CUDA out of memory. Tried to allocate 316.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 174.00 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 22.11 GiB memory in use. Of the allocated memory 21.08 GiB is allocated by PyTorch, and 571.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
-    "failure_phase": "backward",
-    "phase": "backward",
-    "elapsed_s": 65.55915680062026,
-    "peak_allocated_bytes": 22812468736,
-    "peak_reserved_bytes": 23416799232,
-    "allocated_bytes": 9867357696,
-    "reserved_bytes": 23234347008,
-    "host": {
-      "available_bytes": 37161975808,
-      "rss_bytes": 15883857920,
-      "peak_rss_bytes": 15879180288
-    },
-    "trace": {
-      "fine_time": {
-        "active_layer": {
-          "dilation": 4,
-          "nodes": 2970629,
-          "width": 256,
-          "dtype": "torch.bfloat16"
-        },
-        "layers": [
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5125,
-              256
-            ],
-            "hidden_shape": [
-              5125,
-              1024
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5125,
-              256
-            ],
-            "hidden_shape": [
-              5125,
-              1024
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5125,
-              256
-            ],
-            "hidden_shape": [
-              5125,
-              1024
-            ],
-            "dtype": "torch.bfloat16"
-          }
-        ],
-        "edge_stats": [
-          {
-            "nodes": 2970629,
-            "edges": 37042228,
-            "average_degree": 12.46948979492222,
-            "topology_bytes": 616440688,
-            "dilation": 1,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "nodes": 2970629,
-            "edges": 31105643,
-            "average_degree": 10.471062862444283,
-            "topology_bytes": 521455328,
-            "dilation": 2,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "nodes": 2970629,
-            "edges": 28847555,
-            "average_degree": 9.710924858001453,
-            "topology_bytes": 485325920,
-            "dilation": 4,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          }
-        ]
-      },
-      "coarse_time": {
-        "active_layer": {
-          "dilation": 4,
-          "nodes": 1488042,
-          "width": 512,
-          "dtype": "torch.bfloat16"
-        },
-        "layers": [
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5290,
-              512
-            ],
-            "hidden_shape": [
-              5290,
-              2048
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5290,
-              512
-            ],
-            "hidden_shape": [
-              5290,
-              2048
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              8192,
-              512
-            ],
-            "hidden_shape": [
-              8192,
-              2048
-            ],
-            "dtype": "torch.bfloat16"
-          }
-        ],
-        "edge_stats": [
-          {
-            "nodes": 1488042,
-            "edges": 26982715,
-            "average_degree": 18.13303320739603,
-            "topology_bytes": 443627784,
-            "dilation": 1,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "nodes": 1488042,
-            "edges": 22781330,
-            "average_degree": 15.309601476302417,
-            "topology_bytes": 376405624,
-            "dilation": 2,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "nodes": 1488042,
-            "edges": 20707343,
-            "average_degree": 13.915832348818112,
-            "topology_bytes": 343221832,
-            "dilation": 4,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          }
-        ]
-      }
-    },
-    "stages": [
-      {
-        "phase": "worker_start",
-        "elapsed_s": 1.806662148796022,
-        "peak_allocated_bytes": 0,
-        "peak_reserved_bytes": 0,
-        "allocated_bytes": 0,
-        "reserved_bytes": 0,
-        "host": {
-          "available_bytes": 51494535168,
-          "rss_bytes": 552255488,
-          "peak_rss_bytes": 548020224
-        },
-        "trace": {},
-        "stage": "worker_start",
-        "stage_s": null
-      },
-      {
-        "phase": "model_build",
-        "elapsed_s": 2.5928599759936333,
-        "peak_allocated_bytes": 71308288,
-        "peak_reserved_bytes": 85983232,
-        "allocated_bytes": 71308288,
-        "reserved_bytes": 85983232,
-        "host": {
-          "available_bytes": 51371728896,
-          "rss_bytes": 726417408,
-          "peak_rss_bytes": 723546112
-        },
-        "trace": {
-          "fine_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          },
-          "coarse_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          }
-        },
-        "stage": "model_built",
-        "stage_s": 0.7822061814367771,
-        "parameters": 17821672,
-        "candidate_layers": [
-          {
-            "layer": "fine_time.0",
-            "width": 256,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "fine_time.1",
-            "width": 256,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "fine_time.2",
-            "width": 256,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "coarse_time.0",
-            "width": 512,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "coarse_time.1",
-            "width": 512,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "coarse_time.2",
-            "width": 512,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          }
-        ]
-      },
-      {
-        "phase": "data_geometry",
-        "elapsed_s": 3.2150107957422733,
-        "peak_allocated_bytes": 1755244032,
-        "peak_reserved_bytes": 1839202304,
-        "allocated_bytes": 1715809280,
-        "reserved_bytes": 1839202304,
-        "host": {
-          "available_bytes": 50885046272,
-          "rss_bytes": 1365016576,
-          "peak_rss_bytes": 1386512384
-        },
-        "trace": {
-          "fine_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          },
-          "coarse_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          }
-        },
-        "stage": "data_loaded",
-        "stage_s": 0.6211445834487677,
-        "fine_nodes": 2970629,
-        "coarse_nodes": 1488042,
-        "q_dtype": "torch.float32",
-        "token_dtype": "torch.float16",
-        "rgb_dtype": "torch.uint8",
-        "target_labels": [
-          false,
-          false,
-          false,
-          false,
-          false,
-          false,
-          false,
-          false
-        ],
-        "spatial_gt": "zero mask for ANAKIN real"
-      },
-      {
-        "phase": "forward",
-        "elapsed_s": 21.28077779058367,
-        "peak_allocated_bytes": 22409504256,
-        "peak_reserved_bytes": 23416799232,
-        "allocated_bytes": 13998760448,
-        "reserved_bytes": 23232249856,
-        "host": {
-          "available_bytes": 37956771840,
-          "rss_bytes": 15635415040,
-          "peak_rss_bytes": 15630667776
-        },
-        "trace": {
-          "fine_time": {
-            "active_layer": {
-              "dilation": 4,
-              "nodes": 2970629,
-              "width": 256,
-              "dtype": "torch.bfloat16"
-            },
-            "layers": [
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5125,
-                  256
-                ],
-                "hidden_shape": [
-                  5125,
-                  1024
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5125,
-                  256
-                ],
-                "hidden_shape": [
-                  5125,
-                  1024
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5125,
-                  256
-                ],
-                "hidden_shape": [
-                  5125,
-                  1024
-                ],
-                "dtype": "torch.bfloat16"
-              }
-            ],
-            "edge_stats": [
-              {
-                "nodes": 2970629,
-                "edges": 37042228,
-                "average_degree": 12.46948979492222,
-                "topology_bytes": 616440688,
-                "dilation": 1,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 4
-              },
-              {
-                "nodes": 2970629,
-                "edges": 31105643,
-                "average_degree": 10.471062862444283,
-                "topology_bytes": 521455328,
-                "dilation": 2,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 4
-              },
-              {
-                "nodes": 2970629,
-                "edges": 28847555,
-                "average_degree": 9.710924858001453,
-                "topology_bytes": 485325920,
-                "dilation": 4,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 4
-              }
-            ]
-          },
-          "coarse_time": {
-            "active_layer": {
-              "dilation": 4,
-              "nodes": 1488042,
-              "width": 512,
-              "dtype": "torch.bfloat16"
-            },
-            "layers": [
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5290,
-                  512
-                ],
-                "hidden_shape": [
-                  5290,
-                  2048
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5290,
-                  512
-                ],
-                "hidden_shape": [
-                  5290,
-                  2048
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5290,
-                  512
-                ],
-                "hidden_shape": [
-                  5290,
-                  2048
-                ],
-                "dtype": "torch.bfloat16"
-              }
-            ],
-            "edge_stats": [
-              {
-                "nodes": 1488042,
-                "edges": 26982715,
-                "average_degree": 18.13303320739603,
-                "topology_bytes": 443627784,
-                "dilation": 1,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 8
-              },
-              {
-                "nodes": 1488042,
-                "edges": 22781330,
-                "average_degree": 15.309601476302417,
-                "topology_bytes": 376405624,
-                "dilation": 2,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 8
-              },
-              {
-                "nodes": 1488042,
-                "edges": 20707343,
-                "average_degree": 13.915832348818112,
-                "topology_bytes": 343221832,
-                "dilation": 4,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 8
-              }
-            ]
-          }
-        },
-        "stage": "forward_complete",
-        "stage_s": 18.0643613897264,
-        "finite_loss": true,
-        "output_dtype": "torch.float32",
-        "loss_components": {
-          "total": 1.7414692640304565,
-          "frame_BCE": 0.7357272505760193,
-          "pixel_BCE": 0.005926134530454874,
-          "soft_Dice_loss": 0.9998159408569336
-        },
-        "candidate_layers": [
-          {
-            "layer": "fine_time.0",
-            "width": 256,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 2970629,
-            "edges": 37042228,
-            "average_degree": 12.46948979492222,
-            "topology_bytes": 616440688,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "layer": "fine_time.1",
-            "width": 256,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 2970629,
-            "edges": 31105643,
-            "average_degree": 10.471062862444283,
-            "topology_bytes": 521455328,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "layer": "fine_time.2",
-            "width": 256,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 2970629,
-            "edges": 28847555,
-            "average_degree": 9.710924858001453,
-            "topology_bytes": 485325920,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "layer": "coarse_time.0",
-            "width": 512,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 1488042,
-            "edges": 26982715,
-            "average_degree": 18.13303320739603,
-            "topology_bytes": 443627784,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "layer": "coarse_time.1",
-            "width": 512,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 1488042,
-            "edges": 22781330,
-            "average_degree": 15.309601476302417,
-            "topology_bytes": 376405624,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "layer": "coarse_time.2",
-            "width": 512,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 1488042,
-            "edges": 20707343,
-            "average_degree": 13.915832348818112,
-            "topology_bytes": 343221832,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          }
-        ]
-      }
-    ]
-  },
-  "last_live": {
-    "candidate_build_evidence": [
-      {
-        "layer": "fine_time.0",
-        "width": 256,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "fine_time.1",
-        "width": 256,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "fine_time.2",
-        "width": 256,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "coarse_time.0",
-        "width": 512,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "coarse_time.1",
-        "width": 512,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      },
-      {
-        "layer": "coarse_time.2",
-        "width": 512,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-      }
-    ],
-    "fine_nodes": 2970629,
-    "coarse_nodes": 1488042,
-    "loss_components": {
-      "total": 1.7414692640304565,
-      "frame_BCE": 0.7357272505760193,
-      "pixel_BCE": 0.005926134530454874,
-      "soft_Dice_loss": 0.9998159408569336
-    },
-    "forward_edge_evidence": [
-      {
-        "layer": "fine_time.0",
-        "width": 256,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 2970629,
-        "edges": 37042228,
-        "average_degree": 12.46948979492222,
-        "topology_bytes": 616440688,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 4
-      },
-      {
-        "layer": "fine_time.1",
-        "width": 256,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 2970629,
-        "edges": 31105643,
-        "average_degree": 10.471062862444283,
-        "topology_bytes": 521455328,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 4
-      },
-      {
-        "layer": "fine_time.2",
-        "width": 256,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 2970629,
-        "edges": 28847555,
-        "average_degree": 9.710924858001453,
-        "topology_bytes": 485325920,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 4
-      },
-      {
-        "layer": "coarse_time.0",
-        "width": 512,
-        "dilation": 1,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 1488042,
-        "edges": 26982715,
-        "average_degree": 18.13303320739603,
-        "topology_bytes": 443627784,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 8
-      },
-      {
-        "layer": "coarse_time.1",
-        "width": 512,
-        "dilation": 2,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 1488042,
-        "edges": 22781330,
-        "average_degree": 15.309601476302417,
-        "topology_bytes": 376405624,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 8
-      },
-      {
-        "layer": "coarse_time.2",
-        "width": 512,
-        "dilation": 4,
-        "enabled": true,
-        "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-        "nodes": 1488042,
-        "edges": 20707343,
-        "average_degree": 13.915832348818112,
-        "topology_bytes": 343221832,
-        "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-        "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-        "logical_padding_columns": 0,
-        "completed_heads": 8
-      }
-    ],
-    "status": "OOM",
-    "updates": 0,
-    "error": "CUDA out of memory. Tried to allocate 316.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 174.00 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 22.11 GiB memory in use. Of the allocated memory 21.08 GiB is allocated by PyTorch, and 571.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
-    "traceback": "Traceback (most recent call last):\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/pvst/max_window_check.py\", line 168, in worker\n    phase='backward';tick=time.monotonic();loss.backward();torch.cuda.synchronize();boundary('backward_complete',time.monotonic()-tick)\n                                           ^^^^^^^^^^^^^^^\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/lib/python3.12/site-packages/torch/_tensor.py\", line 581, in backward\n    torch.autograd.backward(\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/lib/python3.12/site-packages/torch/autograd/__init__.py\", line 347, in backward\n    _engine_run_backward(\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/lib/python3.12/site-packages/torch/autograd/graph.py\", line 825, in _engine_run_backward\n    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 1125, in unpack_hook\n    frame.recompute_fn(*args)\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 1519, in recompute_fn\n    fn(*args, **kwargs)\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/pvst/sparse_attention.py\", line 58, in sparse_head\n    weights=torch.sparse.softmax(scores,dim=1)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntorch.OutOfMemoryError: CUDA out of memory. Tried to allocate 316.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 174.00 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 22.11 GiB memory in use. Of the allocated memory 21.08 GiB is allocated by PyTorch, and 571.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)\n",
-    "failure_phase": "backward",
-    "phase": "backward",
-    "elapsed_s": 65.55915680062026,
-    "peak_allocated_bytes": 22812468736,
-    "peak_reserved_bytes": 23416799232,
-    "allocated_bytes": 9867357696,
-    "reserved_bytes": 23234347008,
-    "host": {
-      "available_bytes": 37161975808,
-      "rss_bytes": 15883857920,
-      "peak_rss_bytes": 15879180288
-    },
-    "trace": {
-      "fine_time": {
-        "active_layer": {
-          "dilation": 4,
-          "nodes": 2970629,
-          "width": 256,
-          "dtype": "torch.bfloat16"
-        },
-        "layers": [
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5125,
-              256
-            ],
-            "hidden_shape": [
-              5125,
-              1024
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5125,
-              256
-            ],
-            "hidden_shape": [
-              5125,
-              1024
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5125,
-              256
-            ],
-            "hidden_shape": [
-              5125,
-              1024
-            ],
-            "dtype": "torch.bfloat16"
-          }
-        ],
-        "edge_stats": [
-          {
-            "nodes": 2970629,
-            "edges": 37042228,
-            "average_degree": 12.46948979492222,
-            "topology_bytes": 616440688,
-            "dilation": 1,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "nodes": 2970629,
-            "edges": 31105643,
-            "average_degree": 10.471062862444283,
-            "topology_bytes": 521455328,
-            "dilation": 2,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "nodes": 2970629,
-            "edges": 28847555,
-            "average_degree": 9.710924858001453,
-            "topology_bytes": 485325920,
-            "dilation": 4,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          }
-        ]
-      },
-      "coarse_time": {
-        "active_layer": {
-          "dilation": 4,
-          "nodes": 1488042,
-          "width": 512,
-          "dtype": "torch.bfloat16"
-        },
-        "layers": [
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5290,
-              512
-            ],
-            "hidden_shape": [
-              5290,
-              2048
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              5290,
-              512
-            ],
-            "hidden_shape": [
-              5290,
-              2048
-            ],
-            "dtype": "torch.bfloat16"
-          },
-          {
-            "operation": "norm2+FFN block",
-            "input_shape": [
-              8192,
-              512
-            ],
-            "hidden_shape": [
-              8192,
-              2048
-            ],
-            "dtype": "torch.bfloat16"
-          }
-        ],
-        "edge_stats": [
-          {
-            "nodes": 1488042,
-            "edges": 26982715,
-            "average_degree": 18.13303320739603,
-            "topology_bytes": 443627784,
-            "dilation": 1,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "nodes": 1488042,
-            "edges": 22781330,
-            "average_degree": 15.309601476302417,
-            "topology_bytes": 376405624,
-            "dilation": 2,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "nodes": 1488042,
-            "edges": 20707343,
-            "average_degree": 13.915832348818112,
-            "topology_bytes": 343221832,
-            "dilation": 4,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          }
-        ]
-      }
-    },
-    "stages": [
-      {
-        "phase": "worker_start",
-        "elapsed_s": 1.806662148796022,
-        "peak_allocated_bytes": 0,
-        "peak_reserved_bytes": 0,
-        "allocated_bytes": 0,
-        "reserved_bytes": 0,
-        "host": {
-          "available_bytes": 51494535168,
-          "rss_bytes": 552255488,
-          "peak_rss_bytes": 548020224
-        },
-        "trace": {},
-        "stage": "worker_start",
-        "stage_s": null
-      },
-      {
-        "phase": "model_build",
-        "elapsed_s": 2.5928599759936333,
-        "peak_allocated_bytes": 71308288,
-        "peak_reserved_bytes": 85983232,
-        "allocated_bytes": 71308288,
-        "reserved_bytes": 85983232,
-        "host": {
-          "available_bytes": 51371728896,
-          "rss_bytes": 726417408,
-          "peak_rss_bytes": 723546112
-        },
-        "trace": {
-          "fine_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          },
-          "coarse_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          }
-        },
-        "stage": "model_built",
-        "stage_s": 0.7822061814367771,
-        "parameters": 17821672,
-        "candidate_layers": [
-          {
-            "layer": "fine_time.0",
-            "width": 256,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "fine_time.1",
-            "width": 256,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "fine_time.2",
-            "width": 256,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "coarse_time.0",
-            "width": 512,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "coarse_time.1",
-            "width": 512,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          },
-          {
-            "layer": "coarse_time.2",
-            "width": 512,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8"
-          }
-        ]
-      },
-      {
-        "phase": "data_geometry",
-        "elapsed_s": 3.2150107957422733,
-        "peak_allocated_bytes": 1755244032,
-        "peak_reserved_bytes": 1839202304,
-        "allocated_bytes": 1715809280,
-        "reserved_bytes": 1839202304,
-        "host": {
-          "available_bytes": 50885046272,
-          "rss_bytes": 1365016576,
-          "peak_rss_bytes": 1386512384
-        },
-        "trace": {
-          "fine_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          },
-          "coarse_time": {
-            "active_layer": null,
-            "layers": [
-              {},
-              {},
-              {}
-            ],
-            "edge_stats": [
-              null,
-              null,
-              null
-            ]
-          }
-        },
-        "stage": "data_loaded",
-        "stage_s": 0.6211445834487677,
-        "fine_nodes": 2970629,
-        "coarse_nodes": 1488042,
-        "q_dtype": "torch.float32",
-        "token_dtype": "torch.float16",
-        "rgb_dtype": "torch.uint8",
-        "target_labels": [
-          false,
-          false,
-          false,
-          false,
-          false,
-          false,
-          false,
-          false
-        ],
-        "spatial_gt": "zero mask for ANAKIN real"
-      },
-      {
-        "phase": "forward",
-        "elapsed_s": 21.28077779058367,
-        "peak_allocated_bytes": 22409504256,
-        "peak_reserved_bytes": 23416799232,
-        "allocated_bytes": 13998760448,
-        "reserved_bytes": 23232249856,
-        "host": {
-          "available_bytes": 37956771840,
-          "rss_bytes": 15635415040,
-          "peak_rss_bytes": 15630667776
-        },
-        "trace": {
-          "fine_time": {
-            "active_layer": {
-              "dilation": 4,
-              "nodes": 2970629,
-              "width": 256,
-              "dtype": "torch.bfloat16"
-            },
-            "layers": [
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5125,
-                  256
-                ],
-                "hidden_shape": [
-                  5125,
-                  1024
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5125,
-                  256
-                ],
-                "hidden_shape": [
-                  5125,
-                  1024
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5125,
-                  256
-                ],
-                "hidden_shape": [
-                  5125,
-                  1024
-                ],
-                "dtype": "torch.bfloat16"
-              }
-            ],
-            "edge_stats": [
-              {
-                "nodes": 2970629,
-                "edges": 37042228,
-                "average_degree": 12.46948979492222,
-                "topology_bytes": 616440688,
-                "dilation": 1,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 4
-              },
-              {
-                "nodes": 2970629,
-                "edges": 31105643,
-                "average_degree": 10.471062862444283,
-                "topology_bytes": 521455328,
-                "dilation": 2,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 4
-              },
-              {
-                "nodes": 2970629,
-                "edges": 28847555,
-                "average_degree": 9.710924858001453,
-                "topology_bytes": 485325920,
-                "dilation": 4,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 4
-              }
-            ]
-          },
-          "coarse_time": {
-            "active_layer": {
-              "dilation": 4,
-              "nodes": 1488042,
-              "width": 512,
-              "dtype": "torch.bfloat16"
-            },
-            "layers": [
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5290,
-                  512
-                ],
-                "hidden_shape": [
-                  5290,
-                  2048
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5290,
-                  512
-                ],
-                "hidden_shape": [
-                  5290,
-                  2048
-                ],
-                "dtype": "torch.bfloat16"
-              },
-              {
-                "operation": "norm2+FFN block",
-                "input_shape": [
-                  5290,
-                  512
-                ],
-                "hidden_shape": [
-                  5290,
-                  2048
-                ],
-                "dtype": "torch.bfloat16"
-              }
-            ],
-            "edge_stats": [
-              {
-                "nodes": 1488042,
-                "edges": 26982715,
-                "average_degree": 18.13303320739603,
-                "topology_bytes": 443627784,
-                "dilation": 1,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 8
-              },
-              {
-                "nodes": 1488042,
-                "edges": 22781330,
-                "average_degree": 15.309601476302417,
-                "topology_bytes": 376405624,
-                "dilation": 2,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 8
-              },
-              {
-                "nodes": 1488042,
-                "edges": 20707343,
-                "average_degree": 13.915832348818112,
-                "topology_bytes": 343221832,
-                "dilation": 4,
-                "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-                "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-                "logical_padding_columns": 0,
-                "completed_heads": 8
-              }
-            ]
-          }
-        },
-        "stage": "forward_complete",
-        "stage_s": 18.0643613897264,
-        "finite_loss": true,
-        "output_dtype": "torch.float32",
-        "loss_components": {
-          "total": 1.7414692640304565,
-          "frame_BCE": 0.7357272505760193,
-          "pixel_BCE": 0.005926134530454874,
-          "soft_Dice_loss": 0.9998159408569336
-        },
-        "candidate_layers": [
-          {
-            "layer": "fine_time.0",
-            "width": 256,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 2970629,
-            "edges": 37042228,
-            "average_degree": 12.46948979492222,
-            "topology_bytes": 616440688,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "layer": "fine_time.1",
-            "width": 256,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 2970629,
-            "edges": 31105643,
-            "average_degree": 10.471062862444283,
-            "topology_bytes": 521455328,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "layer": "fine_time.2",
-            "width": 256,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 2970629,
-            "edges": 28847555,
-            "average_degree": 9.710924858001453,
-            "topology_bytes": 485325920,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 4
-          },
-          {
-            "layer": "coarse_time.0",
-            "width": 512,
-            "dilation": 1,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 1488042,
-            "edges": 26982715,
-            "average_degree": 18.13303320739603,
-            "topology_bytes": 443627784,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "layer": "coarse_time.1",
-            "width": 512,
-            "dilation": 2,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 1488042,
-            "edges": 22781330,
-            "average_degree": 15.309601476302417,
-            "topology_bytes": 376405624,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          },
-          {
-            "layer": "coarse_time.2",
-            "width": 512,
-            "dilation": 4,
-            "enabled": true,
-            "head_source_sha256": "0038d0710bf539c9e991e4e7d3b28575805cea67b45c26528e1b45602ddf1fd8",
-            "nodes": 1488042,
-            "edges": 20707343,
-            "average_degree": 13.915832348818112,
-            "topology_bytes": 343221832,
-            "backend": "CSR sampled_addmm/COO softmax/CSR mm FP32 per head",
-            "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
-            "logical_padding_columns": 0,
-            "completed_heads": 8
-          }
-        ]
-      }
-    ]
-  },
-  "coordinate_total": null,
-  "formal_models_completed": 0
+  "failure_phase": "backward",
+  "error": "CUDA out of memory. Tried to allocate 316.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 174.00 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 22.11 GiB memory in use. Of the allocated memory 21.08 GiB is allocated by PyTorch, and 571.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+  "failure_operator": "checkpoint recompute: torch.sparse.softmax",
+  "updates": 0,
+  "optimizer_state_established": false,
+  "worker_gpu_released": true,
+  "formal_models_completed": 0,
+  "output_dir": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_v03_sparse_max_window_check_v1",
+  "coordinate_audit_repeated": false,
+  "formal_xyz_scale": null
 }
