@@ -47,3 +47,12 @@ def test_actual_sparse_core_backward_never_materializes_dense_square():
     with NoDenseSquare():
         y=sparse_head(q,k,v,bias,crow,col,relation,0,.1,True);y.square().mean().backward()
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in [q,k,v,bias])
+
+
+def test_fatal_signal_never_passes_full_window_gate():
+    from research_tools.pvst.sparse_attention_check import finalize_layer
+    partial={'correctness':[{'passed':True}],'full_window_allowed':False}
+    failed=finalize_layer(partial,{'timed_out':False,'returncode':-8})
+    assert failed['status']=='FAILED' and not failed['full_window_allowed'] and failed['process']['returncode']==-8
+    timed=finalize_layer({'status':'LAYER_PASS','full_window_allowed':True},{'timed_out':True,'returncode':-15})
+    assert timed['status']=='TIMEOUT' and not timed['full_window_allowed']

@@ -1,0 +1,248 @@
+{
+  "status": "FAILED",
+  "reason": "native SIGFPE in candidate N65536/dim256; no Python exception stack; no retry",
+  "source_commit": "4f365880bdb7051d255a7ee74c5398b03f30f21c",
+  "torch": "2.5.1+cu124",
+  "process": {
+    "pid": 2057298,
+    "returncode": -8,
+    "termination_signal": 8,
+    "timed_out": false,
+    "wall_s": 13.318495030514896,
+    "timeout_s": 290,
+    "samples": []
+  },
+  "full_window_attempts": 0,
+  "adamw_updates": 0,
+  "formal_models_completed": 0,
+  "candidate_default": false,
+  "raw_bf16_sampled_addmm": "unsupported",
+  "core_layout": "FP32 per-head CSR sampled_addmm -> COO softmax/dropout -> CSR mm",
+  "capability": [
+    {
+      "dtype": "torch.float32",
+      "phase": "backward",
+      "status": "PASS",
+      "gradients": {
+        "Q": {
+          "exists": true,
+          "finite": true,
+          "norm": 6.678326606750488
+        },
+        "K": {
+          "exists": true,
+          "finite": true,
+          "norm": 5.738009929656982
+        },
+        "V": {
+          "exists": true,
+          "finite": true,
+          "norm": 33.70735168457031
+        },
+        "bias": {
+          "exists": true,
+          "finite": true,
+          "norm": 5.794678688049316
+        }
+      },
+      "seconds": 0.34742767456918955
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "phase": "sampled_addmm",
+      "status": "UNSUPPORTED",
+      "error": "\"sampled_addmm_out_sparse_csr\" not implemented for 'BFloat16'",
+      "traceback": "Traceback (most recent call last):\n  File \"/tmp/pvst_sparse_capability.py\", line 8, in <module>\n    score=torch.sparse.sampled_addmm(mask,q,k.T,beta=0,alpha=1/8);result['phase']='CSR values -> COO -> softmax'\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: \"sampled_addmm_out_sparse_csr\" not implemented for 'BFloat16'\n",
+      "seconds": 0.0030039167031645775
+    }
+  ],
+  "layout_dispatch": [
+    {
+      "layout": "coo",
+      "status": "PASS",
+      "dense_square_ops": [
+        "aten.mm.default"
+      ],
+      "gradients": {
+        "Q": true,
+        "K": true,
+        "V": true,
+        "bias": true
+      }
+    },
+    {
+      "layout": "csr",
+      "status": "PASS",
+      "dense_square_ops": [],
+      "gradients": {
+        "Q": true,
+        "K": true,
+        "V": true,
+        "bias": true
+      }
+    }
+  ],
+  "tolerances": {
+    "fp32": {
+      "output_atol": 2e-05,
+      "output_rtol": 0.0002,
+      "grad_atol": 2e-05,
+      "grad_rtol": 0.003
+    },
+    "bf16": {
+      "output_atol": 0.04,
+      "output_rtol": 0.03,
+      "grad_atol": 0.003,
+      "grad_rtol": 0.08
+    }
+  },
+  "dropout": {
+    "dropout": 0.1,
+    "max_output_error": 0.0,
+    "finite_gradients": true,
+    "checkpoint_rng": "PASS"
+  },
+  "error_summary": {
+    "torch.float32": {
+      "output": 4.76837158203125e-07,
+      "input_gradient": 1.7462298274040222e-10,
+      "groups": {
+        "qkv": {
+          "max_abs": 9.313225746154785e-10,
+          "group_reference_max_abs": 0.0034389838110655546,
+          "error_relative_to_group_max": 2.7081330584307466e-07,
+          "max_per_parameter_relative_to_its_max": 3.844143518318645e-07
+        },
+        "bias": {
+          "max_abs": 3.14321368932724e-09,
+          "group_reference_max_abs": 0.0007486073300242424,
+          "error_relative_to_group_max": 4.198748213199372e-06,
+          "max_per_parameter_relative_to_its_max": 1.0188679245283019
+        },
+        "proj": {
+          "max_abs": 6.984919309616089e-10,
+          "group_reference_max_abs": 0.004914973396807909,
+          "error_relative_to_group_max": 1.4211509901869525e-07,
+          "max_per_parameter_relative_to_its_max": 3.014023285861663e-07
+        }
+      }
+    },
+    "torch.bfloat16": {
+      "output": 0.03125,
+      "input_gradient": 7.62939453125e-06,
+      "groups": {
+        "qkv": {
+          "max_abs": 3.0517578125e-05,
+          "group_reference_max_abs": 0.0034332275390625,
+          "error_relative_to_group_max": 0.008888888888888889,
+          "max_per_parameter_relative_to_its_max": 0.00946969696969697
+        },
+        "bias": {
+          "max_abs": 8.58306884765625e-06,
+          "group_reference_max_abs": 0.000751495361328125,
+          "error_relative_to_group_max": 0.011421319796954314,
+          "max_per_parameter_relative_to_its_max": 1.3779904306220097
+        },
+        "proj": {
+          "max_abs": 6.103515625e-05,
+          "group_reference_max_abs": 0.00494384765625,
+          "error_relative_to_group_max": 0.012345679012345678,
+          "max_per_parameter_relative_to_its_max": 0.012345679012345678
+        }
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "n": 16384,
+      "dim": 256,
+      "candidate": false,
+      "dtype": "BF16; sparse core per-head FP32",
+      "dropout": 0.1,
+      "outer_checkpoint": true,
+      "edges": 876024,
+      "average_degree": 53.46826171875,
+      "topology_bytes": 14147464,
+      "compact_topology_s": 0.002442111261188984,
+      "edge_topology_s": 0.00707656517624855,
+      "forward_s": 0.017187677323818207,
+      "backward_s": 0.4145885771140456,
+      "peak_allocated_bytes": 228032512,
+      "peak_reserved_bytes": 297795584
+    },
+    {
+      "n": 16384,
+      "dim": 256,
+      "candidate": true,
+      "dtype": "BF16; sparse core per-head FP32",
+      "dropout": 0.1,
+      "outer_checkpoint": true,
+      "edges": 876024,
+      "average_degree": 53.46826171875,
+      "topology_bytes": 14147464,
+      "compact_topology_s": 0.0007672253996133804,
+      "edge_topology_s": 0.009792407043278217,
+      "forward_s": 0.020002895034849644,
+      "backward_s": 0.0442624157294631,
+      "peak_allocated_bytes": 252944384,
+      "peak_reserved_bytes": 301989888
+    },
+    {
+      "n": 16384,
+      "dim": 512,
+      "candidate": false,
+      "dtype": "BF16; sparse core per-head FP32",
+      "dropout": 0.1,
+      "outer_checkpoint": true,
+      "edges": 876024,
+      "average_degree": 53.46826171875,
+      "topology_bytes": 14147464,
+      "compact_topology_s": 0.0009552082046866417,
+      "edge_topology_s": 0.009868101216852665,
+      "forward_s": 0.02168503124266863,
+      "backward_s": 0.4628250515088439,
+      "peak_allocated_bytes": 1319858176,
+      "peak_reserved_bytes": 1604321280
+    },
+    {
+      "n": 16384,
+      "dim": 512,
+      "candidate": true,
+      "dtype": "BF16; sparse core per-head FP32",
+      "dropout": 0.1,
+      "outer_checkpoint": true,
+      "edges": 876024,
+      "average_degree": 53.46826171875,
+      "topology_bytes": 14147464,
+      "compact_topology_s": 0.0011925222352147102,
+      "edge_topology_s": 0.01160439569503069,
+      "forward_s": 0.024756974540650845,
+      "backward_s": 0.06391153763979673,
+      "peak_allocated_bytes": 1224118784,
+      "peak_reserved_bytes": 1604321280
+    },
+    {
+      "n": 65536,
+      "dim": 256,
+      "candidate": false,
+      "dtype": "BF16; sparse core per-head FP32",
+      "dropout": 0.1,
+      "outer_checkpoint": true,
+      "edges": 3658104,
+      "average_degree": 55.8182373046875,
+      "topology_bytes": 59053960,
+      "compact_topology_s": 0.000737990252673626,
+      "edge_topology_s": 0.04211972560733557,
+      "forward_s": 0.07966196909546852,
+      "backward_s": 1.6095911655575037,
+      "peak_allocated_bytes": 1353210880,
+      "peak_reserved_bytes": 1889533952
+    }
+  ],
+  "model_identity": {
+    "parameters": 17821672,
+    "state_dict_keys": 252,
+    "keys_sha256": "31beab46b45b34ed53ff89a70293a0e9e93abb86721dc51902e9c4c1808af665",
+    "scope": "actual official decoder XYZ model instantiated on CPU; no forward"
+  }
+}

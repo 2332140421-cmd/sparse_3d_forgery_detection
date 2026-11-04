@@ -118,6 +118,16 @@ def worker():
     save(OUT/'layer_results.json',result)
 
 
+
+def finalize_layer(result,process):
+    """Native signal cannot leave a partial success looking like a passed gate."""
+    result={**result,'process':process}
+    if process['timed_out']:result.update(status='TIMEOUT',full_window_allowed=False)
+    elif process['returncode']!=0:result.update(status='FAILED',full_window_allowed=False,error='native worker exit '+str(process['returncode'])+'; no Python exception captured')
+    elif result.get('status')!='LAYER_PASS':result['full_window_allowed']=False
+    return result
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--worker',action='store_true');a=p.parse_args();OUT.mkdir(parents=True,exist_ok=True)
     if a.worker:worker();return
@@ -126,7 +136,7 @@ def main():
     save(OUT/'layer_identity.json',spec)
     proc=bounded_process([sys.executable,'-u','-m','research_tools.pvst.sparse_attention_check','--worker'],290,OUT/'layer.log');save(OUT/'layer_process.json',proc)
     result=json.loads((OUT/'layer_results.json').read_text()) if (OUT/'layer_results.json').exists() else {}
-    if proc['timed_out']:result.update(status='TIMEOUT',full_window_allowed=False);save(OUT/'layer_results.json',result)
+    result=finalize_layer(result,proc);save(OUT/'layer_results.json',result)
     save(OUT/'progress.json',{'status':result.get('status','FAILED'),'stage':'layer_check_finished','formal_models_completed':0});print(result.get('status','FAILED'),flush=True)
 
 if __name__=='__main__':main()
