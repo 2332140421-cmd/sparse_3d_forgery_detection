@@ -1,6 +1,21 @@
 # PVST v0.3 SliceBackward取证与原生split修复
 
 **候选结果：OOM；正式模型0/2。** 原实现完整诊断1次，修复后完整验收至多1次；无正式训练/性能指标。
+
+**最终结果：原1.42GiB申请已原生定位；三处split修复与正确性核验通过；唯一候选最大窗口仍OOM，AdamW更新0次。**
+
+原诊断明确为 **SliceBackward0 → slice_backward → zeros**，不是仅凭“与[N,D]大小相符”推断。小图在256/512维、FP32/BF16四组中，目标完整节点slice_backward由 **40/64次降至0**；合法的参数权重切片未移除。
+
+新失败已转为 **ToCopyBackward0 → at::native::to/_to_copy → empty_strided/allocator**，申请 **364MiB** 时设备剩 **255.38MiB**，已不是本次修复的slice零缓冲路径。此为设备/精度拷贝反向分配，但C++栈未打印该ToCopy节点的输入shape、source/target device及dtype；不能只凭364MiB认定CPU→GPU传回或某个head。最后活动记录为coarse dilation1的head0稀疏attention重算，不能当作失败节点身份。原生完整栈留新数据目录，不追加第三次窗口/新profiler。
+
+候选前向 **22.230秒**；反向未完成，从前向阶段结束至worker落盘末态约 **40.155秒**（含错误符号化/收尾，不是完整反向耗时）；梯度检查/裁剪、AdamW和优化器状态建立均未到达。worker末态 **65.640秒**，父进程总墙时 **66.862秒**。
+
+**真实退出历史：**原诊断returncode=2；候选已捕获CUDA OOM并保存worker_result，随后进程最终 **returncode=-6，SIGABRT(6)**，不是正常退出2或0，且不是父进程超时终止。发生abort的进一步机制本轮未取证，不改写原始退出记录。primary计算结果保留OOM，原生退出信号另列；本任务GPU进程已释放。
+
+候选已观测allocated/reserved峰值 **21.110/21.791GiB**，不能作为完整更新峰值上界；主机峰值RSS **17.865GiB**。split并未降低本组单层allocated峰值，但反向时间由0.863425降至0.493071秒（约42.9%缩短）；前向0.213057→0.237282秒。不得拿两次失败墙时计算完整更新加速比。
+
+**对4090的判断：当前仍未通过一次真实更新，不应直接训练。原重复切片问题已确证并修复，剩余限制是ToCopy反向的显存分配；本轮停止，不自动修改拷贝、SpMM、索引、尺度或其他存储。**
+
 ## 已确认的申请来源
 
 原HEAD `51d0f298cd4aeadcb1944d7ef3308d0f149974f0`、相同最大窗口/初始化/开关，仅启动前添加TORCH_SHOW_CPP_STACKTRACES=1，没有allocator history或全程profiler。原配置再次OOM，1.42GiB申请来自 **SliceBackward0 → slice_backward_wrapper → at::native::slice_backward → zeros → CUDA allocator malloc**。不是只根据申请量或最近FFN记录猜测。
@@ -469,3 +484,5 @@
 结论：未完成规定最大窗口一次更新，不建议直接正式训练；本轮停止，不再叠加其他优化。
 错误/门槛：无
 产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_split_backward_check_v1`。原资产/协议/失败日志/退出码/config和用户无关JSON保留，权重丢弃无checkpoint，正式模型0/2；计算与Git发布分列。
+
+11项CPU直接相关检查通过（5.27秒）；CUDA四组小图输出/输入/全部参数梯度最大绝对误差均0，大图固定64行输出/输入及全部参数梯度最大误差1.907349e-6，满足既定容差。单层实测peak allocated两组均1.5325GiB，reserved分别1.7910/1.8320GiB，主机测量期峰值RSS1.8782/2.0131GiB。无全队列、前端、特征重提取或正式训练。原资产/config/旧退出历史及用户JSON经SHA核对未变。

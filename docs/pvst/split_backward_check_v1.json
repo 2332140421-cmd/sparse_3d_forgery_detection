@@ -2067,5 +2067,24 @@
         }
       ]
     }
+  },
+  "conclusion": {
+    "status": "OOM",
+    "original_native_allocator_source_confirmed": "SliceBackward0 -> slice_backward -> zeros",
+    "original_exact_input_shape_dtype": "not printed by exception; fine/coarse full BF16 nodes both approximately1.42GiB",
+    "fixed_sites": [
+      "streamed_head norm+QKV nodes",
+      "attention projection/residual x and attended nodes",
+      "FFN nodes"
+    ],
+    "candidate_native_allocator_source": "ToCopyBackward0 -> to/_to_copy -> empty_strided/allocator",
+    "candidate_exact_copy_tensor": "not recorded; do not infer device/dtype/head from364MiB",
+    "requested_MiB": 364,
+    "free_MiB": 255.38,
+    "candidate_returncode": -6,
+    "candidate_signal": 6,
+    "candidate_timed_out": false,
+    "adamw_updates": 0,
+    "training_allowed": false
   }
 }
