@@ -1,0 +1,2071 @@
+{
+  "status": "OOM",
+  "source_commit": "dc986df3daf4b62756596dd600d51cda9a4d7ac3",
+  "full_window_entered": true,
+  "small_gpu_wall_s": 12.110893541015685,
+  "formal_models_completed": 0,
+  "processes": [
+    {
+      "name": "regression",
+      "pid": 222462,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 3.4194145258516073,
+      "timeout_s": 300.0,
+      "samples": []
+    },
+    {
+      "name": "slice",
+      "pid": 222682,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 4.671344046480954,
+      "timeout_s": 296.5805854741484,
+      "samples": []
+    },
+    {
+      "name": "split",
+      "pid": 222921,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 4.020134968683124,
+      "timeout_s": 291.90924142766744,
+      "samples": []
+    }
+  ],
+  "regression": {
+    "status": "PASS",
+    "comparisons": [
+      {
+        "dtype": "torch.float32",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.945078134536743,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008167126215994358,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001787353539839387,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001874416135251522,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021303060930222273,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.003231619717553258,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003040992596652359,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010481740173418075,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008615317055955529,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.3283064365386963e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021351731847971678,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004878594074398279,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015348800225183368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010165807325392962,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015975169371813536,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001267007552087307,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035513639450073242,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004949982278048992,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_preserved": true,
+        "proof": [
+          {
+            "full_node_slice_backward_count": 40,
+            "slice_allocated_bytes_cumulative": 1679360,
+            "slice_examples": [
+              {
+                "input_sizes": [
+                  41,
+                  256
+                ],
+                "dtype": "torch.float32",
+                "bytes": 41984
+              },
+              {
+                "input_sizes": [
+                  41,
+                  256
+                ],
+                "dtype": "torch.float32",
+                "bytes": 41984
+              }
+            ],
+            "native_split_calls": 0,
+            "blocking": {
+              "head_QKV": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_x": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_attended": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.float32"
+              },
+              "FFN": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  256
+                ],
+                "dtype": "torch.float32"
+              }
+            }
+          },
+          {
+            "full_node_slice_backward_count": 0,
+            "slice_allocated_bytes_cumulative": 0,
+            "slice_examples": [],
+            "native_split_calls": 18,
+            "blocking": {
+              "head_QKV": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_x": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_attended": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.float32"
+              },
+              "FFN": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  256
+                ],
+                "dtype": "torch.float32"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 4.125478744506836,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004027661052532494,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00048602421884424984,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008233566186390817,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0011359256459400058,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0013103255769237876,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00021908507915213704,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 7.906340761110187e-05,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004986069398000836,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 1.4551915228366852e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0012174032162874937,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.002775461645796895,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008669153903611004,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0005062107229605317,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008643227629363537,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0006033350364305079,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0017711883410811424,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0025667203590273857,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_preserved": true,
+        "proof": [
+          {
+            "full_node_slice_backward_count": 64,
+            "slice_allocated_bytes_cumulative": 5373952,
+            "slice_examples": [
+              {
+                "input_sizes": [
+                  41,
+                  512
+                ],
+                "dtype": "torch.float32",
+                "bytes": 83968
+              },
+              {
+                "input_sizes": [
+                  41,
+                  512
+                ],
+                "dtype": "torch.float32",
+                "bytes": 83968
+              }
+            ],
+            "native_split_calls": 0,
+            "blocking": {
+              "head_QKV": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_x": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_attended": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.float32"
+              },
+              "FFN": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  512
+                ],
+                "dtype": "torch.float32"
+              }
+            }
+          },
+          {
+            "full_node_slice_backward_count": 0,
+            "slice_allocated_bytes_cumulative": 0,
+            "slice_examples": [],
+            "native_split_calls": 30,
+            "blocking": {
+              "head_QKV": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_x": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.float32"
+              },
+              "projection_attended": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.float32"
+              },
+              "FFN": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  512
+                ],
+                "dtype": "torch.float32"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.9375,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00081634521484375,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0017885066336020827,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0018774252384901047,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021233558654785156,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0032329559326171875,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003032684326171875,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010538101196289062,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008697509765625,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 3.606081008911133e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00213623046875,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0048828125,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015400797128677368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010147392749786377,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00159454345703125,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0012664794921875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035552978515625,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00494384765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_preserved": true,
+        "proof": [
+          {
+            "full_node_slice_backward_count": 40,
+            "slice_allocated_bytes_cumulative": 839680,
+            "slice_examples": [
+              {
+                "input_sizes": [
+                  41,
+                  256
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 20992
+              },
+              {
+                "input_sizes": [
+                  41,
+                  256
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 20992
+              }
+            ],
+            "native_split_calls": 0,
+            "blocking": {
+              "head_QKV": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_x": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_attended": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "FFN": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            }
+          },
+          {
+            "full_node_slice_backward_count": 0,
+            "slice_allocated_bytes_cumulative": 0,
+            "slice_examples": [],
+            "native_split_calls": 18,
+            "blocking": {
+              "head_QKV": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_x": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_attended": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "FFN": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  256
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  256
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 4.125,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004024505615234375,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00048547080950811505,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008226954378187656,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0011390149593353271,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0013113021850585938,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00021839141845703125,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 7.82012939453125e-05,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00049591064453125,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.250075340270996e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001220703125,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.002777099609375,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008649532101117074,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0005074664950370789,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.000865936279296875,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00060272216796875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00177764892578125,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0025634765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_preserved": true,
+        "proof": [
+          {
+            "full_node_slice_backward_count": 64,
+            "slice_allocated_bytes_cumulative": 2686976,
+            "slice_examples": [
+              {
+                "input_sizes": [
+                  41,
+                  512
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 41984
+              },
+              {
+                "input_sizes": [
+                  41,
+                  512
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 41984
+              }
+            ],
+            "native_split_calls": 0,
+            "blocking": {
+              "head_QKV": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_x": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_attended": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "FFN": {
+                "mode": "slice",
+                "view_grad_fn": "SliceBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            }
+          },
+          {
+            "full_node_slice_backward_count": 0,
+            "slice_allocated_bytes_cumulative": 0,
+            "slice_examples": [],
+            "native_split_calls": 30,
+            "blocking": {
+              "head_QKV": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_x": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "projection_attended": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 7,
+                "last_shape": [
+                  6,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              },
+              "FFN": {
+                "mode": "split",
+                "view_grad_fn": "SplitBackward0",
+                "input_shape": [
+                  41,
+                  512
+                ],
+                "chunk": 11,
+                "last_shape": [
+                  8,
+                  512
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "paired_check": {
+    "output_rows": {
+      "max_abs": 0.0,
+      "reference_max_abs": 4.125,
+      "relative_to_max": 0.0
+    },
+    "input_gradient_rows": {
+      "max_abs": 9.313225746154785e-10,
+      "reference_max_abs": 1.2200325727462769e-07,
+      "relative_to_max": 0.007633587786259542
+    },
+    "norm.weight": {
+      "max_abs": 8.967617759481072e-10,
+      "reference_max_abs": 2.3445451006409712e-05,
+      "relative_to_max": 3.824886011802217e-05
+    },
+    "norm.bias": {
+      "max_abs": 1.709850039333105e-09,
+      "reference_max_abs": 0.0002966183237731457,
+      "relative_to_max": 5.764478800847118e-06
+    },
+    "qkv.weight": {
+      "max_abs": 2.3865140974521637e-08,
+      "reference_max_abs": 1.531466841697693e-05,
+      "relative_to_max": 0.0015583191437606421
+    },
+    "qkv.bias": {
+      "max_abs": 2.384185791015625e-07,
+      "reference_max_abs": 0.0006172060966491699,
+      "relative_to_max": 0.00038628681796233703
+    },
+    "bias.0.weight": {
+      "max_abs": 5.960464477539063e-08,
+      "reference_max_abs": 1.8596649169921875e-05,
+      "relative_to_max": 0.003205128205128205
+    },
+    "bias.0.bias": {
+      "max_abs": 7.450580596923828e-09,
+      "reference_max_abs": 1.4483928680419922e-05,
+      "relative_to_max": 0.00051440329218107
+    },
+    "bias.2.weight": {
+      "max_abs": 5.960464477539063e-08,
+      "reference_max_abs": 6.389617919921875e-05,
+      "relative_to_max": 0.0009328358208955224
+    },
+    "bias.2.bias": {
+      "max_abs": 3.958120942115784e-09,
+      "reference_max_abs": 6.100162863731384e-08,
+      "relative_to_max": 0.0648854961832061
+    },
+    "proj.weight": {
+      "max_abs": 2.384185791015625e-07,
+      "reference_max_abs": 5.53131103515625e-05,
+      "relative_to_max": 0.004310344827586207
+    },
+    "proj.bias": {
+      "max_abs": 0.0,
+      "reference_max_abs": 0.00103759765625,
+      "relative_to_max": 0.0
+    },
+    "norm2.weight": {
+      "max_abs": 8.003553375601768e-10,
+      "reference_max_abs": 0.00031939891050569713,
+      "relative_to_max": 2.505817368922744e-06
+    },
+    "norm2.bias": {
+      "max_abs": 7.639755494892597e-10,
+      "reference_max_abs": 0.0002966002793982625,
+      "relative_to_max": 2.5757748813966056e-06
+    },
+    "ffn.0.weight": {
+      "max_abs": 4.76837158203125e-07,
+      "reference_max_abs": 8.106231689453125e-05,
+      "relative_to_max": 0.0058823529411764705
+    },
+    "ffn.0.bias": {
+      "max_abs": 4.76837158203125e-07,
+      "reference_max_abs": 0.0002498626708984375,
+      "relative_to_max": 0.0019083969465648854
+    },
+    "ffn.3.weight": {
+      "max_abs": 1.9073486328125e-06,
+      "reference_max_abs": 0.0002803802490234375,
+      "relative_to_max": 0.006802721088435374
+    },
+    "ffn.3.bias": {
+      "max_abs": 0.0,
+      "reference_max_abs": 0.0010833740234375,
+      "relative_to_max": 0.0
+    }
+  },
+  "slice": {
+    "nodes": 131072,
+    "edges": 7475256,
+    "forward_blocking_execution": {
+      "head_QKV": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_x": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_attended": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "FFN": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      }
+    },
+    "backward_blocking_execution": {
+      "head_QKV": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_x": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_attended": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "FFN": {
+        "mode": "slice",
+        "view_grad_fn": "SliceBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      }
+    },
+    "measurement_host": {
+      "available_bytes": 50275749888,
+      "rss_bytes": 1886744576,
+      "peak_rss_bytes": 2016743424
+    },
+    "forward_s": 0.2130572386085987,
+    "backward_s": 0.863424607552588,
+    "baseline_allocated_bytes": 169137152,
+    "peak_allocated_bytes": 1645533184,
+    "peak_reserved_bytes": 1923088384
+  },
+  "split": {
+    "nodes": 131072,
+    "edges": 7475256,
+    "forward_blocking_execution": {
+      "head_QKV": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_x": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_attended": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "FFN": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      }
+    },
+    "backward_blocking_execution": {
+      "head_QKV": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_x": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "projection_attended": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 512,
+        "last_shape": [
+          512,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "FFN": {
+        "mode": "split",
+        "view_grad_fn": "SplitBackward0",
+        "input_shape": [
+          131072,
+          512
+        ],
+        "chunk": 8192,
+        "last_shape": [
+          8192,
+          512
+        ],
+        "dtype": "torch.bfloat16"
+      }
+    },
+    "measurement_host": {
+      "available_bytes": 49822679040,
+      "rss_bytes": 2031906816,
+      "peak_rss_bytes": 2161545216
+    },
+    "forward_s": 0.2372822668403387,
+    "backward_s": 0.49307053722441196,
+    "baseline_allocated_bytes": 169137152,
+    "peak_allocated_bytes": 1645533184,
+    "peak_reserved_bytes": 1967128576
+  },
+  "diagnostic": {
+    "status": "OOM",
+    "source_commit": "51d0f298cd4aeadcb1944d7ef3308d0f149974f0",
+    "process": {
+      "pid": 203123,
+      "returncode": 2,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 144.80347159691155,
+      "timeout_s": 900
+    },
+    "gpu_start": null,
+    "gpu_after": {
+      "unix_time": 1793819713.7143443,
+      "worker_pid": 203123,
+      "gpu_total_free_used_util": "24564, 22858, 1215, 33",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "worker_gpu_released": null,
+    "worker": {
+      "status": "OOM",
+      "updates": 0,
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "elapsed_s": 142.14252857584506,
+      "phase": "backward",
+      "peak_allocated_bytes": 22668686848,
+      "peak_reserved_bytes": 23395827712,
+      "host": {
+        "available_bytes": 36216823808,
+        "rss_bytes": 16184266752,
+        "peak_rss_bytes": 19224637440
+      },
+      "failure_operator_context": [],
+      "failure_phase": "backward",
+      "error_first_line": [
+        "CUDA out of memory. Tried to allocate 1.42 GiB. GPU 0 has a total capacity of 23.51 GiB of which 824.38 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 21.49 GiB memory in use. Of the allocated memory 20.61 GiB is allocated by PyTorch, and 411.24 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+      ],
+      "stages": [
+        {
+          "phase": "worker_start",
+          "elapsed_s": 1.8588407430797815,
+          "peak_allocated_bytes": 0,
+          "peak_reserved_bytes": 0,
+          "allocated_bytes": 0,
+          "reserved_bytes": 0,
+          "host": {
+            "available_bytes": 51968266240,
+            "rss_bytes": 551301120,
+            "peak_rss_bytes": 547004416
+          },
+          "stage": "worker_start",
+          "stage_s": null
+        },
+        {
+          "phase": "model_build",
+          "elapsed_s": 2.6869984650984406,
+          "peak_allocated_bytes": 71308288,
+          "peak_reserved_bytes": 85983232,
+          "allocated_bytes": 71308288,
+          "reserved_bytes": 85983232,
+          "host": {
+            "available_bytes": 51813249024,
+            "rss_bytes": 726130688,
+            "peak_rss_bytes": 723517440
+          },
+          "stage": "model_built",
+          "stage_s": 0.826927131973207,
+          "parameters": 17821672
+        },
+        {
+          "phase": "data_geometry",
+          "elapsed_s": 3.308557303622365,
+          "peak_allocated_bytes": 1755244032,
+          "peak_reserved_bytes": 1839202304,
+          "allocated_bytes": 1715809280,
+          "reserved_bytes": 1839202304,
+          "host": {
+            "available_bytes": 51225014272,
+            "rss_bytes": 1385779200,
+            "peak_rss_bytes": 1406160896
+          },
+          "stage": "data_loaded",
+          "stage_s": 0.6201891805976629,
+          "fine_nodes": 2970629,
+          "coarse_nodes": 1488042,
+          "q_dtype": "torch.float32",
+          "token_dtype": "torch.float16",
+          "rgb_dtype": "torch.uint8",
+          "target_labels": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "spatial_gt": "zero mask for ANAKIN real"
+        },
+        {
+          "phase": "forward",
+          "elapsed_s": 25.221231013536453,
+          "peak_allocated_bytes": 18780286976,
+          "peak_reserved_bytes": 21177040896,
+          "allocated_bytes": 13998760448,
+          "reserved_bytes": 21177040896,
+          "host": {
+            "available_bytes": 36374777856,
+            "rss_bytes": 15830847488,
+            "peak_rss_bytes": 18764689408
+          },
+          "stage": "forward_complete",
+          "stage_s": 21.910781230777502,
+          "finite_loss": true,
+          "output_dtype": "torch.float32",
+          "loss_components": {
+            "total": 1.7414692640304565,
+            "frame_BCE": 0.7357272505760193,
+            "pixel_BCE": 0.005926134530454874,
+            "soft_Dice_loss": 0.9998159408569336
+          }
+        }
+      ],
+      "layers": [
+        {
+          "layer": "fine_time.0",
+          "dilation": 1,
+          "nodes": 2970629,
+          "edges": 37042228,
+          "completed_heads": 4
+        },
+        {
+          "layer": "fine_time.1",
+          "dilation": 2,
+          "nodes": 2970629,
+          "edges": 31105643,
+          "completed_heads": 4
+        },
+        {
+          "layer": "fine_time.2",
+          "dilation": 4,
+          "nodes": 2970629,
+          "edges": 28847555,
+          "completed_heads": 4
+        },
+        {
+          "layer": "coarse_time.0",
+          "dilation": 1,
+          "nodes": 1488042,
+          "edges": 26982715,
+          "completed_heads": 8
+        },
+        {
+          "layer": "coarse_time.1",
+          "dilation": 2,
+          "nodes": 1488042,
+          "edges": 22781330,
+          "completed_heads": 8
+        },
+        {
+          "layer": "coarse_time.2",
+          "dilation": 4,
+          "nodes": 1488042,
+          "edges": 20707343,
+          "completed_heads": 8
+        }
+      ]
+    }
+  },
+  "full_window": {
+    "status": "OOM",
+    "source_commit": "dc986df3daf4b62756596dd600d51cda9a4d7ac3",
+    "process": {
+      "pid": 223201,
+      "returncode": -6,
+      "termination_signal": 6,
+      "timed_out": false,
+      "wall_s": 66.86215801071376,
+      "timeout_s": 900
+    },
+    "gpu_start": {
+      "unix_time": 1793820083.6037905,
+      "worker_pid": null,
+      "gpu_total_free_used_util": "24564, 22864, 1209, 9",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "gpu_after": {
+      "unix_time": 1793820150.509699,
+      "worker_pid": 223201,
+      "gpu_total_free_used_util": "24564, 22884, 1189, 100",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "worker_gpu_released": true,
+    "worker": {
+      "status": "OOM",
+      "updates": 0,
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "elapsed_s": 65.6397415716201,
+      "phase": "backward",
+      "peak_allocated_bytes": 22667201024,
+      "peak_reserved_bytes": 23397924864,
+      "host": {
+        "available_bytes": 34513686528,
+        "rss_bytes": 17643102208,
+        "peak_rss_bytes": 19182764032
+      },
+      "failure_operator_context": [],
+      "failure_phase": "backward",
+      "error_first_line": [
+        "CUDA out of memory. Tried to allocate 364.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 255.38 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 22.05 GiB memory in use. Of the allocated memory 20.90 GiB is allocated by PyTorch, and 686.87 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+      ],
+      "stages": [
+        {
+          "phase": "worker_start",
+          "elapsed_s": 1.8342878324910998,
+          "peak_allocated_bytes": 0,
+          "peak_reserved_bytes": 0,
+          "allocated_bytes": 0,
+          "reserved_bytes": 0,
+          "host": {
+            "available_bytes": 51221557248,
+            "rss_bytes": 552001536,
+            "peak_rss_bytes": 547074048
+          },
+          "stage": "worker_start",
+          "stage_s": null
+        },
+        {
+          "phase": "model_build",
+          "elapsed_s": 2.633671353571117,
+          "peak_allocated_bytes": 71308288,
+          "peak_reserved_bytes": 85983232,
+          "allocated_bytes": 71308288,
+          "reserved_bytes": 85983232,
+          "host": {
+            "available_bytes": 51036405760,
+            "rss_bytes": 726274048,
+            "peak_rss_bytes": 722710528
+          },
+          "stage": "model_built",
+          "stage_s": 0.7983589414507151,
+          "parameters": 17821672
+        },
+        {
+          "phase": "data_geometry",
+          "elapsed_s": 3.2529632933437824,
+          "peak_allocated_bytes": 1755244032,
+          "peak_reserved_bytes": 1839202304,
+          "allocated_bytes": 1715809280,
+          "reserved_bytes": 1839202304,
+          "host": {
+            "available_bytes": 50563522560,
+            "rss_bytes": 1368162304,
+            "peak_rss_bytes": 1389109248
+          },
+          "stage": "data_loaded",
+          "stage_s": 0.6182875297963619,
+          "fine_nodes": 2970629,
+          "coarse_nodes": 1488042,
+          "q_dtype": "torch.float32",
+          "token_dtype": "torch.float16",
+          "rgb_dtype": "torch.uint8",
+          "target_labels": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "spatial_gt": "zero mask for ANAKIN real"
+        },
+        {
+          "phase": "forward",
+          "elapsed_s": 25.484926089644432,
+          "peak_allocated_bytes": 18780286976,
+          "peak_reserved_bytes": 22204645376,
+          "allocated_bytes": 13998760448,
+          "reserved_bytes": 22204645376,
+          "host": {
+            "available_bytes": 35994443776,
+            "rss_bytes": 15819767808,
+            "peak_rss_bytes": 18749390848
+          },
+          "stage": "forward_complete",
+          "stage_s": 22.230397945269942,
+          "finite_loss": true,
+          "output_dtype": "torch.float32",
+          "loss_components": {
+            "total": 1.7414692640304565,
+            "frame_BCE": 0.7357272505760193,
+            "pixel_BCE": 0.005926134530454874,
+            "soft_Dice_loss": 0.9998159408569336
+          }
+        }
+      ],
+      "layers": [
+        {
+          "layer": "fine_time.0",
+          "dilation": 1,
+          "nodes": 2970629,
+          "edges": 37042228,
+          "completed_heads": 4,
+          "blocking_execution": {
+            "head_QKV": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5125,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_x": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 512,
+              "last_shape": [
+                5,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_attended": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 512,
+              "last_shape": [
+                5,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "FFN": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5125,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          }
+        },
+        {
+          "layer": "fine_time.1",
+          "dilation": 2,
+          "nodes": 2970629,
+          "edges": 31105643,
+          "completed_heads": 4,
+          "blocking_execution": {
+            "head_QKV": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5125,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_x": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 512,
+              "last_shape": [
+                5,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_attended": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 512,
+              "last_shape": [
+                5,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "FFN": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5125,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          }
+        },
+        {
+          "layer": "fine_time.2",
+          "dilation": 4,
+          "nodes": 2970629,
+          "edges": 28847555,
+          "completed_heads": 4,
+          "blocking_execution": {
+            "head_QKV": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5125,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_x": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 512,
+              "last_shape": [
+                5,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_attended": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 512,
+              "last_shape": [
+                5,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "FFN": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                2970629,
+                256
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5125,
+                256
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          }
+        },
+        {
+          "layer": "coarse_time.0",
+          "dilation": 1,
+          "nodes": 1488042,
+          "edges": 26982715,
+          "completed_heads": 8,
+          "blocking_execution": {
+            "head_QKV": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5290,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_x": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 512,
+              "last_shape": [
+                170,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_attended": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 512,
+              "last_shape": [
+                170,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "FFN": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5290,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          }
+        },
+        {
+          "layer": "coarse_time.1",
+          "dilation": 2,
+          "nodes": 1488042,
+          "edges": 22781330,
+          "completed_heads": 8,
+          "blocking_execution": {
+            "head_QKV": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5290,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_x": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 512,
+              "last_shape": [
+                170,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_attended": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 512,
+              "last_shape": [
+                170,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "FFN": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5290,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          }
+        },
+        {
+          "layer": "coarse_time.2",
+          "dilation": 4,
+          "nodes": 1488042,
+          "edges": 20707343,
+          "completed_heads": 8,
+          "blocking_execution": {
+            "head_QKV": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5290,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_x": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 512,
+              "last_shape": [
+                170,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "projection_attended": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 512,
+              "last_shape": [
+                170,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            },
+            "FFN": {
+              "mode": "split",
+              "view_grad_fn": "SplitBackward0",
+              "input_shape": [
+                1488042,
+                512
+              ],
+              "chunk": 8192,
+              "last_shape": [
+                5290,
+                512
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
