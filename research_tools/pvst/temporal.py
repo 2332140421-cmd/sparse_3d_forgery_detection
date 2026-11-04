@@ -45,7 +45,7 @@ class Neighborhood:
 
 class SparseLayer(nn.Module):
     def __init__(self,dim,heads,chunk=128,ffn_chunk=8192):
-        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.head_qkv_stream=False;self.ffn_checkpoint=True;self.last_execution={}
+        super().__init__();self.dim=dim;self.heads=heads;self.chunk=chunk;self.ffn_chunk=ffn_chunk;self.qkv_chunk=0;self.sparse_edge_attention=False;self.head_output_offload=False;self.head_qkv_stream=False;self.node_split=False;self.blocking_execution={};self.ffn_checkpoint=True;self.last_execution={}
         if ffn_chunk<=0:raise ValueError("FFN_CHUNK_MUST_BE_POSITIVE")
         self.norm=LayerNorm(dim);self.qkv=nn.Linear(dim,dim*3);self.bias=nn.Sequential(nn.Linear(4,64),nn.GELU(),nn.Linear(64,heads))
         self.proj=nn.Linear(dim,dim);self.drop=nn.Dropout(.1);self.norm2=LayerNorm(dim)
@@ -73,6 +73,12 @@ class SparseLayer(nn.Module):
         return x+self.ffn(self.norm2(x))
     def norm_qkv(self,x):
         return self.qkv(self.norm(x))
+    def node_parts(self,x,size,site):
+        # One native split per large activation input, no CopySlices or copies.
+        parts=x.split(size,dim=0) if self.node_split else (x[i:i+size] for i in range(0,len(x),size))
+        for part in parts:
+            self.blocking_execution[site]={'mode':'split' if self.node_split else 'slice','view_grad_fn':type(part.grad_fn).__name__ if part.grad_fn else None,'input_shape':list(x.shape),'chunk':size,'last_shape':list(part.shape),'dtype':str(part.dtype)}
+            yield part
     def norm_qkv_head(self,x,weight,bias):
         # Normalization is still over full D, with the existing FP32 accumulator.
         return F.linear(self.norm(x),weight,bias)
@@ -83,8 +89,8 @@ class SparseLayer(nn.Module):
         weight=torch.cat([self.qkv.weight[a:b] for a,b in ranges])
         offset=torch.cat([self.qkv.bias[a:b] for a,b in ranges])
         parts=[]
-        for start in range(0,len(x),self.qkv_chunk):
-            args=(x[start:start+self.qkv_chunk],weight,offset)
+        for part in self.node_parts(x,self.qkv_chunk,'head_QKV'):
+            args=(part,weight,offset)
             value=checkpoint(self.norm_qkv_head,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.norm_qkv_head(*args)
             parts.append(value)
         projected=torch.cat(parts);del parts,value,weight,offset,args
@@ -94,6 +100,7 @@ class SparseLayer(nn.Module):
         return sparse_head(q,k,v,bias,crow,col,relation,head,self.drop.p,self.drop.training)
     def forward(self,x,graph,dilation):
         if not len(x):return x
+        self.blocking_execution={}
         self.qkv_execution={'stream':self.head_qkv_stream,'heads':{},'full_activation_materialized':False}
         if self.head_qkv_stream:
             if not self.sparse_edge_attention or not self.head_output_offload or self.qkv_chunk<=0:raise ValueError('STREAM_REQUIRES_CSR_CPU_HEADS_AND_NODE_CHUNK')
@@ -154,8 +161,8 @@ class SparseLayer(nn.Module):
             tick=time.monotonic();attended=attended.to(device=x.device,non_blocking=False)
             self.head_storage.update(return_to_gpu_s=time.monotonic()-tick,after_gpu_return=memory())
             del crow,col,relation
-            for start in range(0,len(x),self.chunk):
-                args=(x[start:start+self.chunk],attended[start:start+self.chunk])
+            for xb,ab in zip(self.node_parts(x,self.chunk,'projection_x'),self.node_parts(attended,self.chunk,'projection_attended')):
+                args=(xb,ab)
                 y=checkpoint(self.project_block,*args,use_reentrant=False,preserve_rng_state=True) if self.training else self.project_block(*args)
                 values.append(y)
             del attended
@@ -170,9 +177,8 @@ class SparseLayer(nn.Module):
         values=[]
         self.last_execution={'operation':'norm2+FFN','input_shape':list(x.shape),'dtype':str(x.dtype),
             'ffn_chunk':self.ffn_chunk,'hidden_shape_upper_bound':[min(len(x),self.ffn_chunk),4*self.dim]}
-        for start in range(0,len(x),self.ffn_chunk):
-            # Bound method, not a closure over a loop slice; norm+hidden stay local.
-            part=x[start:start+self.ffn_chunk]
+        for part in self.node_parts(x,self.ffn_chunk,'FFN'):
+            # Bound method, node order/chunk/tail and norm+FFN remain identical.
             y=checkpoint(self.ffn_block,part,use_reentrant=False,preserve_rng_state=True) if self.training and self.ffn_checkpoint else self.ffn_block(part)
             values.append(y)
         return torch.cat(values)

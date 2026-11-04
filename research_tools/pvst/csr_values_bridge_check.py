@@ -36,7 +36,7 @@ def regression():
     save(OUT/'regression.json',result)
 
 
-def benchmark(kind,head_output_offload=False,out=None,head_qkv_stream=False):
+def benchmark(kind,head_output_offload=False,out=None,head_qkv_stream=False,node_split=False):
     import torch
     import numpy as np
     from torch.utils.checkpoint import checkpoint
@@ -47,7 +47,7 @@ def benchmark(kind,head_output_offload=False,out=None,head_qkv_stream=False):
     torch.manual_seed(20260909)
     if kind=='old':sparse_attention.sparse_head=load_test('pvst_coo_reference.py').coo_reference_head
     tick=time.monotonic();graph=make_graph(131072,'cuda');record=validate_graph(graph);torch.cuda.synchronize();record['graph_s']=time.monotonic()-tick
-    model=SparseLayer(512,8,512,8192).cuda().train();model.qkv_chunk=8192;model.sparse_edge_attention=True;model.head_output_offload=head_output_offload;model.head_qkv_stream=head_qkv_stream
+    model=SparseLayer(512,8,512,8192).cuda().train();model.qkv_chunk=8192;model.sparse_edge_attention=True;model.head_output_offload=head_output_offload;model.head_qkv_stream=head_qkv_stream;model.node_split=node_split
     x=torch.randn(131072,512,device='cuda',dtype=torch.bfloat16,requires_grad=True)
     def run():
         model.zero_grad(set_to_none=True);x.grad=None
@@ -56,12 +56,12 @@ def benchmark(kind,head_output_offload=False,out=None,head_qkv_stream=False):
     y,loss=run();loss.backward();torch.cuda.synchronize();del y,loss
     model.zero_grad(set_to_none=True);x.grad=None;torch.cuda.synchronize();baseline=torch.cuda.memory_allocated();torch.cuda.reset_peak_memory_stats()
     tick=time.monotonic();y,loss=run();torch.cuda.synchronize();forward=time.monotonic()-tick
-    forward_storage=model.head_storage;forward_qkv=model.qkv_execution
+    forward_storage=model.head_storage;forward_qkv=model.qkv_execution;forward_blocking=model.blocking_execution
     tick=time.monotonic();loss.backward();torch.cuda.synchronize();backward=time.monotonic()-tick
     from .max_window_check import host
     measurement_host=host()
     if not torch.isfinite(x.grad).all() or not all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters()):raise ValueError('NONFINITE_OR_MISSING_GRADIENT')
-    record.update(head_qkv_stream=head_qkv_stream,forward_qkv_execution=forward_qkv,backward_qkv_execution=model.qkv_execution,head_output_offload=head_output_offload,forward_head_storage=forward_storage,backward_head_storage=model.head_storage,measurement_host=measurement_host,status='PASS',kind=kind,dim=512,heads=8,head_dim=64,forward_s=forward,backward_s=backward,baseline_allocated_bytes=baseline,peak_allocated_bytes=torch.cuda.max_memory_allocated(),peak_reserved_bytes=torch.cuda.max_memory_reserved(),dropout=.1,outer_checkpoint=True,precision='BF16 outer / FP32 sparse core',softmax_saved='COO sparse softmax autograd' if kind=='old' else 'FP32 probabilities E + CSR crow; bridge saves crow/col, no values or dense matrix copy')
+    record.update(node_split=node_split,forward_blocking_execution=forward_blocking,backward_blocking_execution=model.blocking_execution,head_qkv_stream=head_qkv_stream,forward_qkv_execution=forward_qkv,backward_qkv_execution=model.qkv_execution,head_output_offload=head_output_offload,forward_head_storage=forward_storage,backward_head_storage=model.head_storage,measurement_host=measurement_host,status='PASS',kind=kind,dim=512,heads=8,head_dim=64,forward_s=forward,backward_s=backward,baseline_allocated_bytes=baseline,peak_allocated_bytes=torch.cuda.max_memory_allocated(),peak_reserved_bytes=torch.cuda.max_memory_reserved(),dropout=.1,outer_checkpoint=True,precision='BF16 outer / FP32 sparse core',softmax_saved='COO sparse softmax autograd' if kind=='old' else 'FP32 probabilities E + CSR crow; bridge saves crow/col, no values or dense matrix copy')
     # Timing/peak are captured before report snapshots. All parameter gradients
     # are compared, output/input gradients sampled at the same fixed 64 rows.
     arrays={'output_rows':y[::2048].float().cpu().tolist(),'input_gradient_rows':x.grad[::2048].float().cpu().tolist()}
