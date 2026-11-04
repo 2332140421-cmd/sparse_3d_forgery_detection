@@ -83,4 +83,4 @@ export CUDA_VISIBLE_DEVICES=0
 
 重复节点切片原生取证/split限定验收：OOM；原诊断确认SliceBackward零缓冲，三处split修复通过，候选转为ToCopyBackward364MiB申请OOM且最终SIGABRT(-6)，AdamW0，停止训练，正式模型0/2。见[报告](split_backward_check_v1.md)。
 
-无用view清理/训练前验收：OOM；正式模型0/2，未训练。见[报告](tensor_lifetime_check_v1.md)。
+无用view清理/训练前验收：OOM；前向每层projection与FFN各实释约1.42GiB，但首次反向frame_blocks coarse MLP LayerNorm申请122MiB失败，更新0；第二次及非空GT XYZ/UV跳过，不具备训练贯通条件。正式模型0/2，未训练。见[报告](tensor_lifetime_check_v1.md)。

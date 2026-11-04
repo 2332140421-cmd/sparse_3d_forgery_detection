@@ -646,5 +646,65 @@
         }
       ]
     }
+  },
+  "conclusion": {
+    "status": "OOM",
+    "useless_view_prolongs_forward_storage": true,
+    "isolated_view_storage_bytes": 134217728,
+    "isolated_view_payload_bytes": 524288,
+    "isolated_actual_allocated_drop_with_outer_checkpoint": 134217728,
+    "isolated_actual_drop_without_outer_checkpoint": 0,
+    "real_forward_cleanup": [
+      {
+        "layer": "fine_time.0",
+        "projection_drop_bytes": 1520962048,
+        "FFN_input_drop_bytes": 1520962048,
+        "name_only_drop_bytes": 0
+      },
+      {
+        "layer": "fine_time.1",
+        "projection_drop_bytes": 1520962048,
+        "FFN_input_drop_bytes": 1520962048,
+        "name_only_drop_bytes": 0
+      },
+      {
+        "layer": "fine_time.2",
+        "projection_drop_bytes": 1520962048,
+        "FFN_input_drop_bytes": 1520962048,
+        "name_only_drop_bytes": 0
+      },
+      {
+        "layer": "coarse_time.0",
+        "projection_drop_bytes": 1523755008,
+        "FFN_input_drop_bytes": 1523755008,
+        "name_only_drop_bytes": 0
+      },
+      {
+        "layer": "coarse_time.1",
+        "projection_drop_bytes": 1523755008,
+        "FFN_input_drop_bytes": 1523755008,
+        "name_only_drop_bytes": 0
+      },
+      {
+        "layer": "coarse_time.2",
+        "projection_drop_bytes": 1523755008,
+        "FFN_input_drop_bytes": 1523755008,
+        "name_only_drop_bytes": 0
+      }
+    ],
+    "backward_projection_cleanup_observed_drop": 0,
+    "ToCopy_identity": "current explicit conversions and pending fine_time.2/head1 GPU BF16->CPU BF16 known; previous OOM not uniquely attributed",
+    "new_failure_operator": "frame_blocks self.coarse MLP checkpoint recompute LayerNorm -> layer_norm_cuda/empty_like",
+    "new_failure_exact_input_shape": "not recorded; do not infer from allocation",
+    "new_requested_MiB": 122,
+    "free_MiB": 54.19,
+    "completed_max_updates": 0,
+    "optimizer_steps": 0,
+    "skipped": [
+      "max_window_update2",
+      "gt_xyz",
+      "gt_uv"
+    ],
+    "ready_for_formal_training": false
   }
 }
