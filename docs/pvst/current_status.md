@@ -78,3 +78,5 @@ export CUDA_VISIBLE_DEVICES=0
 2026-11-05 CSR values桥接限定验收：OOM；正式模型仍0/2。见[报告](csr_values_bridge_check_v1.md)。
 
 逐head输出CPU暂存限定验收：OOM；小图和匹配单层通过，head输出实际CPU暂存；完整窗口在coarse QKV重算cat申请4.25GiB失败，AdamW0，停止训练。正式模型仍0/2。见[报告](head_output_offload_check_v1.md)。
+
+逐head即时QKV限定验收：OOM；正式模型0/2。见[报告](head_qkv_stream_check_v1.md)。

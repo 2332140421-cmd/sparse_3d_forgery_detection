@@ -1,0 +1,3233 @@
+{
+  "status": "OOM",
+  "source_commit": "8ceedb3ccf1fcf3a755991ce042fcf588273e6a9",
+  "full_window_entered": true,
+  "small_gpu_wall_s": 12.620467348955572,
+  "formal_models_completed": 0,
+  "processes": [
+    {
+      "name": "regression",
+      "pid": 122704,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 3.122100105509162,
+      "timeout_s": 300.0,
+      "samples": []
+    },
+    {
+      "name": "full",
+      "pid": 122908,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 4.625448977574706,
+      "timeout_s": 296.87789989449084,
+      "samples": []
+    },
+    {
+      "name": "stream",
+      "pid": 123166,
+      "returncode": 0,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 4.872918265871704,
+      "timeout_s": 292.25245091691613,
+      "samples": []
+    }
+  ],
+  "regression": {
+    "status": "PASS",
+    "comparisons": [
+      {
+        "dtype": "torch.float32",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.945078134536743,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 1.1641532182693481e-10,
+            "reference_max_abs": 0.0008167126798070967,
+            "relative_to_max": 1.4254134251280574e-07
+          },
+          "norm.weight": {
+            "max_abs": 1.7462298274040222e-10,
+            "reference_max_abs": 0.001787353539839387,
+            "relative_to_max": 9.769918421181184e-08
+          },
+          "norm.bias": {
+            "max_abs": 2.3283064365386963e-10,
+            "reference_max_abs": 0.0018744160188362002,
+            "relative_to_max": 1.2421503087581969e-07
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021303060930222273,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.003231619717553258,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003040992596652359,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010481740173418075,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008615317055955529,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.3283064365386963e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021351731847971678,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004878594074398279,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015348800225183368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010165807325392962,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015975169371813536,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001267007552087307,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035513639450073242,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004949982278048992,
+            "relative_to_max": 0.0
+          }
+        },
+        "qkv_row_gradient_norms": [
+          [
+            0.01375309657305479,
+            0.014166917651891708,
+            0.046837884932756424
+          ],
+          [
+            0.010510269552469254,
+            0.010592914186418056,
+            0.0404425673186779
+          ],
+          [
+            0.013664070516824722,
+            0.014031381346285343,
+            0.04178442806005478
+          ],
+          [
+            0.01244403701275587,
+            0.013253416866064072,
+            0.043754611164331436
+          ]
+        ],
+        "parameter_identity_preserved": true,
+        "state_dict_unchanged": true,
+        "shape_evidence": [
+          {
+            "full_shape_events": 6,
+            "head_shape_events": 0,
+            "forward": {
+              "stream": false,
+              "heads": {},
+              "full_activation_materialized": true,
+              "full_shape": [
+                41,
+                768
+              ],
+              "dtype": "torch.float32"
+            }
+          },
+          {
+            "full_shape_events": 0,
+            "head_shape_events": 16,
+            "forward": {
+              "stream": true,
+              "heads": {
+                "0": {
+                  "head": 0,
+                  "row_ranges": [
+                    [
+                      0,
+                      64
+                    ],
+                    [
+                      256,
+                      320
+                    ],
+                    [
+                      512,
+                      576
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "1": {
+                  "head": 1,
+                  "row_ranges": [
+                    [
+                      64,
+                      128
+                    ],
+                    [
+                      320,
+                      384
+                    ],
+                    [
+                      576,
+                      640
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "2": {
+                  "head": 2,
+                  "row_ranges": [
+                    [
+                      128,
+                      192
+                    ],
+                    [
+                      384,
+                      448
+                    ],
+                    [
+                      640,
+                      704
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "3": {
+                  "head": 3,
+                  "row_ranges": [
+                    [
+                      192,
+                      256
+                    ],
+                    [
+                      448,
+                      512
+                    ],
+                    [
+                      704,
+                      768
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                }
+              },
+              "full_activation_materialized": false
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 4.76837158203125e-07,
+          "reference_max_abs": 4.125478267669678,
+          "relative_to_max": 1.1558348566273547e-07
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 1.1641532182693481e-10,
+            "reference_max_abs": 0.0004027660470455885,
+            "relative_to_max": 2.8903956200100934e-07
+          },
+          "norm.weight": {
+            "max_abs": 1.3096723705530167e-10,
+            "reference_max_abs": 0.0004860242479480803,
+            "relative_to_max": 2.6946646717365487e-07
+          },
+          "norm.bias": {
+            "max_abs": 2.0372681319713593e-10,
+            "reference_max_abs": 0.0008233566186390817,
+            "relative_to_max": 2.4743447563933355e-07
+          },
+          "qkv.weight": {
+            "max_abs": 2.3283064365386963e-10,
+            "reference_max_abs": 0.0011359256459400058,
+            "relative_to_max": 2.0496996831266774e-07
+          },
+          "qkv.bias": {
+            "max_abs": 2.9103830456733704e-10,
+            "reference_max_abs": 0.0013103254605084658,
+            "relative_to_max": 2.221114626395193e-07
+          },
+          "bias.0.weight": {
+            "max_abs": 5.820766091346741e-11,
+            "reference_max_abs": 0.00021908509370405227,
+            "relative_to_max": 2.656851725024083e-07
+          },
+          "bias.0.bias": {
+            "max_abs": 5.4569682106375694e-11,
+            "reference_max_abs": 7.906339305918664e-05,
+            "relative_to_max": 6.902016216977303e-07
+          },
+          "bias.2.weight": {
+            "max_abs": 1.1641532182693481e-10,
+            "reference_max_abs": 0.0004986068233847618,
+            "relative_to_max": 2.3348120476301657e-07
+          },
+          "bias.2.bias": {
+            "max_abs": 2.1827872842550278e-10,
+            "reference_max_abs": 2.3283064365386963e-10,
+            "relative_to_max": 0.9375
+          },
+          "proj.weight": {
+            "max_abs": 2.9103830456733704e-10,
+            "reference_max_abs": 0.0012174032162874937,
+            "relative_to_max": 2.39064839548286e-07
+          },
+          "proj.bias": {
+            "max_abs": 3.4924596548080444e-10,
+            "reference_max_abs": 0.0027754618786275387,
+            "relative_to_max": 1.2583345790845666e-07
+          },
+          "norm2.weight": {
+            "max_abs": 1.7462298274040222e-10,
+            "reference_max_abs": 0.0008669153903611004,
+            "relative_to_max": 2.0143024876702867e-07
+          },
+          "norm2.bias": {
+            "max_abs": 1.4551915228366852e-10,
+            "reference_max_abs": 0.0005062106647528708,
+            "relative_to_max": 2.8746757509486717e-07
+          },
+          "ffn.0.weight": {
+            "max_abs": 2.0372681319713593e-10,
+            "reference_max_abs": 0.0008643227629363537,
+            "relative_to_max": 2.357068700875321e-07
+          },
+          "ffn.0.bias": {
+            "max_abs": 1.1641532182693481e-10,
+            "reference_max_abs": 0.0006033350364305079,
+            "relative_to_max": 1.9295302741852873e-07
+          },
+          "ffn.3.weight": {
+            "max_abs": 3.4924596548080444e-10,
+            "reference_max_abs": 0.0017711883410811424,
+            "relative_to_max": 1.9718172109670895e-07
+          },
+          "ffn.3.bias": {
+            "max_abs": 3.4924596548080444e-10,
+            "reference_max_abs": 0.0025667203590273857,
+            "relative_to_max": 1.360670102812233e-07
+          }
+        },
+        "qkv_row_gradient_norms": [
+          [
+            0.008541464805603027,
+            0.008454129099845886,
+            0.030084222555160522
+          ],
+          [
+            0.008935479447245598,
+            0.008621171116828918,
+            0.03412047028541565
+          ],
+          [
+            0.00873984582722187,
+            0.008829576894640923,
+            0.030096236616373062
+          ],
+          [
+            0.009082094766199589,
+            0.009719488210976124,
+            0.02884427085518837
+          ],
+          [
+            0.007284651510417461,
+            0.007221551612019539,
+            0.029180388897657394
+          ],
+          [
+            0.008992752991616726,
+            0.00916961207985878,
+            0.03198336064815521
+          ],
+          [
+            0.00904112122952938,
+            0.008864058181643486,
+            0.03132585063576698
+          ],
+          [
+            0.008357828482985497,
+            0.008039001375436783,
+            0.03014731965959072
+          ]
+        ],
+        "parameter_identity_preserved": true,
+        "state_dict_unchanged": true,
+        "shape_evidence": [
+          {
+            "full_shape_events": 6,
+            "head_shape_events": 0,
+            "forward": {
+              "stream": false,
+              "heads": {},
+              "full_activation_materialized": true,
+              "full_shape": [
+                41,
+                1536
+              ],
+              "dtype": "torch.float32"
+            }
+          },
+          {
+            "full_shape_events": 0,
+            "head_shape_events": 32,
+            "forward": {
+              "stream": true,
+              "heads": {
+                "0": {
+                  "head": 0,
+                  "row_ranges": [
+                    [
+                      0,
+                      64
+                    ],
+                    [
+                      512,
+                      576
+                    ],
+                    [
+                      1024,
+                      1088
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "1": {
+                  "head": 1,
+                  "row_ranges": [
+                    [
+                      64,
+                      128
+                    ],
+                    [
+                      576,
+                      640
+                    ],
+                    [
+                      1088,
+                      1152
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "2": {
+                  "head": 2,
+                  "row_ranges": [
+                    [
+                      128,
+                      192
+                    ],
+                    [
+                      640,
+                      704
+                    ],
+                    [
+                      1152,
+                      1216
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "3": {
+                  "head": 3,
+                  "row_ranges": [
+                    [
+                      192,
+                      256
+                    ],
+                    [
+                      704,
+                      768
+                    ],
+                    [
+                      1216,
+                      1280
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "4": {
+                  "head": 4,
+                  "row_ranges": [
+                    [
+                      256,
+                      320
+                    ],
+                    [
+                      768,
+                      832
+                    ],
+                    [
+                      1280,
+                      1344
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "5": {
+                  "head": 5,
+                  "row_ranges": [
+                    [
+                      320,
+                      384
+                    ],
+                    [
+                      832,
+                      896
+                    ],
+                    [
+                      1344,
+                      1408
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "6": {
+                  "head": 6,
+                  "row_ranges": [
+                    [
+                      384,
+                      448
+                    ],
+                    [
+                      896,
+                      960
+                    ],
+                    [
+                      1408,
+                      1472
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                },
+                "7": {
+                  "head": 7,
+                  "row_ranges": [
+                    [
+                      448,
+                      512
+                    ],
+                    [
+                      960,
+                      1024
+                    ],
+                    [
+                      1472,
+                      1536
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.float32",
+                  "bytes": 31488
+                }
+              },
+              "full_activation_materialized": false
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.9375,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 3.814697265625e-06,
+            "reference_max_abs": 0.00081634521484375,
+            "relative_to_max": 0.004672897196261682
+          },
+          "norm.weight": {
+            "max_abs": 1.939130015671253e-06,
+            "reference_max_abs": 0.001790445763617754,
+            "relative_to_max": 0.0010830431477315847
+          },
+          "norm.bias": {
+            "max_abs": 1.5962868928909302e-06,
+            "reference_max_abs": 0.0018770769238471985,
+            "relative_to_max": 0.0008504110154522758
+          },
+          "qkv.weight": {
+            "max_abs": 9.417533874511719e-06,
+            "reference_max_abs": 0.0021209716796875,
+            "relative_to_max": 0.004440197841726619
+          },
+          "qkv.bias": {
+            "max_abs": 1.049041748046875e-05,
+            "reference_max_abs": 0.00323486328125,
+            "relative_to_max": 0.003242924528301887
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003032684326171875,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010538101196289062,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008697509765625,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 3.606081008911133e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00213623046875,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0048828125,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015400797128677368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010147392749786377,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00159454345703125,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0012664794921875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035552978515625,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00494384765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "qkv_row_gradient_norms": [
+          [
+            0.013754005543887615,
+            0.014177448116242886,
+            0.04687182605266571
+          ],
+          [
+            0.01051938533782959,
+            0.01059685368090868,
+            0.04046684503555298
+          ],
+          [
+            0.01369069330394268,
+            0.014051924459636211,
+            0.041818976402282715
+          ],
+          [
+            0.012463404797017574,
+            0.013275251723825932,
+            0.043792832642793655
+          ]
+        ],
+        "parameter_identity_preserved": true,
+        "state_dict_unchanged": true,
+        "shape_evidence": [
+          {
+            "full_shape_events": 6,
+            "head_shape_events": 0,
+            "forward": {
+              "stream": false,
+              "heads": {},
+              "full_activation_materialized": true,
+              "full_shape": [
+                41,
+                768
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          },
+          {
+            "full_shape_events": 0,
+            "head_shape_events": 16,
+            "forward": {
+              "stream": true,
+              "heads": {
+                "0": {
+                  "head": 0,
+                  "row_ranges": [
+                    [
+                      0,
+                      64
+                    ],
+                    [
+                      256,
+                      320
+                    ],
+                    [
+                      512,
+                      576
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "1": {
+                  "head": 1,
+                  "row_ranges": [
+                    [
+                      64,
+                      128
+                    ],
+                    [
+                      320,
+                      384
+                    ],
+                    [
+                      576,
+                      640
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "2": {
+                  "head": 2,
+                  "row_ranges": [
+                    [
+                      128,
+                      192
+                    ],
+                    [
+                      384,
+                      448
+                    ],
+                    [
+                      640,
+                      704
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "3": {
+                  "head": 3,
+                  "row_ranges": [
+                    [
+                      192,
+                      256
+                    ],
+                    [
+                      448,
+                      512
+                    ],
+                    [
+                      704,
+                      768
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                }
+              },
+              "full_activation_materialized": false
+            }
+          }
+        ]
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 4.125,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 3.814697265625e-06,
+            "reference_max_abs": 0.0004024505615234375,
+            "relative_to_max": 0.009478672985781991
+          },
+          "norm.weight": {
+            "max_abs": 1.0595540516078472e-06,
+            "reference_max_abs": 0.0004858916508965194,
+            "relative_to_max": 0.0021806385222978464
+          },
+          "norm.bias": {
+            "max_abs": 1.009088009595871e-06,
+            "reference_max_abs": 0.0008225589990615845,
+            "relative_to_max": 0.0012267667252404849
+          },
+          "qkv.weight": {
+            "max_abs": 4.887580871582031e-06,
+            "reference_max_abs": 0.00113677978515625,
+            "relative_to_max": 0.004299496644295302
+          },
+          "qkv.bias": {
+            "max_abs": 5.364418029785156e-06,
+            "reference_max_abs": 0.001312255859375,
+            "relative_to_max": 0.004087936046511628
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00021839141845703125,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 7.82012939453125e-05,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00049591064453125,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.250075340270996e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001220703125,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.002777099609375,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008649532101117074,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0005074664950370789,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.000865936279296875,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00060272216796875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00177764892578125,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0025634765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "qkv_row_gradient_norms": [
+          [
+            0.008551293052732944,
+            0.008462565951049328,
+            0.03011023998260498
+          ],
+          [
+            0.008950714953243732,
+            0.008627185598015785,
+            0.03415897116065025
+          ],
+          [
+            0.008727776817977428,
+            0.008821673691272736,
+            0.030109236016869545
+          ],
+          [
+            0.00908572319895029,
+            0.009721886366605759,
+            0.02888096310198307
+          ],
+          [
+            0.007294682320207357,
+            0.0072323656640946865,
+            0.02921282686293125
+          ],
+          [
+            0.008982036262750626,
+            0.009159170091152191,
+            0.03201952204108238
+          ],
+          [
+            0.009041865356266499,
+            0.008867770433425903,
+            0.03135686740279198
+          ],
+          [
+            0.008367265574634075,
+            0.00805063545703888,
+            0.030189702287316322
+          ]
+        ],
+        "parameter_identity_preserved": true,
+        "state_dict_unchanged": true,
+        "shape_evidence": [
+          {
+            "full_shape_events": 6,
+            "head_shape_events": 0,
+            "forward": {
+              "stream": false,
+              "heads": {},
+              "full_activation_materialized": true,
+              "full_shape": [
+                41,
+                1536
+              ],
+              "dtype": "torch.bfloat16"
+            }
+          },
+          {
+            "full_shape_events": 0,
+            "head_shape_events": 32,
+            "forward": {
+              "stream": true,
+              "heads": {
+                "0": {
+                  "head": 0,
+                  "row_ranges": [
+                    [
+                      0,
+                      64
+                    ],
+                    [
+                      512,
+                      576
+                    ],
+                    [
+                      1024,
+                      1088
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "1": {
+                  "head": 1,
+                  "row_ranges": [
+                    [
+                      64,
+                      128
+                    ],
+                    [
+                      576,
+                      640
+                    ],
+                    [
+                      1088,
+                      1152
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "2": {
+                  "head": 2,
+                  "row_ranges": [
+                    [
+                      128,
+                      192
+                    ],
+                    [
+                      640,
+                      704
+                    ],
+                    [
+                      1152,
+                      1216
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "3": {
+                  "head": 3,
+                  "row_ranges": [
+                    [
+                      192,
+                      256
+                    ],
+                    [
+                      704,
+                      768
+                    ],
+                    [
+                      1216,
+                      1280
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "4": {
+                  "head": 4,
+                  "row_ranges": [
+                    [
+                      256,
+                      320
+                    ],
+                    [
+                      768,
+                      832
+                    ],
+                    [
+                      1280,
+                      1344
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "5": {
+                  "head": 5,
+                  "row_ranges": [
+                    [
+                      320,
+                      384
+                    ],
+                    [
+                      832,
+                      896
+                    ],
+                    [
+                      1344,
+                      1408
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "6": {
+                  "head": 6,
+                  "row_ranges": [
+                    [
+                      384,
+                      448
+                    ],
+                    [
+                      896,
+                      960
+                    ],
+                    [
+                      1408,
+                      1472
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                },
+                "7": {
+                  "head": 7,
+                  "row_ranges": [
+                    [
+                      448,
+                      512
+                    ],
+                    [
+                      960,
+                      1024
+                    ],
+                    [
+                      1472,
+                      1536
+                    ]
+                  ],
+                  "shape": [
+                    41,
+                    192
+                  ],
+                  "dtype": "torch.bfloat16",
+                  "bytes": 15744
+                }
+              },
+              "full_activation_materialized": false
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "full": {
+    "nodes": 131072,
+    "edges": 7475256,
+    "checks": {
+      "rowptr_length": true,
+      "starts_zero": true,
+      "monotone": true,
+      "ends_nnz": true,
+      "col_range": true,
+      "sorted_unique": true,
+      "relation_range": true,
+      "relation_frame": true
+    },
+    "crow_dtype": "torch.int64",
+    "col_dtype": "torch.int64",
+    "relation_dtype": "torch.int64",
+    "logical_elements": 17179869184,
+    "graph_s": 0.28793511912226677,
+    "head_qkv_stream": false,
+    "forward_qkv_execution": {
+      "stream": false,
+      "heads": {},
+      "full_activation_materialized": true,
+      "full_shape": [
+        131072,
+        1536
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "backward_qkv_execution": {
+      "stream": false,
+      "heads": {},
+      "full_activation_materialized": true,
+      "full_shape": [
+        131072,
+        1536
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "head_output_offload": true,
+    "forward_head_storage": {
+      "enabled": true,
+      "cpu_bytes": 134217728,
+      "gpu_list_bytes": 0,
+      "copy_to_cpu_s": 0.0538775697350502,
+      "before_stack": {
+        "allocated_bytes": 694027776,
+        "reserved_bytes": 2699034624
+      },
+      "stack_device": "cpu",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 0.011968150734901428,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 694027776,
+        "reserved_bytes": 2699034624
+      },
+      "return_to_gpu_s": 0.011540288105607033,
+      "after_gpu_return": {
+        "allocated_bytes": 828245504,
+        "reserved_bytes": 2699034624
+      },
+      "stored_head_count": 8,
+      "all_CPU": true
+    },
+    "backward_head_storage": {
+      "enabled": true,
+      "cpu_bytes": 134217728,
+      "gpu_list_bytes": 0,
+      "copy_to_cpu_s": 0.04689507931470871,
+      "before_stack": {
+        "allocated_bytes": 962550272,
+        "reserved_bytes": 2699034624
+      },
+      "stack_device": "cpu",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 0.012609923258423805,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 962550272,
+        "reserved_bytes": 2699034624
+      },
+      "return_to_gpu_s": 0.012266970239579678,
+      "after_gpu_return": {
+        "allocated_bytes": 1096768000,
+        "reserved_bytes": 2699034624
+      },
+      "stored_head_count": 8,
+      "all_CPU": true
+    },
+    "measurement_host": {
+      "available_bytes": 50245767168,
+      "rss_bytes": 2000109568,
+      "peak_rss_bytes": 2130395136
+    },
+    "status": "PASS",
+    "kind": "full",
+    "dim": 512,
+    "heads": 8,
+    "head_dim": 64,
+    "forward_s": 0.18360893800854683,
+    "backward_s": 0.7811720380559564,
+    "baseline_allocated_bytes": 169137152,
+    "peak_allocated_bytes": 2380187648,
+    "peak_reserved_bytes": 2699034624,
+    "dropout": 0.1,
+    "outer_checkpoint": true,
+    "precision": "BF16 outer / FP32 sparse core",
+    "softmax_saved": "FP32 probabilities E + CSR crow; bridge saves crow/col, no values or dense matrix copy",
+    "process_host_after_snapshots": {
+      "available_bytes": 50237755392,
+      "rss_bytes": 2001489920,
+      "peak_rss_bytes": 2130395136
+    }
+  },
+  "stream": {
+    "nodes": 131072,
+    "edges": 7475256,
+    "checks": {
+      "rowptr_length": true,
+      "starts_zero": true,
+      "monotone": true,
+      "ends_nnz": true,
+      "col_range": true,
+      "sorted_unique": true,
+      "relation_range": true,
+      "relation_frame": true
+    },
+    "crow_dtype": "torch.int64",
+    "col_dtype": "torch.int64",
+    "relation_dtype": "torch.int64",
+    "logical_elements": 17179869184,
+    "graph_s": 0.2898117108270526,
+    "head_qkv_stream": true,
+    "forward_qkv_execution": {
+      "stream": true,
+      "heads": {
+        "0": {
+          "head": 0,
+          "row_ranges": [
+            [
+              0,
+              64
+            ],
+            [
+              512,
+              576
+            ],
+            [
+              1024,
+              1088
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "1": {
+          "head": 1,
+          "row_ranges": [
+            [
+              64,
+              128
+            ],
+            [
+              576,
+              640
+            ],
+            [
+              1088,
+              1152
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "2": {
+          "head": 2,
+          "row_ranges": [
+            [
+              128,
+              192
+            ],
+            [
+              640,
+              704
+            ],
+            [
+              1152,
+              1216
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "3": {
+          "head": 3,
+          "row_ranges": [
+            [
+              192,
+              256
+            ],
+            [
+              704,
+              768
+            ],
+            [
+              1216,
+              1280
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "4": {
+          "head": 4,
+          "row_ranges": [
+            [
+              256,
+              320
+            ],
+            [
+              768,
+              832
+            ],
+            [
+              1280,
+              1344
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "5": {
+          "head": 5,
+          "row_ranges": [
+            [
+              320,
+              384
+            ],
+            [
+              832,
+              896
+            ],
+            [
+              1344,
+              1408
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "6": {
+          "head": 6,
+          "row_ranges": [
+            [
+              384,
+              448
+            ],
+            [
+              896,
+              960
+            ],
+            [
+              1408,
+              1472
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "7": {
+          "head": 7,
+          "row_ranges": [
+            [
+              448,
+              512
+            ],
+            [
+              960,
+              1024
+            ],
+            [
+              1472,
+              1536
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        }
+      },
+      "full_activation_materialized": false
+    },
+    "backward_qkv_execution": {
+      "stream": true,
+      "heads": {
+        "0": {
+          "head": 0,
+          "row_ranges": [
+            [
+              0,
+              64
+            ],
+            [
+              512,
+              576
+            ],
+            [
+              1024,
+              1088
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "1": {
+          "head": 1,
+          "row_ranges": [
+            [
+              64,
+              128
+            ],
+            [
+              576,
+              640
+            ],
+            [
+              1088,
+              1152
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "2": {
+          "head": 2,
+          "row_ranges": [
+            [
+              128,
+              192
+            ],
+            [
+              640,
+              704
+            ],
+            [
+              1152,
+              1216
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "3": {
+          "head": 3,
+          "row_ranges": [
+            [
+              192,
+              256
+            ],
+            [
+              704,
+              768
+            ],
+            [
+              1216,
+              1280
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "4": {
+          "head": 4,
+          "row_ranges": [
+            [
+              256,
+              320
+            ],
+            [
+              768,
+              832
+            ],
+            [
+              1280,
+              1344
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "5": {
+          "head": 5,
+          "row_ranges": [
+            [
+              320,
+              384
+            ],
+            [
+              832,
+              896
+            ],
+            [
+              1344,
+              1408
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "6": {
+          "head": 6,
+          "row_ranges": [
+            [
+              384,
+              448
+            ],
+            [
+              896,
+              960
+            ],
+            [
+              1408,
+              1472
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        },
+        "7": {
+          "head": 7,
+          "row_ranges": [
+            [
+              448,
+              512
+            ],
+            [
+              960,
+              1024
+            ],
+            [
+              1472,
+              1536
+            ]
+          ],
+          "shape": [
+            131072,
+            192
+          ],
+          "dtype": "torch.bfloat16",
+          "bytes": 50331648
+        }
+      },
+      "full_activation_materialized": false
+    },
+    "head_output_offload": true,
+    "forward_head_storage": {
+      "enabled": true,
+      "cpu_bytes": 134217728,
+      "gpu_list_bytes": 0,
+      "copy_to_cpu_s": 0.044043452478945255,
+      "before_stack": {
+        "allocated_bytes": 289798656,
+        "reserved_bytes": 1902116864
+      },
+      "stack_device": "cpu",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 0.012609894387423992,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 289798656,
+        "reserved_bytes": 1902116864
+      },
+      "return_to_gpu_s": 0.011927252635359764,
+      "after_gpu_return": {
+        "allocated_bytes": 424016384,
+        "reserved_bytes": 1902116864
+      },
+      "stored_head_count": 8,
+      "all_CPU": true
+    },
+    "backward_head_storage": {
+      "enabled": true,
+      "cpu_bytes": 134217728,
+      "gpu_list_bytes": 0,
+      "copy_to_cpu_s": 0.04893271252512932,
+      "before_stack": {
+        "allocated_bytes": 558321152,
+        "reserved_bytes": 2069889024
+      },
+      "stack_device": "cpu",
+      "stack_dtype": "torch.bfloat16",
+      "stack_s": 0.018964585848152637,
+      "stack_bytes": 134217728,
+      "before_gpu_return": {
+        "allocated_bytes": 558321152,
+        "reserved_bytes": 2069889024
+      },
+      "return_to_gpu_s": 0.011618709191679955,
+      "after_gpu_return": {
+        "allocated_bytes": 692538880,
+        "reserved_bytes": 2069889024
+      },
+      "stored_head_count": 8,
+      "all_CPU": true
+    },
+    "measurement_host": {
+      "available_bytes": 50107826176,
+      "rss_bytes": 1998684160,
+      "peak_rss_bytes": 2128039936
+    },
+    "status": "PASS",
+    "kind": "stream",
+    "dim": 512,
+    "heads": 8,
+    "head_dim": 64,
+    "forward_s": 0.22236032411456108,
+    "backward_s": 0.8670274894684553,
+    "baseline_allocated_bytes": 169137152,
+    "peak_allocated_bytes": 1645533184,
+    "peak_reserved_bytes": 2069889024,
+    "dropout": 0.1,
+    "outer_checkpoint": true,
+    "precision": "BF16 outer / FP32 sparse core",
+    "softmax_saved": "FP32 probabilities E + CSR crow; bridge saves crow/col, no values or dense matrix copy",
+    "process_host_after_snapshots": {
+      "available_bytes": 50105233408,
+      "rss_bytes": 1999417344,
+      "peak_rss_bytes": 2128039936
+    }
+  },
+  "paired_check": {
+    "output_rows": {
+      "max_abs": 0.0,
+      "reference_max_abs": 4.125,
+      "relative_to_max": 0.0
+    },
+    "input_gradient_rows": {
+      "max_abs": 1.3969838619232178e-09,
+      "reference_max_abs": 1.2293457984924316e-07,
+      "relative_to_max": 0.011363636363636364
+    },
+    "norm.weight": {
+      "max_abs": 6.586560630239546e-09,
+      "reference_max_abs": 2.3450089429388754e-05,
+      "relative_to_max": 0.00028087571478448007
+    },
+    "norm.bias": {
+      "max_abs": 7.021299097687006e-09,
+      "reference_max_abs": 0.00029661619919352233,
+      "relative_to_max": 2.36713271789518e-05
+    },
+    "qkv.weight": {
+      "max_abs": 1.1548399925231934e-07,
+      "reference_max_abs": 1.519918441772461e-05,
+      "relative_to_max": 0.007598039215686274
+    },
+    "qkv.bias": {
+      "max_abs": 4.947185516357422e-06,
+      "reference_max_abs": 0.00061798095703125,
+      "relative_to_max": 0.008005401234567902
+    },
+    "bias.0.weight": {
+      "max_abs": 5.960464477539063e-08,
+      "reference_max_abs": 1.8596649169921875e-05,
+      "relative_to_max": 0.003205128205128205
+    },
+    "bias.0.bias": {
+      "max_abs": 1.4901161193847656e-08,
+      "reference_max_abs": 1.4483928680419922e-05,
+      "relative_to_max": 0.00102880658436214
+    },
+    "bias.2.weight": {
+      "max_abs": 1.1920928955078125e-07,
+      "reference_max_abs": 6.389617919921875e-05,
+      "relative_to_max": 0.0018656716417910447
+    },
+    "bias.2.bias": {
+      "max_abs": 4.831235855817795e-09,
+      "reference_max_abs": 6.146728992462158e-08,
+      "relative_to_max": 0.07859848484848485
+    },
+    "proj.weight": {
+      "max_abs": 2.384185791015625e-07,
+      "reference_max_abs": 5.53131103515625e-05,
+      "relative_to_max": 0.004310344827586207
+    },
+    "proj.bias": {
+      "max_abs": 1.1920928955078125e-07,
+      "reference_max_abs": 0.00103759765625,
+      "relative_to_max": 0.00011488970588235294
+    },
+    "norm2.weight": {
+      "max_abs": 9.022187441587448e-10,
+      "reference_max_abs": 0.000319398648571223,
+      "relative_to_max": 2.824741896043302e-06
+    },
+    "norm2.bias": {
+      "max_abs": 7.203198038041592e-10,
+      "reference_max_abs": 0.000296599930152297,
+      "relative_to_max": 2.4285906049751667e-06
+    },
+    "ffn.0.weight": {
+      "max_abs": 4.76837158203125e-07,
+      "reference_max_abs": 8.106231689453125e-05,
+      "relative_to_max": 0.0058823529411764705
+    },
+    "ffn.0.bias": {
+      "max_abs": 1.1920928955078125e-07,
+      "reference_max_abs": 0.0002498626708984375,
+      "relative_to_max": 0.00047709923664122136
+    },
+    "ffn.3.weight": {
+      "max_abs": 1.9073486328125e-06,
+      "reference_max_abs": 0.0002803802490234375,
+      "relative_to_max": 0.006802721088435374
+    },
+    "ffn.3.bias": {
+      "max_abs": 0.0,
+      "reference_max_abs": 0.0010833740234375,
+      "relative_to_max": 0.0
+    }
+  },
+  "full_window": {
+    "status": "OOM",
+    "gpu_start": {
+      "unix_time": 1793817748.7143998,
+      "worker_pid": null,
+      "gpu_total_free_used_util": "24564, 22854, 1219, 7",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "gpu_after": {
+      "unix_time": 1793817893.0461478,
+      "worker_pid": 123466,
+      "gpu_total_free_used_util": "24564, 22834, 1239, 6",
+      "compute_pid_mib": "3903557, 507"
+    },
+    "source_commit": "8ceedb3ccf1fcf3a755991ce042fcf588273e6a9",
+    "formal_models_completed": 0,
+    "worker_gpu_released": true,
+    "process": {
+      "pid": 123466,
+      "returncode": 2,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 144.29580196924508,
+      "timeout_s": 900
+    },
+    "worker": {
+      "candidate_build_evidence": [
+        {
+          "layer": "fine_time.0",
+          "width": 256,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "fine_time.1",
+          "width": 256,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "fine_time.2",
+          "width": 256,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "coarse_time.0",
+          "width": 512,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "coarse_time.1",
+          "width": 512,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        },
+        {
+          "layer": "coarse_time.2",
+          "width": 512,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061"
+        }
+      ],
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "loss_components": {
+        "total": 1.7414692640304565,
+        "frame_BCE": 0.7357272505760193,
+        "pixel_BCE": 0.005926134530454874,
+        "soft_Dice_loss": 0.9998159408569336
+      },
+      "forward_edge_evidence": [
+        {
+          "layer": "fine_time.0",
+          "width": 256,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 2970629,
+          "edges": 37042228,
+          "average_degree": 12.46948979492222,
+          "topology_bytes": 616440688,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 4,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1520962048,
+            "gpu_list_bytes": 0,
+            "copy_to_cpu_s": 0.49365317914634943,
+            "before_stack": {
+              "allocated_bytes": 10940783104,
+              "reserved_bytes": 18637389824
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.12534728180617094,
+            "stack_bytes": 1520962048,
+            "before_gpu_return": {
+              "allocated_bytes": 10940783104,
+              "reserved_bytes": 18637389824
+            },
+            "return_to_gpu_s": 0.11839258763939142,
+            "after_gpu_return": {
+              "allocated_bytes": 12461745152,
+              "reserved_bytes": 18637389824
+            },
+            "stored_head_count": 4,
+            "all_CPU": true
+          },
+          "qkv_execution": {
+            "stream": true,
+            "heads": {
+              "0": {
+                "head": 0,
+                "row_ranges": [
+                  [
+                    0,
+                    64
+                  ],
+                  [
+                    256,
+                    320
+                  ],
+                  [
+                    512,
+                    576
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "1": {
+                "head": 1,
+                "row_ranges": [
+                  [
+                    64,
+                    128
+                  ],
+                  [
+                    320,
+                    384
+                  ],
+                  [
+                    576,
+                    640
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "2": {
+                "head": 2,
+                "row_ranges": [
+                  [
+                    128,
+                    192
+                  ],
+                  [
+                    384,
+                    448
+                  ],
+                  [
+                    640,
+                    704
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "3": {
+                "head": 3,
+                "row_ranges": [
+                  [
+                    192,
+                    256
+                  ],
+                  [
+                    448,
+                    512
+                  ],
+                  [
+                    704,
+                    768
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              }
+            },
+            "full_activation_materialized": false
+          }
+        },
+        {
+          "layer": "fine_time.1",
+          "width": 256,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 2970629,
+          "edges": 31105643,
+          "average_degree": 10.471062862444283,
+          "topology_bytes": 521455328,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 4,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1520962048,
+            "gpu_list_bytes": 0,
+            "copy_to_cpu_s": 0.5088071227073669,
+            "before_stack": {
+              "allocated_bytes": 10846982656,
+              "reserved_bytes": 19908263936
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.12524089589715004,
+            "stack_bytes": 1520962048,
+            "before_gpu_return": {
+              "allocated_bytes": 10846982656,
+              "reserved_bytes": 19908263936
+            },
+            "return_to_gpu_s": 0.11757360212504864,
+            "after_gpu_return": {
+              "allocated_bytes": 12367944704,
+              "reserved_bytes": 19908263936
+            },
+            "stored_head_count": 4,
+            "all_CPU": true
+          },
+          "qkv_execution": {
+            "stream": true,
+            "heads": {
+              "0": {
+                "head": 0,
+                "row_ranges": [
+                  [
+                    0,
+                    64
+                  ],
+                  [
+                    256,
+                    320
+                  ],
+                  [
+                    512,
+                    576
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "1": {
+                "head": 1,
+                "row_ranges": [
+                  [
+                    64,
+                    128
+                  ],
+                  [
+                    320,
+                    384
+                  ],
+                  [
+                    576,
+                    640
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "2": {
+                "head": 2,
+                "row_ranges": [
+                  [
+                    128,
+                    192
+                  ],
+                  [
+                    384,
+                    448
+                  ],
+                  [
+                    640,
+                    704
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "3": {
+                "head": 3,
+                "row_ranges": [
+                  [
+                    192,
+                    256
+                  ],
+                  [
+                    448,
+                    512
+                  ],
+                  [
+                    704,
+                    768
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              }
+            },
+            "full_activation_materialized": false
+          }
+        },
+        {
+          "layer": "fine_time.2",
+          "width": 256,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 2970629,
+          "edges": 28847555,
+          "average_degree": 9.710924858001453,
+          "topology_bytes": 485325920,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 4,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1520962048,
+            "gpu_list_bytes": 0,
+            "copy_to_cpu_s": 0.5059608528390527,
+            "before_stack": {
+              "allocated_bytes": 10812038656,
+              "reserved_bytes": 19910361088
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.12498991005122662,
+            "stack_bytes": 1520962048,
+            "before_gpu_return": {
+              "allocated_bytes": 10812038656,
+              "reserved_bytes": 19910361088
+            },
+            "return_to_gpu_s": 0.11666748113930225,
+            "after_gpu_return": {
+              "allocated_bytes": 12333000704,
+              "reserved_bytes": 19910361088
+            },
+            "stored_head_count": 4,
+            "all_CPU": true
+          },
+          "qkv_execution": {
+            "stream": true,
+            "heads": {
+              "0": {
+                "head": 0,
+                "row_ranges": [
+                  [
+                    0,
+                    64
+                  ],
+                  [
+                    256,
+                    320
+                  ],
+                  [
+                    512,
+                    576
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "1": {
+                "head": 1,
+                "row_ranges": [
+                  [
+                    64,
+                    128
+                  ],
+                  [
+                    320,
+                    384
+                  ],
+                  [
+                    576,
+                    640
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "2": {
+                "head": 2,
+                "row_ranges": [
+                  [
+                    128,
+                    192
+                  ],
+                  [
+                    384,
+                    448
+                  ],
+                  [
+                    640,
+                    704
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              },
+              "3": {
+                "head": 3,
+                "row_ranges": [
+                  [
+                    192,
+                    256
+                  ],
+                  [
+                    448,
+                    512
+                  ],
+                  [
+                    704,
+                    768
+                  ]
+                ],
+                "shape": [
+                  2970629,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 1140721536
+              }
+            },
+            "full_activation_materialized": false
+          }
+        },
+        {
+          "layer": "coarse_time.0",
+          "width": 512,
+          "dilation": 1,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 1488042,
+          "edges": 26982715,
+          "average_degree": 18.13303320739603,
+          "topology_bytes": 443627784,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 8,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1523755008,
+            "gpu_list_bytes": 0,
+            "copy_to_cpu_s": 0.5224648229777813,
+            "before_stack": {
+              "allocated_bytes": 12354917376,
+              "reserved_bytes": 19910361088
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.13103529158979654,
+            "stack_bytes": 1523755008,
+            "before_gpu_return": {
+              "allocated_bytes": 12354917376,
+              "reserved_bytes": 19910361088
+            },
+            "return_to_gpu_s": 0.11611386388540268,
+            "after_gpu_return": {
+              "allocated_bytes": 13878672384,
+              "reserved_bytes": 19910361088
+            },
+            "stored_head_count": 8,
+            "all_CPU": true
+          },
+          "qkv_execution": {
+            "stream": true,
+            "heads": {
+              "0": {
+                "head": 0,
+                "row_ranges": [
+                  [
+                    0,
+                    64
+                  ],
+                  [
+                    512,
+                    576
+                  ],
+                  [
+                    1024,
+                    1088
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "1": {
+                "head": 1,
+                "row_ranges": [
+                  [
+                    64,
+                    128
+                  ],
+                  [
+                    576,
+                    640
+                  ],
+                  [
+                    1088,
+                    1152
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "2": {
+                "head": 2,
+                "row_ranges": [
+                  [
+                    128,
+                    192
+                  ],
+                  [
+                    640,
+                    704
+                  ],
+                  [
+                    1152,
+                    1216
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "3": {
+                "head": 3,
+                "row_ranges": [
+                  [
+                    192,
+                    256
+                  ],
+                  [
+                    704,
+                    768
+                  ],
+                  [
+                    1216,
+                    1280
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "4": {
+                "head": 4,
+                "row_ranges": [
+                  [
+                    256,
+                    320
+                  ],
+                  [
+                    768,
+                    832
+                  ],
+                  [
+                    1280,
+                    1344
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "5": {
+                "head": 5,
+                "row_ranges": [
+                  [
+                    320,
+                    384
+                  ],
+                  [
+                    832,
+                    896
+                  ],
+                  [
+                    1344,
+                    1408
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "6": {
+                "head": 6,
+                "row_ranges": [
+                  [
+                    384,
+                    448
+                  ],
+                  [
+                    896,
+                    960
+                  ],
+                  [
+                    1408,
+                    1472
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "7": {
+                "head": 7,
+                "row_ranges": [
+                  [
+                    448,
+                    512
+                  ],
+                  [
+                    960,
+                    1024
+                  ],
+                  [
+                    1472,
+                    1536
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              }
+            },
+            "full_activation_materialized": false
+          }
+        },
+        {
+          "layer": "coarse_time.1",
+          "width": 512,
+          "dilation": 2,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 1488042,
+          "edges": 22781330,
+          "average_degree": 15.309601476302417,
+          "topology_bytes": 376405624,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 8,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1523755008,
+            "gpu_list_bytes": 0,
+            "copy_to_cpu_s": 0.5174354165792465,
+            "before_stack": {
+              "allocated_bytes": 12292423168,
+              "reserved_bytes": 20692598784
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.12996071111410856,
+            "stack_bytes": 1523755008,
+            "before_gpu_return": {
+              "allocated_bytes": 12292423168,
+              "reserved_bytes": 20692598784
+            },
+            "return_to_gpu_s": 0.11657764110714197,
+            "after_gpu_return": {
+              "allocated_bytes": 13816178176,
+              "reserved_bytes": 20692598784
+            },
+            "stored_head_count": 8,
+            "all_CPU": true
+          },
+          "qkv_execution": {
+            "stream": true,
+            "heads": {
+              "0": {
+                "head": 0,
+                "row_ranges": [
+                  [
+                    0,
+                    64
+                  ],
+                  [
+                    512,
+                    576
+                  ],
+                  [
+                    1024,
+                    1088
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "1": {
+                "head": 1,
+                "row_ranges": [
+                  [
+                    64,
+                    128
+                  ],
+                  [
+                    576,
+                    640
+                  ],
+                  [
+                    1088,
+                    1152
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "2": {
+                "head": 2,
+                "row_ranges": [
+                  [
+                    128,
+                    192
+                  ],
+                  [
+                    640,
+                    704
+                  ],
+                  [
+                    1152,
+                    1216
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "3": {
+                "head": 3,
+                "row_ranges": [
+                  [
+                    192,
+                    256
+                  ],
+                  [
+                    704,
+                    768
+                  ],
+                  [
+                    1216,
+                    1280
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "4": {
+                "head": 4,
+                "row_ranges": [
+                  [
+                    256,
+                    320
+                  ],
+                  [
+                    768,
+                    832
+                  ],
+                  [
+                    1280,
+                    1344
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "5": {
+                "head": 5,
+                "row_ranges": [
+                  [
+                    320,
+                    384
+                  ],
+                  [
+                    832,
+                    896
+                  ],
+                  [
+                    1344,
+                    1408
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "6": {
+                "head": 6,
+                "row_ranges": [
+                  [
+                    384,
+                    448
+                  ],
+                  [
+                    896,
+                    960
+                  ],
+                  [
+                    1408,
+                    1472
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "7": {
+                "head": 7,
+                "row_ranges": [
+                  [
+                    448,
+                    512
+                  ],
+                  [
+                    960,
+                    1024
+                  ],
+                  [
+                    1472,
+                    1536
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              }
+            },
+            "full_activation_materialized": false
+          }
+        },
+        {
+          "layer": "coarse_time.2",
+          "width": 512,
+          "dilation": 4,
+          "enabled": true,
+          "head_source_sha256": "f02e95451f0267eb9e2fde333e6126542c719821d11f540c61b1a922ba09c061",
+          "nodes": 1488042,
+          "edges": 20707343,
+          "average_degree": 13.915832348818112,
+          "topology_bytes": 343221832,
+          "backend": "CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head",
+          "softmax_impl": "research_tools.pvst.sparse_attention.CSRSoftmax",
+          "values_bridge": "research_tools.pvst.sparse_attention.CSRFromValues",
+          "head_impl": "research_tools.pvst.sparse_attention.sparse_head",
+          "logical_padding_columns": 0,
+          "completed_heads": 8,
+          "head_storage": {
+            "enabled": true,
+            "cpu_bytes": 1523755008,
+            "gpu_list_bytes": 0,
+            "copy_to_cpu_s": 0.6549421939998865,
+            "before_stack": {
+              "allocated_bytes": 12263966720,
+              "reserved_bytes": 20692598784
+            },
+            "stack_device": "cpu",
+            "stack_dtype": "torch.bfloat16",
+            "stack_s": 0.14499191660434008,
+            "stack_bytes": 1523755008,
+            "before_gpu_return": {
+              "allocated_bytes": 12263966720,
+              "reserved_bytes": 20692598784
+            },
+            "return_to_gpu_s": 0.12289064098149538,
+            "after_gpu_return": {
+              "allocated_bytes": 13787721728,
+              "reserved_bytes": 20692598784
+            },
+            "stored_head_count": 8,
+            "all_CPU": true
+          },
+          "qkv_execution": {
+            "stream": true,
+            "heads": {
+              "0": {
+                "head": 0,
+                "row_ranges": [
+                  [
+                    0,
+                    64
+                  ],
+                  [
+                    512,
+                    576
+                  ],
+                  [
+                    1024,
+                    1088
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "1": {
+                "head": 1,
+                "row_ranges": [
+                  [
+                    64,
+                    128
+                  ],
+                  [
+                    576,
+                    640
+                  ],
+                  [
+                    1088,
+                    1152
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "2": {
+                "head": 2,
+                "row_ranges": [
+                  [
+                    128,
+                    192
+                  ],
+                  [
+                    640,
+                    704
+                  ],
+                  [
+                    1152,
+                    1216
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "3": {
+                "head": 3,
+                "row_ranges": [
+                  [
+                    192,
+                    256
+                  ],
+                  [
+                    704,
+                    768
+                  ],
+                  [
+                    1216,
+                    1280
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "4": {
+                "head": 4,
+                "row_ranges": [
+                  [
+                    256,
+                    320
+                  ],
+                  [
+                    768,
+                    832
+                  ],
+                  [
+                    1280,
+                    1344
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "5": {
+                "head": 5,
+                "row_ranges": [
+                  [
+                    320,
+                    384
+                  ],
+                  [
+                    832,
+                    896
+                  ],
+                  [
+                    1344,
+                    1408
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "6": {
+                "head": 6,
+                "row_ranges": [
+                  [
+                    384,
+                    448
+                  ],
+                  [
+                    896,
+                    960
+                  ],
+                  [
+                    1408,
+                    1472
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              },
+              "7": {
+                "head": 7,
+                "row_ranges": [
+                  [
+                    448,
+                    512
+                  ],
+                  [
+                    960,
+                    1024
+                  ],
+                  [
+                    1472,
+                    1536
+                  ]
+                ],
+                "shape": [
+                  1488042,
+                  192
+                ],
+                "dtype": "torch.bfloat16",
+                "bytes": 571408128
+              }
+            },
+            "full_activation_materialized": false
+          }
+        }
+      ],
+      "failure_operator_context": [],
+      "status": "OOM",
+      "updates": 0,
+      "error": "CUDA out of memory. Tried to allocate 1.42 GiB. GPU 0 has a total capacity of 23.51 GiB of which 861.50 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 21.45 GiB memory in use. Of the allocated memory 20.61 GiB is allocated by PyTorch, and 371.24 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+      "failure_phase": "backward",
+      "phase": "backward",
+      "elapsed_s": 141.69727745093405,
+      "peak_allocated_bytes": 22668686848,
+      "peak_reserved_bytes": 23400022016,
+      "allocated_bytes": 12222480896,
+      "reserved_bytes": 22523412480,
+      "host": {
+        "available_bytes": 36405739520,
+        "rss_bytes": 16202473472,
+        "peak_rss_bytes": 19242926080
+      }
+    },
+    "stages": [
+      {
+        "phase": "worker_start",
+        "elapsed_s": 1.8810565453022718,
+        "peak_allocated_bytes": 0,
+        "peak_reserved_bytes": 0,
+        "allocated_bytes": 0,
+        "reserved_bytes": 0,
+        "host": {
+          "available_bytes": 51535470592,
+          "rss_bytes": 552198144,
+          "peak_rss_bytes": 546971648
+        },
+        "stage": "worker_start",
+        "stage_s": null
+      },
+      {
+        "phase": "model_build",
+        "elapsed_s": 2.720739592798054,
+        "peak_allocated_bytes": 71308288,
+        "peak_reserved_bytes": 85983232,
+        "allocated_bytes": 71308288,
+        "reserved_bytes": 85983232,
+        "host": {
+          "available_bytes": 51357753344,
+          "rss_bytes": 726253568,
+          "peak_rss_bytes": 723161088
+        },
+        "stage": "model_built",
+        "stage_s": 0.8385280109941959,
+        "parameters": 17821672
+      },
+      {
+        "phase": "data_geometry",
+        "elapsed_s": 3.3361905002966523,
+        "peak_allocated_bytes": 1755244032,
+        "peak_reserved_bytes": 1839202304,
+        "allocated_bytes": 1715809280,
+        "reserved_bytes": 1839202304,
+        "host": {
+          "available_bytes": 50795401216,
+          "rss_bytes": 1369612288,
+          "peak_rss_bytes": 1389862912
+        },
+        "stage": "data_loaded",
+        "stage_s": 0.6144744781777263,
+        "fine_nodes": 2970629,
+        "coarse_nodes": 1488042,
+        "q_dtype": "torch.float32",
+        "token_dtype": "torch.float16",
+        "rgb_dtype": "torch.uint8",
+        "target_labels": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "spatial_gt": "zero mask for ANAKIN real"
+      },
+      {
+        "phase": "forward",
+        "elapsed_s": 25.117304160259664,
+        "peak_allocated_bytes": 18780286976,
+        "peak_reserved_bytes": 21177040896,
+        "allocated_bytes": 13998760448,
+        "reserved_bytes": 21177040896,
+        "host": {
+          "available_bytes": 37140320256,
+          "rss_bytes": 15856435200,
+          "peak_rss_bytes": 18783133696
+        },
+        "stage": "forward_complete",
+        "stage_s": 21.779683273285627,
+        "finite_loss": true,
+        "output_dtype": "torch.float32",
+        "loss_components": {
+          "total": 1.7414692640304565,
+          "frame_BCE": 0.7357272505760193,
+          "pixel_BCE": 0.005926134530454874,
+          "soft_Dice_loss": 0.9998159408569336
+        }
+      }
+    ],
+    "last_live": {
+      "fine_nodes": 2970629,
+      "coarse_nodes": 1488042,
+      "loss_components": {
+        "total": 1.7414692640304565,
+        "frame_BCE": 0.7357272505760193,
+        "pixel_BCE": 0.005926134530454874,
+        "soft_Dice_loss": 0.9998159408569336
+      },
+      "failure_operator_context": [],
+      "status": "OOM",
+      "updates": 0,
+      "error": "CUDA out of memory. Tried to allocate 1.42 GiB. GPU 0 has a total capacity of 23.51 GiB of which 861.50 MiB is free. Process 3903557 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 21.45 GiB memory in use. Of the allocated memory 20.61 GiB is allocated by PyTorch, and 371.24 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+      "failure_phase": "backward",
+      "phase": "backward",
+      "elapsed_s": 141.69727745093405,
+      "peak_allocated_bytes": 22668686848,
+      "peak_reserved_bytes": 23400022016,
+      "allocated_bytes": 12222480896,
+      "reserved_bytes": 22523412480,
+      "host": {
+        "available_bytes": 36405739520,
+        "rss_bytes": 16202473472,
+        "peak_rss_bytes": 19242926080
+      }
+    }
+  }
+}
