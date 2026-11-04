@@ -1,0 +1,650 @@
+{
+  "status": "OOM",
+  "source_commit": "39c1568f6462e7aca042450a36ce608353eca356",
+  "small_gpu_wall_s": 5.193446337245405,
+  "formal_models_completed": 0,
+  "regression": {
+    "status": "PASS",
+    "comparisons": [
+      {
+        "dtype": "torch.float32",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.945078134536743,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008167126215994358,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001787353539839387,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001874416135251522,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021303060930222273,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.003231619717553258,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003040992596652359,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010481740173418075,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008615317055955529,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.3283064365386963e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021351731847971678,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004878594074398279,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015348800225183368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010165807325392962,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015975169371813536,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001267007552087307,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035513639450073242,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.004949982278048992,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_unchanged": true
+      },
+      {
+        "dtype": "torch.float32",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 4.125478744506836,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004027661052532494,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00048602421884424984,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008233566186390817,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0011359256459400058,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0013103255769237876,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00021908507915213704,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 7.906340761110187e-05,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004986069398000836,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 1.4551915228366852e-10,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0012174032162874937,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.002775461645796895,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008669153903611004,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0005062107229605317,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008643227629363537,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0006033350364305079,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0017711883410811424,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0025667203590273857,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_unchanged": true
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 256,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 3.9375,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00081634521484375,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0017885066336020827,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0018774252384901047,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0021233558654785156,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0032329559326171875,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0003032684326171875,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00010538101196289062,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008697509765625,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 3.606081008911133e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00213623046875,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0048828125,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0015400797128677368,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0010147392749786377,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00159454345703125,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0012664794921875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0035552978515625,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00494384765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_unchanged": true
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 512,
+        "dropout": 0.1,
+        "output": {
+          "max_abs": 0.0,
+          "reference_max_abs": 4.125,
+          "relative_to_max": 0.0
+        },
+        "gradients": {
+          "input": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0004024505615234375,
+            "relative_to_max": 0.0
+          },
+          "norm.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00048547080950811505,
+            "relative_to_max": 0.0
+          },
+          "norm.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008226954378187656,
+            "relative_to_max": 0.0
+          },
+          "qkv.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0011390149593353271,
+            "relative_to_max": 0.0
+          },
+          "qkv.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0013113021850585938,
+            "relative_to_max": 0.0
+          },
+          "bias.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00021839141845703125,
+            "relative_to_max": 0.0
+          },
+          "bias.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 7.82012939453125e-05,
+            "relative_to_max": 0.0
+          },
+          "bias.2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00049591064453125,
+            "relative_to_max": 0.0
+          },
+          "bias.2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 2.250075340270996e-06,
+            "relative_to_max": 0.0
+          },
+          "proj.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.001220703125,
+            "relative_to_max": 0.0
+          },
+          "proj.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.002777099609375,
+            "relative_to_max": 0.0
+          },
+          "norm2.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0008649532101117074,
+            "relative_to_max": 0.0
+          },
+          "norm2.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0005074664950370789,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.000865936279296875,
+            "relative_to_max": 0.0
+          },
+          "ffn.0.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00060272216796875,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.weight": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.00177764892578125,
+            "relative_to_max": 0.0
+          },
+          "ffn.3.bias": {
+            "max_abs": 0.0,
+            "reference_max_abs": 0.0025634765625,
+            "relative_to_max": 0.0
+          }
+        },
+        "parameter_identity_keys_count_unchanged": true
+      }
+    ]
+  },
+  "lifetime_probe": {
+    "status": "PASS",
+    "records": [
+      {
+        "outer_checkpoint": false,
+        "phase": "forward",
+        "source": {
+          "shape": [
+            131072,
+            512
+          ],
+          "dtype": "torch.bfloat16",
+          "device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "MulBackward0",
+          "payload_bytes": 134217728,
+          "storage_bytes": 134217728,
+          "storage_id": "41484812288"
+        },
+        "view": {
+          "shape": [
+            512,
+            512
+          ],
+          "dtype": "torch.bfloat16",
+          "device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "SplitBackward0",
+          "payload_bytes": 524288,
+          "storage_bytes": 134217728,
+          "storage_id": "41484812288"
+        },
+        "allocated_before_name_delete": 423786496,
+        "allocated_after_name_delete": 423786496,
+        "allocated_after_view_cleanup": 423786496
+      },
+      {
+        "outer_checkpoint": true,
+        "phase": "forward",
+        "source": {
+          "shape": [
+            131072,
+            512
+          ],
+          "dtype": "torch.bfloat16",
+          "device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "MulBackward0",
+          "payload_bytes": 134217728,
+          "storage_bytes": 134217728,
+          "storage_id": "41350594560"
+        },
+        "view": {
+          "shape": [
+            512,
+            512
+          ],
+          "dtype": "torch.bfloat16",
+          "device": "cuda:0",
+          "requires_grad": true,
+          "grad_fn": "SplitBackward0",
+          "payload_bytes": 524288,
+          "storage_bytes": 134217728,
+          "storage_id": "41350594560"
+        },
+        "allocated_before_name_delete": 432306176,
+        "allocated_after_name_delete": 432306176,
+        "allocated_after_view_cleanup": 298088448
+      }
+    ],
+    "note": "actual project_block, native splits and checkpoint; synthetic attended=x*1.5 only isolates storage ownership, not a model/performance result"
+  },
+  "cases": {
+    "max_window": {
+      "status": "OOM",
+      "source_commit": "39c1568f6462e7aca042450a36ce608353eca356",
+      "gpu_start": {
+        "unix_time": 1793822554.3750632,
+        "worker_pid": null,
+        "gpu_total_free_used_util": "24564, 23400, 673, 18",
+        "compute_pid_mib": ""
+      },
+      "gpu_after": {
+        "unix_time": 1793822621.0781853,
+        "worker_pid": 284721,
+        "gpu_total_free_used_util": "24564, 23402, 671, 6",
+        "compute_pid_mib": ""
+      },
+      "pending_copies": [
+        {
+          "kind": "copy_backward_pre",
+          "event": 697,
+          "phase": "backward",
+          "update_index": 1,
+          "layer": "fine_time.2",
+          "head": 1,
+          "conversion": "head_output",
+          "source": {
+            "shape": [
+              2970629,
+              64
+            ],
+            "dtype": "torch.bfloat16",
+            "device": "cuda:0",
+            "requires_grad": true,
+            "grad_fn": "ToCopyBackward0",
+            "payload_bytes": 380240512,
+            "storage_bytes": 380240512,
+            "storage_id": "19362817024"
+          },
+          "target": {
+            "shape": [
+              2970629,
+              64
+            ],
+            "dtype": "torch.bfloat16",
+            "device": "cpu",
+            "requires_grad": true,
+            "grad_fn": "ToCopyBackward0",
+            "payload_bytes": 380240512,
+            "storage_bytes": 380240512,
+            "storage_id": "123977161498688"
+          },
+          "copy_id": "fine_time.2:1:head_output_after:62"
+        }
+      ],
+      "process": {
+        "pid": 284721,
+        "returncode": 2,
+        "termination_signal": null,
+        "timed_out": false,
+        "wall_s": 66.66513255145401,
+        "timeout_s": 900
+      },
+      "worker": {
+        "status": "OOM",
+        "updates": 0,
+        "optimizer_step_calls": 0,
+        "update_records": [],
+        "fine_nodes": 2970629,
+        "coarse_nodes": 1488042,
+        "phase": "backward",
+        "update_index": 1,
+        "elapsed_s": 63.36903218738735,
+        "peak_allocated_bytes": 23142978560,
+        "peak_reserved_bytes": 23964155904,
+        "host": {
+          "available_bytes": 37530648576,
+          "rss_bytes": 17642135552,
+          "peak_rss_bytes": 19176407040
+        },
+        "optimizer_state_parameters": 0,
+        "failure_operator_context": []
+      },
+      "stages": [
+        {
+          "phase": "worker_start",
+          "update_index": 0,
+          "elapsed_s": 0.8855965109542012,
+          "peak_allocated_bytes": 0,
+          "peak_reserved_bytes": 0,
+          "allocated_bytes": 0,
+          "reserved_bytes": 0,
+          "host": {
+            "available_bytes": 54958342144,
+            "rss_bytes": 551227392,
+            "peak_rss_bytes": 547999744
+          },
+          "stage": "worker_start",
+          "stage_s": null
+        },
+        {
+          "phase": "model_build",
+          "update_index": 0,
+          "elapsed_s": 1.6707775238901377,
+          "peak_allocated_bytes": 71308288,
+          "peak_reserved_bytes": 85983232,
+          "allocated_bytes": 71308288,
+          "reserved_bytes": 85983232,
+          "host": {
+            "available_bytes": 54802468864,
+            "rss_bytes": 726233088,
+            "peak_rss_bytes": 724135936
+          },
+          "stage": "model_built",
+          "stage_s": 0.7840681793168187,
+          "parameters": 17821672
+        },
+        {
+          "phase": "data_geometry",
+          "update_index": 0,
+          "elapsed_s": 2.2588353715837,
+          "peak_allocated_bytes": 1755244032,
+          "peak_reserved_bytes": 1839202304,
+          "allocated_bytes": 1715809280,
+          "reserved_bytes": 1839202304,
+          "host": {
+            "available_bytes": 54262755328,
+            "rss_bytes": 1357459456,
+            "peak_rss_bytes": 1379586048
+          },
+          "stage": "data_loaded",
+          "stage_s": 0.5869001671671867,
+          "fine_nodes": 2970629,
+          "coarse_nodes": 1488042,
+          "q_dtype": "torch.float32",
+          "token_dtype": "torch.float16",
+          "rgb_dtype": "torch.uint8",
+          "target_labels": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "spatial_gt": "zero mask for ANAKIN real"
+        },
+        {
+          "phase": "forward",
+          "update_index": 1,
+          "elapsed_s": 23.381424660794437,
+          "peak_allocated_bytes": 18780286976,
+          "peak_reserved_bytes": 21177040896,
+          "allocated_bytes": 13998760448,
+          "reserved_bytes": 21177040896,
+          "host": {
+            "available_bytes": 39355801600,
+            "rss_bytes": 15798677504,
+            "peak_rss_bytes": 18732740608
+          },
+          "stage": "forward_complete",
+          "stage_s": 21.12118191085756,
+          "finite_loss": true,
+          "output_dtype": "torch.float32",
+          "loss_components": {
+            "total": 1.7414692640304565,
+            "frame_BCE": 0.7357272505760193,
+            "pixel_BCE": 0.005926134530454874,
+            "soft_Dice_loss": 0.9998159408569336
+          }
+        }
+      ]
+    }
+  }
+}

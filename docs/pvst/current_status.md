@@ -82,3 +82,5 @@ export CUDA_VISIBLE_DEVICES=0
 逐head即时QKV限定验收：OOM；全量QKV已消除、匹配单层通过；完整窗口原生反向申请1.42GiB失败，具体底层算子未定位，AdamW0，停止训练。正式模型0/2。见[报告](head_qkv_stream_check_v1.md)。
 
 重复节点切片原生取证/split限定验收：OOM；原诊断确认SliceBackward零缓冲，三处split修复通过，候选转为ToCopyBackward364MiB申请OOM且最终SIGABRT(-6)，AdamW0，停止训练，正式模型0/2。见[报告](split_backward_check_v1.md)。
+
+无用view清理/训练前验收：OOM；正式模型0/2，未训练。见[报告](tensor_lifetime_check_v1.md)。
