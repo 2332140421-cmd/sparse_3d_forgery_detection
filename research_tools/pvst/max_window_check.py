@@ -24,6 +24,7 @@ ROOT=Path(__file__).resolve().parents[2]
 BASE=Path('/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived')
 OUT=BASE/'pvst_v03_max_window_check_v1'
 SPARSE_OUT=BASE/'pvst_v03_sparse_max_window_check_v1'
+BRIDGE_OUT=BASE/'pvst_csr_values_bridge_check_v1'/'full_window'
 VIDEO='782426ea0330c7fea684953c'
 EXPECTED=(2970629,1488042)
 
@@ -107,7 +108,7 @@ def candidate_layers(model,require_execution=False):
             if require_execution:
                 stat=getattr(layer,'edge_stats',None)
                 if not stat or stat.get('completed_heads')!=layer.heads or stat.get('nodes')!=nodes or stat.get('dilation')!=dilation or stat.get('head_impl')!=head.__module__+'.'+head.__name__:raise ValueError('MISSING_ACTUAL_SPARSE_EXECUTION:'+row['layer'])
-                if stat.get('backend')!='CSR sampled_addmm/COO softmax/CSR mm FP32 per head':raise ValueError('SPARSE_BACKEND_MISMATCH')
+                if stat.get('backend')!=sparse_attention.BACKEND or stat.get('softmax_impl')!='research_tools.pvst.sparse_attention.CSRSoftmax' or stat.get('values_bridge')!='research_tools.pvst.sparse_attention.CSRFromValues':raise ValueError('SPARSE_BACKEND_MISMATCH')
                 row.update(stat)
             evidence.append(row)
     return evidence
@@ -178,6 +179,15 @@ def worker(out):
         boundary('update_complete',time.monotonic()-tick,gradients=gradients,gradient_norm=norm,optimizer_state_parameters=len(opt.state),parameter_delta_norms=changes,parameter_update_verified=changed)
         result.update(status='PASS',updates=1,gradients=gradients,optimizer_state_parameters=len(opt.state),weights='discarded; no checkpoint saved')
     except BaseException as e:
+        tb=e.__traceback__;context=[]
+        while tb is not None:
+            frame=tb.tb_frame
+            if frame.f_code.co_name=='sparse_head':
+                loc=frame.f_locals;q0=loc.get('q');col0=loc.get('col')
+                context.append({'function':'sparse_head','head':loc.get('head'),'q_shape':list(q0.shape) if q0 is not None else None,'edges':len(col0) if col0 is not None else None,'dtype':str(q0.dtype) if q0 is not None else None})
+            tb=tb.tb_next
+        result['failure_operator_context']=context
+        del tb
         result.update(status='OOM' if isinstance(e,torch.OutOfMemoryError) else 'FAILED',updates=0,error=str(e),traceback=traceback.format_exc(),failure_phase=phase)
     finally:
         done.set();thread.join(timeout=6)
@@ -279,7 +289,7 @@ def make_sparse_report(out,result,spec):
     lines=['# PVST v0.3 修复后稀疏attention最大窗口资源检查','',
         '状态：**'+result['status']+'**；正式模型仍0/2，本轮无正式训练、评价、前端或单层重复测试。',
         '源码：`'+spec['source_commit']+'`。视频'+VIDEO+'；ANAKIN/train/real/an:4wdo37；720×1280；历史[104,120)、目标[120,128)。',
-        '局部XYZ h=1/8、coarse=1/4；seed20260909；外层BF16、逐head FP32 CSR sampled_addmm → COO softmax → CSR mm；保留逻辑填充列修复。',
+        '局部XYZ h=1/8、coarse=1/4；seed20260909；外层BF16、逐head FP32 CSR sampled_addmm → CSRSoftmax → CSRFromValues → CSR mm；保留逻辑填充列修复。',
         'attention512 / QKV8192 / FFN8192 / point32768 / tile256；原外层checkpoint CPU卸载。完整点、像素、邻居及128/256/512宽度不变；正式XYZ尺度仍null。',
         '真实损失为8目标帧均值frame BCE + pixel BCE + soft Dice loss；ANAKIN real使用既有全零空间GT。损失仅作执行检查。',
         '',f'实际fine/coarse：{w.get("fine_nodes","未完成加载")}/{w.get("coarse_nodes","未完成加载")}；预期2,970,629/1,488,042。',
@@ -336,8 +346,10 @@ def publish(out,result,sparse=False):
 
 def main():
     global OUT
-    p=argparse.ArgumentParser();p.add_argument('--worker',action='store_true');p.add_argument('--sparse',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--worker',action='store_true');p.add_argument('--sparse',action='store_true');p.add_argument('--values-bridge',action='store_true');a=p.parse_args()
+    if a.values_bridge:a.sparse=True
     if a.sparse:OUT=SPARSE_OUT
+    if a.values_bridge:OUT=BRIDGE_OUT
     if a.worker:raise SystemExit(worker(OUT))
     OUT.mkdir(parents=True,exist_ok=True)
     with (OUT/'run.lock').open('w') as lock:
@@ -351,7 +363,7 @@ def main():
         if dirty:raise ValueError('RESOURCE_SOURCE_NOT_COMMITTED')
         spec['source_commit']=git('rev-parse','HEAD');save(OUT/'identity.json',spec)
         save(OUT/'progress.json',{'status':'RUNNING','stage':'bounded_worker','pid':os.getpid()})
-        startgpu=gpu_sample(None);command=[sys.executable,'-u','-m','research_tools.pvst.max_window_check','--worker']+(['--sparse'] if a.sparse else [])
+        startgpu=gpu_sample(None);command=[sys.executable,'-u','-m','research_tools.pvst.max_window_check','--worker']+(['--values-bridge'] if a.values_bridge else ['--sparse'] if a.sparse else [])
         proc=bounded_process(command,900,OUT/'worker.log',gpu_sample)
         w=read(OUT/'worker_result.json') if (OUT/'worker_result.json').exists() else {};live=read(OUT/'live.json') if (OUT/'live.json').exists() else {}
         if not w and (OUT/'stages.json').exists():w={'stages':read(OUT/'stages.json')}
@@ -366,7 +378,8 @@ def main():
         else:coords=coordinate_audit(OUT,spec);make_report(OUT,result,coords)
         save(OUT/'result_small.json',{'status':status,'source_commit':spec['source_commit'],'video_id':VIDEO,'config':spec['config'],'process':{k:v for k,v in proc.items() if k!='samples'},'gpu_start':startgpu,'gpu_after':result['gpu_after'],'worker':{k:v for k,v in w.items() if k not in ['traceback']},'last_live':result['live'],'coordinate_total':coords['total'] if coords else None,'formal_models_completed':0})
         save(OUT/'progress.json',{'status':status,'stage':'report_complete','formal_models_completed':0})
-        try:publish(OUT,result,sparse=a.sparse)
+        try:
+            if not a.values_bridge:publish(OUT,result,sparse=a.sparse)
         except BaseException:save(OUT/'publication.json',{'status':'FAILED','calculation_status':status,'error':traceback.format_exc()})
 
 if __name__=='__main__':main()

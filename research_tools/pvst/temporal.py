@@ -87,12 +87,12 @@ class SparseLayer(nn.Module):
         del projected
         bias=self.bias(graph.relative[dilation].to(q.dtype));values=[]
         if self.sparse_edge_attention:
-            from .sparse_attention import edge_topology,sparse_head,intersection_padding
+            from .sparse_attention import edge_topology,sparse_head,intersection_padding,BACKEND
             self.last_execution={'operation':'CSR edge topology','nodes':len(x),'dtype':str(x.dtype)}
             crow,col,relation=edge_topology(graph,dilation,self.chunk)
             self.edge_stats={'nodes':len(x),'edges':len(col),'average_degree':len(col)/len(x),
                 'topology_bytes':sum(a.numel()*a.element_size() for a in [crow,col,relation]),'dilation':dilation,
-                'backend':'CSR sampled_addmm/COO softmax/CSR mm FP32 per head','head_impl':sparse_head.__module__+'.'+sparse_head.__name__,
+                'backend':BACKEND,'softmax_impl':'research_tools.pvst.sparse_attention.CSRSoftmax','values_bridge':'research_tools.pvst.sparse_attention.CSRFromValues','head_impl':sparse_head.__module__+'.'+sparse_head.__name__,
                 'logical_padding_columns':intersection_padding(len(x),len(x)),'completed_heads':0}
             heads=[]
             for head in range(self.heads):

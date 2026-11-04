@@ -7,6 +7,8 @@ The old query gather remains the historical default, not a silent fallback.
 import torch
 import torch.nn.functional as F
 
+BACKEND="CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head"
+
 
 
 def edge_topology(graph,dilation,chunk):
@@ -67,6 +69,37 @@ class CSRSoftmax(torch.autograd.Function):
         return result,None
 
 
+
+class CSRFromValues(torch.autograd.Function):
+    """Fixed unique sorted topology; route SpMM's CSR gradient to edge values.
+
+    SparseLayer's head is the caller. The stock CSR constructor backward makes
+    a dense logical matrix in torch2.5; this boundary only extracts CSR values.
+    Structural equality is checked, never inferred from nnz alone.
+    """
+    @staticmethod
+    def forward(ctx,values,crow,col,shape):
+        ctx.save_for_backward(crow,col);ctx.shape=shape;ctx.set_materialize_grads(False)
+        return torch.sparse_csr_tensor(crow,col,values,size=shape)
+
+    @staticmethod
+    @torch.autograd.function.once_differentiable
+    def backward(ctx,grad):
+        crow,col=ctx.saved_tensors
+        if grad is None:return None,None,None,None
+        if grad.layout!=torch.sparse_csr:raise RuntimeError('CSR_BRIDGE_REQUIRES_CSR_GRAD:'+str(grad.layout))
+        if tuple(grad.shape)!=tuple(ctx.shape):raise RuntimeError('CSR_BRIDGE_SHAPE_CHANGED')
+        # Undefined/zero upstream gradients can be represented by an empty CSR.
+        # Its mathematical value is zero on every original edge, not missing data.
+        if not grad.values().numel():return grad.values().new_zeros(len(col)),None,None,None
+        if grad.crow_indices().shape!=crow.shape or grad.col_indices().shape!=col.shape:raise RuntimeError('CSR_BRIDGE_STRUCTURE_CHANGED')
+        # Async device assertions avoid per-head host synchronization. A changed
+        # structure is rejected, not silently matched by nnz or densified.
+        torch._assert_async((grad.crow_indices()==crow).all(),'CSR_BRIDGE_ROW_ORDER_CHANGED')
+        torch._assert_async((grad.col_indices()==col).all(),'CSR_BRIDGE_COLUMN_ORDER_CHANGED')
+        return grad.values(),None,None,None
+
+
 def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):
     def emit(stage,tensor):
         if trace is not None:trace(stage,tensor,head)
@@ -83,19 +116,16 @@ def sparse_head(q,k,v,bias,crow,col,relation,head,dropout,training,trace=None):
         emit('CSR_created',mask)
         scores=torch.sparse.sampled_addmm(mask,qf,kf.T,beta=0,alpha=q.shape[-1]**-.5)
         emit('sampled_addmm_complete',scores)
-        coo=scores.to_sparse_coo()
-        emit('CSR_to_COO_complete',coo)
-        values=coo.values()+bias.reshape(-1,bias.shape[-1])[relation,head].float()
-        emit('bias_added',values)
-        # Builder guarantees unique sorted columns/rows. Avoid a redundant E-sort.
-        scores=torch.sparse_coo_tensor(coo.indices(),values,coo.shape,is_coalesced=True)
-        emit('softmax_start',scores)
-        weights=torch.sparse.softmax(scores,dim=1)
-        emit('softmax_complete',weights)
-        dropped=F.dropout(weights.values(),dropout,training)
+        del mask
+        values=scores.values()+bias.reshape(-1,bias.shape[-1])[relation,head].float()
+        del scores
+        emit('bias_added',values);emit('softmax_start',values)
+        probabilities=CSRSoftmax.apply(values,crow);del values
+        emit('softmax_complete',probabilities)
+        dropped=F.dropout(probabilities,dropout,training);del probabilities
         emit('dropout_complete',dropped)
-        matrix=torch.sparse_coo_tensor(weights.indices(),dropped,weights.shape,is_coalesced=True)
-        # COO SpMM backward in torch2.5 creates dense N x N. CSR uses SDDMM.
-        matrix=matrix.to_sparse_csr();emit('COO_to_CSR_complete',matrix)
+        matrix=CSRFromValues.apply(dropped,crow,col,(len(q),len(kf)))
+        del dropped
+        emit('CSR_weights_complete',matrix)
         result=torch.sparse.mm(matrix,vf);emit('sparse_mm_complete',result)
         return result.to(q.dtype)

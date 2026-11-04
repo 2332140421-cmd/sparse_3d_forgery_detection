@@ -48,7 +48,7 @@ def test_sparse_candidate_requires_all_six_actual_layers():
     with pytest.raises(ValueError,match='MISSING_ACTUAL'):candidate_layers(model,True)
     for layers,n in zip([fine,coarse],EXPECTED):
         for l,d in zip(layers,[1,2,4]):
-            l.edge_stats={'nodes':n,'dilation':d,'completed_heads':l.heads,'head_impl':'research_tools.pvst.sparse_attention.sparse_head','backend':'CSR sampled_addmm/COO softmax/CSR mm FP32 per head'}
+            l.edge_stats={'nodes':n,'dilation':d,'completed_heads':l.heads,'head_impl':'research_tools.pvst.sparse_attention.sparse_head','backend':'CSR sampled_addmm/CSRSoftmax/CSRFromValues/CSR mm FP32 per head','softmax_impl':'research_tools.pvst.sparse_attention.CSRSoftmax','values_bridge':'research_tools.pvst.sparse_attention.CSRFromValues'}
     assert len(candidate_layers(model,True))==6
     coarse[-1].sparse_edge_attention=False
     with pytest.raises(ValueError,match='CANDIDATE_NOT_ENABLED'):candidate_layers(model)
