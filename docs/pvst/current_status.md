@@ -68,3 +68,5 @@ export CUDA_VISIBLE_DEVICES=0
 2026-11-04单窗口独立资源检查：TIMEOUT；正式模型仍0/2，旧预算结论不变，见[900秒报告](max_window_check_v1.md)。
 
 2026-11-04稀疏attention限定检查：小规模数值和中等规模反向改善，但N65,536候选SIGFPE/退出-8，验收FAILED，未进入完整窗口，正式0/2；见[结果](sparse_attention_check_v1.md)。
+
+2026-11-04 SIGFPE定位：取得gdb原生栈及单算子复现，逻辑空列padding规避PyTorch2.5.1交集kernel整数零除；65,536两宽度及131,072/512单层前反向通过（FIX_VALIDATED），本轮无完整窗口/训练，正式0/2；见[报告](sparse_sigfpe_v1.md)。

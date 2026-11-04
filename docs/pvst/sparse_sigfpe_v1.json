@@ -1,0 +1,459 @@
+{
+  "status": "FIX_VALIDATED",
+  "scope": "single layers only; no full model/AdamW/900s window",
+  "source_commit": "18e45afb4ffd587d77cb768aeb8c6cb358ac1cf5",
+  "root_cause": "torch2.5.1 sparse intersection int std::accumulate accumulator wraps N*N=2^32 to zero, nnz division triggers SIGFPE",
+  "diagnostic": {
+    "phase": "warmup backward, head3 sampled_addmm backward -> sparse_mask -> sparse mul intersection",
+    "gdb_returncode": 255,
+    "inferior_termination_signal": 8,
+    "native_stack_obtained": true,
+    "graph": {
+      "nodes": 65536,
+      "edges": 3658104,
+      "checks": {
+        "rowptr_length": true,
+        "starts_zero": true,
+        "monotone": true,
+        "ends_nnz": true,
+        "col_range": true,
+        "sorted_unique": true,
+        "relation_range": true,
+        "relation_frame": true
+      },
+      "crow_dtype": "torch.int64",
+      "col_dtype": "torch.int64",
+      "relation_dtype": "torch.int64",
+      "logical_elements": 4294967296
+    },
+    "minimal_process": {
+      "pid": 2784254,
+      "returncode": -8,
+      "termination_signal": 8,
+      "timed_out": false,
+      "wall_s": 1.266081739217043,
+      "timeout_s": 20,
+      "samples": []
+    }
+  },
+  "fix": "one unused logical column and explicit zero K/V storage row only when product low32 bits is zero; no node/edge/neighbor changed",
+  "budget": {
+    "limit_s": 300,
+    "spent_worker_wall_s": 22.16483088117093
+  },
+  "regression": {
+    "status": "PASS",
+    "forced_padding_on_small_graph": true,
+    "comparisons": [
+      {
+        "dtype": "torch.float32",
+        "dim": 256,
+        "dilation": 1,
+        "nodes": 41,
+        "edges": 488,
+        "output": {
+          "max_abs": 4.76837158203125e-07,
+          "reference_max_abs": 3.8748536109924316,
+          "relative_to_max": 1.2305939941844588e-07
+        },
+        "input_gradient": {
+          "max_abs": 1.1641532182693481e-10,
+          "reference_max_abs": 0.000813736638519913,
+          "relative_to_max": 1.4306265235725406e-07
+        },
+        "parameters": {
+          "norm.weight": {
+            "max_abs": 2.9103830456733704e-10,
+            "reference_max_abs": 0.0015801229747012258,
+            "relative_to_max": 1.8418712291830794e-07
+          },
+          "norm.bias": {
+            "max_abs": 4.656612873077393e-10,
+            "reference_max_abs": 0.0018187714740633965,
+            "relative_to_max": 2.560306745230533e-07
+          },
+          "qkv.weight": {
+            "max_abs": 6.984919309616089e-10,
+            "reference_max_abs": 0.0020918650552630424,
+            "relative_to_max": 3.339086951159843e-07
+          },
+          "qkv.bias": {
+            "max_abs": 9.313225746154785e-10,
+            "reference_max_abs": 0.0034389838110655546,
+            "relative_to_max": 2.7081330584307466e-07
+          },
+          "bias.0.weight": {
+            "max_abs": 1.7462298274040222e-10,
+            "reference_max_abs": 0.00019507406977936625,
+            "relative_to_max": 8.951624525899586e-07
+          },
+          "bias.0.bias": {
+            "max_abs": 3.92901711165905e-10,
+            "reference_max_abs": 0.00011126061872346327,
+            "relative_to_max": 3.5313637086852516e-06
+          },
+          "bias.2.weight": {
+            "max_abs": 1.076841726899147e-09,
+            "reference_max_abs": 0.0006451797671616077,
+            "relative_to_max": 1.6690568764060677e-06
+          },
+          "bias.2.bias": {
+            "max_abs": 2.0954757928848267e-09,
+            "reference_max_abs": 2.3283064365386963e-09,
+            "relative_to_max": 0.9
+          },
+          "proj.weight": {
+            "max_abs": 5.820766091346741e-10,
+            "reference_max_abs": 0.0019312279764562845,
+            "relative_to_max": 3.014023285861663e-07
+          },
+          "proj.bias": {
+            "max_abs": 6.984919309616089e-10,
+            "reference_max_abs": 0.004914973396807909,
+            "relative_to_max": 1.4211509901869525e-07
+          },
+          "norm2.weight": {
+            "max_abs": 2.3283064365386963e-10,
+            "reference_max_abs": 0.0013504878152161837,
+            "relative_to_max": 1.7240484588644625e-07
+          },
+          "norm2.bias": {
+            "max_abs": 2.3283064365386963e-10,
+            "reference_max_abs": 0.0009049799991771579,
+            "relative_to_max": 2.572771153678182e-07
+          },
+          "ffn.0.weight": {
+            "max_abs": 2.9103830456733704e-10,
+            "reference_max_abs": 0.001412399229593575,
+            "relative_to_max": 2.0605951806635066e-07
+          },
+          "ffn.0.bias": {
+            "max_abs": 1.7462298274040222e-10,
+            "reference_max_abs": 0.0010215719230473042,
+            "relative_to_max": 1.7093557369853074e-07
+          },
+          "ffn.3.weight": {
+            "max_abs": 6.984919309616089e-10,
+            "reference_max_abs": 0.0032861342187970877,
+            "relative_to_max": 2.1255733468406435e-07
+          },
+          "ffn.3.bias": {
+            "max_abs": 5.820766091346741e-10,
+            "reference_max_abs": 0.004363003186881542,
+            "relative_to_max": 1.334119147299348e-07
+          }
+        }
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "dim": 512,
+        "dilation": 1,
+        "nodes": 41,
+        "edges": 488,
+        "output": {
+          "max_abs": 0.03125,
+          "reference_max_abs": 4.3125,
+          "relative_to_max": 0.007246376811594203
+        },
+        "input_gradient": {
+          "max_abs": 5.7220458984375e-06,
+          "reference_max_abs": 0.000408172607421875,
+          "relative_to_max": 0.014018691588785047
+        },
+        "parameters": {
+          "norm.weight": {
+            "max_abs": 2.407636202406138e-06,
+            "reference_max_abs": 0.00047511374577879906,
+            "relative_to_max": 0.005067494308041074
+          },
+          "norm.bias": {
+            "max_abs": 2.8759241104125977e-06,
+            "reference_max_abs": 0.0008257925510406494,
+            "relative_to_max": 0.0034826229744848243
+          },
+          "qkv.weight": {
+            "max_abs": 7.62939453125e-06,
+            "reference_max_abs": 0.00103759765625,
+            "relative_to_max": 0.007352941176470588
+          },
+          "qkv.bias": {
+            "max_abs": 7.62939453125e-06,
+            "reference_max_abs": 0.001495361328125,
+            "relative_to_max": 0.00510204081632653
+          },
+          "bias.0.weight": {
+            "max_abs": 1.1920928955078125e-06,
+            "reference_max_abs": 0.00015735626220703125,
+            "relative_to_max": 0.007575757575757576
+          },
+          "bias.0.bias": {
+            "max_abs": 1.1920928955078125e-06,
+            "reference_max_abs": 6.818771362304688e-05,
+            "relative_to_max": 0.017482517482517484
+          },
+          "bias.2.weight": {
+            "max_abs": 3.814697265625e-06,
+            "reference_max_abs": 0.0004062652587890625,
+            "relative_to_max": 0.009389671361502348
+          },
+          "bias.2.bias": {
+            "max_abs": 3.825873136520386e-06,
+            "reference_max_abs": 3.516674041748047e-06,
+            "relative_to_max": 1.0879237288135593
+          },
+          "proj.weight": {
+            "max_abs": 7.62939453125e-06,
+            "reference_max_abs": 0.001251220703125,
+            "relative_to_max": 0.006097560975609756
+          },
+          "proj.bias": {
+            "max_abs": 1.52587890625e-05,
+            "reference_max_abs": 0.002655029296875,
+            "relative_to_max": 0.005747126436781609
+          },
+          "norm2.weight": {
+            "max_abs": 2.5735280360095203e-06,
+            "reference_max_abs": 0.0007414668216370046,
+            "relative_to_max": 0.0034708606790088132
+          },
+          "norm2.bias": {
+            "max_abs": 1.957640051841736e-06,
+            "reference_max_abs": 0.0005822703242301941,
+            "relative_to_max": 0.0033620810994101163
+          },
+          "ffn.0.weight": {
+            "max_abs": 5.7220458984375e-06,
+            "reference_max_abs": 0.00069427490234375,
+            "relative_to_max": 0.008241758241758242
+          },
+          "ffn.0.bias": {
+            "max_abs": 3.814697265625e-06,
+            "reference_max_abs": 0.00048065185546875,
+            "relative_to_max": 0.007936507936507936
+          },
+          "ffn.3.weight": {
+            "max_abs": 1.52587890625e-05,
+            "reference_max_abs": 0.001708984375,
+            "relative_to_max": 0.008928571428571428
+          },
+          "ffn.3.bias": {
+            "max_abs": 1.1444091796875e-05,
+            "reference_max_abs": 0.0023956298828125,
+            "relative_to_max": 0.004777070063694267
+          }
+        }
+      }
+    ],
+    "dropout": {
+      "dropout": 0.1,
+      "max_output_error": 0.0,
+      "finite_gradients": true,
+      "checkpoint_rng": "PASS"
+    }
+  },
+  "validation_cases": [
+    {
+      "stage": "65536_256",
+      "process": {
+        "pid": 2831173,
+        "returncode": 0,
+        "termination_signal": null,
+        "timed_out": false,
+        "wall_s": 2.968351419083774,
+        "timeout_s": 288.5440395940095,
+        "samples": []
+      },
+      "result": {
+        "nodes": 65536,
+        "edges": 3658104,
+        "checks": {
+          "rowptr_length": true,
+          "starts_zero": true,
+          "monotone": true,
+          "ends_nnz": true,
+          "col_range": true,
+          "sorted_unique": true,
+          "relation_range": true,
+          "relation_frame": true
+        },
+        "crow_dtype": "torch.int64",
+        "col_dtype": "torch.int64",
+        "relation_dtype": "torch.int64",
+        "logical_elements": 4294967296,
+        "status": "PASS",
+        "dim": 256,
+        "logical_shape": [
+          65536,
+          65537
+        ],
+        "actual_nodes": 65536,
+        "graph_s": 0.25136789958924055,
+        "forward_s": 0.05778335873037577,
+        "backward_s": 0.15445785224437714,
+        "finite_gradients": {
+          "input": true,
+          "norm.weight": true,
+          "norm.bias": true,
+          "qkv.weight": true,
+          "qkv.bias": true,
+          "bias.0.weight": true,
+          "bias.0.bias": true,
+          "bias.2.weight": true,
+          "bias.2.bias": true,
+          "proj.weight": true,
+          "proj.bias": true,
+          "norm2.weight": true,
+          "norm2.bias": true,
+          "ffn.0.weight": true,
+          "ffn.0.bias": true,
+          "ffn.3.weight": true,
+          "ffn.3.bias": true
+        },
+        "baseline_allocated_bytes": 56400896,
+        "peak_allocated_bytes": 962838016,
+        "peak_reserved_bytes": 1314914304,
+        "diagnostic_hooks": false,
+        "launch_blocking": null,
+        "dropout": 0.1,
+        "outer_checkpoint": true
+      }
+    },
+    {
+      "stage": "65536_512",
+      "process": {
+        "pid": 2831360,
+        "returncode": 0,
+        "termination_signal": null,
+        "timed_out": false,
+        "wall_s": 3.21939676720649,
+        "timeout_s": 285.57568817492574,
+        "samples": []
+      },
+      "result": {
+        "nodes": 65536,
+        "edges": 3658104,
+        "checks": {
+          "rowptr_length": true,
+          "starts_zero": true,
+          "monotone": true,
+          "ends_nnz": true,
+          "col_range": true,
+          "sorted_unique": true,
+          "relation_range": true,
+          "relation_frame": true
+        },
+        "crow_dtype": "torch.int64",
+        "col_dtype": "torch.int64",
+        "relation_dtype": "torch.int64",
+        "logical_elements": 4294967296,
+        "status": "PASS",
+        "dim": 512,
+        "logical_shape": [
+          65536,
+          65537
+        ],
+        "actual_nodes": 65536,
+        "graph_s": 0.2485815230756998,
+        "forward_s": 0.06811634078621864,
+        "backward_s": 0.2957100188359618,
+        "finite_gradients": {
+          "input": true,
+          "norm.weight": true,
+          "norm.bias": true,
+          "qkv.weight": true,
+          "qkv.bias": true,
+          "bias.0.weight": true,
+          "bias.0.bias": true,
+          "bias.2.weight": true,
+          "bias.2.bias": true,
+          "proj.weight": true,
+          "proj.bias": true,
+          "norm2.weight": true,
+          "norm2.bias": true,
+          "ffn.0.weight": true,
+          "ffn.0.bias": true,
+          "ffn.3.weight": true,
+          "ffn.3.bias": true
+        },
+        "baseline_allocated_bytes": 99406848,
+        "peak_allocated_bytes": 1314925568,
+        "peak_reserved_bytes": 1556086784,
+        "diagnostic_hooks": false,
+        "launch_blocking": null,
+        "dropout": 0.1,
+        "outer_checkpoint": true
+      }
+    },
+    {
+      "stage": "131072_512",
+      "process": {
+        "pid": 2831558,
+        "returncode": 0,
+        "termination_signal": null,
+        "timed_out": false,
+        "wall_s": 4.521122288890183,
+        "timeout_s": 282.35629140771925,
+        "samples": []
+      },
+      "result": {
+        "nodes": 131072,
+        "edges": 7475256,
+        "checks": {
+          "rowptr_length": true,
+          "starts_zero": true,
+          "monotone": true,
+          "ends_nnz": true,
+          "col_range": true,
+          "sorted_unique": true,
+          "relation_range": true,
+          "relation_frame": true
+        },
+        "crow_dtype": "torch.int64",
+        "col_dtype": "torch.int64",
+        "relation_dtype": "torch.int64",
+        "logical_elements": 17179869184,
+        "status": "PASS",
+        "dim": 512,
+        "logical_shape": [
+          131072,
+          131073
+        ],
+        "actual_nodes": 131072,
+        "graph_s": 0.2984044598415494,
+        "forward_s": 0.15569849777966738,
+        "backward_s": 0.8524044472724199,
+        "finite_gradients": {
+          "input": true,
+          "norm.weight": true,
+          "norm.bias": true,
+          "qkv.weight": true,
+          "qkv.bias": true,
+          "bias.0.weight": true,
+          "bias.0.bias": true,
+          "bias.2.weight": true,
+          "bias.2.bias": true,
+          "proj.weight": true,
+          "proj.bias": true,
+          "norm2.weight": true,
+          "norm2.bias": true,
+          "ffn.0.weight": true,
+          "ffn.0.bias": true,
+          "ffn.3.weight": true,
+          "ffn.3.bias": true
+        },
+        "baseline_allocated_bytes": 169137152,
+        "peak_allocated_bytes": 2616589312,
+        "peak_reserved_bytes": 3196059648,
+        "diagnostic_hooks": false,
+        "launch_blocking": null,
+        "dropout": 0.1,
+        "outer_checkpoint": true
+      }
+    }
+  ],
+  "formal_models_completed": 0,
+  "full_model_attempts": 0,
+  "adamw_updates": 0,
+  "candidate_default": false,
+  "formal_XYZ_scale": null
+}
