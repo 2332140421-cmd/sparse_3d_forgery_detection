@@ -86,5 +86,60 @@
         "stages": []
       }
     ]
-  }
+  },
+  "semantic_gate": {
+    "status": "FAILED",
+    "stage": "FP32 CUDA parameter gradient comparison",
+    "parameter": "decoder.final_conv_block.op.bias",
+    "mismatched_elements": 2,
+    "elements": 32,
+    "greatest_absolute_difference": 3.0055642127990723e-05,
+    "greatest_absolute_difference_index": 6,
+    "greatest_relative_difference": 0.0002667101798579097,
+    "greatest_relative_difference_index": 19,
+    "atol": 2e-05,
+    "rtol": 3e-05,
+    "comparison_rule": "abs(x-y) <= atol + rtol * abs(reference); original torch.testing.assert_close settings unchanged",
+    "output_and_loss_checks": "passed earlier assertions, exact errors not persisted before exception",
+    "remaining_parameter_comparisons": "not completed",
+    "BF16": "not run after first comparison failed",
+    "process": {
+      "pid": 809001,
+      "returncode": 1,
+      "termination_signal": null,
+      "timed_out": false,
+      "wall_s": 5.695784624665976,
+      "timeout_s": 300
+    },
+    "CPU_tests": {
+      "passed": 3,
+      "wall_s": 5.47
+    }
+  },
+  "resource_gate": {
+    "status": "NOT_RUN",
+    "reason": "semantic correctness check failed; stop as instructed",
+    "max_window_workers_started": 0,
+    "completed_groups": 0,
+    "group_states": {
+      "1": "NOT_RUN",
+      "2": "NOT_RUN",
+      "3": "NOT_RUN",
+      "4": "NOT_RUN"
+    },
+    "successful_updates": 0,
+    "optimizer_steps": 0,
+    "optimizer_state_established": false,
+    "complete_update_s": null,
+    "GPU_peak_allocated_bytes": null,
+    "GPU_peak_reserved_bytes": null,
+    "host_peak_rss_bytes": null,
+    "fine_coarse_nodes": "not measured; no full window loaded",
+    "planned_frame_occurrences": 72,
+    "planned_unique_input_frames": 24,
+    "actual_full_window_frame_occurrences": 0,
+    "formal_models_completed": 0
+  },
+  "original_assets_user_json_unchanged": true,
+  "source_unchanged_during_execution": true
 }

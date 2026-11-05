@@ -87,4 +87,4 @@ export CUDA_VISIBLE_DEVICES=0
 
 目标帧4＋4微批资源检查：语义对照通过；A前向通过、反向K.float申请606MiB时OOM，B及第二次未执行，成功更新0次；正式模型0/2，未训练。见[报告](target_microbatch_check_v1.md)。
 
-目标帧组大小2资源验收：FAILED；真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_check_v1.md)。
+目标帧组大小2：CUDA小图FP32 decoder.final_conv_block.op.bias梯度超既定容差，语义门槛FAILED；最大窗口四组均未运行，真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_check_v1.md)。
