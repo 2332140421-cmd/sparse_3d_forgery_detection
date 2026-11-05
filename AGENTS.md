@@ -127,3 +127,12 @@ results, or inconsistency between the paper and implementation.
   Preserve every valid point and the native point bypass; only one epoch per condition.
   Use the separate v03 entry, shared read-only caches, frozen clips and complete-video
   evaluation. Resource failure stops training; retain v0.2 evidence unchanged.
+
+## Depth-slice relation design only
+
+- ADR-0031 and `docs/pvst/depth_slice_relation_design.md` register an independent
+  design-stage correction on `pvst-depth-slice-design`: viewing-depth slabs,
+  native point/local features, and causal real-only relation prediction.
+- Root contract section16 governs this proposal; existing PVST cube contracts and
+  resource evidence remain unchanged. No model implementation/training is authorized
+  by the design document; unresolved axes/units/alignment and parameters stay explicit.
