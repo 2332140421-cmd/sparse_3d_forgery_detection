@@ -169,5 +169,50 @@
   },
   "CUDA_VISIBLE_DEVICES": "",
   "formal_XYZ": null,
-  "formal_models_completed": 0
+  "formal_models_completed": 0,
+  "scope": {
+    "stage1": "COMPLETE: one fixed train window,24 frames",
+    "stage2": "NOT_RUN: all three rejected in stage1",
+    "stage2_completed_videos": 0,
+    "stage2_completed_frames": 0,
+    "stage2_completed_windows": 0,
+    "original_train_videos": 32,
+    "original_train_frames": 15351,
+    "original_train_windows": 1932,
+    "dev_test_coordinates_read": false,
+    "training_models_built": 0,
+    "GPU_used": false,
+    "CUDA_VISIBLE_DEVICES": "",
+    "frontend_calls": 0,
+    "formal_XYZ_unchanged": true,
+    "user_JSON_unchanged": true,
+    "runtime_source_unchanged": true
+  },
+  "closest_candidate": {
+    "h": 1.0,
+    "coarse_h": 2.0,
+    "qualified": false,
+    "fine_nodes": 198398,
+    "fine_budget": 200000,
+    "fine_budget_ratio": 0.99199,
+    "coarse_nodes": 55153,
+    "coarse_budget": 50000,
+    "coarse_budget_ratio": 1.10306,
+    "coarse_excess": 5153,
+    "blocking_window": {
+      "video_id": "782426ea0330c7fea684953c",
+      "history": [
+        104,
+        120
+      ],
+      "target": [
+        120,
+        128
+      ],
+      "input": [
+        104,
+        128
+      ]
+    }
+  }
 }

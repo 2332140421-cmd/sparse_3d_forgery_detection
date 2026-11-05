@@ -91,4 +91,4 @@ export CUDA_VISIBLE_DEVICES=0
 
 两帧微批梯度归因：FP32基于分组参考通过（原A/C失败保留）、BF16通过；唯一最大窗口组1反向SpMM申请548MiB时OOM，组2–4未运行、真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_gradient_check_v1.md)。
 
-XYZ扩展尺度CPU筛选：NO_CANDIDATE，候选None；正式XYZ仍null、模型0/2。见[报告](xyz_scale_budget_screen_v1.md)。
+XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2为198,398/55,153，coarse超预算10.306%；阶段二未运行，正式XYZ仍null、模型0/2。见[报告](xyz_scale_budget_screen_v1.md)。
