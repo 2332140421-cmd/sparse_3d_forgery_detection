@@ -131,8 +131,10 @@ results, or inconsistency between the paper and implementation.
 ## Depth-slice relation design only
 
 - ADR-0031 and `docs/pvst/depth_slice_relation_design.md` register an independent
-  design-stage correction on `pvst-depth-slice-design`: viewing-depth slabs,
-  native point/local features, and causal real-only relation prediction.
+  design-stage correction on `pvst-depth-slice-design`: viewing-depth slabs and
+  native point/local features. ADR-0032 supersedes the real-only mainline with
+  supervised temporal/depth pair relations, and authorizes only the small CPU audit;
+  real-only prediction remains an alternative, not a concurrent implementation.
 - Root contract section16 governs this proposal; existing PVST cube contracts and
   resource evidence remain unchanged. No model implementation/training is authorized
   by the design document; unresolved axes/units/alignment and parameters stay explicit.

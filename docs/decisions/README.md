@@ -32,3 +32,5 @@
 - [ADR-0027：空间监督扩量与匹配视觉适配](0027-v8-spatial-supervision-expansion.md)
 
 - [ADR-0031：观看深度整片与真实关系预测（设计阶段）](0031-depth-slice-relation-design.md)
+
+- [ADR-0032：深度切片监督关系与小规模CPU审计](0032-depth-slice-supervised-relations-audit.md)

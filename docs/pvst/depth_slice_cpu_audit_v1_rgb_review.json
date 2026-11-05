@@ -1,0 +1,74 @@
+{
+  "579e7711a2f1fc95701a3489": {
+    "comparable": true,
+    "roi": [
+      0.01,
+      0.08,
+      0.42,
+      0.98
+    ],
+    "description": "左侧木门、门框及地板背景；人物在右侧，24帧中该ROI未见人物进入。纹理可能不足，由RGB匹配数如实判定。",
+    "camera": "基本固定，局部轻微抖动；不用固定像素代替对应",
+    "review_method": "manual RGB-only review of all24 middle frames contact sheet before depth opened; ROI normalized x0,y0,x1,y1"
+  },
+  "0b5c2fa5e32e075e850d8d6d": {
+    "comparable": true,
+    "roi": [
+      0.68,
+      0.22,
+      0.98,
+      0.97
+    ],
+    "description": "人物右侧厨房橱柜、台面和柜门边框，24帧无可见遮挡；不含人物前景。",
+    "camera": "基本固定",
+    "review_method": "manual RGB-only review of all24 middle frames contact sheet before depth opened; ROI normalized x0,y0,x1,y1"
+  },
+  "8961013e78b38df464e70177": {
+    "comparable": true,
+    "roi": [
+      0.79,
+      0.06,
+      0.99,
+      0.91
+    ],
+    "description": "右侧白色门框、门板及悬挂黑包背景，人物头和手位于左侧；静态但纹理有限。",
+    "camera": "基本固定",
+    "review_method": "manual RGB-only review of all24 middle frames contact sheet before depth opened; ROI normalized x0,y0,x1,y1"
+  },
+  "c26e3fc1fdc6aabda308ae84": {
+    "comparable": true,
+    "roi": [
+      0.03,
+      0.08,
+      0.22,
+      0.33
+    ],
+    "description": "左上远处建筑立面/窗框区域，舞蹈者和长椅人物均在ROI外；有细树枝，RGB双向/补丁检查仍只是近似对应。",
+    "camera": "固定或轻微平滑运动；以LK对应同一背景纹理",
+    "review_method": "manual RGB-only review of all24 middle frames contact sheet before depth opened; ROI normalized x0,y0,x1,y1"
+  },
+  "8a9691dcdc0248c8ab03723f": {
+    "comparable": true,
+    "roi": [
+      0.27,
+      0.09,
+      0.44,
+      0.37
+    ],
+    "description": "左上门框和门内背景，位于人物脸左侧且肩膀上方；纹理有限，不能因门框可辨就预设足够可靠点。",
+    "camera": "基本固定",
+    "review_method": "manual RGB-only review of all24 middle frames contact sheet before depth opened; ROI normalized x0,y0,x1,y1"
+  },
+  "adcb32286a41e0e3a6fdfdeb": {
+    "comparable": true,
+    "roi": [
+      0.6,
+      0.01,
+      0.98,
+      0.2
+    ],
+    "description": "右上远处建筑立面/窗框，不含前景人物、路人或道路车辆；24帧可辨同一立面。",
+    "camera": "固定或轻微抖动",
+    "review_method": "manual RGB-only review of all24 middle frames contact sheet before depth opened; ROI normalized x0,y0,x1,y1"
+  }
+}

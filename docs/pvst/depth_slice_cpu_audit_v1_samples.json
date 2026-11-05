@@ -1,0 +1,78 @@
+{
+  "base_HEAD": "27c82606465ca7c88f935a06859d8c1732673b79",
+  "rule": "each dataset first3 unique source real/train sorted(source_id,video_id); middle min24 continuous frames; no depth/scene replacement",
+  "manifest_sha256": "945e0400c648ae892a7a6f0733aba21fdcc424c5233fdfcee2192305fe7808fd",
+  "scale_sha256": "1af871b7c418b9bc48d736c66594022b8f308580486e05a841bf39bc3caaff00",
+  "scale": 1.9888148307800293,
+  "config": {
+    "asset_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02",
+    "cache_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/cache"
+  },
+  "h_candidates": [
+    0.03125,
+    0.0625,
+    0.125,
+    0.25
+  ],
+  "origins": [
+    "0",
+    "h/2"
+  ],
+  "grid": "native remapped grid; interpolated points not independent depth measurements",
+  "samples": [
+    {
+      "dataset": "ActivityForensics",
+      "source_id": "charades:2074D",
+      "video_id": "579e7711a2f1fc95701a3489",
+      "frame_range": [
+        261,
+        285
+      ]
+    },
+    {
+      "dataset": "ActivityForensics",
+      "source_id": "charades:8BCI8",
+      "video_id": "0b5c2fa5e32e075e850d8d6d",
+      "frame_range": [
+        514,
+        538
+      ]
+    },
+    {
+      "dataset": "ActivityForensics",
+      "source_id": "charades:DY9AE",
+      "video_id": "8961013e78b38df464e70177",
+      "frame_range": [
+        384,
+        408
+      ]
+    },
+    {
+      "dataset": "ANAKIN",
+      "source_id": "anakin:https://vimeo.com/12973568",
+      "video_id": "c26e3fc1fdc6aabda308ae84",
+      "frame_range": [
+        25,
+        49
+      ]
+    },
+    {
+      "dataset": "ANAKIN",
+      "source_id": "anakin:https://vimeo.com/141132187",
+      "video_id": "8a9691dcdc0248c8ab03723f",
+      "frame_range": [
+        63,
+        87
+      ]
+    },
+    {
+      "dataset": "ANAKIN",
+      "source_id": "anakin:https://vimeo.com/159805605",
+      "video_id": "adcb32286a41e0e3a6fdfdeb",
+      "frame_range": [
+        38,
+        62
+      ]
+    }
+  ]
+}
