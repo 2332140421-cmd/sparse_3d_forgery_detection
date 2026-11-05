@@ -89,4 +89,4 @@ export CUDA_VISIBLE_DEVICES=0
 
 目标帧组大小2：CUDA小图FP32 decoder.final_conv_block.op.bias梯度超既定容差，语义门槛FAILED；最大窗口四组均未运行，真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_check_v1.md)。
 
-目标帧组大小2资源验收：OOM；真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_gradient_check_v1.md)。
+两帧微批梯度归因：FP32基于分组参考通过（原A/C失败保留）、BF16通过；唯一最大窗口组1反向SpMM申请548MiB时OOM，组2–4未运行、真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_gradient_check_v1.md)。

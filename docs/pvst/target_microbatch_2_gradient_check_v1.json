@@ -1077,5 +1077,62 @@
         "stages": []
       }
     ]
+  },
+  "diagnostic_complete_parameter_summary": "semantics.json: all229 named parameters x9 comparisons x2 dtypes, metadata only; no full gradients saved",
+  "resource_observed": {
+    "status": "OOM",
+    "max_window_started": true,
+    "group_states": {
+      "1": {
+        "forward": "PASS",
+        "backward": "OOM"
+      },
+      "2": "NOT_RUN",
+      "3": "NOT_RUN",
+      "4": "NOT_RUN"
+    },
+    "completed_forward_backward_groups": 0,
+    "updates": 0,
+    "optimizer_step_calls": 0,
+    "optimizer_state_parameters": 0,
+    "fine_nodes": 2240579,
+    "coarse_nodes": 1123151,
+    "load_s": 0.5152803482487798,
+    "forward_s": 17.766844197176397,
+    "backward_s": null,
+    "backward_observation_until_terminal_s": 33.18917535338551,
+    "AdamW_s": null,
+    "complete_update_s": null,
+    "worker_until_terminal_s": 52.33407870866358,
+    "parent_wall_s": 56.04233952611685,
+    "small_parent_wall_s": 12.53406720329076,
+    "peak_allocated_bytes": 22360215552,
+    "peak_reserved_bytes": 23261609984,
+    "host": {
+      "available_bytes": 36813422592,
+      "rss_bytes": 15786573824,
+      "peak_rss_bytes": 18088882176
+    },
+    "operator": "torch.sparse.mm(matrix,vf) checkpoint recomputation; fine_time.2/head3",
+    "head_Q_shape": [
+      2240579,
+      64
+    ],
+    "head_Q_dtype": "torch.bfloat16",
+    "requested_MiB": 548,
+    "free_MiB": 445.75,
+    "returncode": 2,
+    "termination_signal": null,
+    "timed_out": false,
+    "planned_input_occurrences": 72,
+    "planned_unique_inputs": 24,
+    "actual_loaded_occurrences": 18,
+    "actual_unique_inputs": 18,
+    "actual_forward_supervised_target_range": [
+      120,
+      122
+    ],
+    "all8_backward_supervision_complete": false,
+    "source_old_assets_user_JSON_unchanged": true
   }
 }
