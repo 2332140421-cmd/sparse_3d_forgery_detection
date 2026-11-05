@@ -1,236 +1,57 @@
 # PVST v0.3 目标帧4＋4微批资源验收
 
-**状态：OOM；正式模型0/2，不启动训练。**
+**结果：语义检查通过；最大窗口微批A反向OOM，真实AdamW更新0次。B及第二次更新均未执行；正式模型0/2，不启动训练。**
 
-只改变目标帧执行：A历史[104,120)、目标[120,124)；B历史[108,124)、目标[124,128)。每组20帧，逻辑更新40帧次、24唯一输入帧；历史重算，不复用可学习特征、不提前step。
-三层因果最大回溯2+4+8=14帧，加帧级visual的2帧，完整16帧。context读写仅同帧，BN固定、LayerNorm逐位置，XYZ为冻结训练全局scale；真实PTS与绝对q保持。没有窗口统计或未来帧依赖。
-losses逐帧计算：frame BCE标量、pixel BCE原生全像素均值、softDice每帧全像素sum/epsilon1；缺GT仅空间项0，不改变frame分母。clip_terms对目标帧取均值，本AN real8帧均有合法零GT，各分项每微批乘4/8。未来AF/AN外层配对权重仍须保留。
-诊断关闭所有Dropout（含MHA与attention内部），两份诊断模型同非零输出头验证上游梯度；资源验收恢复原Dropout与规定初始化。分组改变随机轨迹，不称逐步完全相同。
+执行源码：`682595fdf813f7b6fdbcc32ff5916a94a3c13903`。唯一最大窗口worker退出码2，无终止信号、非TIMEOUT；未重试，不追加其他配置或算子修复。
 
-执行源码：`682595fdf813f7b6fdbcc32ff5916a94a3c13903`；冻结配置XYZ仍null；1/8只作局部资源配置。新增前端调用0。
+## 执行与监督语义
 
-## 小规模语义核验
-```json
-{
-  "status": "PASS",
-  "comparisons": [
-    {
-      "status": "PASS",
-      "dtype": "torch.float32",
-      "errors": {
-        "frame_logit": 2.9802322387695312e-08,
-        "pixel_logits": 1.7881393432617188e-07,
-        "loss_components": 5.960464477539063e-08
-      },
-      "gradient_max_abs": 2.308189868927002e-05,
-      "gradient_max_abs_over_reference_max": 2.1956521739130435,
-      "key_gradients": {
-        "geo.0.weight": {
-          "max_abs": 1.3560056686401367e-06,
-          "reference_norm": 0.20043820142745972
-        },
-        "vfe.0.weight": {
-          "max_abs": 4.470348358154297e-08,
-          "reference_norm": 2.1980888843536377
-        },
-        "fine_time.layers.0.qkv.weight": {
-          "max_abs": 1.862645149230957e-09,
-          "reference_norm": 0.32990363240242004
-        },
-        "coarse_time.layers.0.qkv.weight": {
-          "max_abs": 1.3969838619232178e-09,
-          "reference_norm": 0.28859755396842957
-        },
-        "pixel_out.weight": {
-          "max_abs": 2.384185791015625e-07,
-          "reference_norm": 7.416090488433838
-        },
-        "frame_residual.6.weight": {
-          "max_abs": 2.384185791015625e-07,
-          "reference_norm": 5.045561790466309
-        }
-      },
-      "tolerances": {
-        "output_atol": 2e-05,
-        "output_rtol": 1e-05,
-        "gradient_atol": 2e-05,
-        "gradient_rtol": 3e-05
-      },
-      "loss_terms_reference": [
-        1.9465551376342773,
-        0.6052652597427368,
-        0.6090775728225708,
-        0.7322123646736145
-      ],
-      "loss_terms_microbatch": [
-        1.9465551376342773,
-        0.605265200138092,
-        0.6090775728225708,
-        0.7322124242782593
-      ],
-      "diagnostic_heads": "same nonzero weights only in diagnostic models; all Dropout and MHA dropout=0; train/checkpoint retained"
-    },
-    {
-      "status": "PASS",
-      "dtype": "torch.bfloat16",
-      "errors": {
-        "frame_logit": 0.001953125,
-        "pixel_logits": 0.001953125,
-        "loss_components": 8.559226989746094e-05
-      },
-      "gradient_max_abs": 0.01171875,
-      "gradient_max_abs_over_reference_max": 1.724390243902439,
-      "key_gradients": {
-        "geo.0.weight": {
-          "max_abs": 0.0008544921875,
-          "reference_norm": 0.1985328197479248
-        },
-        "vfe.0.weight": {
-          "max_abs": 0.002197265625,
-          "reference_norm": 2.1885805130004883
-        },
-        "fine_time.layers.0.qkv.weight": {
-          "max_abs": 6.103515625e-05,
-          "reference_norm": 0.3298802971839905
-        },
-        "coarse_time.layers.0.qkv.weight": {
-          "max_abs": 3.0517578125e-05,
-          "reference_norm": 0.28844836354255676
-        },
-        "pixel_out.weight": {
-          "max_abs": 0.01171875,
-          "reference_norm": 7.4253764152526855
-        },
-        "frame_residual.6.weight": {
-          "max_abs": 0.0078125,
-          "reference_norm": 5.04946756362915
-        }
-      },
-      "tolerances": {
-        "output_atol": 0.02,
-        "output_rtol": 0.02,
-        "gradient_atol": 0.2,
-        "gradient_rtol": 0.03
-      },
-      "loss_terms_reference": [
-        1.947211742401123,
-        0.6061400175094604,
-        0.6089023947715759,
-        0.7321693897247314
-      ],
-      "loss_terms_microbatch": [
-        1.9471261501312256,
-        0.6061416864395142,
-        0.6088321208953857,
-        0.7321523427963257
-      ],
-      "diagnostic_heads": "same nonzero weights only in diagnostic models; all Dropout and MHA dropout=0; train/checkpoint retained"
-    }
-  ]
-}
-```
+固定XYZ_PVST、video `782426ea0330c7fea684953c`、ANAKIN/train/real/an:4wdo37，720×1280，fine1/8、coarse1/4。A输入[104,124)、历史[104,120)、目标[120,124)；B输入[108,128)、历史[108,124)、目标[124,128)。两组目标并集恰为原8帧，无重复；A目标可作B历史但不重复监督。
+三层因果候选最大回溯2+4+8=14帧，加帧级visual两帧=16。context read/write仅同帧，BN固定、LayerNorm逐位置；坐标除以冻结训练全局scale，真实PTS不重置，没有窗口整体统计或未来帧路径。逐帧全场景体素与原生像素映射不变。
+实际losses：frame BCE为每帧标量；pixel BCE按该帧全像素均值；softDice按每帧全像素sum、epsilon1；clip_terms对目标帧均值。此AN real8帧均有合法零GT，各分项微批乘4/8，loss权重不变。缺GT仍只空间项0，不另改frame分母；以后AF/AN配对仍需原外层等权。
+入口每逻辑更新只zero_grad一次，依次A/B前反向并释放输出、GPU输入和Video缓存，保留参数梯度；两组成功后才clip和step。禁止retain_graph或复用detach历史特征。此次A失败，未到释放后/B加载前边界，不能声称已实测验证两图释放切换。
+正式配置XYZ仍null。保留seed20260909、BF16/逐head FP32、attention512/QKV8192/FFN8192/point32768/tile256、CSRSoftmax/桥接/逻辑填充列、saved-tensor CPU卸载、head CPU、即时QKV、node_split/view清理及原初始化/Dropout。实际模型17,821,672参数及state_dict键核对通过。
 
-## 实际微批阶段
-|更新/微批/阶段|耗时秒|allocated/reserved GiB|已观测峰值A/R GiB|RSS GiB|
+## 小规模正确性
+
+15项直接相关CPU检查通过（4.73秒）。CUDA完整PVST双尺度三层小原生场对照通过（父进程6.252秒）；仅decoder复用既有FakeDecoder测试夹具，不宣称官方decoder该小样例覆盖。两份诊断模型相同非零输出头，全部Dropout含MHA/attention关闭，其余train/checkpoint保留；非零上游梯度检查覆盖geo/VFE/fine/coarse QKV，全部可学习参数梯度逐项比较。资源验收恢复官方初始化和原Dropout。分组随机轨迹改变，不声称原联合训练逐步一致。
+
+|精度|frame logit最大绝对误差|pixel logit最大绝对误差|loss分项最大绝对误差|全部参数梯度最大绝对误差|
 |---|---:|---:|---:|---:|
-|0/None/worker_start|None|0.000/0.000|0.000/0.000|0.516|
-|0/None/model_built|0.8091107662767172|0.066/0.080|0.066/0.080|0.679|
-|1/A/before_microbatch_load|None|0.066/0.080|0.066/0.080|0.679|
-|1/A/data_loaded|0.5235004127025604|1.343/1.443|1.379/1.443|1.211|
-|1/A/forward_complete|19.621444502845407|7.587/13.924|11.349/13.924|14.521|
+|torch.float32|2.9802322387695312e-08|1.7881393432617188e-07|5.960464477539063e-08|2.308189868927002e-05|
+|torch.bfloat16|0.001953125|0.001953125|8.559226989746094e-05|0.01171875|
 
-## 结果与边界
-成功更新0次，step成功调用0次；原24帧联合检查不重跑。
-```json
-{
-  "update_records": [],
-  "microbatches": [],
-  "error": "CUDA out of memory. Tried to allocate 606.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 372.38 MiB is free. Process 290469 has 507.28 MiB memory in use. Including non-PyTorch memory, this process has 21.94 GiB memory in use. Of the allocated memory 20.60 GiB is allocated by PyTorch, and 889.84 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)\nException raised from malloc at ../c10/cuda/CUDACachingAllocator.cpp:1318 (most recent call first):\nC++ CapturedTraceback:\n#4 std::_Function_handler<std::shared_ptr<c10::LazyValue<std::string> const> (), c10::SetStackTraceFetcher(std::function<std::string ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) from Logging.cpp:0\n#5 c10::Error::Error(c10::SourceLocation, std::string) from ??:0\n#6 c10::cuda::CUDACachingAllocator::Native::DeviceCachingAllocator::malloc(signed char, unsigned long, CUstream_st*) from CUDACachingAllocator.cpp:0\n#7 c10::cuda::CUDACachingAllocator::Native::NativeCachingAllocator::malloc(void**, signed char, unsigned long, CUstream_st*) from :0\n#8 c10::cuda::CUDACachingAllocator::Native::NativeCachingAllocator::allocate(unsigned long) from :0\n#9 at::TensorBase at::detail::_empty_strided_generic<c10::ArrayRef<long> >(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::Allocator*, c10::DispatchKeySet, c10::ScalarType) from :0\n#10 at::detail::empty_strided_generic(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::Allocator*, c10::DispatchKeySet, c10::ScalarType) from ??:0\n#11 at::detail::empty_strided_cuda(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::ScalarType, std::optional<c10::Device>) from ??:0\n#12 at::detail::empty_strided_cuda(c10::ArrayRef<long>, c10::ArrayRef<long>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from ??:0\n#13 at::native::empty_strided_cuda(c10::ArrayRef<long>, c10::ArrayRef<long>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from ??:0\n#14 at::(anonymous namespace)::(anonymous namespace)::wrapper_CUDA__empty_strided(c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from RegisterCUDA.cpp:0\n#15 c10::impl::wrap_kernel_functor_unboxed_<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor (c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_CUDA__empty_strided>, at::Tensor, c10::guts::typelist::typelist<c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool> > >, at::Tensor (c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>)>::call(c10::OperatorKernel*, c10::DispatchKeySet, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from RegisterCUDA.cpp:0\n#16 at::_ops::empty_strided::redispatch(c10::DispatchKeySet, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from ??:0\n#17 c10::impl::wrap_kernel_functor_unboxed_<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor (c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>), &at::(anonymous namespace)::empty_strided>, at::Tensor, c10::guts::typelist::typelist<c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool> > >, at::Tensor (c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>)>::call(c10::OperatorKernel*, c10::DispatchKeySet, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from RegisterBackendSelect.cpp:0\n#18 at::_ops::empty_strided::call(c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>) from ??:0\n#19 at::empty_strided(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::TensorOptions) from :0\n#20 at::native::_to_copy(at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from ??:0\n#21 c10::impl::wrap_kernel_functor_unboxed_<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor (at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_CompositeExplicitAutograd___to_copy>, at::Tensor, c10::guts::typelist::typelist<at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat> > >, at::Tensor (at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>)>::call(c10::OperatorKernel*, c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from RegisterCompositeExplicitAutograd.cpp:0\n#22 at::_ops::_to_copy::redispatch(c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from ??:0\n#23 c10::impl::wrap_kernel_functor_unboxed_<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor (at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>), &at::(anonymous namespace)::_to_copy>, at::Tensor, c10::guts::typelist::typelist<at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat> > >, at::Tensor (at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>)>::call(c10::OperatorKernel*, c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from RegisterBackendSelect.cpp:0\n#24 at::_ops::_to_copy::redispatch(c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from ??:0\n#25 torch::autograd::VariableType::(anonymous namespace)::_to_copy(c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from VariableType_0.cpp:0\n#26 c10::impl::wrap_kernel_functor_unboxed_<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor (c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>), &torch::autograd::VariableType::(anonymous namespace)::_to_copy>, at::Tensor, c10::guts::typelist::typelist<c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat> > >, at::Tensor (c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>)>::call(c10::OperatorKernel*, c10::DispatchKeySet, at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from VariableType_0.cpp:0\n#27 at::_ops::_to_copy::call(at::Tensor const&, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>, bool, std::optional<c10::MemoryFormat>) from ??:0\n#28 at::native::to(at::Tensor const&, c10::ScalarType, bool, bool, std::optional<c10::MemoryFormat>) from ??:0\n#29 c10::impl::wrap_kernel_functor_unboxed_<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor (at::Tensor const&, c10::ScalarType, bool, bool, std::optional<c10::MemoryFormat>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_CompositeImplicitAutograd_dtype_to>, at::Tensor, c10::guts::typelist::typelist<at::Tensor const&, c10::ScalarType, bool, bool, std::optional<c10::MemoryFormat> > >, at::Tensor (at::Tensor const&, c10::ScalarType, bool, bool, std::optional<c10::MemoryFormat>)>::call(c10::OperatorKernel*, c10::DispatchKeySet, at::Tensor const&, c10::ScalarType, bool, bool, std::optional<c10::MemoryFormat>) from RegisterCompositeImplicitAutograd.cpp:0\n#30 at::_ops::to_dtype::call(at::Tensor const&, c10::ScalarType, bool, bool, std::optional<c10::MemoryFormat>) from ??:0\n#31 torch::autograd::THPVariable_to_type(_object*, c10::ScalarType, std::optional<c10::MemoryFormat>) from python_variable_methods.cpp:0\n#32 torch::autograd::THPVariable_float(_object*, _object*, _object*) from python_variable_methods.cpp:0\n#33 method_vectorcall_VARARGS_KEYWORDS from /usr/local/src/conda/python-3.12.7/Objects/descrobject.c:365\n#34 _PyObject_VectorcallTstate from /usr/local/src/conda/python-3.12.7/Include/internal/pycore_call.h:92\n#35 _PyEval_EvalFrameDefault from /croot/python-split_1728047642222/work/build-static/Python/bytecodes.c:2715\n#36 _PyEval_EvalFrame from /usr/local/src/conda/python-3.12.7/Include/internal/pycore_ceval.h:89\n#37 PyCFunction_Call from /usr/local/src/conda/python-3.12.7/Objects/call.c:387\n#38 _PyObject_VectorcallTstate from /usr/local/src/conda/python-3.12.7/Include/internal/pycore_call.h:92\n#39 PyObject_CallFunctionObjArgs from /usr/local/src/conda/python-3.12.7/Objects/call.c:957\n#40 torch::autograd::PySavedVariableHooks::call_unpack_hook() from ??:0\n#41 torch::autograd::SavedVariable::unpack(std::shared_ptr<torch::autograd::Node>) const from ??:0\n#42 torch::autograd::generated::SparseAddmmBackward0::apply(std::vector<at::Tensor, std::allocator<at::Tensor> >&&) from ??:0\n#43 torch::autograd::Node::operator()(std::vector<at::Tensor, std::allocator<at::Tensor> >&&) from :0\n#44 torch::autograd::Engine::evaluate_function(std::shared_ptr<torch::autograd::GraphTask>&, torch::autograd::Node*, torch::autograd::InputBuffer&, std::shared_ptr<torch::autograd::ReadyQueue> const&) from ??:0\n#45 torch::autograd::Engine::thread_main(std::shared_ptr<torch::autograd::GraphTask> const&) from ??:0\n#46 torch::autograd::Engine::thread_init(int, std::shared_ptr<torch::autograd::ReadyQueue> const&, bool) from ??:0\n#47 torch::autograd::python::PythonEngine::thread_init(int, std::shared_ptr<torch::autograd::ReadyQueue> const&, bool) from ??:0\n#48 execute_native_thread_routine from thread48.o:0\n#49 start_thread from ./nptl/pthread_create.c:442\n#50 __clone3 from ./misc/../sysdeps/unix/sysv/linux/x86_64/clone3.S:81\n",
-  "failure_phase": "backward",
-  "failure_microbatch": "A",
-  "process": {
-    "pid": 525626,
-    "returncode": 2,
-    "termination_signal": null,
-    "timed_out": false,
-    "wall_s": 59.99331793747842,
-    "timeout_s": 900,
-    "samples": [
-      {
-        "unix_time": 1793856564.591882,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 12927, 11146, 96",
-        "compute_pid_mib": "290469, 507\n525626, 9938"
-      },
-      {
-        "unix_time": 1793856569.6284738,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 8139, 15934, 64",
-        "compute_pid_mib": "290469, 507\n525626, 14718"
-      },
-      {
-        "unix_time": 1793856574.664455,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 8131, 15942, 42",
-        "compute_pid_mib": "290469, 507\n525626, 14722"
-      },
-      {
-        "unix_time": 1793856579.6978002,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 8113, 15960, 11",
-        "compute_pid_mib": "290469, 507\n525626, 14726"
-      },
-      {
-        "unix_time": 1793856584.7341585,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 8101, 15972, 53",
-        "compute_pid_mib": "290469, 507\n525626, 14740"
-      },
-      {
-        "unix_time": 1793856589.7704256,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 4519, 19554, 100",
-        "compute_pid_mib": "290469, 507\n525626, 18322"
-      },
-      {
-        "unix_time": 1793856594.8125532,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 3819, 20254, 68",
-        "compute_pid_mib": "290469, 507\n525626, 19022"
-      },
-      {
-        "unix_time": 1793856599.844735,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 373, 23700, 40",
-        "compute_pid_mib": "290469, 507\n525626, 22468"
-      },
-      {
-        "unix_time": 1793856604.9099638,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 373, 23700, 7",
-        "compute_pid_mib": "290469, 507\n525626, 22468"
-      },
-      {
-        "unix_time": 1793856609.9446166,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 373, 23700, 7",
-        "compute_pid_mib": "290469, 507\n525626, 22468"
-      },
-      {
-        "unix_time": 1793856614.978259,
-        "worker_pid": 525626,
-        "gpu_total_free_used_util": "24564, 373, 23700, 7",
-        "compute_pid_mib": "290469, 507\n525626, 22468"
-      }
-    ]
-  },
-  "host": {
-    "available_bytes": 37627506688,
-    "rss_bytes": 15889297408,
-    "peak_rss_bytes": 18433126400
-  }
-}
-```
-本轮只验收规定XYZ窗口，不追加UV、非空GT或其他样本。尚未完成两次更新；下一步仅依据本轮实际失败阶段/算子和资源证据决定，不自动缩小微批或改算子。
-旧24帧失败峰值为未完成更新的观测值，不能拿旧失败耗时当作完整更新时间或计算总加速比。全部原节点/边、宽度、尺度、输入像素、损失及缓存保持。
-产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_target_microbatch_check_v1`。计算状态与publication分开。
+预设FP32输出atol/rtol=2e-5/1e-5、梯度2e-5/3e-5；BF16输出0.02/0.02、梯度0.2/0.03，未按结果放宽。FP32最大梯度差2.308e-5按逐元素atol+rtol判定通过，不意味着所有误差≤atol。按参数张量max差/max参考值的最大比值约2.196/1.724，受接近零的参考梯度影响，不用该比值掩盖绝对容差判定。geo/VFE/fine/coarse QKV诊断参考梯度范数均非零（约0.20/2.20/0.33/0.29），没有零输出头掩盖时序差异。
+
+## 唯一最大窗口实测
+
+|微批|fine N|coarse N|加载秒|前向秒|反向|真实更新|
+|---|---:|---:|---:|---:|---|---:|
+|A|2,476,159|1,239,848|0.524|19.621|OOM，未完成|0|
+|B|未加载|未加载|未执行|未执行|未执行|0|
+
+|层|实际有效边E|平均度|拓扑字节|
+|---|---:|---:|---:|
+|fine_time.0|30,688,147|12.393|510,819,632|
+|fine_time.1|25,512,084|10.303|428,002,624|
+|fine_time.2|23,417,130|9.457|394,483,360|
+|coarse_time.0|22,385,191|18.055|368,081,848|
+|coarse_time.1|18,741,525|15.116|309,783,192|
+|coarse_time.2|16,711,040|13.478|277,295,432|
+
+A前向loss分项（total/frame BCE/pixel BCE/softDice）：[1.7459708452224731, 0.740224301815033, 0.0059305038303136826, 0.9998160600662231]；各项加权系数0.5，loss有限。这不是检测效果成绩。
+A前向结束allocated/reserved=7.587/13.924GiB；已观测全程峰值allocated/reserved=20.600/21.795GiB，主机峰值RSS=17.167GiB，末态可用内存=35.043GiB。不是完整更新峰值上界。
+worker至失败末态56.253秒，父进程墙时59.993秒；前向落盘到末态35.269秒包含错误符号化/收尾，不能称完整反向耗时。AdamW与完整更新时间未测得，状态参数0。
+失败栈明确为SparseAddmmBackward请求checkpoint重算 → streamed_head → sparse_head → `kf=k.float()`。最后层元数据为fine_time.2/dilation4/head3，QKV shape[2,476,159,192]；按代码reshape/unbind推得K为[2,476,159,64]（不是分配量反猜）。申请606MiB时空闲372.38MiB。
+共享GPU另有PID290469约507MiB，未终止或改动它；起始空闲量见summary.gpu_start。不能把与上轮不同共享占用下的失败峰值差异宣称完整更新内存收益。
+设计每逻辑更新累计40帧次、24唯一输入，重复16帧历史是必要重算成本；此次实际仅A加载/前向20帧次、20唯一输入，4目标帧反向未完成。没有真正处理完40帧次，更没有全8帧累计梯度成功或更新。原24帧节点2,970,629/1,488,042仅与既有同身份记录核对，未重跑24帧原配置；A/B节点数不能相加当唯一覆盖。
+
+## 对本轮五项问题的回答
+
+1. 小规模真实PVST路径在预设数值容差内保留8帧输出、监督归一化和累计梯度；正式Dropout轨迹不同。
+2. A前向完成、反向失败；B未运行。
+3. 最大窗口成功0次AdamW更新；无第二次更新。
+4. 资源与失败墙时见上；没有完整更新时间。
+5. 4090当前共享环境下4＋4仍不足。下一步应依据本轮A反向稀疏head的K FP32转换606MiB申请及存活峰值证据决定，不能仅靠减少目标帧数就认定能训练。本轮停止，不自动改K转换、缩微批或启动正式训练。
+
+产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_target_microbatch_check_v1`。完整阶段/错误/资源采样保存在max_window，summary为小型摘要；旧失败记录、冻结缓存、正式config和用户无关JSON经SHA保持不变。执行源码运行期间未改。自动push已成功，随后远端核验曾发生网络错误；计算OOM与发布状态独立，最终发布另行核对。

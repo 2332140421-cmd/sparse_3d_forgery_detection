@@ -85,4 +85,4 @@ export CUDA_VISIBLE_DEVICES=0
 
 无用view清理/训练前验收：OOM；前向每层projection与FFN各实释约1.42GiB，但首次反向frame_blocks coarse MLP LayerNorm申请122MiB失败，更新0；第二次及非空GT XYZ/UV跳过，不具备训练贯通条件。正式模型0/2，未训练。见[报告](tensor_lifetime_check_v1.md)。
 
-目标帧4＋4微批资源检查：OOM，成功更新0次；正式模型0/2，未训练。见[报告](target_microbatch_check_v1.md)。
+目标帧4＋4微批资源检查：语义对照通过；A前向通过、反向K.float申请606MiB时OOM，B及第二次未执行，成功更新0次；正式模型0/2，未训练。见[报告](target_microbatch_check_v1.md)。
