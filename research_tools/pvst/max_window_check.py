@@ -135,6 +135,9 @@ def candidate_layers(model,require_execution=False,require_offload=False,require
 
 
 def worker(out):
+    if read(out/'identity.json').get('target_microbatches'):
+        from .target_microbatch_check import microbatch_worker
+        return microbatch_worker(out)
     started=time.monotonic();spec=read(out/'identity.json');c=spec['config'];row=spec['row'];scale=spec['global_scale'];stages=[];phase='worker_start';update_index=0;m=None;opt=None;v=None;done=threading.Event();lock=threading.Lock();trace={}
     # Timer includes Python imports, construction, input and the single update.
     import torch
