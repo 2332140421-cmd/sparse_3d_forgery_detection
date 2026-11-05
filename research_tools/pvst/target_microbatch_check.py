@@ -125,7 +125,7 @@ def microbatch_worker(out):
 
 def report(r):
     import json
-    w=r.get('worker',{});size=r['group_size'];slug='target_microbatch_2_check_v1' if size==2 else 'target_microbatch_check_v1'
+    w=r.get('worker',{});size=r['group_size'];slug='target_microbatch_2_gradient_check_v1' if r.get('gradient_reference') else 'target_microbatch_2_check_v1' if size==2 else 'target_microbatch_check_v1'
     groups=batches(size);edges=[]
     for x in w.get('stages',[]):
         for e in x.get('edge_evidence',[]):edges.append({'group':x['microbatch'],**{k:e[k] for k in ['layer','nodes','edges','topology_bytes']}})
@@ -134,6 +134,12 @@ def report(r):
     compact['groups']=[{**part,'stages':[{k:v for k,v in x.items() if k not in ['edge_evidence']} for x in w.get('stages',[]) if x['microbatch']==part['name']]} for part in groups]
     summary={k:v for k,v in r.items() if k!='worker'};summary['worker']=compact
     if 'process' in summary:summary['process']={k:v for k,v in summary['process'].items() if k!='samples'}
+    semantic_brief={**r.get('semantics',{}),'comparisons':[{k:v for k,v in c.items() if k not in ['parameters','exception_elements']} for c in r.get('semantics',{}).get('comparisons',[])]}
+    if r.get('gradient_reference'):
+        for c,brief in zip(r.get('semantics',{}).get('comparisons',[]),semantic_brief['comparisons']):
+            brief['gradient_pair_summary']={label:{'mismatched_parameters':sum(not row[label]['pass'] for row in c['parameters'].values()),'mismatched_elements':sum(row[label]['mismatches'] for row in c['parameters'].values()),'max_abs':max((row[label].get('max_abs',0.) for row in c['parameters'].values()),default=0.)} for label in c['checks']}
+            brief['exception_elements']=c['exception_elements']
+        summary['semantics']=semantic_brief
     lines=['# PVST v0.3 目标帧'+('2＋2＋2＋2' if size==2 else '4＋4')+'资源验收','',
         '**状态：'+r['status']+'；真实更新'+str(w.get('updates',0))+'次；正式模型0/2，不启动训练。**','',
         '源码：`'+r['source_commit']+'`；产物：`'+str(OUT)+'`。',
@@ -143,7 +149,7 @@ def report(r):
         '每组反向后释放图和Video GPU缓存，只保留梯度；所有组成功前不clip、不step、不zero_grad。未完成组不会计作更新。',
         '计划每更新'+str(sum(x['input_range'][1]-x['input_range'][0] for x in groups))+'帧次、24唯一输入、8唯一目标；重复历史重新计算。失败时实际加载组数见下，不能把计划量当作完成量。',
         '小图沿用同非零诊断头、全部Dropout关闭、训练/checkpoint路径与既定容差；真实资源恢复原Dropout，随机轨迹随分组变化，不称训练逐步一致。','',
-        '## 语义核验','```json',json.dumps(r.get('semantics',{}),ensure_ascii=False,indent=2),'```','',
+        '## 语义核验','```json',json.dumps(semantic_brief,ensure_ascii=False,indent=2),'```','',
         '## 实测阶段','|组/阶段|秒|allocated/reserved GiB|峰值A/R GiB|RSS GiB|','|---|---:|---:|---:|---:|']
     for x in w.get('stages',[]):lines.append(f"|{x['microbatch']}/{x['stage']}|{x['stage_s']}|{x['allocated_bytes']/2**30:.3f}/{x['reserved_bytes']/2**30:.3f}|{x['peak_allocated_bytes']/2**30:.3f}/{x['peak_reserved_bytes']/2**30:.3f}|{x['host']['rss_bytes']/2**30:.3f}|")
     lines+=['','## 节点/边','|组/层|N|E|拓扑字节|','|---|---:|---:|---:|']
@@ -162,36 +168,49 @@ def report(r):
 
 def main():
     global OUT
-    p=argparse.ArgumentParser();p.add_argument('--group-size',type=int,choices=[2,4],default=4);p.add_argument('--worker',choices=['semantics','max_window']);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--gradient-reference',action='store_true');p.add_argument('--group-size',type=int,choices=[2,4],default=4);p.add_argument('--worker',choices=['semantics','max_window']);args=p.parse_args()
     if args.group_size==2:OUT=BASE/'pvst_target_microbatch_2_check_v1'
+    if args.gradient_reference:
+        if args.group_size!=2:raise ValueError('GRADIENT_REFERENCE_REQUIRES_GROUP_SIZE_2')
+        OUT=BASE/'pvst_target_microbatch_2_gradient_check_v1'
     if args.worker=='semantics':
         import torch
         from .csr_values_bridge_check import load_test
         sys.path.insert(0,str(ROOT/'tests'))
+        if args.gradient_reference and sha(ROOT/'tests/test_pvst_target_microbatch.py')!=read(OUT/'identity.json')['diagnostic_test_sha256']:raise ValueError('DIAGNOSTIC_SOURCE_CHANGED')
         test=load_test('test_pvst_target_microbatch.py')
-        result={'status':'PASS','comparisons':[test.compare_microbatch('cuda',dtype,args.group_size) for dtype in [torch.float32,torch.bfloat16]]}
+        if args.gradient_reference:
+            result={'status':'PASS','comparisons':[]}
+            for dtype in [torch.float32,torch.bfloat16]:
+                comparison=test.abc_microbatch('cuda',dtype);result['comparisons'].append(comparison)
+                if comparison['status']!='PASS':result['status']='FAILED'
+                save(OUT/'semantics.json',result)
+                if result['status']!='PASS':break
+        else:result={'status':'PASS','comparisons':[test.compare_microbatch('cuda',dtype,args.group_size) for dtype in [torch.float32,torch.bfloat16]]}
         save(OUT/'semantics.json',result);return
     if args.worker=='max_window':
         from .max_window_check import worker
         raise SystemExit(worker(OUT/'max_window'))
     OUT.mkdir(parents=True,exist_ok=True)
     if (OUT/'identity.json').exists():raise RuntimeError('EXISTING_RUN: inspect/reuse; no retry')
-    r={'status':'FAILED','source_commit':git('rev-parse','HEAD'),'group_size':args.group_size,'formal_models_completed':0,'gpu_start':gpu_sample(None)}
+    r={'status':'FAILED','source_commit':git('rev-parse','HEAD'),'group_size':args.group_size,'gradient_reference':args.gradient_reference,'formal_models_completed':0,'gpu_start':gpu_sample(None)}
     spec=identity(sparse=True);spec['config'].update(head_output_offload=True,head_qkv_stream=True,node_split=True);spec['group_size']=args.group_size;spec['target_microbatches']=batches(args.group_size);spec['updates_requested']=1 if args.group_size==2 else 2;spec['source_commit']=r['source_commit']
-    save(OUT/'identity.json',spec);folder=OUT/'semantics';folder.mkdir()
+    spec['diagnostic_test_sha256']=sha(ROOT/'tests/test_pvst_target_microbatch.py')
+    save(OUT/'identity.json',spec);folder=OUT/'semantics';folder.mkdir();mode_args=['--gradient-reference'] if args.gradient_reference else []
     try:
-        process=bounded_process([sys.executable,'-u','-m',__spec__.name,'--group-size',str(args.group_size),'--worker','semantics'],300,folder/'worker.log',gpu_sample);save(folder/'process.json',process)
-        if process['returncode']!=0 or process['timed_out']:raise RuntimeError('SEMANTIC_CHECK_FAILED; no maximum-window run')
-        r['semantics']=read(OUT/'semantics.json');folder=OUT/'max_window';folder.mkdir();save(folder/'identity.json',spec)
+        process=bounded_process([sys.executable,'-u','-m',__spec__.name,*mode_args,'--group-size',str(args.group_size),'--worker','semantics'],300,folder/'worker.log',gpu_sample);save(folder/'process.json',process)
+        if (OUT/'semantics.json').exists():r['semantics']=read(OUT/'semantics.json')
+        if process['returncode']!=0 or process['timed_out'] or r.get('semantics',{}).get('status')!='PASS':raise RuntimeError('SEMANTIC_CHECK_FAILED; no maximum-window run')
+        folder=OUT/'max_window';folder.mkdir();save(folder/'identity.json',spec)
         save(OUT/'progress.json',{'status':'RUNNING','stage':'max_window','source_commit':r['source_commit']})
-        process=bounded_process([sys.executable,'-u','-m',__spec__.name,'--group-size',str(args.group_size),'--worker','max_window'],900,folder/'worker.log',gpu_sample);save(folder/'process.json',process);r['process']=process
+        process=bounded_process([sys.executable,'-u','-m',__spec__.name,*mode_args,'--group-size',str(args.group_size),'--worker','max_window'],900,folder/'worker.log',gpu_sample);save(folder/'process.json',process);r['process']=process
         r['worker']=read(folder/'worker_result.json') if (folder/'worker_result.json').exists() else {'stages':read(folder/'stages.json') if (folder/'stages.json').exists() else [],**(read(folder/'partial.json') if (folder/'partial.json').exists() else {})}
         r['status']='TIMEOUT' if process['timed_out'] else r['worker'].get('status','FAILED')
         if r['status']=='PASS' and (process['returncode']!=0 or r['worker'].get('updates')!=spec['updates_requested']):r['status']='FAILED'
     except Exception as e:r.update(reason=str(e),traceback=traceback.format_exc())
     r['gpu_end']=gpu_sample(None);report(r);save(OUT/'progress.json',{'status':r['status'],'stage':'report_complete','updates':r.get('worker',{}).get('updates',0),'formal_models_completed':0})
     import subprocess
-    slug='target_microbatch_2_check_v1' if args.group_size==2 else 'target_microbatch_check_v1'
+    slug='target_microbatch_2_gradient_check_v1' if args.gradient_reference else 'target_microbatch_2_check_v1' if args.group_size==2 else 'target_microbatch_check_v1'
     try:
         subprocess.run(['git','add','--','docs/pvst/'+slug+'.md','docs/pvst/'+slug+'.json','docs/pvst/current_status.md'],check=True)
         subprocess.run(['git','commit','-m','Record fixed target microbatch resource acceptance'],check=True);head=git('rev-parse','HEAD');save(OUT/'publication.json',{'status':'COMMITTED','commit':head,'calculation_status':r['status']})
