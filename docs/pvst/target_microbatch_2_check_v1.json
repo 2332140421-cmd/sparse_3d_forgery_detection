@@ -1,0 +1,90 @@
+{
+  "status": "FAILED",
+  "source_commit": "2e5918b7b7959140effd294456815c917fe6482d",
+  "group_size": 2,
+  "formal_models_completed": 0,
+  "gpu_start": {
+    "unix_time": 1793862762.453504,
+    "worker_pid": null,
+    "gpu_total_free_used_util": "24564, 22860, 1213, 6",
+    "compute_pid_mib": "290469, 507"
+  },
+  "reason": "SEMANTIC_CHECK_FAILED; no maximum-window run",
+  "traceback": "Traceback (most recent call last):\n  File \"/media/njupt/8FCD3869E2FAB06F/chenyh/projects/sparse_3d_forgery_detection/research_tools/pvst/target_microbatch_check.py\", line 184, in main\n    if process['returncode']!=0 or process['timed_out']:raise RuntimeError('SEMANTIC_CHECK_FAILED; no maximum-window run')\n                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: SEMANTIC_CHECK_FAILED; no maximum-window run\n",
+  "gpu_end": {
+    "unix_time": 1793862768.7961829,
+    "worker_pid": null,
+    "gpu_total_free_used_util": "24564, 22842, 1230, 6",
+    "compute_pid_mib": "290469, 507"
+  },
+  "worker": {
+    "error": [],
+    "edge_counts": [],
+    "groups": [
+      {
+        "name": "1",
+        "input_range": [
+          104,
+          122
+        ],
+        "history_range": [
+          104,
+          120
+        ],
+        "target_range": [
+          120,
+          122
+        ],
+        "stages": []
+      },
+      {
+        "name": "2",
+        "input_range": [
+          106,
+          124
+        ],
+        "history_range": [
+          106,
+          122
+        ],
+        "target_range": [
+          122,
+          124
+        ],
+        "stages": []
+      },
+      {
+        "name": "3",
+        "input_range": [
+          108,
+          126
+        ],
+        "history_range": [
+          108,
+          124
+        ],
+        "target_range": [
+          124,
+          126
+        ],
+        "stages": []
+      },
+      {
+        "name": "4",
+        "input_range": [
+          110,
+          128
+        ],
+        "history_range": [
+          110,
+          126
+        ],
+        "target_range": [
+          126,
+          128
+        ],
+        "stages": []
+      }
+    ]
+  }
+}
