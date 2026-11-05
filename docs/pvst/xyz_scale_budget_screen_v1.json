@@ -1,0 +1,173 @@
+{
+  "status": "NO_CANDIDATE",
+  "stage": "stage1_stop",
+  "stage1": [
+    {
+      "h": 0.25,
+      "coarse_h": 0.5,
+      "fine_nodes": 1488042,
+      "coarse_nodes": 613039,
+      "valid_points": 16446812,
+      "per_frame": {
+        "fine": {
+          "min": 58334,
+          "median": 61970.5,
+          "max": 65142
+        },
+        "coarse": {
+          "min": 23806,
+          "median": 25518.0,
+          "max": 27143
+        }
+      },
+      "members": {
+        "fine": {
+          "blocks": 1488042,
+          "median": 2.0,
+          "P90": 11.0,
+          "max": 9085,
+          "singleton_fraction": 0.4366711423467886,
+          "valid_point_members": 16446812
+        },
+        "coarse": {
+          "blocks": 613039,
+          "median": 3.0,
+          "P90": 26.0,
+          "max": 21543,
+          "singleton_fraction": 0.2883845889086991,
+          "valid_point_members": 16446812
+        }
+      },
+      "reduction_vs_1_8": {
+        "fine": 0.4990818442828101,
+        "coarse": 0.5880230531127482
+      },
+      "fine_budget_pass": false,
+      "coarse_budget_pass": false,
+      "BF16_single_feature_payload_bytes": 1389629440,
+      "within_budget": false
+    },
+    {
+      "h": 0.5,
+      "coarse_h": 1.0,
+      "fine_nodes": 613039,
+      "coarse_nodes": 198398,
+      "valid_points": 16446812,
+      "per_frame": {
+        "fine": {
+          "min": 23806,
+          "median": 25518.0,
+          "max": 27143
+        },
+        "coarse": {
+          "min": 7708,
+          "median": 8213.0,
+          "max": 8902
+        }
+      },
+      "members": {
+        "fine": {
+          "blocks": 613039,
+          "median": 3.0,
+          "P90": 26.0,
+          "max": 21543,
+          "singleton_fraction": 0.2883845889086991,
+          "valid_point_members": 16446812
+        },
+        "coarse": {
+          "blocks": 198398,
+          "median": 7.0,
+          "P90": 79.0,
+          "max": 63681,
+          "singleton_fraction": 0.11458280829443845,
+          "valid_point_members": 16446812
+        }
+      },
+      "reduction_vs_1_8": {
+        "fine": 0.7936332675672391,
+        "coarse": 0.8666717740493883
+      },
+      "fine_budget_pass": false,
+      "coarse_budget_pass": false,
+      "BF16_single_feature_payload_bytes": 517035520,
+      "within_budget": false
+    },
+    {
+      "h": 1.0,
+      "coarse_h": 2.0,
+      "fine_nodes": 198398,
+      "coarse_nodes": 55153,
+      "valid_points": 16446812,
+      "per_frame": {
+        "fine": {
+          "min": 7708,
+          "median": 8213.0,
+          "max": 8902
+        },
+        "coarse": {
+          "min": 2145,
+          "median": 2296.0,
+          "max": 2491
+        }
+      },
+      "members": {
+        "fine": {
+          "blocks": 198398,
+          "median": 7.0,
+          "P90": 79.0,
+          "max": 63681,
+          "singleton_fraction": 0.11458280829443845,
+          "valid_point_members": 16446812
+        },
+        "coarse": {
+          "blocks": 55153,
+          "median": 24.0,
+          "P90": 293.0,
+          "max": 135781,
+          "singleton_fraction": 0.043624100230268525,
+          "valid_point_members": 16446812
+        }
+      },
+      "reduction_vs_1_8": {
+        "fine": 0.9332134709517749,
+        "coarse": 0.9629358579932555
+      },
+      "fine_budget_pass": true,
+      "coarse_budget_pass": false,
+      "BF16_single_feature_payload_bytes": 158056448,
+      "within_budget": false
+    }
+  ],
+  "stage2": [],
+  "selected_h": null,
+  "elapsed_s": 1.878934926353395,
+  "completed_unique_frames": 24,
+  "host": {
+    "available_bytes": 53092843520,
+    "rss_bytes": 497709056,
+    "peak_rss_bytes": 538947584
+  },
+  "execution_HEAD": "e4192beccfc1bb37ce28aa250d0a7e744530b000",
+  "global_scale": 1.9888148307800293,
+  "reference_1_8": [
+    2970629,
+    1488042
+  ],
+  "expected_train": {
+    "videos": 32,
+    "frames": 15351,
+    "windows": 1932
+  },
+  "process": {
+    "pid": 1000518,
+    "returncode": 0,
+    "termination_signal": null,
+    "timed_out": false,
+    "wall_s": 3.3185685370117426,
+    "timeout_s": 1800,
+    "samples": []
+  },
+  "CUDA_VISIBLE_DEVICES": "",
+  "formal_XYZ": null,
+  "formal_models_completed": 0
+}
