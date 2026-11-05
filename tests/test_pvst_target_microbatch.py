@@ -8,7 +8,7 @@ from research_tools.pvst.model import PVST
 from research_tools.pvst.v03 import clip_terms
 
 
-def compare_microbatch(device='cpu',dtype=torch.float32):
+def compare_microbatch(device='cpu',dtype=torch.float32,group_size=4):
     torch.set_num_threads(4);torch.manual_seed(20260909)
     c={**CFG,'voxel_sizes':{'XYZ_PVST':.125},'qkv_chunk':8192,'ffn_chunk':8192,
        'sparse_edge_attention':True,'head_output_offload':True,'head_qkv_stream':True,
@@ -33,9 +33,11 @@ def compare_microbatch(device='cpu',dtype=torch.float32):
         return outputs,terms
     outputs,terms=run(a,fs,16,gt,labels);reference_terms=terms.detach().float().cpu();terms[0].backward();del terms
     got=[];total=torch.zeros(4)
-    for lo,hi,start,offset in [(0,20,16,0),(4,24,20,4)]:
-        out,values=run(b,fs[lo:hi],start-lo,gt[offset:offset+4],labels[offset:offset+4])
-        got+=out;total+=values.detach().float().cpu()*.5;(values[0]*.5).backward();del values
+    for offset in range(0,8,group_size):
+        lo,hi,start=offset,16+offset+group_size,16+offset
+        weight=group_size/8
+        out,values=run(b,fs[lo:hi],start-lo,gt[offset:offset+group_size],labels[offset:offset+group_size])
+        got+=out;total+=values.detach().float().cpu()*weight;(values[0]*weight).backward();del values
     # Frozen before measurement: existing halo tolerance, existing BF16 QKV tolerance.
     oa,orr=(2e-2,2e-2) if dtype==torch.bfloat16 else (2e-5,1e-5)
     ga,gr=(.2,.03) if dtype==torch.bfloat16 else (2e-5,3e-5)
@@ -68,3 +70,13 @@ def test_fixed_partition_and_tail_mean():
     gt=[np.zeros((2,3),bool)]*7;y=[False]*7
     whole=clip_terms(pred,gt,y,1.);split=sum(clip_terms(pred[a:b],gt[a:b],y[a:b],1.)*((b-a)/7) for a,b in [(0,4),(4,7)])
     torch.testing.assert_close(whole,split)
+
+
+def test_group2_full_model_and_fixed_coverage():
+    from research_tools.pvst.target_microbatch_check import batches
+    plan=batches(2)
+    assert [x['input_range'] for x in plan]==[[104,122],[106,124],[108,126],[110,128]]
+    assert [i for x in plan for i in range(*x['target_range'])]==list(range(120,128))
+    assert all(x['target_range'][0]-x['input_range'][0]==16 and x['target_range'][1]-x['target_range'][0]==2 for x in plan)
+    assert sum(b-a for a,b in [x['input_range'] for x in plan])==72
+    compare_microbatch(group_size=2)
