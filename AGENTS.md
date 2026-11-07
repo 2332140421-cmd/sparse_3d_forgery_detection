@@ -144,3 +144,11 @@ results, or inconsistency between the paper and implementation.
   explicit temporal/depth relations and local pixel bypass. Reuse registered
   ANAKIN train8/dev4 pairs, no new scene filter, no old voxel model or forensic
   checkpoint. One seed, max30/min10/patience8; no extra conditions or tests access.
+- ADR-0034 authorizes exactly RGBD_LOCAL/RGBD_SLICE_RELATION on branch
+  pvst-rgbd-slice-relations. Use research_tools/rgbd_slice and the pinned original
+  DFormer-S RGB-D weights; train the encoder with fixed BN statistics. Preserve
+  multiscale256 local decoding/native RGB detail, 4x128 learned slab pooling and
+  two temporal/depth relation blocks with zero-initialized residual projections.
+  Reuse train8/dev4 and fixed24-frame clips; only their independent MoGe<=768
+  cache and essential official dependencies are authorized. Fit check must pass
+  before formal max30/min10/patience8 training. Both conditions use depth.
