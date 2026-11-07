@@ -101,6 +101,10 @@ XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2�
 
 <!-- rgbd-slice-pilot -->
 
-## RGB-D切片匹配实验
+## RGB-D切片关系匹配实验
 
-FAILED；见[报告](rgbd_slice_relations_v1.md)。两个条件均使用深度。旧结果保留。
+2026-11-07 RUNNING，执行源码b3e11381aaeebc149cc576083b120e1c3d1f0a29。
+3062帧新几何、零残差共同初始化核验、B真实24帧两次更新及A固定pair拟合检查均通过。
+A拟合30次更新达到Dice.809245、GT召回.956399、real FPR.00003147，检查权重丢弃；已自动继续两条件正式阶段，尚无最终指标。
+见[运行核验/最终报告](rgbd_slice_relations_v1.md)、[ADR-0034](../decisions/0034-rgbd-slice-relations.md)。两个条件都使用深度，不是二维/三维对照。
+实时状态：`derived/pvst_rgbd_slice_relations_v1/progress.json`；旧PVST、首轮切片结果及失败记录保留。
