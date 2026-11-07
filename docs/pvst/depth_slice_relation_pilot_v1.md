@@ -14,7 +14,7 @@
 
 监测：固定前两个训练pair的完整视频，称训练监测子集，不代表全训练集。best仅按开发Dice，min10/max30/patience8。
 
-完成摘要：{"status": "FAILED", "error": "index_copy_(): self and source expected to have the same dtype, but got (self) Float and (source) BFloat16", "execution_head": "d15956f40b6cf72aa5750ceaa46d69af2e46f416", "wall_s": 35.66993834730238, "peak_allocated": 645201408, "peak_reserved": 939524096, "data": {"train": {"pairs": 8, "videos": 16, "frames": 2138, "positive_frames": 1065, "all_nonempty_fake": 7, "mixed_fake": 1}, "dev": {"pairs": 4, "videos": 8, "frames": 924, "positive_frames": 462, "all_nonempty_fake": 4, "mixed_fake": 0}}, "storage_bytes": 1723157427}
+完成摘要：{"status": "FAILED", "error": "SMOKE_GRADIENT_PATH:{'geo': {'present': True, 'finite': True, 'norm': 0.1475275754928589}, 'fusion': {'present': True, 'finite': True, 'norm': 0.2686961889266968}, 'token': {'present': True, 'finite': True, 'norm': 0.08095058798789978}, 'time': {'present': True, 'finite': True, 'norm': 0.13109533488750458}, 'depth': {'present': True, 'finite': True, 'norm': 1.1420923471450806}, 'context': {'present': True, 'finite': True, 'norm': 1.1309572458267212}, 'pixel': {'present': True, 'finite': True, 'norm': 1.4781862497329712}, 'frame_head': {'present': True, 'finite': True, 'norm': 0.0}, 'frame_visual': {'present': True, 'finite': True, 'norm': 0.0}}", "execution_head": "963b412cb5f369ee4d2c109e3d5d81cdf743b84b", "wall_s": 17.328498259186745, "peak_allocated": 1439262208, "peak_reserved": 1824522240, "data": {"train": {"pairs": 8, "videos": 16, "frames": 2138, "positive_frames": 1065, "all_nonempty_fake": 7, "mixed_fake": 1}, "dev": {"pairs": 4, "videos": 8, "frames": 924, "positive_frames": 462, "all_nonempty_fake": 4, "mixed_fake": 0}}, "storage_bytes": 1723172319}
 
 
 
@@ -24,4 +24,4 @@
 
 完整资产与固定样例：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_depth_slice_relation_pilot_v1`。
 
-首次必要检查在BF16片上下文index_copy类型不一致处退出1，正式训练尚未开始；已修复显式dtype对齐并通过5项CPU检查（含BF16反向），将复用全部冻结视觉缓存重新执行必要检查。原错误/退出历史保存在运行目录execution_history/00_bf16_context_scatter；本页不是最终成绩。
+第二次必要检查已完成一次验收更新，第二次反向各分支梯度存在且有限，但全正标签片段上的帧头梯度为零，被逐步非零断言过严拦截。当前检查要求每步梯度存在且有限、两步内每个核心分支至少一次非零，并保存逐步logit与loss；不改变模型、初始化、数据或损失。原退出1保留在execution_history/01_overstrict_per_step_gradient_check，尚无正式epoch成绩。

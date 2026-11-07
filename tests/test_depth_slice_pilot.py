@@ -58,3 +58,10 @@ def test_bfloat16_context_scatter_keeps_gradient():
         pred=m(fs);loss=torch.stack([terms(p,f['gt']) for p,f in zip(pred,fs)]).mean().sum()
     loss.backward()
     assert m.context.weight.grad is not None and torch.isfinite(m.context.weight.grad).all()
+
+
+def test_finite_saturated_bce_can_have_zero_gradient():
+    # A nonzero path is checked across both updates, not independently per step.
+    x=torch.tensor(30.,requires_grad=True)
+    loss=torch.nn.functional.binary_cross_entropy_with_logits(x,torch.ones_like(x));loss.backward()
+    assert torch.isfinite(x.grad) and x.grad==0

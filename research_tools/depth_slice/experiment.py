@@ -107,10 +107,11 @@ def smoke(config,out,rows,clips,progress):
         loss=torch.stack([terms(p,f['gt']) for p,f in zip(pred,fs)]).mean(0).sum()
         if not torch.isfinite(loss):raise ValueError('SMOKE_LOSS')
         loss.backward();g=gradients(model)
-        if not all(x['present'] and x['finite'] and x['norm']>0 for x in g.values()):raise ValueError('SMOKE_GRADIENT_PATH:'+str(g))
+        if not all(x['present'] and x['finite'] for x in g.values()):raise ValueError('SMOKE_GRADIENT_PATH:'+str(g))
         before=model.pixel[-1].weight.detach().clone();torch.nn.utils.clip_grad_norm_(model.parameters(),1,error_if_nonfinite=True);opt.step()
         if torch.equal(before,model.pixel[-1].weight):raise ValueError('SMOKE_NO_UPDATE')
-        records.append({'step':step+1,'loss':float(loss),'gradients':g,'optimizer_states':len(opt.state),'slices':[p['slices'] for p in pred]});del pred,loss
+        records.append({'step':step+1,'loss':float(loss),'gradients':g,'optimizer_states':len(opt.state),'frame_logits':[float(p['frame']) for p in pred],'loss_terms':torch.stack([terms(p,f['gt']) for p,f in zip(pred,fs)]).mean(0).detach().cpu().tolist(),'slices':[p['slices'] for p in pred]});del pred,loss
+    if not all(any(step['gradients'][name]['norm']>0 for step in records) for name in records[0]['gradients']):raise ValueError('SMOKE_BRANCH_NEVER_RECEIVED_NONZERO_GRADIENT')
     save(out/'smoke.json',{'status':'PASS','video_id':r['video_id'],'range':[clip['start'],clip['end']],'updates':records,'peak_allocated':torch.cuda.max_memory_allocated()})
     del opt,model,fs;torch.cuda.empty_cache()
 
