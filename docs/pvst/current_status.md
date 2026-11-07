@@ -97,6 +97,8 @@ XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2�
 
 ## 深度切片关系首轮训练（独立新方法）
 
-2026-11-07：ADR-0033授权单条件DEPTH_SLICE_RELATION。执行代码已实现，4项CPU合同检查通过；即将执行官方资产/PTS核验、原生冻结视觉缓存和真实含非空GT片段两次更新，成功后自动训练。不是旧PVST0/2正式模型的续跑。
-配置：[首轮协议](depth_slice_pilot_config.json)；入口`python -m research_tools.depth_slice.experiment --config docs/pvst/depth_slice_pilot_config.json`。
-实时状态及产物：`derived/pvst_depth_slice_relation_pilot_v1/progress.json`。以文件实际状态为准；本页的准备说明不冒充训练已完成。
+2026-11-07：RUNNING，执行源码35914bb1f469d896f77b91954780a5116179bc49。
+6项CPU检查及真实非空GT片段两次更新通过；已启动自动epoch0完整开发评价，随后正式训练，非旧PVST0/2模型的续跑。
+数据ANAKIN训练8pair/16视频/2138帧，开发4pair/8视频/924帧；无新场景过滤或MoGe调用。
+见[启动核验/后续结果](depth_slice_relation_pilot_v1.md)、[配置](depth_slice_pilot_config.json)、ADR-0033。
+实时状态以`derived/pvst_depth_slice_relation_pilot_v1/progress.json`为准，尚无最终成绩。
