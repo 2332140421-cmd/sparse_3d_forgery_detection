@@ -126,7 +126,7 @@ class DepthSliceRelation(nn.Module):
                 local,v=self.local(visual,xyz,valid);context=local.new_zeros(len(local),128)
                 if len(unique):
                     _,ix=slab_ids(xyz.to(local.device),v)
-                    context=context.index_copy(0,torch.where(v.reshape(-1))[0],self.context(c)[ix])
+                    context=context.index_copy(0,torch.where(v.reshape(-1))[0],self.context(c).to(local.dtype)[ix])
                 outputs=[self.pixel(torch.cat((local[k:k+16384],context[k:k+16384]),-1)) for k in range(0,len(local),16384)]
                 return torch.cat(outputs).reshape(v.shape)
             args=(f['visual'],f['xyz'],f['valid'],ctx,sid)

@@ -50,3 +50,11 @@ def test_empty_gt_is_supervised_not_missing():
     p={'pixel':torch.ones(2,3,requires_grad=True),'frame':torch.tensor(1.,requires_grad=True)}
     a=terms(p,torch.zeros(2,3,dtype=torch.bool));assert torch.isfinite(a).all()
     a.sum().backward();assert (p['pixel'].grad>0).all() and p['frame'].grad>0
+
+
+def test_bfloat16_context_scatter_keeps_gradient():
+    torch.set_num_threads(2);m=DepthSliceRelation().train();fs=example(2)
+    with torch.autocast('cpu',dtype=torch.bfloat16):
+        pred=m(fs);loss=torch.stack([terms(p,f['gt']) for p,f in zip(pred,fs)]).mean().sum()
+    loss.backward()
+    assert m.context.weight.grad is not None and torch.isfinite(m.context.weight.grad).all()
