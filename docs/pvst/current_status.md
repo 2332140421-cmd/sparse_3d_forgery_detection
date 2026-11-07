@@ -101,10 +101,6 @@ XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2�
 
 <!-- rgbd-slice-pilot -->
 
-## RGB-D切片关系匹配实验
+## RGB-D切片匹配实验
 
-2026-11-07 PREPARING，分支pvst-rgbd-slice-relations，起点0570938。
-官方原版DFormer-S源码/权重已固定并strict核验，5项直接检查及6项既有相关检查通过。
-新独立入口`research_tools.rgbd_slice.experiment`按准备→必要检查→小样本拟合→两条件训练→评价报告执行。
-见[ADR-0034](../decisions/0034-rgbd-slice-relations.md)、[配置](rgbd_slice_config_v1.json)。
-当前未完成新的几何准备或正式训练，不冒称已有指标；实时状态见`derived/pvst_rgbd_slice_relations_v1/progress.json`。
+FAILED；见[报告](rgbd_slice_relations_v1.md)。两个条件均使用深度。旧结果保留。
