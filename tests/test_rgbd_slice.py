@@ -85,3 +85,16 @@ def test_trainable_encoder_and_residual_two_step_path():
             assert m.time[0].q.weight.grad.abs().sum()>0
         opt.step()
     for k,v in m.local.encoder.named_buffers():assert torch.equal(v,bn[k])
+
+
+def test_cuda_cpu_staged_decode_autograd():
+    import pytest
+    if not torch.cuda.is_available():pytest.skip('CUDA transfer regression needs CUDA')
+    from research_tools.rgbd_slice.model import Local
+    from torch.utils.checkpoint import checkpoint
+    m=Local(torch.nn.Identity()).cuda().train();local=torch.randn(256,8,12,requires_grad=True)
+    rgb=torch.randint(0,255,(32,48,3),dtype=torch.uint8);ctx=torch.zeros(1,32,32,48,requires_grad=True)
+    with torch.autocast('cuda',dtype=torch.bfloat16):z=checkpoint(m.decode,local,rgb,ctx,use_reentrant=False)
+    z.float().square().mean().backward()
+    assert z.is_cuda and local.grad is not None and torch.isfinite(local.grad).all()
+    assert ctx.grad is not None and ctx.grad.device.type=='cpu' and torch.isfinite(ctx.grad).all()

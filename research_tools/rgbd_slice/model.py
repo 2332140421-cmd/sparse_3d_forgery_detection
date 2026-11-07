@@ -61,7 +61,7 @@ class Local(nn.Module):
         local=local.to(next(self.parameters()).device);rgb=rgb.to(local.device).permute(2,0,1)[None].float()/255;h,w=rgb.shape[-2:]
         x=F.interpolate(local[None],size=((h+1)//2,(w+1)//2),mode='bilinear',align_corners=False);x=self.up(x)
         x=F.interpolate(x,size=(h,w),mode='bilinear',align_corners=False);detail=self.detail(rgb)
-        x=self.native(torch.cat((x,detail),1));x=x+context.to(x.dtype)
+        x=self.native(torch.cat((x,detail),1));x=x+context.to(device=x.device,dtype=x.dtype)
         return self.final(x)[0,0]
 
 

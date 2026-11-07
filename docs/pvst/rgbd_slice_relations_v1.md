@@ -52,3 +52,5 @@ B−A：{}
                                              ~^~~~~~~~~~~~~~~~~~~~
 RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
 
+
+首次检查失败记录保留：新几何3062帧已完成（82.6809秒），随后A零残差对照因CPU暂存上下文未回传GPU而退出1，正式更新0次。现已补齐设备拷贝；独立CUDA/BF16小图检查确认原生解码输出与跨CPU/GPU梯度完整。旧退出/日志/初始身份归档至execution_history/00_cpu_context_device_copy，新执行复用全部高分辨率几何和相同共同初始化，不重跑前端。
