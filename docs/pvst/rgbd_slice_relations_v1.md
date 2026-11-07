@@ -1,38 +1,43 @@
 # 预训练RGB-D编码与深度切片关系匹配实验
 
-当前状态：RUNNING。必要检查与A固定小样本拟合均通过，独立入口已继续正式阶段。尚无新最终开发成绩。
-执行源码b3e11381aaeebc149cc576083b120e1c3d1f0a29，分支pvst-rgbd-slice-relations。
-协议：[ADR-0034](../decisions/0034-rgbd-slice-relations.md)、[固定配置](rgbd_slice_config_v1.json)。两个条件均使用深度，不是纯二维/三维对照。
+状态：COMPLETE。两个条件均使用深度，非纯二维/三维对照。
 
-|条件|总参数|可训练参数|方法|
-|---|---:|---:|---|
-|RGBD_LOCAL|20,402,578|20,402,578|共同DFormer-S、多尺度256局部融合、原生卷积细化和独立帧头|
-|RGBD_SLICE_RELATION|33,264,311|33,264,311|共同路径＋4×128学习式片池化、两组512维8head时间→深度关系和零初始化像素/帧残差|
+数据：{"train": {"pairs": 8, "videos": 16, "frames": 2138, "positive_frames": 1065, "all_nonempty_fake": 7, "mixed_fake": 1}, "dev": {"pairs": 4, "videos": 8, "frames": 924, "positive_frames": 462, "all_nonempty_fake": 4, "mixed_fake": 0}}
 
-官方原版DFormer-S源码e3273009b759b578945483828ff315d560be94c9，Small RGB-D ImageNet权重229183347字节，SHA256=8a086a3fb4e7ebda0806172938dd199bb7d8394593a8176640ed79735e35a0c0。保留编码器530键strict加载；RGB/depth stem各35键、交互270键，无missing/unexpected。仅略去分类pred和官方分割不使用的最后深度更新，四尺度输出一致性已通过检查。编码器微调，BN统计固定、仿射可训练；依赖隔离，不改PyTorch或驱动。
+官方原版DFormer-S RGB-D ImageNet预训练，保留多尺度64/128/256/512、stride4/8/16/32，编码器1e-5微调，BN统计固定且仿射可训练；多尺度局部融合256，逐级上采样/跳连、原生RGB细节卷积及独立帧头。共同初始化精确复制，B额外4×128池化和两组512维8head显式时间→深度关系，像素/帧增量投影零初始化。
 
-复用ANAKIN训练8pair/16视频/2138帧/1065正帧，开发4pair/8视频/924帧/462正帧。片段严格沿用48条首/中/尾24原生帧清单，无场景筛选或新数据。
-24视频、3062帧新MoGe几何已全部完成，新增前端耗时82.6809秒；完整画面长边≤768，小视频不放大。例：720×1280→432×768，1693 tokens，实际内部434×770；360×640保持尺寸，1176 tokens。内部patch取整和输出尺寸逐视频登记，不是旧256场放大。encoder_depth和固定slice_depth=Z/1.9888148307800293分开，h.125,d0=0不改。
+官方加载记录：/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_rgbd_slice_relations_v1/official_load.json；全部保留编码器strict加载；忽略分类pred及官方分割本就删除的末端仅分类深度更新，已对照证明RGB多尺度输出一致。
 
-11项CPU相关检查及新增1项CUDA设备传输回归通过。真实an:7ogg04、[0,24)检查：
-- A/B共同初始化逐张量核验，零残差像素/帧输出最大差均为0；BF16预设atol/rtol=.002。
-- B两次真实AdamW更新通过，分别8.506秒/6.553秒；梯度存在且有限，关系上游在第二步取得非零梯度，共同BN缓冲未变。
-- 检查片段allocated峰值分别0.925/1.113GiB，进程峰值RSS约12.129GiB；不是完整训练峰值。
+新MoGe-2：完整宽高比输入长边≤768、不放大小视频；num_tokens=round(input_h*input_w/14²)，实际内部网格与输出记录在每视频complete.json。旧256场不进入模型。原生插值回映不是独立测量。encoder_depth采用官方Greys_r灰度处理及(.48,.28)标准化；slice_depth始终Z/固定s，h.125,d0=0，非米。
 
-A固定第一个训练pair首24帧real/fake拟合检查（不是开发成绩）：
+片段清单严格复用上轮首/中/尾24帧，每片段全帧等权损失并只更新一次；A逐帧梯度累积，B完整因果关系反向。frame BCE+pixel BCE+softDice等权，空GT沿用epsilon1。最多30轮、最少10轮、开发Dice耐心8。阈值logit≥0，视频frame log-mean-exp温度1。
 
-|指标|初始|30次片段更新后|
-|---|---:|---:|
-|fake Dice|0.098097|0.809245|
-|real像素FPR|0.624738|0.00003147|
-|fake GT召回|—|0.956399|
+训练监测仅固定第一个训练pair的真实反向首段，不将未训练时段冒充拟合。开发完整视频24帧因果窗口，尾段补左上下文、每帧一次、边界重置；不声称无限历史/精确时间边界。pixel AP为正GT帧AP再fake视频宏平均，不是AP@IoU。
 
-拟合耗时51.234秒，达到预设Dice≥.8且real FPR≤.05目标。检查/拟合权重均丢弃，正式A/B从同一共同初始化重新开始。这个结果说明固定训练片段上具备定位学习能力，不代替完整训练或泛化证据。
+必要检查：/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_rgbd_slice_relations_v1/checks.json；独立拟合诊断：/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_rgbd_slice_relations_v1/fit/result.json（检查权重丢弃）。
 
-首次启动在完成新几何后，因CPU暂存上下文未回传GPU而退出1；已补齐可微设备拷贝并完成CUDA/BF16反向核验。旧日志、退出码与82.6809秒准备成本保存于execution_history/00_cpu_context_device_copy。新执行复用全部几何和相同初始化，新增前端调用0；不是OOM，不改模型或损失。
+|条件|best/结束epoch|Dice|IoU|pixel AP|GT召回|real像素FPR|frame AUROC/AP|video AUROC/AP|
 
-独立流程将自动按最多30轮/最少10轮/Dice耐心8完成两个条件，从各自同一best评价全部开发帧、生成B−A和逐fake差值、固定样例、中文报告以及普通commit/push。当前尚无best/最终指标，不将检查样本当开发效果；本页将在结束时由报告替换。
+|---|---|---|---|---|---|---|---|---|
 
-运行根目录：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_rgbd_slice_relations_v1/`。
-查看progress.json/run.log、后续各条件history.csv；完成后report.md、result_summary.json、best_dev.json、samples/index.html与publication.json。
-相机运动/深度漂移、窗口边界和单seed小队列限制仍在。开发4fake均全程编辑，不能验证复杂伪造切换边界；不自动追加条件或训练。
+|RGBD_LOCAL|5/13|0.1582535901668644|0.10959719247374318|0.23274230259678305|0.13096429560401388|0.015151872196903934|0.5143527107812822/0.5131029368988097|0.5/0.5595238095238095|
+
+该条件全部同best指标及成本：{"status": "COMPLETE", "condition": "RGBD_LOCAL", "best_epoch": 5, "last_epoch": 13, "updates": 624, "best_dev": {"dice": 0.1582535901668644, "iou": 0.10959719247374318, "pixel_ap": 0.23274230259678305, "real_fpr": 0.015151872196903934, "GT_recall": 0.13096429560401388, "pred_area": 0.023241507087780777, "frame": {"auroc": 0.5143527107812822, "ap": 0.5131029368988097, "acc": 0.43506493506493504, "precision": 0.45677233429394815, "recall": 0.6861471861471862, "f1": 0.5484429065743944, "confusion_matrix": [[85, 377], [145, 317]], "undefined_reason": null}, "video": {"auroc": 0.5, "ap": 0.5595238095238095, "acc": 0.5, "precision": 0.5, "recall": 0.75, "f1": 0.6, "confusion_matrix": [[1, 3], [1, 3]], "undefined_reason": null}, "loss": 1.835012935159935}, "best_train_monitor_clips": {"dice": 0.6436738624544424, "iou": 0.4749842691256574, "pixel_ap": null, "real_fpr": 0.007859700520833334, "GT_recall": 0.7133529469156135, "pred_area": 0.07175184461805555, "frame": {"auroc": 1.0, "ap": 1.0, "acc": 0.5, "precision": 0.0, "recall": 0.0, "f1": 0.0, "confusion_matrix": [[24, 0], [24, 0]], "undefined_reason": null}, "video": {"auroc": 1.0, "ap": 1.0, "acc": 0.5, "precision": 0.0, "recall": 0.0, "f1": 0.0, "confusion_matrix": [[1, 0], [1, 0]], "undefined_reason": null}, "loss": 1.6145828068256378}, "parameters": 20402578, "trainable": 20402578, "seconds": 2425.9403315884992, "peak_allocated": 2761790464, "peak_reserved": 2946498560, "peak_rss": 14470848512}
+
+相对epoch0的开发Dice变化：0.07521293833844413；训练监测Dice：0.6436738624544424。
+
+|RGBD_SLICE_RELATION|12/20|0.21836327576841308|0.17624700211499955|0.2951098366623513|0.26077065258600723|0.008210221387656464|0.47167875414628657/0.4519823489901186|0.5/0.5595238095238095|
+
+该条件全部同best指标及成本：{"status": "COMPLETE", "condition": "RGBD_SLICE_RELATION", "best_epoch": 12, "last_epoch": 20, "updates": 960, "best_dev": {"dice": 0.21836327576841308, "iou": 0.17624700211499955, "pixel_ap": 0.2951098366623513, "real_fpr": 0.008210221387656464, "GT_recall": 0.26077065258600723, "pred_area": 0.015637847272456918, "frame": {"auroc": 0.47167875414628657, "ap": 0.4519823489901186, "acc": 0.4805194805194805, "precision": 0.48717948717948717, "recall": 0.7402597402597403, "f1": 0.5876288659793815, "confusion_matrix": [[102, 360], [120, 342]], "undefined_reason": null}, "video": {"auroc": 0.5, "ap": 0.5595238095238095, "acc": 0.5, "precision": 0.5, "recall": 0.75, "f1": 0.6, "confusion_matrix": [[1, 3], [1, 3]], "undefined_reason": null}, "loss": 2.3804389246967106}, "best_train_monitor_clips": {"dice": 0.12626600521983058, "iou": 0.07032849924674926, "pixel_ap": null, "real_fpr": 1.808449074074074e-07, "GT_recall": 0.07090510695866943, "pred_area": 0.004649703414351851, "frame": {"auroc": 1.0, "ap": 0.9999999999999998, "acc": 0.5208333333333334, "precision": 1.0, "recall": 0.041666666666666664, "f1": 0.08, "confusion_matrix": [[24, 0], [23, 1]], "undefined_reason": null}, "video": {"auroc": 1.0, "ap": 1.0, "acc": 0.5, "precision": 0.0, "recall": 0.0, "f1": 0.0, "confusion_matrix": [[1, 0], [1, 0]], "undefined_reason": null}, "loss": 1.9225237319866815}, "parameters": 33264311, "trainable": 33264311, "seconds": 12265.46726849489, "peak_allocated": 3182884864, "peak_reserved": 3640655872, "peak_rss": 31536898048}
+
+相对epoch0的开发Dice变化：0.13532262393999278；训练监测Dice：0.12626600521983058。
+
+B−A：{"dice": 0.06010968560154867, "iou": 0.06664980964125637, "pixel_ap": 0.06236753406556825, "real_fpr": -0.00694165080924747, "GT_recall": 0.12980635698199336}
+
+逐fake视频：[{"video_id": "e73bc60d4e2c5b994ee45ba4", "pair_id": "an:7e2e57", "generator": "splicing", "A_Dice": 0.0, "B_Dice": 0.06759553813129342, "difference": 0.06759553813129342}, {"video_id": "a2a08b465a8cea8a95403ee7", "pair_id": "an:4rvro9", "generator": "splicing", "A_Dice": 0.5083187910062422, "B_Dice": 0.7968243859360006, "difference": 0.28850559492975836}, {"video_id": "f2cd41132415857399b19518", "pair_id": "an:4wgx37", "generator": "inpainting", "A_Dice": 0.1245313904327252, "B_Dice": 0.008896250144694726, "difference": -0.11563514028803047}, {"video_id": "37b22da558e1daee1e72b707", "pair_id": "an:95q8g9", "generator": "inpainting", "A_Dice": 0.00016417922849022284, "B_Dice": 0.00013692886166365674, "difference": -2.7250366826566096e-05}]
+
+定位错误证据：分别检查编辑区召回（漏覆盖）、real像素FPR（背景误报）及固定样例。低误报不能单独证明定位成功；本报告不凭数值虚构肉眼边界结论。共同样例身份/PTS/概率色阶固定，不按预测挑选。
+
+限制：相机运动与逐帧几何可比性未解决；单seed小队列不能证明三维增益，或把切片关系收益外推到其他数据。开发fake全程编辑，无法检验复杂时间切换。
+
+完整产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_rgbd_slice_relations_v1`；计算与Git发布状态分开。
