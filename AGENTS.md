@@ -138,3 +138,9 @@ results, or inconsistency between the paper and implementation.
 - Root contract section16 governs this proposal; existing PVST cube contracts and
   resource evidence remain unchanged. No model implementation/training is authorized
   by the design document; unresolved axes/units/alignment and parameters stay explicit.
+- ADR-0033 and `docs/pvst/depth_slice_pilot_config.json` supersede the design-only
+  execution restriction for one DEPTH_SLICE_RELATION pilot. Implementations live
+  in `research_tools/depth_slice`; preserve learned native-pixel slab encoding,
+  explicit temporal/depth relations and local pixel bypass. Reuse registered
+  ANAKIN train8/dev4 pairs, no new scene filter, no old voxel model or forensic
+  checkpoint. One seed, max30/min10/patience8; no extra conditions or tests access.

@@ -1,0 +1,35 @@
+{
+  "protocol": "depth-slice-relation-pilot-v1",
+  "condition": "DEPTH_SLICE_RELATION",
+  "seed": 20260909,
+  "source_manifest": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/manifest.json",
+  "cache_root": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_point_voxel_v02/cache",
+  "output": "/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_depth_slice_relation_pilot_v1",
+  "resnet_weights": "/media/njupt/8FCD3869E2FAB06F/chenyh/cache/torch/hub/checkpoints/resnet18-f37072fd.pth",
+  "scale": 1.9888148307800293,
+  "h": 0.125,
+  "d0": 0,
+  "D": 512,
+  "heads": 8,
+  "blocks": 2,
+  "frames": 24,
+  "epochs": 30,
+  "min_epochs": 10,
+  "patience": 8,
+  "lr": 0.0003,
+  "weight_decay": 0.01,
+  "amp": "BF16",
+  "monitor_pairs": [
+    "an:7ogg04",
+    "an:728qx7"
+  ],
+  "sample_video_ids": [
+    "cb41b3d004b6640f6c3b5bb1",
+    "f02cfe65b813132c7e61618f",
+    "e73bc60d4e2c5b994ee45ba4",
+    "a2a08b465a8cea8a95403ee7",
+    "f2cd41132415857399b19518",
+    "37b22da558e1daee1e72b707"
+  ],
+  "visual_frozen": true
+}

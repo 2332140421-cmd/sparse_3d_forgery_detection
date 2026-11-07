@@ -92,3 +92,11 @@ export CUDA_VISIBLE_DEVICES=0
 两帧微批梯度归因：FP32基于分组参考通过（原A/C失败保留）、BF16通过；唯一最大窗口组1反向SpMM申请548MiB时OOM，组2–4未运行、真实更新0次，正式模型0/2，未训练。见[报告](target_microbatch_2_gradient_check_v1.md)。
 
 XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2为198,398/55,153，coarse超预算10.306%；阶段二未运行，正式XYZ仍null、模型0/2。见[报告](xyz_scale_budget_screen_v1.md)。
+
+<!-- depth-slice-pilot -->
+
+## 深度切片关系首轮训练（独立新方法）
+
+2026-11-07：ADR-0033授权单条件DEPTH_SLICE_RELATION。执行代码已实现，4项CPU合同检查通过；即将执行官方资产/PTS核验、原生冻结视觉缓存和真实含非空GT片段两次更新，成功后自动训练。不是旧PVST0/2正式模型的续跑。
+配置：[首轮协议](depth_slice_pilot_config.json)；入口`python -m research_tools.depth_slice.experiment --config docs/pvst/depth_slice_pilot_config.json`。
+实时状态及产物：`derived/pvst_depth_slice_relation_pilot_v1/progress.json`。以文件实际状态为准；本页的准备说明不冒充训练已完成。
