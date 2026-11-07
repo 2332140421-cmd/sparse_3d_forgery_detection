@@ -95,10 +95,6 @@ XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2�
 
 <!-- depth-slice-pilot -->
 
-## 深度切片关系首轮训练（独立新方法）
+## 深度切片关系首轮训练
 
-2026-11-07：RUNNING，执行源码35914bb1f469d896f77b91954780a5116179bc49。
-6项CPU检查及真实非空GT片段两次更新通过；已启动自动epoch0完整开发评价，随后正式训练，非旧PVST0/2模型的续跑。
-数据ANAKIN训练8pair/16视频/2138帧，开发4pair/8视频/924帧；无新场景过滤或MoGe调用。
-见[启动核验/后续结果](depth_slice_relation_pilot_v1.md)、[配置](depth_slice_pilot_config.json)、ADR-0033。
-实时状态以`derived/pvst_depth_slice_relation_pilot_v1/progress.json`为准，尚无最终成绩。
+已完成；单条件独立新方法，见[结果](depth_slice_relation_pilot_v1.md)。旧PVST资源/模型完成数不变。
