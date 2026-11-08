@@ -112,3 +112,9 @@ COMPLETE；见[报告](rgbd_slice_relations_v1.md)。两个条件均使用深度
 ## 最终关系上下文LayerNorm单条件
 
 本轮只改变最终关系token的通道归一化，其余沿原匹配协议；见[实验报告/运行入口](rgbd_slice_context_norm_v1.md)、ADR-0035。原A/B结果及完整B拟合诊断保持不变。
+
+<!-- set-to-set-fit -->
+
+## 集合对集合限定拟合
+
+COMPLETE；更新80/80，见[报告](set_to_set_fit_check_v1.md)。无正式训练或开发/测试评分。
