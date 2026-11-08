@@ -1,0 +1,90 @@
+{
+  "status": "COMPLETE",
+  "base_head": "34cd65d6e1ea68f71500be47866d169eebfd7046",
+  "coverage": [
+    {
+      "pair": "an:7ogg04",
+      "frames": 24,
+      "GT_pixels": 326335,
+      "GT_selected_pixels": 326320,
+      "GT_excluded_pixels": 15,
+      "total_coverage": 0.9999540349640706,
+      "nonempty_frame_coverage_min": 0.9988292226038089,
+      "nonempty_frame_coverage_median": 1.0,
+      "nonempty_frame_coverage_max": 1.0,
+      "frames_with_excluded_GT": 1,
+      "edited_slice_frame_units": 12259,
+      "coaggregated_normal_pixels": 3500524,
+      "edited_fraction_in_edited_slices": 0.0852713097267618,
+      "exclusion_paths": {
+        "excluded_original_native_valid": 15,
+        "excluded_resample_no_support": 0,
+        "excluded_resample_mixed_support": 0,
+        "excluded_resample_nonfinite": 0
+      }
+    },
+    {
+      "pair": "an:728qx7",
+      "frames": 24,
+      "GT_pixels": 40431,
+      "GT_selected_pixels": 40431,
+      "GT_excluded_pixels": 0,
+      "total_coverage": 1.0,
+      "nonempty_frame_coverage_min": 1.0,
+      "nonempty_frame_coverage_median": 1.0,
+      "nonempty_frame_coverage_max": 1.0,
+      "frames_with_excluded_GT": 0,
+      "edited_slice_frame_units": 38,
+      "coaggregated_normal_pixels": 4770901,
+      "edited_fraction_in_edited_slices": 0.00840328624173098,
+      "exclusion_paths": {
+        "excluded_original_native_valid": 0,
+        "excluded_resample_no_support": 0,
+        "excluded_resample_mixed_support": 0,
+        "excluded_resample_nonfinite": 0
+      }
+    }
+  ],
+  "AN_category_counts": {
+    "A": 0,
+    "B": 4,
+    "C": 3,
+    "待确认": 1
+  },
+  "AF_inventory": {
+    "AF_train_edit_rows": 3824,
+    "AF_train_source_count": 2660,
+    "AF_operation_counts": {
+      "add+delete": 198,
+      "add": 580,
+      "delete": 3046
+    },
+    "all_nontrain_sources_excluded": 1212
+  },
+  "fit_checkpoint_files": [],
+  "seconds": 3.224964825436473,
+  "model_frontend_GPU_download_calls": 0,
+  "AN_pair_ids_by_category": {
+    "A": [],
+    "B": [
+      "an:7ogg04",
+      "an:95qvg9",
+      "an:4wdo37",
+      "an:40y1x9"
+    ],
+    "C": [
+      "an:728qx7",
+      "an:7p8r14",
+      "an:7e2557"
+    ],
+    "待确认": [
+      "an:4z1827"
+    ]
+  },
+  "next_priority": "特征保留：在输入基本覆盖的前提下，后续检查编码/池化后编辑证据保留；本轮不运行模型、不改valid/网络或训练集合",
+  "evidence_conclusion": "15 original-valid exclusions in one frame, otherwise complete edit-region pool selection; mixing-count risk confirmed, learned attention/feature loss not measured",
+  "frame_coverage_rows": 48,
+  "edited_slice_count_rows": 12297,
+  "AF_excluded_official_train_rows": 165,
+  "interpretation": "input selection only, not detection performance, learned attention or causal fake evidence"
+}
