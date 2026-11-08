@@ -152,3 +152,10 @@ results, or inconsistency between the paper and implementation.
   Reuse train8/dev4 and fixed24-frame clips; only their independent MoGe<=768
   cache and essential official dependencies are authorized. Fit check must pass
   before formal max30/min10/patience8 training. Both conditions use depth.
+- ADR-0035 authorizes only RGBD_SLICE_RELATION_NORM with one shared affine
+  LayerNorm512 after final relations and before both zero-initialized residual
+  projections. Keep all ADR-0034 data/model/training settings, old A/B defaults
+  and strict checkpoint compatibility. Reuse caches/initialization; no frontend,
+  repeated pair fitting or old-condition training. Use the existing train loop
+  via research_tools.rgbd_slice.context_norm; record detached scalar context and
+  preclip-gradient diagnostics, then compare saved old results and new best/last.

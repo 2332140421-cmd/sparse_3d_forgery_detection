@@ -95,12 +95,14 @@ class SlabPool(nn.Module):
 
 
 class RGBDSlices(nn.Module):
-    def __init__(self,encoder,relation=False):
+    def __init__(self,encoder,relation=False,context_norm=False):
         super().__init__();self.local=Local(encoder);self.relation=relation
         if relation:
             self.pool=SlabPool();self.time=nn.ModuleList([PairRelation(),PairRelation()]);self.depth=nn.ModuleList([PairRelation(),PairRelation()])
             self.pixel_context=nn.Linear(512,32);self.frame_context=nn.Linear(512,1)
             for m in [self.pixel_context,self.frame_context]:nn.init.zeros_(m.weight);nn.init.zeros_(m.bias)
+            # Appended after all old modules; LayerNorm initialization uses no RNG.
+            self.context_norm=nn.LayerNorm(512,eps=1e-5) if context_norm else None
     def train(self,mode=True):
         super().train(mode)
         for m in self.local.encoder.modules():
@@ -127,7 +129,9 @@ class RGBDSlices(nn.Module):
             local=local.to('cpu');locals.append(local);desc.append(d)
             if self.relation:
                 args=(local,f['xyz'],f['valid']);encoded.append(checkpoint(self.pool,*args,use_reentrant=False) if self.training else self.pool(*args))
-        contexts=self.relations(encoded,frames) if self.relation else [None]*len(frames);result=[]
+        contexts=self.relations(encoded,frames) if self.relation else [None]*len(frames)
+        if self.relation and self.context_norm is not None:contexts=[self.context_norm(c) for c in contexts]
+        result=[]
         for f,local,d,c in zip(frames,locals,desc,contexts):
             if self.relation:
                 _,index=slab_ids(f['xyz'].to(device),f['valid'].to(device));valid=f['valid'].to(device);h,w=valid.shape

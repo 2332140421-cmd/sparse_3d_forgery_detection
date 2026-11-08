@@ -74,7 +74,7 @@ def geometry(config,out,rows,progress):
 class Video(RegisteredVideo):
     def __init__(self,row,config):
         super().__init__(row,config)
-        folder=Path(config['output'])/'geometry'/row['video_id'];meta=json.loads((folder/'complete.json').read_text())
+        folder=Path(config.get('geometry_root',Path(config['output'])/'geometry'))/row['video_id'];meta=json.loads((folder/'complete.json').read_text())
         if meta['video_sha256']!=row['video_sha256'] or meta['pts']!=row['pts']:raise ValueError('HIGH_RES_FRAME_IDENTITY')
         self.xyz=np.load(folder/'xyz.npy',mmap_mode='r');self.valid=np.load(folder/'valid.npy',mmap_mode='r')
     def frame(self,i):

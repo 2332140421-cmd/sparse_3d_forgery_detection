@@ -25,6 +25,7 @@ from scripts.prepare_v8_assets import digest
 
 REPO=Path(__file__).resolve().parents[2]
 CONDITIONS=['RGBD_LOCAL','RGBD_SLICE_RELATION']
+NORM_CONDITION='RGBD_SLICE_RELATION_NORM'
 
 
 def git(*args):return subprocess.check_output(['git',*args],cwd=REPO,text=True).strip()
@@ -37,9 +38,10 @@ def state_hash(state):
 
 
 def make(config,out,condition):
-    seed_all(config['seed']);m=RGBDSlices(backbone(config),condition==CONDITIONS[1])
-    common=torch.load(out/'common_initial.pt',map_location='cpu',weights_only=True);m.local.load_state_dict(common,strict=True)
-    if state_hash(m.local.state_dict())!=json.loads((out/'initialization.json').read_text())['common_sha256']:raise ValueError('COMMON_INITIALIZATION_CHANGED')
+    seed_all(config['seed']);m=RGBDSlices(backbone(config),condition in [CONDITIONS[1],NORM_CONDITION],context_norm=condition==NORM_CONDITION)
+    initialization_root=Path(config.get('initialization_root',out))
+    common=torch.load(initialization_root/'common_initial.pt',map_location='cpu',weights_only=True);m.local.load_state_dict(common,strict=True)
+    if state_hash(m.local.state_dict())!=json.loads((initialization_root/'initialization.json').read_text())['common_sha256']:raise ValueError('COMMON_INITIALIZATION_CHANGED')
     return m.cuda()
 
 
@@ -55,6 +57,7 @@ def forward(model,fs):
 def grad_info(model):
     groups={'rgb_stem':'local.encoder.downsample_layers.','depth_stem':'local.encoder.downsample_layers_e.','rgbd_interaction':'local.encoder.stages.','decoder':'local.refine','pixel':'local.final','frame':'local.frame'}
     if model.relation:groups.update(pool='pool.',time='time.',depth='depth.',pixel_context='pixel_context.',frame_context='frame_context.')
+    if getattr(model,'context_norm',None) is not None:groups['context_norm']='context_norm.'
     info={}
     for name,prefix in groups.items():
         gs=[p.grad for n,p in model.named_parameters() if n.startswith(prefix) and p.grad is not None]
@@ -62,7 +65,7 @@ def grad_info(model):
     return info
 
 
-def update(model,opt,fs,diagnose=False):
+def update(model,opt,fs,diagnose=False,context_diagnostics=False):
     model.train();opt.zero_grad(set_to_none=True);started=time.monotonic();parts=[]
     # Same one-clip mean and one AdamW step. A has no temporal graph, so native
     # frame-wise backward is exactly its clip loss gradient (not extra updates).
@@ -76,12 +79,48 @@ def update(model,opt,fs,diagnose=False):
         if not torch.isfinite(loss):raise ValueError('NONFINITE_LOSS')
         loss.backward();parts=[t.detach().cpu().numpy()];del pred,t,loss
     info=grad_info(model) if diagnose else None
+    if context_diagnostics:
+        names=['frame_context','pixel_context','context_norm']
+        norms=torch.stack([torch.sqrt(sum((p.grad.detach().float().square().sum() for p in getattr(model,name).parameters() if p.grad is not None),torch.zeros((),device='cuda'))) for name in names])
     norm=torch.nn.utils.clip_grad_norm_(model.parameters(),1,error_if_nonfinite=True)
     before=model.local.final[-1].weight.detach().clone() if diagnose else None
     opt.step();torch.cuda.synchronize()
     if diagnose and torch.equal(before,model.local.final[-1].weight):raise ValueError('NO_PIXEL_PARAMETER_UPDATE')
-    return {'terms':np.mean(parts,axis=0).tolist(),'seconds':time.monotonic()-started,'gradient_norm':float(norm),'gradients':info,'optimizer_states':len(opt.state),
+    extra={'preclip_context_gradients':dict(zip(names,norms.cpu().tolist())),'clip_coefficient':float((1./(norm+1e-6)).clamp(max=1.))} if context_diagnostics else {}
+    return {**extra,'terms':np.mean(parts,axis=0).tolist(),'seconds':time.monotonic()-started,'gradient_norm':float(norm),'gradients':info,'optimizer_states':len(opt.state),
             'peak_allocated':torch.cuda.max_memory_allocated(),'peak_reserved':torch.cuda.max_memory_reserved(),'peak_rss':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024}
+
+
+class ContextScaleRecorder:
+    """Detached scalar reductions, one host transfer at the end of each update.
+
+    Hooks use the existing forward tensors. No RNG calls, per-slice CPU sync,
+    retained activations, extra forward or change to the backward graph.
+    """
+    def __init__(self,model):
+        self.active=False;self.rows=[];self.handles=[]
+        def norm_hook(module,args,output):
+            if self.active:
+                a=args[0].detach().float();b=output.detach().float()
+                self.rows.append(torch.stack((a.square().sum(),a.new_tensor(a.numel()),b.square().sum(),b.new_tensor(b.numel()),a.new_zeros(()),a.new_zeros(()),a.new_zeros(()))))
+        def pixel_hook(module,args,output):
+            if self.active:
+                x=output.detach().float();z=x.new_zeros(())
+                self.rows.append(torch.stack((z,z,z,z,x.square().sum(),x.new_tensor(x.numel()),z)))
+        def frame_hook(module,args,output):
+            if self.active:
+                x=output.detach().float();z=x.new_zeros(())
+                self.rows.append(torch.stack((z,z,z,z,z,z,x.abs().sum())))
+        for module,hook in [(model.context_norm,norm_hook),(model.pixel_context,pixel_hook),(model.frame_context,frame_hook)]:self.handles.append(module.register_forward_hook(hook))
+    def begin(self,frames):self.rows=[];self.frames=frames;self.active=True
+    def finish(self):
+        self.active=False
+        totals=torch.stack(self.rows).sum(0).cpu().tolist() if self.rows else [0.]*7
+        self.rows=[]
+        rms=lambda a,n:(a/n)**.5 if n else None
+        return {'raw_token_rms':rms(*totals[:2]),'normalized_token_rms':rms(*totals[2:4]),'pixel_projection_rms':rms(*totals[4:6]),'frame_residual_mean_abs':totals[6]/self.frames}
+    def close(self):
+        for handle in self.handles:handle.remove()
 
 
 def load_clip(row,clip,c):
@@ -194,27 +233,47 @@ def train(condition,c,out,m,identity,progress):
         model.load_state_dict(s['model']);opt.load_state_dict(s['optimizer']);history=s['history'];best=s['best'];best_epoch=s['best_epoch'];bad=s['bad'];begin=s['epoch']+1;updates=history[-1]['updates']
         random.setstate(s['rng']['python']);np.random.set_state(s['rng']['numpy']);torch.set_rng_state(s['rng']['torch']);torch.cuda.set_rng_state_all(s['rng']['cuda'])
     started=time.monotonic();prior_seconds=history[-1]['cumulative_s'] if history else 0.
+    scales=ContextScaleRecorder(model) if condition==NORM_CONDITION else None
     if not (folder/'epoch0_dev.json').exists():save(folder/'epoch0_dev.json',evaluate(model,dev,c,progress))
     for epoch in range(begin,31):
-        ep=time.monotonic();order=list(m['clips']);random.Random(c['seed']+epoch).shuffle(order);online=[];torch.cuda.reset_peak_memory_stats()
+        ep=time.monotonic();order=list(m['clips']);random.Random(c['seed']+epoch).shuffle(order);online=[];execution_records=[];torch.cuda.reset_peak_memory_stats()
         for ci,clip in enumerate(order):
             progress('train',condition=condition,epoch=epoch,clip=ci,total=len(order),updates=updates)
-            row=next(r for r in trainrows if r['video_id']==clip['video_id']);fs=load_clip(row,clip,c);record=update(model,opt,fs);online.append(record['terms']);updates+=1;del fs
+            row=next(r for r in trainrows if r['video_id']==clip['video_id']);fs=load_clip(row,clip,c)
+            if scales:scales.begin(len(fs))
+            record=update(model,opt,fs,context_diagnostics=scales is not None);online.append(record['terms']);updates+=1
+            if scales:
+                record.update(scales.finish());execution_records.append(record)
+                with (folder/'update_history.jsonl').open('a') as log:log.write(json.dumps({'epoch':epoch,'update':updates,'video_id':clip['video_id'],'range':[clip['start'],clip['end']],**record})+'\n')
+            del fs
         dm=evaluate(model,dev,c,progress);mm=evaluate(model,monitor_rows,c,progress,clip_list=monitor_clips,pixel_ap=False)
         improved=dm['metrics']['dice']>best
         if improved:best=dm['metrics']['dice'];best_epoch=epoch;bad=0
         else:bad+=1
         if state_hash(dict(model.local.encoder.named_buffers()))!=bn_hash:raise ValueError('ENCODER_BN_BUFFERS_CHANGED')
         parts=np.mean(online,axis=0);r={'epoch':epoch,'updates':updates,'loss':float(parts.sum()),'frame_BCE':float(parts[0]),'pixel_BCE':float(parts[1]),'dice_loss':float(parts[2]),'dev':dm['metrics'],'train_monitor_clips':mm['metrics'],'best_epoch':best_epoch,'bad':bad,'epoch_s':time.monotonic()-ep,'cumulative_s':prior_seconds+time.monotonic()-started,'lr':[g['lr'] for g in opt.param_groups],'peak_allocated':torch.cuda.max_memory_allocated(),'peak_reserved':torch.cuda.max_memory_reserved(),'peak_rss':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024}
+        if scales:
+            keys=['raw_token_rms','normalized_token_rms','pixel_projection_rms','frame_residual_mean_abs','gradient_norm','clip_coefficient']
+            r['context_diagnostics']={k:float(np.mean([x[k] for x in execution_records if x[k] is not None])) if any(x[k] is not None for x in execution_records) else None for k in keys}
+            r['context_diagnostics'].update({name+'_preclip_gradient':float(np.mean([x['preclip_context_gradients'][name] for x in execution_records])) for name in ['frame_context','pixel_context','context_norm']})
+            r['update_seconds']=sum(x['seconds'] for x in execution_records);r['epoch_evaluation_seconds']=dm['seconds']+mm['seconds']
         history.append(r);save(folder/'history.json',history);history_csv(folder/'history.csv',history);save(folder/f'epoch{epoch:02d}_dev.json',dm)
         s=checkpoint_state(model,opt,epoch,best_epoch,best,bad,history,identity);s['config']=c;torch.save(s,folder/'last.pt')
         if improved:torch.save(s,folder/'best.pt')
         print('EPOCH_COMPLETE '+condition+' '+json.dumps(r),flush=True)
         if epoch>=10 and bad>=8:break
+    final_eval_started=time.monotonic()
     s=torch.load(folder/'best.pt',map_location='cpu',weights_only=False);model.load_state_dict(s['model'])
     bd=evaluate(model,dev,c,progress,samples=folder/'samples');bm=evaluate(model,monitor_rows,c,progress,clip_list=monitor_clips,samples=folder/'train_monitor_samples',pixel_ap=False)
     save(folder/'best_dev.json',bd);save(folder/'best_train_monitor.json',bm)
     summary={'status':'COMPLETE','condition':condition,'best_epoch':best_epoch,'last_epoch':history[-1]['epoch'],'updates':updates,'best_dev':bd['metrics'],'best_train_monitor_clips':bm['metrics'],'parameters':sum(p.numel() for p in model.parameters()),'trainable':sum(p.numel() for p in model.parameters() if p.requires_grad),'seconds':prior_seconds+time.monotonic()-started,'peak_allocated':max(r['peak_allocated'] for r in history),'peak_reserved':max(r['peak_reserved'] for r in history),'peak_rss':max(r['peak_rss'] for r in history)}
+    if scales:
+        s=torch.load(folder/'last.pt',map_location='cpu',weights_only=False);model.load_state_dict(s['model'])
+        ld=evaluate(model,dev,c,progress,samples=folder/'last_samples');lm=evaluate(model,monitor_rows,c,progress,clip_list=monitor_clips,pixel_ap=False)
+        save(folder/'last_dev.json',ld);save(folder/'last_train_monitor.json',lm)
+        summary.update(last_dev=ld['metrics'],last_train_monitor_clips=lm['metrics'],context_norm_eps=model.context_norm.eps,final_evaluation_seconds=time.monotonic()-final_eval_started,training_update_seconds=sum(x['update_seconds'] for x in history),epoch_evaluation_seconds=sum(x['epoch_evaluation_seconds'] for x in history),seconds=prior_seconds+time.monotonic()-started)
+        summary['peak_allocated']=max(summary['peak_allocated'],torch.cuda.max_memory_allocated());summary['peak_reserved']=max(summary['peak_reserved'],torch.cuda.max_memory_reserved());summary['peak_rss']=max(summary['peak_rss'],resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024)
+        scales.close()
     save(folder/'summary.json',summary);del model,opt;torch.cuda.empty_cache();return summary
 
 
