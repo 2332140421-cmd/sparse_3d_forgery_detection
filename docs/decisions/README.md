@@ -34,3 +34,5 @@
 - [ADR-0031：观看深度整片与真实关系预测（设计阶段）](0031-depth-slice-relation-design.md)
 
 - [ADR-0032：深度切片监督关系与小规模CPU审计](0032-depth-slice-supervised-relations-audit.md)
+
+- [ADR-0036：自适应集合对集合限定拟合](0036-adaptive-set-to-set-fit.md)

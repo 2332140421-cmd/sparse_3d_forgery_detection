@@ -1,0 +1,189 @@
+{
+  "status": "COMPLETE",
+  "worker_exit_code": 0,
+  "execution_head": "456f58b37f610e6bc11e6830105132bd891250a3",
+  "updates": 80,
+  "pairs": [
+    {
+      "pair_id": "an:7ogg04",
+      "frames_per_video": 24,
+      "updates_per_role": 20,
+      "total_updates": 40,
+      "initial_fake_dice": 0.09809653029491043,
+      "final_fake_dice": 0.8643025884155996,
+      "final_fake_iou": 0.762088374958342,
+      "final_fake_GT_recall": 0.9898769811964598,
+      "final_real_pixel_FPR": 0.0,
+      "final_fake_frame_BCE_FP32": 1.7129200994968414,
+      "final_real_frame_BCE_FP32": 0.19593845307826996,
+      "final_fake_mean_frame_logit": -1.5139973958333333,
+      "final_real_mean_frame_logit": -1.5305989583333333
+    },
+    {
+      "pair_id": "an:728qx7",
+      "frames_per_video": 24,
+      "updates_per_role": 20,
+      "total_updates": 40,
+      "initial_fake_dice": 0.0015980032208004734,
+      "final_fake_dice": 0.40926195102345364,
+      "final_fake_iou": 0.2573025213709413,
+      "final_fake_GT_recall": 0.9552891745576986,
+      "final_real_pixel_FPR": 0.0,
+      "final_fake_frame_BCE_FP32": 1.5352673679590225,
+      "final_real_frame_BCE_FP32": 0.24234415094057718,
+      "final_fake_mean_frame_logit": -1.2926432291666667,
+      "final_real_mean_frame_logit": -1.2939453125
+    }
+  ],
+  "tests": {
+    "passed": 8,
+    "skipped": 1,
+    "skip_note": "existing optional CUDA smoke under sandbox; new actual model performed 80 CUDA updates"
+  },
+  "resources": {
+    "status": "COMPLETE",
+    "updates": 80,
+    "exit_code": 0,
+    "model_s": 0.7765688160434365,
+    "load_s": 1.900408323854208,
+    "stop_reason": "80_UPDATES",
+    "BN_unchanged": true,
+    "optimizer_states": 631,
+    "wall_s": 1037.8580716913566,
+    "peak_allocated": 3133802496,
+    "peak_reserved": 12821987328,
+    "peak_rss": 17069850624,
+    "actual_worker_exit_code": 0
+  },
+  "worker_process_wall_s": 1041.7302095461637,
+  "stage_seconds": {
+    "forward_s": 263.2895023934543,
+    "backward_s": 682.5472996439785,
+    "adamw_and_checks_s": 3.2321591172367334,
+    "seconds": 949.0689611546695
+  },
+  "evaluations_seconds": 81.74081642646343,
+  "gradients": {
+    "local.encoder": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 5.933511257171631,
+      "second_norm": 1.6143358945846558,
+      "last_norm": 0.060964521020650864
+    },
+    "local.refine": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 4.042108058929443,
+      "second_norm": 2.21658992767334,
+      "last_norm": 0.05046120285987854
+    },
+    "pool": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 0.3677995204925537,
+      "second_norm": 0.28054577112197876,
+      "last_norm": 0.0355101078748703
+    },
+    "sets.participation.0": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 0.05391011759638786,
+      "second_norm": 0.01650991104543209,
+      "last_norm": 0.00031881436007097363
+    },
+    "sets.participation.1": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 0.2474239617586136,
+      "second_norm": 0.11286184936761856,
+      "last_norm": 0.002430214313790202
+    },
+    "sets.read_members": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 3.8577959537506104,
+      "second_norm": 3.151426076889038,
+      "last_norm": 0.0890025645494461
+    },
+    "sets.interaction": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 1.297946572303772,
+      "second_norm": 0.9677166938781738,
+      "last_norm": 0.13383689522743225
+    },
+    "sets.unit_readout": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 3.8221287727355957,
+      "second_norm": 3.5738208293914795,
+      "last_norm": 0.3084075450897217
+    },
+    "sets.current_readout": {
+      "all_present_finite": true,
+      "nonzero_updates": 79,
+      "first_norm": 0.0,
+      "second_norm": 0.13060852885246277,
+      "last_norm": 0.0012688656570389867
+    },
+    "sets.global_readout": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 4.148967266082764,
+      "second_norm": 4.643579959869385,
+      "last_norm": 0.5879164934158325
+    },
+    "sets.gru": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 3.713336229324341,
+      "second_norm": 4.841744422912598,
+      "last_norm": 0.7883502840995789
+    },
+    "sets.frame_head": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 4.49097204208374,
+      "second_norm": 7.525057792663574,
+      "last_norm": 2.1372337341308594
+    },
+    "pixel_context": {
+      "all_present_finite": true,
+      "nonzero_updates": 80,
+      "first_norm": 2.9541594982147217,
+      "second_norm": 3.2391815185546875,
+      "last_norm": 0.04178108647465706
+    }
+  },
+  "intervention": {
+    "scope": "first fixed training fake clip, same final weights/eval; zero returned relation message and relation g only",
+    "frame_logit_mean_abs_difference": 1.6796875,
+    "pixel_logit_mean_abs_difference": 0.3806793689727783,
+    "pixel_probability_mean_abs_difference": 0.05273805186152458
+  },
+  "routing": {
+    "last_mean_membership_per_unit": [
+      0.5080512166023254,
+      0.50806725025177,
+      0.5081130862236023,
+      0.5081745982170105,
+      0.5081259608268738,
+      0.5081660151481628,
+      0.508093535900116,
+      0.5081204175949097
+    ],
+    "last_mean_membership_sum_over_units": 4.064951419830322,
+    "last_AB_membership_product_mean": 0.023313820362091064,
+    "unit_cosine_offdiag_mean_min": 0.9999286532402039,
+    "unit_cosine_offdiag_mean_max": 0.9999408721923828,
+    "last_read_max_weight_mean": 0.0015018233098089695,
+    "last_empty_weight_mean": 0.0015018233098089695
+  },
+  "initial_frame_BCE_FP32": 0.6957194271186988,
+  "final_frame_BCE_FP32": 0.9216175178686777,
+  "fit_outcome": "spatial improvement on both fixed fake clips; relation frame detection not fitted; highly homogeneous relation units",
+  "formal_training_launched": false,
+  "frontend_calls": 0,
+  "precision_note": "Canonical frame BCE from saved FP32 terms[0]; auxiliary frame_BCE field used BF16 target and has <=0.0010547191 rounding difference; raw files preserved."
+}
