@@ -104,3 +104,7 @@ XYZ扩展尺度CPU筛选：NO_CANDIDATE；固定24帧窗口最粗fine1/coarse2�
 ## RGB-D切片匹配实验
 
 COMPLETE；见[报告](rgbd_slice_relations_v1.md)。两个条件均使用深度。旧结果保留。
+
+## 完整B限定拟合诊断
+
+补齐原A-only小样本检查，独立结果见[报告](rgbd_slice_b_fit_check_v1.md)。只读审阅正式history，不替换正式模型或分数。
