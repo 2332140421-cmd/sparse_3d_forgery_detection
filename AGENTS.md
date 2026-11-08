@@ -138,6 +138,15 @@ results, or inconsistency between the paper and implementation.
 - Root contract section16 governs this proposal; existing PVST cube contracts and
   resource evidence remain unchanged. No model implementation/training is authorized
   by the design document; unresolved axes/units/alignment and parameters stay explicit.
+
+## RGB-D adaptive set-to-set diagnostic
+
+- ADR-0036 and root contract16.4 authorize RGBDSetSlices on pvst-set-to-set-relations:
+  overlapping learned role sets, induced states, joint interactions and relation-only
+  frame GRU. Keep native RGB-D/SlabPool, absolute depth IDs and actual causal PTS.
+  Only two specified training pairs, four24-frame clips, max80 updates/1800s worker.
+  No formal training, dev/test scoring, new frontend or old checkpoint fine-tuning.
+  Old A/B/NORM paths and user JSON stay unchanged; bounded diagnostic is independent.
 - ADR-0033 and `docs/pvst/depth_slice_pilot_config.json` supersede the design-only
   execution restriction for one DEPTH_SLICE_RELATION pilot. Implementations live
   in `research_tools/depth_slice`; preserve learned native-pixel slab encoding,

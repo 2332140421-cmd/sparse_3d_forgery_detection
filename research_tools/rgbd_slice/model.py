@@ -142,3 +142,32 @@ class RGBDSlices(nn.Module):
             args=(local,f['rgb'],ctx);pixel=checkpoint(self.local.decode,*args,use_reentrant=False) if self.training else self.local.decode(*args)
             result.append({'pixel':pixel,'frame':self.local.frame(d).squeeze()+extra,'slices':len(c) if c is not None else 0})
         return result
+
+
+class RGBDSetSlices(RGBDSlices):
+    """Independent ADR-0036 model; old A/B/NORM construction stays unchanged."""
+    def __init__(self,encoder):
+        super().__init__(encoder,False)
+        from .set_relations import SetRelations
+        self.relation=True
+        self.pool=SlabPool();self.sets=SetRelations();self.pixel_context=nn.Linear(512,32)
+        nn.init.zeros_(self.pixel_context.weight);nn.init.zeros_(self.pixel_context.bias)
+
+    def forward(self,frames):
+        device=next(self.parameters()).device;locals=[];encoded=[]
+        for f in frames:
+            args=(f['rgb'],f['depth'])
+            local,_=checkpoint(self.local.encode,*args,use_reentrant=False) if self.training else self.local.encode(*args)
+            local=local.to('cpu');locals.append(local)
+            args=(local,f['xyz'],f['valid'])
+            encoded.append(checkpoint(self.pool,*args,use_reentrant=False) if self.training else self.pool(*args))
+        contexts,frame_logits=self.sets(encoded,[f['pts'] for f in frames]);result=[]
+        for f,local,c,frame in zip(frames,locals,contexts,frame_logits):
+            valid=f['valid'].to(device);_,index=slab_ids(f['xyz'].to(device),valid);h,w=valid.shape
+            projected=self.pixel_context(c);ctx=projected.new_zeros(h*w,32)
+            if len(c):ctx=ctx.index_copy(0,torch.where(valid.reshape(-1))[0],projected[index])
+            ctx=ctx.reshape(h,w,32).permute(2,0,1)[None].to('cpu')
+            args=(local,f['rgb'],ctx)
+            pixel=checkpoint(self.local.decode,*args,use_reentrant=False) if self.training else self.local.decode(*args)
+            result.append({'pixel':pixel,'frame':frame,'slices':len(c)})
+        return result
