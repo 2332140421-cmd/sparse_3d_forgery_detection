@@ -147,6 +147,12 @@ results, or inconsistency between the paper and implementation.
   Only two specified training pairs, four24-frame clips, max80 updates/1800s worker.
   No formal training, dev/test scoring, new frontend or old checkpoint fine-tuning.
   Old A/B/NORM paths and user JSON stay unchanged; bounded diagnostic is independent.
+- ADR-0037 and root contract16.5 authorize only the matched RGBD and
+  RGB_DEPTH_PARTITION two-pair fit on `pvst-rgb-partition-compare`. In the new
+  condition true depth is used for slice assignment and slice position only;
+  same encoder/score shapes receive fixed constants in geometry channels.
+  Both arms start from the same initialization, 80 updates/1800s each.
+  Preserve old entry/results; no frontend extraction or dev/test scoring.
 - ADR-0033 and `docs/pvst/depth_slice_pilot_config.json` supersede the design-only
   execution restriction for one DEPTH_SLICE_RELATION pilot. Implementations live
   in `research_tools/depth_slice`; preserve learned native-pixel slab encoding,

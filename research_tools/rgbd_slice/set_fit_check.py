@@ -45,8 +45,8 @@ def inputs():
     return c,rows
 
 
-def build(c,out):
-    seed_all(c['seed']);model=RGBDSetSlices(backbone(c,out/'official_load.json'))
+def build(c,out,*,rgb_only=False):
+    seed_all(c['seed']);model=RGBDSetSlices(backbone(c,out/'official_load.json'),rgb_only=rgb_only)
     common=torch.load(SOURCE/'common_initial.pt',map_location='cpu',weights_only=True)
     model.local.load_state_dict(common,strict=True)
     h=state_hash(model.local.state_dict())
@@ -55,6 +55,7 @@ def build(c,out):
     # The old classifier is intentionally absent: new detection only reads GRU.
     del model.local.frame
     save(out/'initialization.json',{'common_sha256':h,'loaded_local_keys':list(common),'strict_local_load':True,
+         'model_sha256':state_hash(model.state_dict()),
          'removed_old_classifier_keys':removed,'new_modules':['pool','sets','pixel_context'],
          'trained_checkpoint_loaded':False,'parameters':sum(p.numel() for p in model.parameters()),
          'module_parameters':{n:sum(p.numel() for p in m.parameters()) for n,m in model.named_children()}})
@@ -127,14 +128,14 @@ def intervention(model,fs,out):
     save(out/'intervention.json',result)
 
 
-def worker(out):
+def worker(out,*,condition=None):
     start=time.monotonic();history=[];result={'status':'FAILED','updates':0,'exit_code':1}
     def progress(stage,**extra):
         save(out/'progress.json',{'status':'RUNNING','pid':os.getpid(),'stage':stage,'wall_s':time.monotonic()-start,**extra});print(stage,extra,flush=True)
     try:
-        torch.set_num_threads(4);c,rows=inputs();save(out/'config.json',{**c,'max_updates':80,'worker_seconds':1800,'order':[(r['pair_id'],r['role']) for r in rows]})
+        torch.set_num_threads(4);c,rows=inputs();save(out/'config.json',{**c,'max_updates':80,'worker_seconds':1800,'order':[(r['pair_id'],r['role']) for r in rows],**({'condition':condition} if condition is not None else {})})
         save(out/'launch.json',{'head':git('rev-parse','HEAD'),'gpu':torch.cuda.get_device_name(),'gpu_free_total':torch.cuda.mem_get_info(),'started_unix':time.time()})
-        progress('model');t=time.monotonic();model=build(c,out);opt=optimizer(model,c);result['model_s']=time.monotonic()-t
+        progress('model');t=time.monotonic();model=build(c,out,rgb_only=condition=='RGB_DEPTH_PARTITION');opt=optimizer(model,c);result['model_s']=time.monotonic()-t
         bn=state_hash(dict(model.local.encoder.named_buffers()));t=time.monotonic();clips=[];identities=[]
         for r in rows:
             progress('load',video=r['video_id'])
@@ -165,6 +166,8 @@ def worker(out):
         if last!=80:progress('final_evaluation',update=last);evaluate_fixed(model,rows,clips,out,last,True)
         progress('relation_intervention');intervention(model,clips[0],out)
         if state_hash(dict(model.local.encoder.named_buffers()))!=bn:raise ValueError('BN_BUFFERS_CHANGED')
+        if condition is not None and last==80:
+            torch.save({'condition':condition,'updates':last,'state_dict':model.state_dict()},out/'final.pt')
         result.update(status='COMPLETE',exit_code=0,stop_reason='80_UPDATES' if last==80 else 'TIME_LIMIT',
                       BN_unchanged=True,optimizer_states=len(opt.state))
     except BaseException as e:

@@ -72,15 +72,20 @@ def native_sample(local,linear_ids,hw):
 
 
 class SlabPool(nn.Module):
-    def __init__(self):
+    def __init__(self, *, rgb_only=False):
         super().__init__();self.score=nn.Sequential(nn.Linear(259,128),nn.GELU(),nn.Linear(128,4));self.value=nn.Linear(256,512)
+        self.rgb_only = rgb_only
     def forward(self,local,xyz,valid):
         device=next(self.parameters()).device;local=local.to(device);xyz=xyz.to(device);valid=valid.to(device)
         ids,index=slab_ids(xyz,valid);points=torch.where(valid.reshape(-1))[0];n=len(ids)
         if not n:return local.new_empty(0,512),ids
         q=xyz.reshape(-1,3);hw=valid.shape;scores=[]
         for p in points.split(8192):
-            def score_chunk(l,coordinates,selected):return self.score(torch.cat((native_sample(l,selected,hw),coordinates[selected]),-1)).float()
+            def score_chunk(l,coordinates,selected):
+                visual = native_sample(l,selected,hw)
+                # Keep identical parameter shapes/initialization in the comparison.
+                geometry = visual.new_zeros((len(selected),3)) if self.rgb_only else coordinates[selected]
+                return self.score(torch.cat((visual,geometry),-1)).float()
             args=(local,q,p);scores.append(checkpoint(score_chunk,*args,use_reentrant=False) if self.training else score_chunk(*args))
         score=torch.cat(scores);maximum=score.new_full((n,4),-torch.inf).scatter_reduce(0,index[:,None].expand(-1,4),score,reduce='amax',include_self=True)
         weights=(score-maximum[index]).exp();denom=weights.new_zeros(n,4).index_add(0,index,weights);weights=weights/denom[index]
@@ -146,17 +151,20 @@ class RGBDSlices(nn.Module):
 
 class RGBDSetSlices(RGBDSlices):
     """Independent ADR-0036 model; old A/B/NORM construction stays unchanged."""
-    def __init__(self,encoder):
+    def __init__(self,encoder,*,rgb_only=False):
         super().__init__(encoder,False)
         from .set_relations import SetRelations
         self.relation=True
-        self.pool=SlabPool();self.sets=SetRelations();self.pixel_context=nn.Linear(512,32)
+        self.rgb_only=rgb_only
+        self.pool=SlabPool(rgb_only=rgb_only);self.sets=SetRelations();self.pixel_context=nn.Linear(512,32)
         nn.init.zeros_(self.pixel_context.weight);nn.init.zeros_(self.pixel_context.bias)
 
     def forward(self,frames):
         device=next(self.parameters()).device;locals=[];encoded=[]
         for f in frames:
-            args=(f['rgb'],f['depth'])
+            rgb = f['rgb']
+            depth = rgb.new_zeros(rgb.shape[:2],dtype=torch.float32) if self.rgb_only else f['depth']
+            args=(rgb,depth)
             local,_=checkpoint(self.local.encode,*args,use_reentrant=False) if self.training else self.local.encode(*args)
             local=local.to('cpu');locals.append(local)
             args=(local,f['xyz'],f['valid'])

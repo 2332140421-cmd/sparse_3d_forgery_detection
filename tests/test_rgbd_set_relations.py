@@ -17,6 +17,31 @@ class TinyEncoder(nn.Module):
 class SetTests(unittest.TestCase):
     def setUp(self):
         torch.set_num_threads(2);torch.manual_seed(20260909)
+
+    def test_rgb_only_ignores_geometry_values_but_keeps_partition(self):
+        old = RGBDSetSlices(TinyEncoder()).eval()
+        rgb_only = RGBDSetSlices(TinyEncoder(), rgb_only=True).eval()
+        rgb_only.load_state_dict(old.state_dict(), strict=True)
+        xyz = torch.randn(16,16,3)
+        xyz[...,2] = .03125
+        xyz[:,8:,2] += .125
+        frame = dict(rgb=torch.randint(0,256,(16,16,3),dtype=torch.uint8),
+                     depth=torch.zeros(16,16),xyz=xyz,valid=torch.ones(16,16,dtype=torch.bool),
+                     pts=0.)
+        changed_xyz = xyz + xyz.new_tensor([100.,-50.,.03125])
+        changed = dict(frame, depth=torch.full((16,16), 50.), xyz=changed_xyz)
+        repartitioned = dict(frame, xyz=xyz.clone())
+        repartitioned["xyz"][:4,:4,2] += .25
+        with torch.no_grad():
+            a,b = rgb_only([frame])[0],rgb_only([changed])[0]
+            self.assertEqual(a["slices"],2)
+            self.assertEqual(rgb_only([repartitioned])[0]["slices"],3)
+            for key in ("frame","pixel"):
+                torch.testing.assert_close(a[key],b[key],rtol=0,atol=0)
+            # The same perturbation really reaches the baseline encoder.
+            x,_ = old.local.encode(frame["rgb"],frame["depth"])
+            y,_ = old.local.encode(changed["rgb"],changed["depth"])
+            self.assertFalse(torch.allclose(x,y))
     def test_actual_path_causality_permutation_and_overlap(self):
         model=SetRelations().eval()
         e=[(torch.randn(3,512),torch.tensor([-4,2,10])) for _ in range(3)]
