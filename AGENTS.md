@@ -174,3 +174,8 @@ results, or inconsistency between the paper and implementation.
   repeated pair fitting or old-condition training. Use the existing train loop
   via research_tools.rgbd_slice.context_norm; record detached scalar context and
   preclip-gradient diagnostics, then compare saved old results and new best/last.
+- ADR-0038 and root contract16.6 authorize only the source-isolated ANAKIN
+  train8/dev4 RGBD/RGB_DEPTH_PARTITION comparison: existing 48 clips, matched
+  initial state and epoch orders, fixed12 epochs/576 updates per arm, four-hour
+  independent worker cap. Reuse high-resolution geometry and build/update/evaluate;
+  main epoch12 and separate best, no frontend, reserved test or model changes.
