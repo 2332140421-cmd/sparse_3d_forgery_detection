@@ -122,3 +122,7 @@ COMPLETE；更新80/80，见[报告](set_to_set_fit_check_v1.md)。无正式训�
 两个训练pair空间拟合有进展（fake Dice .86430/.40926，real像素FPR均0），
 但关系单元高度同质化、帧检测尚未拟合；消息置零表明关系被消费，不能据此宣称有效。
 worker退出0、约1041.73秒；完整小型汇总见[JSON](set_to_set_fit_check_v1_summary.json)。本轮已停止。
+
+## ANAKIN来源隔离RGB分片对照
+
+COMPLETE；见[报告](rgb_partition_anakin_dev_v1.md)。
