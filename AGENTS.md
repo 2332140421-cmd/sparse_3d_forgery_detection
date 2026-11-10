@@ -179,3 +179,9 @@ results, or inconsistency between the paper and implementation.
   initial state and epoch orders, fixed12 epochs/576 updates per arm, four-hour
   independent worker cap. Reuse high-resolution geometry and build/update/evaluate;
   main epoch12 and separate best, no frontend, reserved test or model changes.
+- ADR-0039 / root16.7 authorize one RGB_DEPTH_PARTITION ANAKIN expansion:
+  preserve original8 pairs, add8 independent registered train sources, 96clips
+  x6 epochs=576 updates. Freeze source/category selection and cache budget first;
+  only new16 videos may receive native RGB/current high-res MoGe caches (60min,
+  30GiB). Reuse original baseline/dev/initialization, four-hour train cap; no
+  fallback or retries. Report common48-clip fit, dev main576 and separate best.
