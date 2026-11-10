@@ -16,6 +16,14 @@ SEED = 20260909
 COUNTS = {"train": (580, 572), "dev": (462, 462)}
 
 
+def validate_features(x, width):
+    expected = (sum(sum(counts) for counts in COUNTS.values()), 2, width)
+    if x.shape != expected:
+        raise ValueError(f"Expected GRU feature shape {expected}, got {x.shape}")
+    if not np.isfinite(x).all():
+        raise ValueError("GRU features contain nonfinite values")
+
+
 def fit_probe(x_train, y_train):
     model = make_pipeline(StandardScaler(), LogisticRegression(
         C=1.0, solver="lbfgs", max_iter=1000, random_state=SEED))
@@ -122,7 +130,7 @@ def main():
     from scripts.prepare_v8_assets import digest
 
     started = time.monotonic()
-    out = OUT.parent / "pvst_gru_readout_probe_v1"
+    out = OUT.parent / "pvst_gru_readout_probe_v1_retry"
     c, m, identity = (read(OUT / f"{name}.json") for name in ("config", "manifest", "identity"))
     folder = OUT / CONDITION
     weight_path = folder / "last.pt"
@@ -158,8 +166,7 @@ def main():
     del model
     rows = frames["train"] + frames["dev"]
     x = np.stack([r.pop("features") for r in rows])
-    if x.shape != (2080, 2, 512) or not np.isfinite(x).all():
-        raise ValueError("Unexpected GRU feature shape or nonfinite features")
+    validate_features(x, c["D"])
     original = {r["video_id"]: r for r in read(folder / "last_dev.json")["records"]}
     reference_logits = []
     for r in frames["dev"]:

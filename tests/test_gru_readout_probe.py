@@ -2,10 +2,19 @@ import unittest
 
 import numpy as np
 
-from research_tools.rgbd_slice.gru_readout_probe import align, fit_probe, score
+from research_tools.rgbd_slice.gru_readout_probe import align, fit_probe, score, validate_features
 
 
 class TestGRUReadoutProbe(unittest.TestCase):
+    def test_frozen_feature_shape_and_finiteness(self):
+        x = np.zeros((1152 + 924, 2, 512), dtype=np.float32)
+        validate_features(x, 512)
+        with self.assertRaisesRegex(ValueError, "Expected GRU feature shape"):
+            validate_features(x[:-1], 512)
+        x[0, 0, 0] = np.nan
+        with self.assertRaisesRegex(ValueError, "nonfinite"):
+            validate_features(x, 512)
+
     def test_fit_uses_only_supplied_training_rows(self):
         train = np.array([[-2.0, 5.0], [-1.0, 5.0], [1.0, 5.0], [2.0, 5.0]])
         model = fit_probe(train, [0, 0, 1, 1])

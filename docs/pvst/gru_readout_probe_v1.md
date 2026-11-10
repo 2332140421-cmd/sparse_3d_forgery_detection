@@ -12,6 +12,6 @@
 PYTHONPATH=. python -u -m research_tools.rgbd_slice.gru_readout_probe
 ```
 
-结果保存在原运行同级的 `pvst_gru_readout_probe_v1/`。包括 `report.md`、`summary.json`、`frames.csv` 及按CSV顺序存放的 `features.npz`。重复运行不会覆盖该目录。原模型代码、配置、清单及权重身份不匹配时停止。若原帧头复现偏差足以改变排序，应先检查输入和运行环境。
+结果保存在原运行同级的 `pvst_gru_readout_probe_v1_retry/`。原 `pvst_gru_readout_probe_v1/` 保留首次失败记录。形状由冻结的训练与开发帧数推导（1152＋924＝2076）；形状和有限性分别核验。输出包括 `report.md`、`summary.json`、`frames.csv` 和按CSV顺序存放的 `features.npz`。重复运行不会覆盖结果。原模型代码、配置、清单及权重身份不匹配时停止。若原帧头复现偏差足以改变排序，应先检查输入和运行环境。
 
 若开发集 u 读出优于 h，优先查时序更新；若 h 优于原头且接近 u，优先查分类头；若二者均弱，优先查进入 GRU 前的关系汇聚。结合四对逐视频分差判断结果是否由单条视频驱动。
