@@ -54,10 +54,13 @@ def routing(xyz,valid,gt):
     return ids,index,counts,edits,g,mixed,pure
 
 def summarize_pool(scores,index,counts,edits,g):
-    w=normalize_scores(scores,index,len(counts));sums=w.new_zeros(len(counts),4).index_add(0,index,w)
-    # Per-weight reference tests1e-6; long FP32 index_add normalization guard5e-4.
-    error=float((sums-1).abs().max()) if sums.numel() else 0.
-    assert error<=5e-4 and torch.isfinite(w).all()
+    w=normalize_scores(scores,index,len(counts))
+    # Audit only: long original FP32 index_add reductions can drift. Do not
+    # silently repair or re-normalize the actual model weights. FP64 below is
+    # only for measuring their sum, never used by the model or GT mass.
+    assert torch.isfinite(w).all() and (w>=0).all()
+    audit=w.new_zeros(len(counts),4,dtype=torch.float64).index_add(0,index,w.double())
+    error=float((audit-1).abs().max()) if audit.numel() else 0.
     mass=w.new_zeros(len(counts),4).index_add(0,index[g],w[g])
     return mass,error
 
@@ -223,7 +226,7 @@ def main():
         '## 混合片内局部响应',table(['模式','pair','group','可比帧','编辑像素总数','同片背景总数','编辑均值logit','同片背景均值logit','差'],[[r[k] for k in ['mode','pair_id','group','comparable_frames','edit_pixels_total','background_pixels_total','edit_logit_mean','background_logit_mean','edit_minus_background']] for r in grouped]),
         '局部logit按每帧该组全部有效编辑像素/同片背景像素分别均值，再等帧平均；没有混合片的帧不参与该组均值。缺失项保持None/不可比较，不填0。片数只描述规模，不当独立视频证据。组固定<1%与>=1%，不按结果改分组。',
         '## 核验与资源', 'NORMAL检测基线复现：'+json.dumps(reproduction,ensure_ascii=False),
-        f'帧头两条件最大logit差{head_difference}；正常路径仅被动捕获score，不改need_weights/capture或任何模型值。正规化预设CUDA FP32容差5e-4，实际最大误差'+str(results['NORMAL']['normalization_max_error'])+'。',
+        f'帧头两条件最大logit差{head_difference}；正常路径仅被动捕获score，不改need_weights/capture或任何模型值。原FP32权重的FP64求和审计最大偏差'+str(results['NORMAL']['normalization_max_error'])+'。',
         '资源：'+json.dumps({mode:{k:result[k] for k in ['seconds','peak_allocated','peak_reserved','peak_RSS','projection']} for mode,result in results.items()},ensure_ascii=False),
         f"总墙钟{summary['wall_s']:.3f}秒，退出码0；执行HEAD {summary['execution_head']}。所有像素score/权重帧内释放，无全量权重图落盘。产物{OUT}。计算与Git发布状态分开。"]
     text='\n\n'.join(lines)+'\n';(OUT/'report.md').write_text(text);(REPO/DOC).write_text(text)

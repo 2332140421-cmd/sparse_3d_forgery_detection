@@ -46,10 +46,13 @@ class RetentionTests(unittest.TestCase):
         self.assertGreater(int(valid.sum()),8192)
         torch.testing.assert_close(a[0],b[0],rtol=0,atol=0);torch.testing.assert_close(a[1],b[1],rtol=0,atol=0)
         self.assertFalse(model.pool.score._forward_hooks)
-        # Per-element reference tolerance remains1e-6; long FP32 index_add sum uses
-        # the predeclared5e-4 accumulation guard, not a per-weight error bound.
         self.assertLessEqual(capture.max_error,5e-4)
         self.assertFalse(capture.chunks)
+    def test_uniform_long_sum_audit_not_model_repair(self):
+        n=250000;index=torch.zeros(n,dtype=torch.long);g=torch.zeros(n,dtype=torch.bool);g[:250]=True
+        mass,error=summarize_pool(torch.zeros(n,4),index,torch.tensor([n]),torch.tensor([250]),g)
+        torch.testing.assert_close(mass,torch.full((1,4),.001),atol=1e-6,rtol=1e-6)
+        self.assertLess(error,1e-6)
     def test_original_tail_coverage(self):
         n=102;counts={}
         for start in range(0,n,24):
