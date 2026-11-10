@@ -73,9 +73,15 @@ def gradient_info(model):
     return result
 
 
-def update_once(model,opt,fs):
+def clip_objective(parts,frame_bce_weight=1.):
+    """Only ADR-0040 changes frame weight; original default sum stays exact."""
+    if frame_bce_weight not in (0.,1.):raise ValueError('ONLY_ORIGINAL_OR_FRAME_OFF')
+    return parts.sum() if frame_bce_weight==1. else parts[1:].sum()+parts[0]*0.
+
+
+def update_once(model,opt,fs,*,frame_bce_weight=1.):
     model.train();opt.zero_grad(set_to_none=True);torch.cuda.synchronize();start=time.monotonic()
-    output=forward(model,fs);parts=torch.stack([terms(p,f['gt']) for p,f in zip(output,fs)]).mean(0);loss=parts.sum()
+    output=forward(model,fs);parts=torch.stack([terms(p,f['gt']) for p,f in zip(output,fs)]).mean(0);loss=clip_objective(parts,frame_bce_weight)
     if not bool(torch.isfinite(loss)):raise ValueError('NONFINITE_LOSS')
     torch.cuda.synchronize();fwd=time.monotonic();loss.backward();torch.cuda.synchronize();bwd=time.monotonic()
     gradients=gradient_info(model);norm=torch.nn.utils.clip_grad_norm_(model.parameters(),1,error_if_nonfinite=True)

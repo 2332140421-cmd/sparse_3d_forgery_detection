@@ -179,3 +179,9 @@ results, or inconsistency between the paper and implementation.
   initial state and epoch orders, fixed12 epochs/576 updates per arm, four-hour
   independent worker cap. Reuse high-resolution geometry and build/update/evaluate;
   main epoch12 and separate best, no frontend, reserved test or model changes.
+
+- ADR-0040 / root16.8 authorize only FRAME_BCE_OFF on original ANAKIN8/4:
+  frame coefficient0, both spatial coefficients1, unchanged complete model and
+  parameter groups; original manifest/orders/initialization, 12epochs/576steps.
+  Default update weight1 must preserve original objective. No extra freezing,
+  frontend, expansion data, baseline retrain or retries; OFF frame scores only diagnostic.

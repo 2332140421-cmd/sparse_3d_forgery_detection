@@ -649,3 +649,11 @@ RGBD与RGB_DEPTH_PARTITION均从共同初始化重新训练12轮×48更新；完
 同源real及编辑版本不得跨train/dev，逐源URL/媒体SHA补核；不读保留测试，不重提前端。
 主比较epoch12，另列epoch1–12开发fake视频宏Dice best（平分取早）；各4小时时限，不自动重试或降级。
 仅本独立实验取代16.5的两对80次更新范围；原拟合、干预和历史结果不变。旧实验无隐式恢复。
+
+### 16.8 原ANAKIN8对帧BCE关闭消融
+
+2026-11-11按ADR-0040授权pvst-rgb-partition-frame-loss-off唯一条件FRAME_BCE_OFF。
+原16.6的RGB_DEPTH_PARTITION、8对48段/4对完整开发、共同初始化、orders、12轮576更新保持。
+只将frame BCE系数1→0，pixel BCE/soft Dice各1且不重归一化；完整模型、帧头、像素消息、参数组、BN/Dropout/BF16不变。
+旧入口默认1不变；OFF帧指标仅诊断。真实目标/梯度检查不计更新；预检后实际训练，4小时时限，不自动重试/降级。
+不引入16对数据/权重、不重跑前端/基线。末轮主表、best单列、原48段回测及多pair误报检查；不预判具体层梯度冲突。
