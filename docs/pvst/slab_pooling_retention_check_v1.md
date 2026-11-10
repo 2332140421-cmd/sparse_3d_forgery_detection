@@ -1,0 +1,22 @@
+# 冻结切片汇聚保留诊断：协议
+
+基于c5cba7da99861c488021f7f8a60ae3506f995f4d，独立pvst-slab-pooling-retention-check。
+仅原RGB_DEPTH_PARTITION last epoch12/576，原开发4对8视频924唯一帧；原BF16 eval/no_grad及24帧窗口/尾段左上下文。
+NORMAL采集实际SlabPool.score的四头分数，不改模块返回值；依原valid/片号/原生索引复算FP32归一化权重。
+PIXEL_CONTEXT_ZERO沿用上轮pixel_context(C+M)完整投影后清零（含bias），不是只去掉M，不是独立训练的RGB模型。
+每条件各一次完整开发前向；GT仅用于诊断/评价，绝不选像素进模型。
+
+混合片指同片有效编辑与非编辑像素均存在；固定<1%编辑占比为小区域组，>=1%另列。
+均匀参照为片内编辑有效点数/全部有效点数；四头分别记录编辑质量、与参照差、绝对质量。
+逐帧释放完整scores/weights；仅少量片级质量在当前窗口暂存至像素解码后，输出轻量分组统计。
+权重/面积先按帧内等片均值，再等帧；局部logit先按帧内组的有效编辑/背景像素分别均值，再等帧。
+纯编辑片、无有效编辑帧、GT有效覆盖率单列；不可比项None，不填0；片/帧数不当独立视频证据。
+
+正式Dice/IoU/召回/real FPR用全原生画面、阈值0；pixel AP沿正GT帧AP→fake视频宏平均，不裁valid。
+检测top1%沿上轮全部原生FP32 logit ceil1%均值、视频log-mean-exp，只用于NORMAL复现核验。
+关键测试：四头参考softmax/均匀质量、负坐标与GT计数守恒/空片、实际多chunk hook不改变输出、尾段单次计分。
+逐元素四头权重参考容差1e-6；长FP32 index_add归一化和检查预设5e-4。首轮大chunk测试误把逐元素容差用于长归约和（实测2.74e-6），已区分两类检查；权重参考容差未放宽，hook前后实际输出须精确一致。
+
+输出derived/pvst_slab_pooling_retention_check_v1；只依据多视频证据判读是否值得做片内局部方格对照，不实现方格，不预设有效。
+若局部没有响应，不能把漏检归因于汇聚；若NORMAL真有定位收益，与检测排序收益分开。计算和发布状态独立。
+当前尚无本次实测结果。
