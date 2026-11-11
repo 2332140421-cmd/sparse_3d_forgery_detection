@@ -189,3 +189,10 @@ results, or inconsistency between the paper and implementation.
   do not fine-tune encoder/pool or use old sets/GRU/head predictions as inputs.
   Preserve all slices and actual PTS; training GT only defines slice BCE targets.
   Slice AP and valid-pixel backfill AP are separate from precise pixel localization.
+
+## CPU localization oracle
+
+- ADR-0040/root16.8 authorize only original dev four fake/462 frames, SLAB versus
+  one fixed native SLAB_GRID, CPU GT-driven exact whole-unit overlap limits.
+  No model construction, weights, GPU, frontend, training or new data. Preserve
+  old inputs/results; this oracle is neither model performance nor grid-model authorization.
