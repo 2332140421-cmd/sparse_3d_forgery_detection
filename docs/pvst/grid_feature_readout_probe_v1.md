@@ -1,14 +1,46 @@
 # 方格池化前后冻结特征读出诊断
 
-状态：执行前协议。基于e4b3b02e337527bfe4b74216199f0c16dd08494f独立分支，不覆盖后续人工审阅记录。
+完成运行 **COMPLETE，退出码0**。训练8对48段/1152唯一帧，开发4对8视频/924唯一帧（462 fake正GT帧）。不训练主模型、不重提前端，不重跑方格关系模型。
 
-仅加载RGB_DEPTH_PARTITION last epoch12/576，主模型eval/no_grad；只执行Local.encode与native_sample，不执行旧关系或像素头。训练原48段1152唯一帧，开发924唯一帧，全部保留。方格C直接读已PASS缓存。A为256维真实池化输入线性读出；B为A全部有效成员logit的格内均值；C为缓存C512的线性读出；D引用同口径正式方格关系final_dev，禁止重跑或替换。
+## 四视频主表：相同几何有效原生像素 pixel AP
 
-训练每帧在几何有效范围按seed20260909从正负区各取最多128个不放回像素，两模型索引完全相同。各仅拟合一次训练StandardScaler+L2 LogisticRegression(C=1,solver=lbfgs,max_iter=1000,class_weight=balanced)，未收敛即停止，不做搜索。开发不参与拟合。AP按正GT帧→视频→四fake宏平均；不报告不同线性读出零阈值Dice/FPR。
+|视频|A 池化前像素|B 像素均值到格|C 方格C线性|D 正式格关系|B−A|C−B|D−C|
+|---|---|---|---|---|---|---|---|
+|an:7e2e57| 0.035204 | 0.047491 | 0.035003 | 0.015123 | 0.012287 | -0.012488 | -0.019880 |
+|an:4rvro9| 0.953797 | 0.969492 | 0.946943 | 0.928268 | 0.015696 | -0.022549 | -0.018675 |
+|an:4wgx37| 0.293124 | 0.313698 | 0.306840 | 0.300767 | 0.020574 | -0.006859 | -0.006072 |
+|an:95q8g9| 0.088073 | 0.123656 | 0.105503 | 0.068584 | 0.035583 | -0.018153 | -0.036919 |
+|视频宏平均| 0.342550 | 0.363584 | 0.348572 | 0.328186 | 0.021035 | -0.015012 | -0.020386 |
 
-三项必要小图检查通过：训练采样重现/隔离、native_sample索引与方格计数/回填AP、显式标准化FP32读出等价（包括高偏置特征）。沿用atol=rtol=1e-5。逐帧核对真实PTS、原生尺寸、方格顺序及n/g；参数/缓冲和冻结缓存hash前后不变。
+A为真正送入方格池化的256维Local.encode特征，经原native_sample取值，不是32维Local.native。B复用A的logit，在完整原方格有效成员内取均值，没有第三次拟合。C从原已PASS缓存读取512维方格C，按同一分组顺序回填。D直接引用正式SLAB_GRID_CURRENT第576步final_dev.json（宏AP 0.32818578268880655），不重新运行或替换权重。
 
-独立入口：`PYTHONPATH=. python -u -m research_tools.rgbd_slice.grid_feature_readout_probe`。
-产物：`derived/pvst_grid_feature_readout_probe_v1/`。计算与发布状态分开，原结果只读，不训练主模型、不重提前端、不追加实验。
+## 线索在哪一步变弱
 
-执行记录：首次启动缺原rgbd-packages路径，在构造前退出1；补齐原环境后两个读出均收敛，但C折入原始权重在1/1024分数超差（最大绝对3.41402724e-5）。保留该退出1，不放宽容差。改为显式训练标准化后FP32线性打分；由于旧断言前未持久化C系数，需要同协议重新拟合，两个完成尝试分别记录，不作为参数搜索或额外实验条件。
+- **7e2e57：池化前已弱。** A=0.035204，强制整格输出B反而升至0.047491；C=0.035003，较B下降0.012488但几乎与A相同。D=0.015123进一步降低。因此不是“池化前线索很强、被整格粒度抹掉”的情形；C存在较B弱的线性读出，但不足以认定它是主要瓶颈。
+- 另三条也均B>A、C<B。帽子4rvro9的A/B/C均很强（0.947–0.969），滑板移除4wgx37中等（0.293–0.314），骑马移除95q8g9较弱（0.088–0.124）。不是所有编辑都缺乏视觉线索，也没有只在猫这一例出现B/C方向变化。
+- B→C宏AP下降0.015012，逐视频下降0.006859–0.022549；C→D四条均下降，宏差0.020386。C与D的训练、类别权重来源和读出能力不同，**不是纯关系消融，不能据此判定关系模块损害了特征**。
+
+**唯一优先建议：先检查冻结256维视觉特征对7e2e57猫／背景融合线索的表达及其与现有人工可见线索的匹配。** 当前没有在池化前读出强而稳定的猫编辑证据，不优先改方格粒度、池化或关系位置编码。不据此断言特征完全没有信息。四视频的小规模结果不外推到整个数据集；人工可见痕迹不是三维时序异常真值。
+
+## 采样、拟合与计分核验
+
+- 原冻结RGB_DEPTH_PARTITION last.pt：condition正确、epoch12、updates576；strict加载，原共同初始化身份一致。模型eval/no_grad、requires_grad False，参数及缓冲区state hash前后不变。仅调用RGB-only Local.encode（深度零输入），不调用旧sets/GRU/像素头。
+- 原8对每视频72帧，共1152唯一训练帧；几何有效范围内每帧按seed20260909各类最多128个、不放回。两个读出共用**完全相同像素索引与标签**。正样本73,131，负样本147,456，共220,587；负样本含real及fake非编辑区。索引hash及逐视频覆盖见train_frames.csv和summary.json。
+- 每个模型固定StandardScaler+L2 LogisticRegression(C=1, solver=lbfgs, max_iter=1000, class_weight=balanced)，只读训练采样。完成运行分别迭代229/395次，无ConvergenceWarning；拟合耗时6.907/19.256秒。无开发选参。
+- 显式采用训练标准化后FP32线性读出，原atol=rtol=1e-5不变；1024样本核验最大绝对误差分别1.6110686e-05/1.8093684e-05，逐元素允许误差包含相对项，均通过。未把原始权重折入精度问题当作特征差异。
+- 逐帧核对缓存SHA、绝对片号顺序、单元数n、有效编辑数g、原生尺寸、帧号和PTS。每个几何有效像素恰好一个方格；A/B/C同范围。与正式逐帧计分清单完全一致，924唯一帧仅一次计分；Local.encode及池化前特征本身逐帧独立，不调用因果关系，故无需重算重复尾段上下文。保留原PTS及边界身份。
+- AP在正GT帧的全部原生几何有效像素计算，先按fake视频平均再四视频宏平均；无有效编辑GT不填AP0。开发fake共462可评价帧。GT有效覆盖率：7e2e57=100%，4rvro9=99.1020%，4wgx37=99.0612%，95q8g9=100%，与正式记录一致。无GT输入到视觉或线性特征、无GT聚合选像素、无valid作为数值输入。
+- 三项针对性小图检查通过：训练采样重现/隔离；native_sample原生索引、方格n/g计数守恒及均值回填AP与直接像素AP等价（含并列分数）；显式标准化FP32读出等价（含高偏置特征）。不比较不同读出的零阈值Dice/FPR，也不把pixel AP解释为real误报验证。
+- 原权重、24份双组缓存和正式D结果/权重SHA在结束后均复核未变；不保存整库全分辨率特征、像素响应或像素归属图。
+
+## 真实执行历史与资源
+
+首次启动缺原rgbd-packages路径，在模型构造前退出1；日志和退出码保留在 `/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_grid_feature_readout_probe_v1_environment_failure`。补齐已安装的原环境路径，没有安装依赖。
+
+第二次启动已采样并完成两次线性拟合，但C的标准化折入检查有1/1024元素超原容差，最大绝对差3.41402724e-5，在开发评价前退出1；保留于 `/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_grid_feature_readout_probe_v1_folding_failure`。不放宽容差，改用显式标准化。旧断言前未保存C系数，因此重新执行固定拟合；**两个读出各实际拟合2次**，不是超参数搜索；数值修正前后训练采样记录SHA完全相同。该重复成本及两次退出1均不改写为成功。最终完成运行才是本表来源。
+
+完成运行：池化前训练采样40.878秒，开发读取与AP评价577.936秒，总墙钟730.735秒（12.18分钟，含身份/SHA核验；不含两个失败尝试和Git发布）。峰值GPU allocated/reserved=0.392/0.672GiB，主机峰值RSS=5.530GiB。GPU RTX4090；启动可用显存21.870GiB。
+
+执行HEAD `0898b06df44753f7b13cd920d7d0c95790f60d59`，起点e4b3b02e337527bfe4b74216199f0c16dd08494f；独立分支pvst-grid-feature-readout-probe，未覆盖原分支后续人工审阅文档。实际命令见command.txt（包含原rgbd-packages环境）。退出码0，状态status.json。计算与Git发布分开，发布见publication.json。
+
+产物：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_grid_feature_readout_probe_v1/`，report.md、summary.json、video_AP.csv、train/dev_frames.csv、两个coefficients.json和convergence.json、identity.json及execution_history.json。只提交入口、测试和小型报告。本轮停止，不自动实施下一步。
