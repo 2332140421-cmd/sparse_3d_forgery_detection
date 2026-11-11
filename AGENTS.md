@@ -179,3 +179,13 @@ results, or inconsistency between the paper and implementation.
   initial state and epoch orders, fixed12 epochs/576 updates per arm, four-hour
   independent worker cap. Reuse high-resolution geometry and build/update/evaluate;
   main epoch12 and separate best, no frontend, reserved test or model changes.
+
+## Frozen slice relation readout
+
+- ADR-0039/root16.7 authorize only CURRENT_ONLY/CURRENT_HISTORY on
+  pvst-slice-relation-readout: original frozen RGB_DEPTH_PARTITION last C512,
+  train8/48 clips and dev4, exact paired initialization/orders, 576 updates each.
+  New readout uses current non-self slabs, optionally all same-window past slabs;
+  do not fine-tune encoder/pool or use old sets/GRU/head predictions as inputs.
+  Preserve all slices and actual PTS; training GT only defines slice BCE targets.
+  Slice AP and valid-pixel backfill AP are separate from precise pixel localization.
