@@ -196,3 +196,13 @@ results, or inconsistency between the paper and implementation.
   one fixed native SLAB_GRID, CPU GT-driven exact whole-unit overlap limits.
   No model construction, weights, GPU, frontend, training or new data. Preserve
   old inputs/results; this oracle is neither model performance nor grid-model authorization.
+
+## Matched slab/grid localization
+
+- ADR-0041/root16.9 authorize SLAB_CURRENT/SLAB_GRID_CURRENT, original frozen
+  RGB-only local/pool weights and train8/dev4. Encode once/frame, preserve all
+  valid pixels/units, same 512/8head current-only readout and initialization.
+  Fixed native grid only; query-block SDPA preserves all non-self keys and gradients.
+  Shared count-weighted pixel BCE, original orders, 576 updates per arm after
+  real maximum-clip resource gate. No history, frontend or reserved test access.
+  Keep older models, entry defaults and results untouched.
