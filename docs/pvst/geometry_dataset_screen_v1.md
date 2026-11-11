@@ -1,20 +1,51 @@
-# 局部编辑三维关系候选：下载与人工预览
+# PVST局部编辑候选：人工预览准备结果
 
-状态：固定规则后执行资产准备，不训练、不推理、不提取深度，不修改正式划分或分数。
-起点6ba9597b0e5f0c5e752b1da01da631bd5102c67d，独立分支pvst-geometry-dataset-screen。
+**预览已就绪6对，AINPAINT受下载中断阻塞0/4；没有训练、模型推理、深度提取或正式划分/分数改动。** 全部固定GRIP六对保留；AINPAINT没有换方法、压缩版或source补位。
 
-GRIP只取02 Fast Car、04 Rolling Can、05 Falling Can、10 Tennis Ball、06 Walnuts、14 Wall Frame的VIDEO_ORI、VIDEO_FORG_rigid、GT_rigid。作者论文明确GT同时包含原复制区与克隆区；已抽查MAT只有GT二值数组，不能直接把它当编辑目标像素真值。保留定性参考，不从像素差补目标mask。
+## 实际交付及像素GT结论
 
-AINPAINT固定HF revision 3dfae9aca06b058aef7996349a2df83d2ec5b717，作者代码/val清单revision753ae1b700b054c97e15569718690211e36cdf53。只用CoCoCo原始432x240、对应input_frames与resized_432x240 mask；不读保留测试媒体。原片与mask允许24条val初筛，只为最终最多4条提取fake。PNG本身无PTS，25fps展示时钟不冒充官方时标。
+|固定编号|名称|fake帧数 / 原生H×W|机位自动初筛|目标编辑像素GT|
+|---|---|---|---|---|
+|02|Fast Car|140 / 370×720|较稳定候选（传统背景匹配，待人工确认）；可靠间隔4/4；最大平移0.37px、旋转0.03°、角点位移0.05%对角线|否：仅复制源／克隆并集|
+|04|Rolling Can|125 / 480×660|较稳定候选（传统背景匹配，待人工确认）；可靠间隔4/4；最大平移0.18px、旋转0.02°、角点位移0.03%对角线|否：仅复制源／克隆并集|
+|05|Falling Can|174 / 480×720|较稳定候选（传统背景匹配，待人工确认）；可靠间隔4/4；最大平移0.26px、旋转0.01°、角点位移0.03%对角线|否：仅复制源／克隆并集|
+|10|Tennis Ball|200 / 640×360|不确定：可靠背景匹配不足；可靠间隔2/4；最大平移1.61px、旋转0.13°、角点位移0.24%对角线|否：仅复制源／克隆并集|
+|06|Walnuts|221 / 480×720|较稳定候选（传统背景匹配，待人工确认）；可靠间隔4/4；最大平移0.89px、旋转0.04°、角点位移0.10%对角线|否：仅复制源／克隆并集|
+|14|Wall Frame|200 / 500×570|可见全局运动迹象（非切镜定论）；可靠间隔4/4；最大平移53.42px、旋转1.17°、角点位移7.60%对角线|否：仅复制源／克隆并集|
 
-按作者clip ID去重后排序，Random(20260909).shuffle取前24：boat、incident_curve、airplane_1、D06_2、airplane_11_bis、panda_3、D09_3、mugello_1、airplane_3、D09_1、traffic_3、D08_2、traffic_4、safari1_6、spin、airplane_5、airplane_2、traffic_1、drift_2、D09_2、safari1_1、mugello_2、airplane、D06_1。不可读/标注未对齐不静默换样本。作者未提供原始长视频URL映射，不将不同同系列clip ID强称为独立长源。
+GRIP六对共12条原始AVI，fake共1060帧、real共1060帧，12条H264兼容预览均完整解码通过。原件未转码覆盖。MAT的GT是H×W×T的uint8二值0/1，T、H、W与各自fake实际解码完全一致；同编号real/fake帧数和PTS网格一致，但不据此宣称逐像素内容注册。页面独立播放，原始PTS完整保存在每对record.json及real/fake_identity.json。预览时钟与原件逐帧最大偏差<1e-4秒。
 
-机位预筛在原片5个均匀帧做外围背景ORB/Hamming匹配与部分仿射RANSAC。可靠要求匹配>=20、内点>=15、内点率>=.5、内点xy覆盖跨度各>=.1；较稳定候选要求四段都可靠且最大角点移动<=画面对角线3%、旋转<=3°、尺度.97–1.03。匹配不可靠=不确定，不宣称移动或切镜。不是人工机位确认。
+作者论文IV-B说明GT同时包含原复制区域与克隆区域，实读六个MAT均仅一个二值GT数组，无源/目标分离字段。因此保留全部原GT，明确标为**复制区域并集，未验证编辑目标掩膜**；这6对可作定性案例或另行定义的复制并集定位研究，**不能直接作为本研究实际编辑目标的像素GT**。未通过差分、连通域或肉眼猜测补目标mask。本轮能直接核实用于当前编辑目标像素评价的完整pair数量为0。
 
-稳定且标注核实的候选按mask质心跨度/画面对角线排序：较少位移前2作参照，剩余末2作较多位移候选，seed顺序破同分。该相对分组不是异常标签；不足4保留实际数量，不换池。全部选择在提取fake之前保存。
+每对固定首/中/末帧均展示RGB、官方mask及叠加。Fast Car和Tennis Ball这三个固定时刻恰好均无非空GT，所以另加首个非空官方GT帧并标明“按GT取样、非模型”；没有替换固定帧或按异常明显程度选视频。标签仍是复制并集，空mask和缺标注严格区分。
 
-逐文件清点计划18,235,396,886字节（GRIP六对及AINPAINT三个必需包），总新增下载预算20,000,000,000字节。只解包允许source/variant的成员，不提取其他压缩/后处理版本或测试媒体。所有原件保留，兼容MP4只是预览副本。
+## AINPAINT：已核实部分与具体缺口
 
-单入口：`CUDA_VISIBLE_DEVICES='' PYTHONPATH=. python scripts/prepare_geometry_screen.py`；同入口`--download`可复算已保存download_plan.json的固定下载列表。四项针对性检查通过：archive源/版本过滤、mask位移及时间段、低纹理不确定、同帧纹理背景RANSAC。
+- 数据集HF revision `3dfae9aca06b058aef7996349a2df83d2ec5b717`，作者代码/val清单revision `753ae1b700b054c97e15569718690211e36cdf53`。固定CoCoCo、原始432×240、对应input_frames和resized_432x240 mask，不混其他处理/压缩版本。
+- 已按官方val中同一作者clip ID对齐real/CoCoCo记录、排序后用seed20260909固定打乱，保存最多24条队列与预筛规则在selection_rules.json。没有从保留测试集读取媒体，也未依据模型分数选样本。**原RGB媒体未取得，因此24条原片机位初筛实际完成0条，最终4对尚未选择**；不能伪称已完成2个多动/2个少动组。
+- input_masks.tar完整取得，142,223,360字节，官方LFS SHA256核对通过。只读取固定24个val source的resized_432x240成员：共1903张PNG，均432×240。原mask含0–255多级灰度/软边界，不假定为纯0/255。作者dataset.py最终标签为TF.to_tensor(mask)>0.5；早先>0仅用于裁剪包围，不可混淆。预览入口已按最终标签口径登记并加边界测试，原mask保留。**尚不能核验其与本批最终fake的三方逐帧对应，故不宣布可直接像素评价。**
+- input_frames.tar（11,076,485,120字节）与CoCoCo.tar（5,442,631,680字节）未完整取得。官方HTTP/Xet与原环境HTTP镜像均有尝试；最终两个媒体包各发生实际IncompleteRead，保留已写入前缀、分段及错误。停止其余本任务请求，未自动重试失败分段。尚缺续传载荷合计约14.506 GB，详见ainpaint_missing_assets.json；**不是不公开，也不是预算超限或标注不合格**，是本次传输未完成。
+- 包按容器分发，原本三必需包加固定GRIP六对计划18.235 GB，预算20 GB。包中其他划分/其他处理版本未被解码或提取；目录名用于限定成员，最终只解包允许val mask。没有把同一source的多个方法/压缩版本当独立样本。作者clip ID去重可核实，原始长视频URL映射未公开，不能保证同系列不同clip来自独立长视频。
 
-输出：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/pvst_geometry_screen_v1/`。所有候选仍待人工确认，不能当作下一轮冻结协议或三维异常真值。
+## 建议先看的内容（不是准入结论）
+
+1. **05 Falling Can、04 Rolling Can**：原片背景匹配稳定，运动物体与台阶/桌面提供可人工比较的接触、运动衔接和复制位置变化；固定画面中确能看到复制物体。不是预先认定它们破坏三维规律。
+2. **06 Walnuts**：作者标为遮挡式copy-move、背景较稳定，用作对象被背景覆盖的参照。协调与否交人工判断，不把合理移除自动判异常。
+3. 02 Fast Car和10 Tennis Ball仍保留供连续播放查看；Tennis Ball的背景匹配不足，不能据此宣称机位移动。14 Wall Frame有约53.42px最大仿射平移、1.17°旋转迹象，属于机位变化参照，不因其偏离优先机位就删除。只查看了固定帧和相应内容核对图，未声称已播放全片确认机位。
+
+网页每对只留三项：机位；编辑内容及形态/遮挡/接触/运动衔接；协调/不协调/不确定。自动结果在字段外注明，人工字段不预填。合理对象增删、mask位移与编辑GT都不是三维时序异常真值。候选未冻结为任何新训练/开发/测试集合，原实验划分及成绩不变。
+
+## 核验、时间与成本
+
+- 5项CPU检查通过：归档成员source/variant过滤；mask位移与连续帧区间；纹理不足应标不确定；相同纹理背景的RANSAC；soft mask的0.5最终标签边界。
+- 摄像机预筛只用原片5个均匀帧、外围背景ORB/Hamming匹配、部分仿射RANSAC。可靠门槛与固定“较稳定”条件详见selection_rules.json，每段匹配/内点数、二维位移/转动/尺度全部保存在record.json。它是图像变换估计，不是相机位姿或神经深度置信度；可能受到运动前景及视差影响。匹配不足不等于切镜或移动。
+- GRIP的mask非空区间只按复制并集和数组帧号登记，不冒充真正编辑目标起止。14全程非空也不代表复杂时间边界监督。AINPAINT PNG没有官方PTS，未来若准备播放器，其25fps只能是展示时钟，当前没有生成AINPAINT配对播放器。
+- 本次已落盘媒体/标注载荷 **3,729,546,006字节（3.730 GB）**，其中完整资产1,716,280,086字节（1.716 GB），其余为未完成范围/前缀；不含少量元数据及未测的HTTP/TLS开销。没有把旧客户端账本的“预留预算18.235GB”误当实际下载量；最终以download_status.json/download_outcome.json为准，旧账本另存历史。
+- 从首轮下载开始到本次准备结束约2993.4秒（49.9分钟，含慢速传输及后续停止/检查间隔）。最终预览/标注读取CPU入口10.671秒；前期已有GRIP解码/预览复用，未把它们假称首次处理。未运行GPU。
+- 预览准备退出0；下载为PARTIAL_STOPPED，保留实际IncompleteRead及剩余范围worker终止信号15/退出143，不写成下载完整成功。所有本任务下载/媒体进程已结束。计算/预览与Git发布状态分开，见publication.json。
+
+入口执行HEAD `d3530864bfedccb5123bbb36798cdf38158bb69c`，最终页面/soft-mask语义登记HEAD `abdbea0fa3ade41349628b5ecddcb0ff4451b57e`。分支pvst-geometry-dataset-screen，起点6ba9597b0e5f0c5e752b1da01da631bd5102c67d。原用户JSON和后续人工审阅文件保持不变。
+
+打开：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/pvst_geometry_screen_v1/index.html`。candidate_manifest.csv逐对列身份、来源、revision、文件路径、帧数、PTS核验、mask类型、机位与像素评价状态；更完整PTS和SHA见各对record/identity文件与asset_identity.json。媒体、mask、预览和未完成包只留服务器，不提交Git。本轮停止，等待人工确认，不自动补传、申请其他库或开启实验。
+
+来源：[GRIP官方目录](https://www.grip.unina.it/download/prog/ForgedVideosDataset/Copymove/)；[作者论文（IV-A/B）](https://arxiv.org/html/1703.04636)；[AINPAINT发布](https://huggingface.co/datasets/Truebees/AINPAINT)；[作者固定val清单](https://github.com/MMLab-unitn/AINPAINT-CVIU26/blob/753ae1b700b054c97e15569718690211e36cdf53/splits/val.json)。来源网页、文件清单和选择规则保存在references/；未凭论文描述替代实际文件核验。
