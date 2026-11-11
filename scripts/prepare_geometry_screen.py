@@ -4,20 +4,14 @@ Caller: this dataset screen CLI. Outputs external masks/media/HTML and small
 candidate records. Existing decode/digest are reused; MAT union and PNG sequences
 need only these dataset-specific adapters, not a downloader/data framework.
 """
-import argparse
 import csv
-from concurrent.futures import ThreadPoolExecutor,as_completed
-import hashlib
 import html
 import json
 import math
 import os
 from pathlib import Path
-import random
-import re
 import subprocess
 import tarfile
-import threading
 import time
 import traceback
 
@@ -25,7 +19,6 @@ import av
 import cv2
 import numpy as np
 from PIL import Image
-import requests
 from scipy.io import loadmat
 from scripts.prepare_v8_assets import digest
 from scripts.review_anakin import decode,numeric_members
@@ -69,6 +62,12 @@ def camera_check(images):
     stable=bool(records) and len(reliable)==len(records) and all(r['max_corner_displacement_fraction']<=.03 and abs(r['rotation_degrees'])<=3 and .97<=r['scale']<=1.03 for r in reliable)
     state='较稳定候选（传统背景匹配，待人工确认）' if stable else ('可见全局运动迹象（非切镜定论）' if any(r['max_corner_displacement_fraction']>.03 or abs(r['rotation_degrees'])>3 or not .97<=r['scale']<=1.03 for r in reliable) else '不确定：可靠背景匹配不足')
     return {'state':state,'stable_candidate':stable,'intervals':records,'method':'5 uniform source frames; outer border outside centre60%; ORB2000/Hamming ratio.75/partial affine RANSAC3px; reliable>=20 matches,>=15 inliers,>=.5 fraction,xy span>=.1; stable thresholds maxcorner<=.03 diagonal,rotation<=3deg,scale.97..1.03; foreground leakage/parallax possible'}
+
+
+def camera_text(camera):
+    rs=[r for r in camera['intervals'] if r['reliable']]
+    if not rs:return camera['state']+'；可靠背景间隔0/'+str(len(camera['intervals']))
+    return camera['state']+f"；可靠间隔{len(rs)}/{len(camera['intervals'])}；最大平移{max(r['translation_pixels'] for r in rs):.2f}px、旋转{max(abs(r['rotation_degrees']) for r in rs):.2f}°、角点位移{max(r['max_corner_displacement_fraction'] for r in rs):.2%}对角线"
 
 
 def motion_stats(masks):
@@ -148,6 +147,9 @@ def grip_review():
         aligned=meta['fake']['frame_count']==n and meta['fake']['sizes_hw']==[tuple(gt.shape[:2])]
         same_clock=meta['real']['pts']==meta['fake']['pts'] and meta['real']['frame_count']==n
         camera=camera_check([(i,ims['real'][i]) for i in keep if i in ims['real']]);masks=[gt[:,:,i].astype(bool) for i in range(n)];motion=motion_stats(masks)
+        extra=next(iter(motion['positive_frames']),None)
+        if extra is not None and extra not in fixed and not any(masks[i].any() for i in fixed):
+            _,additional=decode(paths['fake'],{extra});ims['fake'].update(additional);fixed.append(extra)
         for i in fixed:
             ims['fake'][i].save(folder/f'fake_{i:04d}.png');Image.fromarray(gt[:,:,i]*255).save(folder/f'mask_{i:04d}.png')
             if aligned:overlay(ims['fake'][i],masks[i]).save(folder/f'overlay_{i:04d}.png')
@@ -158,7 +160,17 @@ def grip_review():
 
 def ainpaint_review():
     rules=read(ROOT/'selection_rules.json');sources=rules['prescreen_sources_in_order'];archives=ROOT/'ainpaint'/'archives';records=[];result=[]
-    if not all((archives/n).exists() for n in ['input_frames.tar','input_masks.tar','CoCoCo.tar']):return [],{'status':'MISSING_ARCHIVES','missing':[n for n in ['input_frames.tar','input_masks.tar','CoCoCo.tar'] if not (archives/n).exists()]}
+    if not all((archives/n).exists() for n in ['input_frames.tar','input_masks.tar','CoCoCo.tar']):
+        mask_audit=[]
+        if (archives/'input_masks.tar').exists():
+            maskroot,_=extract_selected(archives/'input_masks.tar','input_masks','resized_432x240',set(sources))
+            for source in sources:
+                fs=pngs(maskroot/source);sizes=set();values=set()
+                for i,path in fs:
+                    with Image.open(path) as im:sizes.add(im.size);values.update(np.unique(np.array(im.convert('L'))).tolist())
+                mask_audit.append({'source_id':source,'mask_frames':len(fs),'sizes_wh':sorted(sizes),'values':sorted(values),'real_fake_alignment':'not_checked_missing_media'})
+            save(ROOT/'ainpaint'/'mask_only_audit.json',mask_audit)
+        return [],{'status':'MISSING_ARCHIVES','missing':[n for n in ['input_frames.tar','input_masks.tar','CoCoCo.tar'] if not (archives/n).exists()],'planned_prescreen':len(sources),'RGB_prescreen_completed':0,'mask_only_sources':len(mask_audit),'reason':'real/fake archive incomplete after actual transport failures; no alternate method/variant or source substitution'}
     realroot,_=extract_selected(archives/'input_frames.tar','input_frames','432x240',set(sources));maskroot,_=extract_selected(archives/'input_masks.tar','input_masks','resized_432x240',set(sources))
     for order,source in enumerate(sources):
         record={'source_id':source,'seed_order':order,'status':'UNRESOLVED'}
@@ -202,20 +214,22 @@ def ainpaint_review():
 def render(records,ain):
     fields=['dataset','revision','source_id','name','status','official_split','official_source','edit_type','object','selection_group','real_path','fake_path','mask_path','frames','native_hw','alignment','real_fake_sync','mask_semantics','direct_pixel_GT','timing_type','positive_frame_runs','camera_state','preview_folder'];csvrows=[]
     for r in records:
-        a={k:r.get(k,'') for k in fields};a['camera_state']=r.get('camera',{}).get('state','未完成');a={k:json.dumps(v,ensure_ascii=False) if isinstance(v,(list,dict)) else v for k,v in a.items()};csvrows.append(a)
+        a={k:r.get(k,'') for k in fields};a['camera_state']=camera_text(r['camera']) if r.get('camera') else '未完成';a={k:json.dumps(v,ensure_ascii=False) if isinstance(v,(list,dict)) else v for k,v in a.items()};csvrows.append(a)
     csvsave(ROOT/'candidate_manifest.csv',csvrows);save(ROOT/'candidate_manifest.json',records)
     cards=['<!doctype html><meta charset="utf-8"><title>PVST候选数据人工审阅</title><style>body{font:16px sans-serif;max-width:1500px;margin:24px}video{width:100%;max-width:680px} .pair,.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.shots{grid-template-columns:repeat(3,minmax(0,1fr))}img{max-width:100%}textarea,select{display:block;width:90%;margin:8px 0}section{border-top:2px solid #aaa;padding:16px 0}</style><h1>局部编辑：结构／遮挡／运动衔接候选</h1><p>只供人工审阅，未冻结训练或评价集合。没有模型分数或热图。对象增删、mask位移本身不等于三维时序异常。自动机位只来自原片传统特征/RANSAC，匹配不足=不确定。播放器独立，不强制同步。</p><button id="export">导出人工填写CSV</button> <span id="save">填写保存在当前浏览器；请导出备份。</span>']
     for dataset in ['GRIP','AINPAINT']:
         cards.append(f'<h2>{dataset}</h2>')
+        if dataset=='AINPAINT' and not any(r['dataset']=='AINPAINT' and r['status']=='READY' for r in records):
+            cards.append('<p>本轮0/4对：两个必要媒体包下载连接中断、尚未通过完整SHA核验。仅mask包完整，不能当作已准备配对；固定24条val队列未完成原片机位初筛。未改用压缩版、其他方法或新来源凑数。详见中文报告及AINPAINT资产缺口。</p>')
         for r in [r for r in records if r['dataset']==dataset]:
             sid=dataset+'_'+r['source_id'];cards.append(f'<section data-id="{html.escape(sid)}"><h3>{html.escape(r.get("name",r["source_id"]))} · {html.escape(r["source_id"])}</h3>')
             if r['status']!='READY':cards.append('<p>'+html.escape(json.dumps(r,ensure_ascii=False))+'</p></section>');continue
-            folder=r['preview_folder'];cards.append('<p>'+html.escape(r['mask_semantics'])+'；可直接用于编辑像素评价：'+('是（尚未人工场景确认）' if r['direct_pixel_GT'] else '否，仅定性／复制并集定位')+'</p><p>'+html.escape(r['camera']['state'])+'；'+html.escape(r['real_fake_sync'])+'</p><p>'+html.escape(r['timing_type'])+'；mask非空帧区间[起,止)：'+str(r['positive_frame_runs'])+'。全程mask非空不等于可验证编辑起止。</p>')
+            folder=r['preview_folder'];cards.append('<p>'+html.escape(r['mask_semantics'])+'；可直接用于编辑像素评价：'+('是（尚未人工场景确认）' if r['direct_pixel_GT'] else '否，仅定性／复制并集定位')+'</p><p>'+html.escape(camera_text(r['camera']))+'；'+html.escape(r['real_fake_sync'])+'</p><p>'+html.escape(r['timing_type'])+'；mask非空帧区间[起,止)：'+str(r['positive_frame_runs'])+'。全程mask非空不等于可验证编辑起止。</p>')
             cards.append(f'<div class="pair"><div>原片（完整发布短片／PNG全序列预览）<video controls preload="none" src="{folder}/real.mp4"></video></div><div>rigid / CoCoCo伪造<video controls preload="none" src="{folder}/fake.mp4"></video></div></div>')
             cards.append(f'<p>尺寸{r["native_hw"]}，帧数{r["frames"]}。'+('AINPAINT播放器25fps仅展示；未提供官方PTS。' if dataset=='AINPAINT' else '真实解码PTS见该对record.json，AVI原件保留；MP4仅兼容预览。')+'</p>')
             for i in r['fixed_frames']:
                 timing=f'fake PTS {r["PTS_fake"][i]["seconds"]:.6f}s' if r['PTS_fake'] else '官方仅帧号，预览时钟'+f'{i/25:.3f}s'
-                cards.append(f'<p>固定fake帧{i} · {timing}</p><div class="shots">')
+                cards.append(f'<p>'+('固定首／中／末fake帧' if i in [0,r['frames']//2,r['frames']-1] else '额外首个非空官方GT帧（按标注选取，非模型）')+f'{i} · {timing}</p><div class="shots">')
                 for name,title in [('fake','原画面'),('mask','官方标注（GRIP为复制并集）'),('overlay','标注叠加，不是三维异常真值')]:
                     file=f'{folder}/{name}_{i:04d}.png'
                     if (ROOT/file).exists():cards.append(f'<figure><a href="{file}"><img loading="lazy" src="{file}"></a><figcaption>{title}</figcaption></figure>')
@@ -234,53 +248,17 @@ document.querySelector('#export').onclick=()=>{const fields=['sample','camera','
 
 def prepare():
     start=time.monotonic();assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
+    plan=read(ROOT/'download_plan.json');checks=[]
+    for spec in plan['files']:
+        path=ROOT/spec['relative_path']
+        if path.exists():
+            assert path.stat().st_size==spec['size'];sha=digest(path)
+            if spec.get('sha256'):assert sha==spec['sha256']
+            checks.append({'path':spec['relative_path'],'bytes':path.stat().st_size,'sha256':sha,'verified':True})
+    save(ROOT/'asset_identity.json',checks)
     (ROOT/'preview').mkdir(exist_ok=True);records=grip_review();ar,ain=ainpaint_review();records+=ar;render(records,ain)
-    download=read(ROOT/'download_status.json');summary={'status':'PREVIEW_READY','execution_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'prepared_pairs':sum(r['status']=='READY' for r in records),'records':records,'ainpaint_screen':ain,'download_bytes':download['transferred_bytes'],'download_seconds':download.get('seconds'),'prepare_seconds':time.monotonic()-start,'no_models_or_frontends':True,'formal_split_changed':False}
+    download=read(ROOT/'download_outcome.json');first=read(ROOT/'download_first_transfer.json');summary={'status':'PREVIEW_READY_WITH_AINPAINT_BLOCKED','execution_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'prepared_pairs':sum(r['status']=='READY' for r in records),'records':records,'ainpaint_screen':ain,'download_bytes':download['payload_bytes_saved'],'download_measurement':'saved payload incl incomplete ranges; wire overhead not measured','download_seconds':time.time()-first['started_unix'],'prepare_seconds':time.monotonic()-start,'no_models_or_frontends':True,'formal_split_changed':False}
     save(ROOT/'summary.json',summary);print('PREVIEW_READY',summary['prepared_pairs'],flush=True)
 
 
-def download_assets():
-    root=Path('/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/secondary_datasets/pvst_geometry_screen_v1')
-    plan=json.loads((root/'download_plan.json').read_text());assert plan['expected_media_bytes']<20000000000
-    state={'status':'RUNNING','started_unix':time.time(),'budget_bytes':20000000000,'planned_bytes':plan['expected_media_bytes'],'transferred_bytes':0,'files':[]};lock=threading.Lock();start=time.monotonic()
-    def record():
-     tmp=root/'download_status.json.tmp';tmp.write_text(json.dumps(state,indent=2));tmp.replace(root/'download_status.json')
-    def fetch(x):
-     path=root/x['relative_path'];path.parent.mkdir(parents=True,exist_ok=True);t=time.monotonic();sha=hashlib.sha256();n=0
-     if path.exists():
-      assert path.stat().st_size==x['size']
-      with path.open('rb') as f:
-       for chunk in iter(lambda:f.read(8*1024*1024),b''):sha.update(chunk)
-      result={**x,'status':'REUSED','local_sha256':sha.hexdigest(),'bytes_downloaded':0,'seconds':time.monotonic()-t}
-     else:
-      part=path.with_name(path.name+'.part');assert not part.exists(),'PARTIAL_EXISTS_NO_UNCONTROLLED_REDOWNLOAD'
-      with requests.get(x['url'],stream=True,timeout=(30,120),headers={'Cache-Control':'no-cache'}) as r:
-       r.raise_for_status()
-       with part.open('xb') as f:
-        for chunk in r.iter_content(2*1024*1024):
-         if not chunk:continue
-         with lock:
-          assert state['transferred_bytes']+len(chunk)<=state['budget_bytes'];state['transferred_bytes']+=len(chunk)
-          if int(time.monotonic()-start)%10==0:record()
-         f.write(chunk);sha.update(chunk);n+=len(chunk)
-      assert n==x['size'],(x['name'],n,x['size'])
-      if x.get('sha256'):assert sha.hexdigest()==x['sha256']
-      part.rename(path);result={**x,'status':'DOWNLOADED','local_sha256':sha.hexdigest(),'bytes_downloaded':n,'seconds':time.monotonic()-t}
-     if x.get('sha256'):assert result['local_sha256']==x['sha256']
-     with lock:state['files'].append(result);record()
-     print('finished',x['name'],result['status'],round(result['seconds'],2),flush=True)
-     return result
-    with ThreadPoolExecutor(max_workers=4) as pool:
-     futures={pool.submit(fetch,x):x for x in plan['files']}
-     for f in as_completed(futures):
-      try:f.result()
-      except Exception as e:
-       with lock:state['files'].append({**futures[f],'status':'FAILED','error':repr(e)});record()
-       print('FAILED',futures[f]['name'],repr(e),flush=True)
-    state['status']='COMPLETE' if all(x['status']!='FAILED' for x in state['files']) else 'PARTIAL';state['seconds']=time.monotonic()-start;record();print('DOWNLOAD',state['status'],state['transferred_bytes'],state['seconds'],flush=True)
-
-
-if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--download',action='store_true');args=parser.parse_args()
-    if args.download:download_assets()
-    else:prepare()
+if __name__=='__main__':prepare()
