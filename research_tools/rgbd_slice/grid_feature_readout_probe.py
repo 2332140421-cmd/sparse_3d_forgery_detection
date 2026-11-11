@@ -26,7 +26,7 @@ from .experiment import REPO,git,state_hash
 from .set_fit_check import build
 from .model import native_sample
 from .grid_localization import grouping,count_metrics
-from .local_pixel_readout_probe import folded,csvsave,read
+from .local_pixel_readout_probe import csvsave,read
 from .slab_grid_experiment import table
 from scripts.prepare_v8_assets import digest
 
@@ -78,22 +78,34 @@ def fit_one(x,y,name):
     info={'n_iter':clf.n_iter_.tolist(),'warnings':problems,'seconds':time.monotonic()-start}
     save(OUT/f'{name}_convergence.json',info)
     if problems or int(clf.n_iter_.max())>=1000:raise ValueError(name+'_NOT_CONVERGED_NO_SEARCH')
-    w,b=folded(scaler,clf);ref=clf.decision_function(scaler.transform(x[:1024]));actual=x[:1024]@w+b
+    parameters={'scaler_mean':scaler.mean_.tolist(),'scaler_scale':scaler.scale_.tolist(),'scaler_var':scaler.var_.tolist(),'coef':clf.coef_[0].tolist(),'intercept':float(clf.intercept_[0]),**info}
+    save(OUT/f'{name}_coefficients.json',parameters)
+    ref=clf.decision_function(scaler.transform(x[:1024]));actual=linear_scores(x[:1024],parameters)
     np.testing.assert_allclose(actual,ref,atol=1e-5,rtol=1e-5)
-    info['fold_max_abs']=float(np.max(abs(ref-actual)))
-    save(OUT/f'{name}_coefficients.json',{'scaler_mean':scaler.mean_.tolist(),'scaler_scale':scaler.scale_.tolist(),'scaler_var':scaler.var_.tolist(),'coef':clf.coef_[0].tolist(),'intercept':clf.intercept_.tolist(),'weight_fp32':w.tolist(),'bias_fp32':float(b),**info})
-    return w,b,info
+    info['explicit_standardization_max_abs']=float(np.max(abs(ref-actual)))
+    parameters.update(info);save(OUT/f'{name}_coefficients.json',parameters)
+    return parameters,info
+
+
+def linear_scores(x,parameters):
+    # Match StandardScaler.transform on float32 input: subtract/divide in-place
+    # with its trained float64 statistics, retaining float32 standardized data.
+    # Avoid raw-feature folded weights: cancellation failed the original tolerance.
+    xx=np.asarray(x,dtype=np.float32).copy()
+    xx-=np.asarray(parameters['scaler_mean'],dtype=np.float64)
+    xx/=np.asarray(parameters['scaler_scale'],dtype=np.float64)
+    return xx@np.asarray(parameters['coef'],dtype=np.float32)+np.float32(parameters['intercept'])
+
 
 
 @torch.no_grad()
-def visual_scores(local,points,hw,w,b):
+def visual_scores(local,points,hw,parameters):
     pieces=[]
     for chunk in points.split(65536):
         # Exact native_sample used by frozen_pool; only linear arithmetic is FP32.
         with torch.autocast('cuda',dtype=torch.bfloat16):x=native_sample(local,chunk,hw)
         assert x.ndim==2 and x.shape[1]==256
-        with torch.autocast('cuda',enabled=False):z=x.float().matmul(w)+b
-        pieces.append(z.cpu().numpy())
+        pieces.append(linear_scores(x.float().cpu().numpy(),parameters))
     return np.concatenate(pieces)
 
 
@@ -131,10 +143,10 @@ def scan(model,c,rows,clips,phase,coeff=None):
                     features[0].append(a);features[1].append(b);labels.append(y)
                     rec.update(negative_samples=int((y==0).sum()),positive_samples=int(y.sum()),indices_sha256=hashlib.sha256(selected.astype('<i8').tobytes()).hexdigest())
                 else:
-                    wa,ba,wc,bc=coeff
-                    z=visual_scores(local,points.cuda(),f['valid'].shape,wa,ba)
+                    prepool,grid=coeff
+                    z=visual_scores(local,points.cuda(),f['valid'].shape,prepool)
                     unit_z=grid_mean(z,index.numpy(),n.numpy())
-                    cz=q['features'].numpy()@wc+bc
+                    cz=linear_scores(q['features'].numpy(),grid)
                     assert np.isfinite(z).all() and np.isfinite(cz).all()
                     gt=f['gt'][f['valid']].numpy()
                     rec.update(PREPOOL_PIXEL=float(average_precision_score(gt,z)) if gt.any() else None,PREPOOL_TO_GRID=count_metrics(unit_z,n.numpy(),g.numpy())['pixel_AP'],GRID_C_LINEAR=count_metrics(cz,n.numpy(),g.numpy())['pixel_AP'])
@@ -189,14 +201,14 @@ def main():
     model.requires_grad_(False);before=state_hash(model.state_dict());torch.cuda.reset_peak_memory_stats()
     features,labels,tr,seen,train_s=scan(model,c,train,clips,'train');assert seen==expected
     y=np.concatenate(labels);x=np.concatenate(features[0]);del features[0][:]
-    w,b,fit_a=fit_one(x,y,'PREPOOL_LINEAR');del x
+    prepool,fit_a=fit_one(x,y,'PREPOOL_LINEAR');del x
     x=np.concatenate(features[1]);del features,labels
-    wc,bc,fit_c=fit_one(x,y,'GRID_C_LINEAR');del x
+    grid,fit_c=fit_one(x,y,'GRID_C_LINEAR');del x
     sampling={'frames':len(tr),'negative_samples':int((y==0).sum()),'positive_samples':int(y.sum()),'same_pixel_indices_and_labels':True,'videos':[]}
     for row in train:
         rr=[r for r in tr if r['video_id']==row['video_id']];sampling['videos'].append({'video_id':row['video_id'],'pair_id':row['pair_id'],'role':row['role'],'frames':len(rr),'negative_samples':sum(r['negative_samples'] for r in rr),'positive_samples':sum(r['positive_samples'] for r in rr)})
     del y
-    coeff=(torch.tensor(w,device='cuda'),torch.tensor(b,device='cuda'),wc,bc)
+    coeff=(prepool,grid)
     _,_,dr,seen,dev_s=scan(model,c,dev,clips,'dev',coeff)
     assert len(seen)==924 and seen==set(dframes)
     for r in dr:
@@ -216,7 +228,7 @@ def main():
     csvsave(OUT/'video_AP.csv',result);keys=['PREPOOL_PIXEL','PREPOOL_TO_GRID','GRID_C_LINEAR','GRID_RELATION','B_minus_A','C_minus_B','D_minus_C']
     summary={'status':'COMPLETE','exit_code':0,'identity':identity,'sampling':sampling,'train_frames':1152,'dev_frames':924,'dev_fake_frames':462,'fits':{'PREPOOL_LINEAR':fit_a,'GRID_C_LINEAR':fit_c},'video_AP':result,'macro':{k:float(np.mean([r[k] for r in result])) for k in keys},'train_extract_seconds':train_s,'dev_seconds':dev_s,'wall_seconds':time.monotonic()-start,'peak_allocated':torch.cuda.max_memory_allocated(),'peak_reserved':torch.cuda.max_memory_reserved(),'peak_RSS':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024,'model_and_original_assets_unchanged':True,'unique_scoring':True}
     save(OUT/'summary.json',summary)
-    lines=['# 方格池化前后冻结特征线性读出诊断',table(['pair','A池化前像素','B像素均值到格','C缓存格线性','D正式格关系','B−A','C−B','D−C'],[[r['pair_id']]+[r[k] for k in keys] for r in result]),'宏平均：'+json.dumps(summary['macro'],ensure_ascii=False),'A为Local.encode真正送入池化的256维特征，经原native_sample在原生像素采样；不是32维Local.native。B仅对A在完整原单元有效像素取均值，不新增拟合。C是已PASS缓存C512，不重算池化，不读取位置、时间或其他格。D引用同一正式实验576步final_dev，不重新运行关系模型。','两模型共用训练1152唯一帧同一采样索引和GT；每类最多128不放回，负样本含real及fake背景。StandardScaler和L2逻辑回归只读训练；固定C1/lbfgs/1000/balanced，无调参。采样摘要：'+json.dumps(sampling,ensure_ascii=False),'开发8视频924唯一帧，462fake正GT帧；与正式逐帧身份、PTS、n/g及有效像素范围一致。每帧只计算一次，无尾部上下文重复计分；冻结编码为逐帧路径，不读取旧关系/GRU/像素头。AP在全部原生几何有效像素上计算，先帧→视频→四fake宏平均。无有效编辑GT不填0。不报告不同读出零阈值Dice/FPR。','B/C同粒度；C/D读出与训练不同，其差值不是纯关系消融。该诊断只测本次线性可读性，不证明特征完全没有信息，也不能外推泛化或三维独立贡献。','拟合与折入：'+json.dumps(summary['fits'],ensure_ascii=False),'资源：'+json.dumps({k:summary[k] for k in ['train_extract_seconds','dev_seconds','wall_seconds','peak_allocated','peak_reserved','peak_RSS']},ensure_ascii=False),'模型参数/缓冲和原缓存SHA前后核对不变；退出码0。执行HEAD '+identity['execution_head']+'；产物 '+str(OUT)]
+    lines=['# 方格池化前后冻结特征线性读出诊断',table(['pair','A池化前像素','B像素均值到格','C缓存格线性','D正式格关系','B−A','C−B','D−C'],[[r['pair_id']]+[r[k] for k in keys] for r in result]),'宏平均：'+json.dumps(summary['macro'],ensure_ascii=False),'A为Local.encode真正送入池化的256维特征，经原native_sample在原生像素采样；不是32维Local.native。B仅对A在完整原单元有效像素取均值，不新增拟合。C是已PASS缓存C512，不重算池化，不读取位置、时间或其他格。D引用同一正式实验576步final_dev，不重新运行关系模型。','两模型共用训练1152唯一帧同一采样索引和GT；每类最多128不放回，负样本含real及fake背景。StandardScaler和L2逻辑回归只读训练；固定C1/lbfgs/1000/balanced，无调参。采样摘要：'+json.dumps(sampling,ensure_ascii=False),'开发8视频924唯一帧，462fake正GT帧；与正式逐帧身份、PTS、n/g及有效像素范围一致。每帧只计算一次，无尾部上下文重复计分；冻结编码为逐帧路径，不读取旧关系/GRU/像素头。AP在全部原生几何有效像素上计算，先帧→视频→四fake宏平均。无有效编辑GT不填0。不报告不同读出零阈值Dice/FPR。','B/C同粒度；C/D读出与训练不同，其差值不是纯关系消融。该诊断只测本次线性可读性，不证明特征完全没有信息，也不能外推泛化或三维独立贡献。','拟合与显式标准化FP32读出：'+json.dumps(summary['fits'],ensure_ascii=False),'资源：'+json.dumps({k:summary[k] for k in ['train_extract_seconds','dev_seconds','wall_seconds','peak_allocated','peak_reserved','peak_RSS']},ensure_ascii=False),'模型参数/缓冲和原缓存SHA前后核对不变；退出码0。执行HEAD '+identity['execution_head']+'；产物 '+str(OUT)]
     report='\n\n'.join(lines)+'\n';(OUT/'report.md').write_text(report);DOC.write_text(report);save(OUT/'status.json',{'status':'COMPLETE','stage':'report_complete','exit_code':0});(OUT/'exit_code.txt').write_text('0\n')
 
 

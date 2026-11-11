@@ -4,10 +4,9 @@ import torch
 from sklearn.metrics import average_precision_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from research_tools.rgbd_slice.grid_feature_readout_probe import sample_pixels,pixel_units,grid_mean
+from research_tools.rgbd_slice.grid_feature_readout_probe import sample_pixels,pixel_units,grid_mean,linear_scores
 from research_tools.rgbd_slice.grid_localization import grouping,count_metrics
 from research_tools.rgbd_slice.model import native_sample
-from research_tools.rgbd_slice.local_pixel_readout_probe import folded
 
 
 class GridFeatureProbeTest(unittest.TestCase):
@@ -30,9 +29,10 @@ class GridFeatureProbeTest(unittest.TestCase):
         for unit_scores in [means,np.array([.1,.1,.5])]:
             self.assertAlmostEqual(count_metrics(unit_scores,n,g)['pixel_AP'],average_precision_score(gt,unit_scores[idx]))
         self.assertEqual(int(n.sum()),len(idx));self.assertEqual(int(g.sum()),int(gt.sum()))
-    def test_folded_linear(self):
-        rng=np.random.default_rng(4);x=rng.normal(size=(100,256)).astype('float32');y=np.arange(100)%2
+    def test_explicit_standardization_with_offset(self):
+        rng=np.random.default_rng(11);x=(1000+rng.normal(size=(100,512))*.01).astype('float32');y=np.arange(100)%2
         scale=StandardScaler().fit(x);clf=LogisticRegression(C=1,solver='lbfgs',max_iter=1000,class_weight='balanced').fit(scale.transform(x),y)
-        w,b=folded(scale,clf);np.testing.assert_allclose(x@w+b,clf.decision_function(scale.transform(x)),atol=1e-5,rtol=1e-5)
+        parameters={'scaler_mean':scale.mean_,'scaler_scale':scale.scale_,'coef':clf.coef_[0],'intercept':clf.intercept_[0]}
+        np.testing.assert_allclose(linear_scores(x,parameters),clf.decision_function(scale.transform(x)),atol=1e-5,rtol=1e-5)
 
 if __name__=='__main__':unittest.main()
