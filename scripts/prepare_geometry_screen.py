@@ -119,6 +119,12 @@ def video_from_png(files,out,rate=25):
         for packet in stream.encode():c.mux(packet)
 
 
+def ain_mask(image):
+    # Author dataset.py final processed_masks: TF.to_tensor(mask_img) > 0.5.
+    # Its earlier >0 is only the mask-aware crop envelope, not the target.
+    return np.asarray(image.convert('L'),dtype=np.float32)/255 > .5
+
+
 def overlay(image,gt):
     a=np.asarray(image).copy();a[gt]=(a[gt]*.55+np.array([255,70,0])*.45).astype(np.uint8);return Image.fromarray(a)
 
@@ -179,7 +185,7 @@ def ainpaint_review():
             assert real and [i for i,p in real]==[i for i,p in mask] and [i for i,p in real]==list(range(len(real))), 'FRAME_IDENTITY_OR_COVERAGE'
             masks=[];values=set()
             for (_,rp),(_,mp) in zip(real,mask):
-                with Image.open(rp) as a,Image.open(mp) as b:assert a.size==b.size==(432,240);v=np.array(b.convert('L'));values.update(np.unique(v).tolist());masks.append(v>0)
+                with Image.open(rp) as a,Image.open(mp) as b:assert a.size==b.size==(432,240);v=np.array(b.convert('L'));values.update(np.unique(v).tolist());masks.append(ain_mask(b))
             keep=sorted(set(np.linspace(0,len(real)-1,5,dtype=int).tolist()));camera=camera_check([(i,Image.open(real[i][1]).convert('RGB')) for i in keep]);motion=motion_stats(masks);assert motion['positive_frames'],'NO_EDIT_MASK_FOREGROUND'
             record.update(status='VERIFIED_REAL_MASK',frames=len(real),mask_values=sorted(values),camera=camera,mask_motion=motion)
         except Exception as e:record.update(status='UNRESOLVED',reason=repr(e))
@@ -200,13 +206,13 @@ def ainpaint_review():
             result.append({'dataset':'AINPAINT','source_id':source,'status':'ALIGNMENT_UNRESOLVED','name':source,'reason':'fake/real frame names differ; no replacement'});continue
         values=set();masks=[]
         for (_,fp),(_,mp) in zip(fake,mask):
-            with Image.open(fp) as a,Image.open(mp) as b:assert a.size==b.size==(432,240);masks.append(np.array(b.convert('L'))>0)
+            with Image.open(fp) as a,Image.open(mp) as b:assert a.size==b.size==(432,240);masks.append(ain_mask(b))
         for role,files in [('real',real),('fake',fake)]:video_from_png(files,folder/f'{role}.mp4');meta,_=decode(folder/f'{role}.mp4',set());assert meta['frame_count']==len(files);save(folder/f'{role}_preview_identity.json',meta)
         n=len(fake);fixed=[0,n//2,n-1]
         for i in fixed:
             im=Image.open(fake[i][1]).convert('RGB');im.save(folder/f'fake_{i:04d}.png');Image.open(mask[i][1]).save(folder/f'mask_{i:04d}.png');overlay(im,masks[i]).save(folder/f'overlay_{i:04d}.png')
         positive=record['mask_motion']['positive_frames']
-        r={'dataset':'AINPAINT','source_id':source,'name':source,'status':'READY','revision':rules['HF_revision'],'official_split':'val (author code '+rules['official_code_revision']+')','official_source':'https://huggingface.co/datasets/Truebees/AINPAINT','edit_type':'CoCoCo object-removal inpainting; raw432x240','object':'待人工描述（仅按目录身份，不凭名称断言对象）','selection_group':group,'mask_semantics':'官方input_masks/resized_432x240编辑区域GT，非三维异常标签','direct_pixel_GT':True,'alignment':'real/fake/mask identical numbered PNG lists and432x240 at every frame; foreground >0 follows official loader','real_fake_sync':'同一source及帧号对应；官方PNG没有PTS，播放器25fps是展示时钟，不是官方时间','timing_type':'从已对齐编辑mask导出帧号区间；官方秒级时间未提供','positive_frame_runs':ranges(positive),'official_time_interval':None,'real_path':str((realroot/source).relative_to(ROOT)),'fake_path':str((fakeroot/source).relative_to(ROOT)),'mask_path':str((maskroot/source).relative_to(ROOT)),'preview_folder':str(folder.relative_to(ROOT)),'frames':n,'native_hw':[240,432],'real_frames':n,'PTS_real':None,'PTS_fake':None,'preview_fps':25,'camera':record['camera'],'mask_motion':record['mask_motion'],'fixed_frames':fixed,'aligned_mask':True,'manual_scene_approval':False}
+        r={'dataset':'AINPAINT','source_id':source,'name':source,'status':'READY','revision':rules['HF_revision'],'official_split':'val (author code '+rules['official_code_revision']+')','official_source':'https://huggingface.co/datasets/Truebees/AINPAINT','edit_type':'CoCoCo object-removal inpainting; raw432x240','object':'待人工描述（仅按目录身份，不凭名称断言对象）','selection_group':group,'mask_semantics':'官方input_masks/resized_432x240编辑区域GT，非三维异常标签','direct_pixel_GT':True,'alignment':'real/fake/mask identical numbered PNG lists and432x240 at every frame; raw soft mask retained; uint8/255 >0.5 follows final official target conversion','real_fake_sync':'同一source及帧号对应；官方PNG没有PTS，播放器25fps是展示时钟，不是官方时间','timing_type':'从已对齐编辑mask导出帧号区间；官方秒级时间未提供','positive_frame_runs':ranges(positive),'official_time_interval':None,'real_path':str((realroot/source).relative_to(ROOT)),'fake_path':str((fakeroot/source).relative_to(ROOT)),'mask_path':str((maskroot/source).relative_to(ROOT)),'preview_folder':str(folder.relative_to(ROOT)),'frames':n,'native_hw':[240,432],'real_frames':n,'PTS_real':None,'PTS_fake':None,'preview_fps':25,'camera':record['camera'],'mask_motion':record['mask_motion'],'fixed_frames':fixed,'aligned_mask':True,'manual_scene_approval':False}
         save(folder/'record.json',r);result.append(r);print('AINPAINT prepared',source,group,flush=True)
     return result,{'status':'COMPLETE','prescreen_count':len(records),'stable_candidates':len(stable),'selected':len(result),'official_source_identity_limit':'deduplicated author clip IDs across techniques/variants; original long-source URLs not published in split; cannot assert independence of same-series different IDs'}
 
@@ -225,7 +231,7 @@ def render(records,ain):
             sid=dataset+'_'+r['source_id'];cards.append(f'<section data-id="{html.escape(sid)}"><h3>{html.escape(r.get("name",r["source_id"]))} · {html.escape(r["source_id"])}</h3>')
             if r['status']!='READY':cards.append('<p>'+html.escape(json.dumps(r,ensure_ascii=False))+'</p></section>');continue
             folder=r['preview_folder'];cards.append('<p>'+html.escape(r['mask_semantics'])+'；可直接用于编辑像素评价：'+('是（尚未人工场景确认）' if r['direct_pixel_GT'] else '否，仅定性／复制并集定位')+'</p><p>'+html.escape(camera_text(r['camera']))+'；'+html.escape(r['real_fake_sync'])+'</p><p>'+html.escape(r['timing_type'])+'；mask非空帧区间[起,止)：'+str(r['positive_frame_runs'])+'。全程mask非空不等于可验证编辑起止。</p>')
-            cards.append(f'<div class="pair"><div>原片（完整发布短片／PNG全序列预览）<video controls preload="none" src="{folder}/real.mp4"></video></div><div>rigid / CoCoCo伪造<video controls preload="none" src="{folder}/fake.mp4"></video></div></div>')
+            cards.append(f'<p>播放器为H264兼容预览副本，原件未修改：<a href="{r["real_path"]}">原始real</a> / <a href="{r["fake_path"]}">原始fake</a> / <a href="{r["mask_path"]}">官方标注原件</a>。不强制同步播放。</p><div class="pair"><div>原片（完整发布短片／PNG全序列预览）<video controls preload="none" src="{folder}/real.mp4"></video></div><div>rigid / CoCoCo伪造<video controls preload="none" src="{folder}/fake.mp4"></video></div></div>')
             cards.append(f'<p>尺寸{r["native_hw"]}，帧数{r["frames"]}。'+('AINPAINT播放器25fps仅展示；未提供官方PTS。' if dataset=='AINPAINT' else '真实解码PTS见该对record.json，AVI原件保留；MP4仅兼容预览。')+'</p>')
             for i in r['fixed_frames']:
                 timing=f'fake PTS {r["PTS_fake"][i]["seconds"]:.6f}s' if r['PTS_fake'] else '官方仅帧号，预览时钟'+f'{i/25:.3f}s'

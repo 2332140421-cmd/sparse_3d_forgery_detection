@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image
-from scripts.prepare_geometry_screen import archive_key,motion_stats,ranges,camera_check
+from scripts.prepare_geometry_screen import archive_key,motion_stats,ranges,camera_check,ain_mask
 
 class GeometryScreenTest(unittest.TestCase):
     def test_archive_exact_allowed_source_variant(self):
@@ -18,5 +18,9 @@ class GeometryScreenTest(unittest.TestCase):
     def test_camera_identical_textured(self):
         a=Image.fromarray(np.random.default_rng(7).integers(0,256,(240,432,3),dtype=np.uint8));r=camera_check([(0,a),(20,a)])
         self.assertTrue(r['stable_candidate']);self.assertAlmostEqual(r['intervals'][0]['rotation_degrees'],0,places=5)
+
+    def test_soft_mask_matches_final_author_target(self):
+        a=Image.fromarray(np.array([[0,127,128,255]],dtype=np.uint8))
+        np.testing.assert_array_equal(ain_mask(a),[[False,False,True,True]])
 
 if __name__=='__main__':unittest.main()
