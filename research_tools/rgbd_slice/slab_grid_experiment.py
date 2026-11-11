@@ -38,22 +38,83 @@ def table(headers,rows):
     return '\n'.join(['|'+'|'.join(headers)+'|','|'+'|'.join(['---']*len(headers))+'|']+['|'+'|'.join(map(fmt,r))+'|' for r in rows])
 
 
+def _record_mismatch(teacher,local,xyz,valid,ids,B,C,row,frame,run_dir,error,*,C_ids=None):
+    """Persist the primary error/B/C before attempting same-local A evidence."""
+    print('ORIGINAL_REPRODUCTION_MISMATCH',row['video_id'],frame['frame_index'],frame['pts'],str(error),flush=True)
+    try:
+        (run_dir/'original_mismatch_error.txt').write_text(str(error))
+        info={'video_id':row['video_id'],'pair_id':row['pair_id'],'role':row['role'],'frame_index':frame['frame_index'],'pts':frame['pts'],'native_hw':row['source_hw'],'absolute_slab_ids':ids.cpu().tolist(),'C_absolute_slab_ids':(ids if C_ids is None else C_ids).cpu().tolist(),'B_shape':list(B.shape),'C_shape':list(C.shape),'B_dtype':str(B.dtype),'C_dtype':str(C.dtype),'local_dtype':str(local.dtype),'local_shape':list(local.shape),'atol':2e-5,'rtol':3e-5,'original_error':str(error)}
+        save(run_dir/'mismatch_identity.json',info)
+        torch.save({'B':B.detach().cpu(),'C':C.detach().cpu(),'ids':ids.cpu(),'identity':info},run_dir/'mismatch_B_C.pt')
+        from .pooling_parity_check import difference
+        save(run_dir/'mismatch_B_C_comparison.json',difference(B,C,ids.cpu()))
+        with torch.no_grad(),torch.autocast('cuda',dtype=torch.bfloat16,enabled=local.is_cuda):A,aid=teacher.pool(local,xyz,valid)
+        assert torch.equal(aid,ids)
+        torch.save({'A':A.detach().cpu(),'B':B.detach().cpu(),'C':C.detach().cpu(),'ids':ids.cpu(),'identity':info},run_dir/'mismatch_A_B_C.pt')
+        comparisons={'A_minus_B':difference(A,B,ids.cpu()),'A_minus_C':difference(A,C,ids.cpu()),'B_minus_C':difference(B,C,ids.cpu())}
+        save(run_dir/'same_call_ABC.json',{'identity':info,'comparisons':comparisons,'A_uses_same_local':True,'additional_encoder_calls':0})
+    except BaseException as recording_error:
+        print('EVIDENCE_RECORDING_ERROR',repr(recording_error),'PRIMARY_ERROR',str(error),flush=True)
+        try:save(run_dir/'evidence_recording_error.json',{'recording_error':repr(recording_error),'original_error':str(error)})
+        except BaseException:pass
+
+
+def _reuse_video(path,row,wanted,reference,video,oracle):
+    """Check every cached tensor/count against original geometry/GT, no encoder."""
+    data=torch.load(path,map_location='cpu',weights_only=True,mmap=True);assert sorted(data)==wanted
+    records=[];maximum=0.
+    for i in wanted:
+        f=video.frame(i);entry=data[i];base=reference[i];points,groups,L=grouping(f['xyz'],f['valid'])
+        assert f['pts']==row['pts'][i]['pts_s']==entry['pts']==base['pts'] and list(f['gt'].shape)==row['source_hw']
+        assert entry['valid_pixels']==int(f['valid'].sum()) and entry['valid_GT_pixels']==int((f['gt']&f['valid']).sum()) and entry['GT_pixels']==int(f['gt'].sum())
+        stat={'video_id':row['video_id'],'pair_id':row['pair_id'],'split':row['split'],'role':row['role'],'frame_index':i,'pts':f['pts'],'L':L,**{k:entry[k] for k in ['GT_pixels','valid_GT_pixels','valid_pixels']}}
+        for name,(ids,index) in zip(CONDITIONS,groups):
+            q=entry[name];counts=torch.bincount(index,minlength=len(ids));edits=torch.bincount(index[f['gt'][f['valid']]],minlength=len(ids))
+            assert q['features'].dtype==torch.float32 and q['features'].shape==(len(ids),512) and torch.isfinite(q['features']).all()
+            assert torch.equal(q['ids'],ids) and torch.equal(q['counts'],counts) and torch.equal(q['edit_counts'],edits)
+            stat[name+'_units']=len(ids)
+        slab=entry[CONDITIONS[0]];torch.testing.assert_close(slab['features'],base['features'],atol=2e-5,rtol=3e-5)
+        assert torch.equal(slab['ids'],base['ids']) and torch.equal(slab['counts'],base['counts']) and torch.equal(slab['edit_counts'],base['edit_counts'])
+        maximum=max(maximum,float((slab['features']-base['features']).abs().max()))
+        if row['role']=='real':assert entry['GT_pixels']==0
+        if (row['video_id'],i) in oracle:
+            a=oracle[(row['video_id'],i)];assert [stat[name+'_units'] for name in CONDITIONS]==[int(a['SLAB_units']),int(a['SLAB_GRID_units'])]
+            assert entry['valid_pixels']==int(a['valid_pixels']) and entry['valid_GT_pixels']==int(a['valid_GT_pixels']) and entry['GT_pixels']==int(a['GT_pixels'])
+        records.append(stat)
+    return records,maximum
+
+
 @torch.no_grad()
-def extract(teacher,rows,clips,config):
-    folder=OUT/'cache';folder.mkdir();records=[];started=time.monotonic();max_error=0.
+def extract(teacher,rows,clips,config,*,resume_run=None):
+    report_out=Path(resume_run) if resume_run is not None else OUT
+    def log_progress(stage,**extra):
+        save(report_out/'status.json',{'status':'RUNNING','pid':os.getpid(),'stage':stage,**extra});print(stage,json.dumps(extra),flush=True)
+    folder=OUT/'cache';folder.mkdir(exist_ok=resume_run is not None);records=[];started=time.monotonic();max_error=0.;reused=[];added=[]
     oracle={(r['video_id'],int(r['frame_index'])):r for r in csv.DictReader((ORACLE/'frames.csv').open())}
     for row in rows:
         v=Video(row,config);data={};reference=torch.load(REF/'cache'/f"{row['video_id']}.pt",map_location='cpu',weights_only=True,mmap=True)
         wanted=sorted({i for s,e,_ in windows(row,clips if row['split']=='train' else None) for i in range(s,e)})
+        cache_path=folder/f"{row['video_id']}.pt"
+        if resume_run is not None and cache_path.exists():
+            log_progress('reuse_verify_start',video_id=row['video_id'],completed_frames=len(records))
+            try:rr,error=_reuse_video(cache_path,row,wanted,reference,v,oracle)
+            finally:v.close()
+            records.extend(rr);max_error=max(max_error,error);reused.append({'video_id':row['video_id'],'frames':len(wanted),'sha256':digest(cache_path),'bytes':cache_path.stat().st_size})
+            save(report_out/'reused_cache.json',reused);csvsave(report_out/'cache_frames.csv',records)
+            log_progress('reuse_verified',video_id=row['video_id'],frames=len(wanted),completed_frames=len(records));del reference;continue
         try:
             for i in wanted:
+                if resume_run is not None:log_progress('extract_frame',video_id=row['video_id'],frame_index=i,pts=row['pts'][i]['pts_s'],completed_frames=len(records))
                 f=v.frame(i);xyz=f['xyz'].cuda();valid=f['valid'].cuda();gt=f['gt'].cuda();points,groups,L=grouping(xyz,valid)
                 with torch.autocast('cuda',dtype=torch.bfloat16):
                     # Same RGB-only condition as original: constant depth input.
                     local,_=teacher.local.encode(f['rgb'],torch.zeros_like(f['depth']))
                     features=frozen_pool(teacher.pool,local,points,groups,valid.shape)
                 base=reference[i];assert f['pts']==base['pts']==row['pts'][i]['pts_s']
-                torch.testing.assert_close(features[0].cpu(),base['features'],atol=2e-5,rtol=3e-5)
+                try:torch.testing.assert_close(features[0].cpu(),base['features'],atol=2e-5,rtol=3e-5)
+                except AssertionError as mismatch:
+                    _record_mismatch(teacher,local,xyz,valid,groups[0][0],features[0],base['features'],row,f,report_out,mismatch,C_ids=base['ids'])
+                    raise
                 if features[0].numel():max_error=max(max_error,float((features[0].cpu()-base['features']).abs().max()))
                 entry={'pts':f['pts'],'GT_pixels':int(gt.sum()),'valid_GT_pixels':int((gt&valid).sum()),'valid_pixels':int(valid.sum())}
                 stat={'video_id':row['video_id'],'pair_id':row['pair_id'],'split':row['split'],'role':row['role'],'frame_index':i,'pts':f['pts'],'L':L,**{k:entry[k] for k in ['GT_pixels','valid_GT_pixels','valid_pixels']}}
@@ -70,11 +131,12 @@ def extract(teacher,rows,clips,config):
                 data[i]=entry;records.append(stat)
                 del local,features,f,xyz,valid,gt,points,groups
         finally:v.close()
-        torch.save(data,folder/f"{row['video_id']}.pt");del data,reference
-        progress('extract',video_id=row['video_id'],frames=len(wanted),completed_frames=len(records))
-    csvsave(OUT/'cache_frames.csv',records)
+        assert not cache_path.exists();torch.save(data,cache_path);del data,reference
+        added.append({'video_id':row['video_id'],'frames':len(wanted),'sha256':digest(cache_path),'bytes':cache_path.stat().st_size});save(report_out/'added_cache.json',added)
+        csvsave(report_out/'cache_frames.csv',records);log_progress('extract',video_id=row['video_id'],frames=len(wanted),completed_frames=len(records))
+    csvsave(report_out/'cache_frames.csv',records)
     result={'frames':len(records),'train_frames':sum(r['split']=='train' for r in records),'dev_frames':sum(r['split']=='dev' for r in records),'seconds':time.monotonic()-started,'SLAB_reference_max_abs_error':max_error,'SLAB_atol':2e-5,'SLAB_rtol':3e-5,'bytes':sum(p.stat().st_size for p in folder.glob('*.pt')),'files':{p.name:digest(p) for p in folder.glob('*.pt')}}
-    save(OUT/'extraction.json',result);return records,result
+    result.update(reused=reused,added=added);save(report_out/'extraction.json',result);return records,result
 
 
 def load_cache(rows):
