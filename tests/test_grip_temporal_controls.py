@@ -10,7 +10,7 @@ class TemporalAssetTest(unittest.TestCase):
     def test_pts_not_equal_from_count_alone(self):
         a={'frame_count':2,'sizes_hw':[(2,3)],'pts':[{'seconds':0.},{'seconds':.1}]};b={**a,'pts':[{'seconds':0.},{'seconds':.2}]}
         self.assertTrue(timelines_equal([a,a]));self.assertFalse(timelines_equal([a,b]))
-    def test_unverified_local_mapping_not_strict(self):
+    def test_undocumented_operation_not_strict(self):
         r=eligibility(True,True,True,True,False);self.assertFalse(r['strict_temporal_control']);self.assertFalse(r['target_only_pixel_GT'])
         self.assertTrue(eligibility(True,True,True,True,True)['strict_temporal_control'])
 
