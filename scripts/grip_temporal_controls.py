@@ -141,6 +141,8 @@ def render(results,batch):
         num=r['source_id'];cards.append(f'<section><h2>{num} {html.escape(r["name"])}</h2><p>{r["qualification"]}</p>')
         if r['status']!='READY':cards.append('<p>'+html.escape(str(r))+'</p></section>');continue
         cards.append('<p>'+html.escape('; '.join(r['reasons']))+'</p><p>编码（原片/rigid/flip）：'+html.escape('; '.join(x['codec']+'/'+x['pixel_format'] for x in r['media']))+f'。帧数{r["frames"]}；完整PTS对齐={r["full_pts_aligned"]}；两变体GT并集外像素完全相同={r["background_identical_outside_GT_union"]}。差异统计仅核查已有标签外背景，不生成新GT。</p>')
+        links=' / '.join(f'<a href="{html.escape(os.path.relpath(path,OUT))}">{label}原AVI</a>' for label,path in zip(['原片','rigid','flipTemp'],r['source_paths']))
+        cards.append('<p>'+links+'；下方H264只是兼容预览，编码核验依据原AVI，不依据预览副本。</p>')
         videos=[f'../preview/grip_{num}/real.mp4',f'../preview/grip_{num}/fake.mp4',f'{num}/flipTemp.mp4'];cards.append('<div class="row">')
         for label,v in zip(['原片来源（既有兼容预览）','rigid普通复制（伪造）','flipTemp局部反转（伪造）'],videos):cards.append(f'<div>{label}<video controls preload="none" src="{v}"></video></div>')
         cards.append('</div><p>下列固定0/25/50/75/100%帧按各自原生帧号与PTS展示。即使PTS相同，也不代表运动物体应相同；不把不同步视频标成同一内容时刻。</p>')
