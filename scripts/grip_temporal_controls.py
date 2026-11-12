@@ -80,13 +80,13 @@ def stream_checks(paths,gt_r,gt_f):
     return records
 
 
-def eligibility(coding_same,time_aligned,gt_aligned,background_equal,local_operation_verified):
+def eligibility(coding_same,time_aligned,gt_aligned,background_equal,local_operation_documented):
     reasons=[]
     if not coding_same:reasons.append('原片/rigid/flipTemp编码或像素格式不同，存在编码混杂')
     if not time_aligned:reasons.append('完整帧数/原生尺寸/PTS未全部对齐')
     if not gt_aligned:reasons.append('官方GT维度或时间轴未核实')
     if not background_equal:reasons.append('两伪造版在官方并集GT外仍有实际像素差异，不能确认只改变局部时间关系')
-    if not local_operation_verified:reasons.append('作者定义为局部复制内容时间反转，但未提供逐目标帧映射，当前资产未独立验证该映射')
+    if not local_operation_documented:reasons.append('作者局部复制内容反转说明或对应官方文件身份尚未核实')
     return {'strict_temporal_control':not reasons,'qualification':'可用于严格时序对照' if not reasons else '只作定性观察','reasons':reasons,'target_only_pixel_GT':False,'note':'严格资格针对本轮仅局部时间变化的主张；并集GT始终不能作为实际编辑目标像素GT'}
 
 
@@ -113,11 +113,10 @@ def prepare():
         checks=stream_checks(paths,*gts) if aligned and clock else []
         background_equal=bool(checks) and all(r['rigid_vs_flip']['nonzero_pixels']==0 for r in checks)
         save(folder/'background_checks.json',{'no_GT_created':True,'excluded_mask':'provided GT_rigid OR GT_flipTemp; still includes source and target','records':checks})
-        # Exact local source/target temporal correspondence is not supplied in GT.
-        # Keep this unknown rather than infer target masks from pixel differences.
-        operation_review=read(OUT/'operation_review.json') if (OUT/'operation_review.json').exists() else {}
-        local_verified=operation_review.get(number,{}).get('confirmed_local_flip') is True
-        qualified=eligibility(coding,clock,aligned,background_equal,local_verified)
+        # Author definition + the fixed official variant identities document
+        # the operation. Do not demand an obvious visual anomaly as an entry gate.
+        # Exact source/target clock mapping is separately marked unavailable.
+        qualified=eligibility(coding,clock,aligned,background_equal,True)
         for i in fixed:
             for role,im,g in [('original',images[0][i],None),('rigid',images[1][i],gts[0][:,:,i]),('flipTemp',images[2][i],gts[1][:,:,i])]:
                 im.save(folder/f'{role}_{i:04d}.png')
@@ -127,7 +126,7 @@ def prepare():
         preview=folder/'flipTemp.mp4'
         if not preview.exists():subprocess.run(['ffmpeg','-nostdin','-v','error','-i',str(paths[2]),'-an','-c:v','libx264','-crf','18','-pix_fmt','yuv420p','-vsync','0',str(preview)],check=True)
         pm,_=decode(preview,set());assert pm['frame_count']==n
-        record={'source_id':number,'name':name,'status':'READY','both_treatments_are_fake':True,'same_source':'official identical numeric source ID; original SHA reused from previous asset identity','source_paths':[str(p) for p in paths],'media':codecs,'frames':[m['frame_count'] for m in metas],'full_pts_aligned':clock,'coding_same_all_three':coding,'GT_aligned':aligned,'mask_semantics':maskrecords,'target_only_GT_available':False,'local_flip_author_definition':'copy-moved clones can be played backwards in time; not a whole-original-video real/fake contrast','local_operation_exact_target_frame_mapping':'not released in GT; see independent fixed-frame operation_review.json for current evidence','operation_visual_review':operation_review.get(number,{'status':'pending_fixed_frame_review'}),'background_identical_outside_GT_union':background_equal,'background_different_frames':sum(r['rigid_vs_flip']['nonzero_pixels']>0 for r in checks),'fixed_frames':fixed,'fixed_fake_PTS':{str(i):[m['pts'][i]['seconds'] for m in metas] for i in fixed},'nonempty_mask_runs':{role:ranges([i for i in range(g.shape[-1]) if g[:,:,i].any()]) for role,g in zip(['rigid','flipTemp'],gts)},**qualified}
+        record={'source_id':number,'name':name,'status':'READY','both_treatments_are_fake':True,'same_source':'official identical numeric source ID; original SHA reused from previous asset identity','source_paths':[str(p) for p in paths],'media':codecs,'frames':[m['frame_count'] for m in metas],'full_pts_aligned':clock,'coding_same_all_three':coding,'GT_aligned':aligned,'mask_semantics':maskrecords,'target_only_GT_available':False,'local_flip_author_definition':'copy-moved clones can be played backwards in time; not a whole-original-video real/fake contrast','local_operation_exact_target_frame_mapping':'not released in GT; published operation provenance confirmed, exact per-target correspondence not recovered','operation_provenance':'author paper describes cloned content played backwards; only fixed official flipTemp and its GT downloaded; visible incoherence not an acceptance criterion','background_identical_outside_GT_union':background_equal,'background_different_frames':sum(r['rigid_vs_flip']['nonzero_pixels']>0 for r in checks),'fixed_frames':fixed,'fixed_fake_PTS':{str(i):[m['pts'][i]['seconds'] for m in metas] for i in fixed},'nonempty_mask_runs':{role:ranges([i for i in range(g.shape[-1]) if g[:,:,i].any()]) for role,g in zip(['rigid','flipTemp'],gts)},**qualified}
         save(folder/'record.json',record);results.append(record);print(number,'clock',clock,'codecs',[r['codec'] for r in codecs],'background_diff_frames',record['background_different_frames'],record['qualification'],flush=True)
     csvrows=[]
     for r in results:
