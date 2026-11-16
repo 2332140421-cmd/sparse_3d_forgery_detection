@@ -83,6 +83,8 @@ def validate(out):
             assert np.array_equal(frames[i],composite(bg,layers[s])), (role,i,'composition')
             assert np.array_equal(ms[i],layers[s][...,3]>0), (role,i,'mask')
             assert m['mapping'][role][i]['source_layer']==s
+            assert m['mapping'][role][i]['rgb_sha256']==rgb_hash(frames[i])
+            assert (m['mapping'][role][i]['pts_num'],m['mapping'][role][i]['pts_den'])==(i,FPS)
         arrays.append(frames);masks.append(ms)
     result=check_arrays(*arrays,*masks,[composite(bg,layers[s]) for s in MAPPING])
     media=[]
@@ -95,6 +97,7 @@ def validate(out):
                 assert abs(float(f.pts*f.time_base)-i/FPS)<.0011
             media.append({'role':role,'codec':stream.codec_context.name,'decoded_frames':len(decoded),'fps':str(stream.average_rate),'pts_tolerance_s':.0011,'RGB_exact':True})
     result['media']=media
+    result['validation_head']=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
     save(out/'validation.json',result)
     assert result['status']=='PASS',result
     return result
