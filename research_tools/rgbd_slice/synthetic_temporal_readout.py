@@ -4,6 +4,7 @@ CLI caller only. Reuses Local.encode/grouping/frozen_pool/CurrentReadout; create
 no trainable modules beyond loading the existing frozen readout, and no labels
 enter feature extraction. Geometry follows the original per-frame MoGe settings.
 """
+import argparse
 import json
 import os
 from pathlib import Path
@@ -116,7 +117,12 @@ def run():
     torch.cuda.synchronize();extract_seconds=time.monotonic()-extract_start
     assert state_hash(teacher.state_dict())==before;del teacher;torch.cuda.empty_cache()
     readout=CurrentReadout().cuda().eval();readout.load_state_dict(rcp['state_dict'],strict=True);readout.requires_grad_(False);del rcp
-    rows=[]
+    finish(entries,identity,readout,start,geometry_seconds,extract_seconds)
+
+
+@torch.no_grad()
+def finish(entries,identity,readout,start,geometry_seconds=None,extract_seconds=None):
+    m=read(INPUT/'manifest.json');rows=[]
     for t in [3,6]:
         sources=[[m['mapping'][role][i]['source_layer'] for i in range(t-3,t+1)] for role in ['ordered','perturbed']]
         current=[entries[s[-1]] for s in sources];assert sources[0][-1]==sources[1][-1]
@@ -125,14 +131,46 @@ def run():
         histories=[aligned_history(entries,s) for s in sources]
         row={'t':t,'H':3,'current_C_max_abs':float((current[0]['features']-current[1]['features']).abs().max()),'current_logit_max_abs':float((logits[0]-logits[1]).abs().max()),'current_units':len(logits[0]),'ordered_history':histories[0],'perturbed_history':histories[1],'history_delta':histories[1]['total']-histories[0]['total'] if histories[0]['total'] is not None and histories[1]['total'] is not None else None}
         assert row['current_C_max_abs']==0 and row['current_logit_max_abs']==0
-        if t==3:assert row['history_delta']==0
+        if t==3 and row['history_delta'] is not None:assert row['history_delta']==0
         rows.append(row)
-    summary={'status':'COMPLETE','exit_code':0,'identity':identity,'rows':rows,'unique_feature_frames':7,'new_moge_frames':7,'geometry_seconds':geometry_seconds,'extract_seconds':extract_seconds,'wall_seconds':time.monotonic()-start,'features':[{k:v for k,v in e.items() if k not in ['features','ids','keys','counts']}|{'units':len(e['ids'])} for e in entries.values()],'frozen_teacher_state_unchanged':True,'peak_allocated':torch.cuda.max_memory_allocated(),'peak_reserved':torch.cuda.max_memory_reserved(),'peak_RSS':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024}
+    summary={'status':'COMPLETE','exit_code':0,'identity':identity,'finalization_head':git('rev-parse','HEAD'),'rows':rows,'unique_feature_frames':7,'new_moge_frames':7,'geometry_seconds':geometry_seconds,'extract_seconds':extract_seconds,'finalization_seconds':time.monotonic()-start,'features':[{k:v for k,v in e.items() if k not in ['features','ids','keys','counts']}|{'units':len(e['ids']),'depth_id_min':int(e['ids'].min()),'depth_id_max':int(e['ids'].max())} for e in entries.values()],'frozen_teacher_state_unchanged':True,'peak_allocated_finalization':torch.cuda.max_memory_allocated(),'peak_reserved_finalization':torch.cuda.max_memory_reserved(),'peak_RSS_finalization':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024,'historical_exit_code':1 if (OUT/'first_failure_status.json').exists() else None,'history_comparability':'NO_COMMON_KEYS' if all(r['history_delta'] is None for r in rows) else 'AVAILABLE'}
     save(OUT/'summary.json',summary);save(OUT/'status.json',{'status':'COMPLETE','exit_code':0});print(json.dumps(rows),flush=True)
 
 
+@torch.no_grad()
+def cached_finalize():
+    start=time.monotonic();torch.set_num_threads(4);identity=read(OUT/'identity.json')
+    if (OUT/'summary.json').exists():
+        assert read(OUT/'summary.json')['status']=='COMPLETE';print('REUSE COMPLETE');return
+    for name in ['status.json','error.log']:
+        old=OUT/name;new=OUT/('first_failure_'+name)
+        if old.exists() and not new.exists():new.write_bytes(old.read_bytes())
+    assert digest(INPUT/'manifest.json')==identity['input_manifest_sha256']
+    assert digest(Path(identity['encoder_weight']))==identity['encoder_sha256']
+    assert digest(Path(identity['readout_weight']))==identity['readout_sha256']
+    entries={}
+    for i in range(7):
+        e=torch.load(OUT/f'features_{i:02d}.pt',map_location='cpu',weights_only=True)
+        g=torch.load(OUT/f'geometry_{i:02d}.pt',map_location='cpu',weights_only=True)
+        rgb=np.array(Image.open(INPUT/f'ordered/rgb/{i:03d}.png').convert('RGB'))
+        assert e['source_frame']==g['source_frame']==i and e['rgb_sha256']==g['rgb_sha256']==rgb_hash(rgb)
+        points,groups,L=grouping(g['xyz_provider']/identity['scale'],g['valid'])
+        ids,index=groups[1]
+        assert torch.equal(e['ids'],ids) and torch.equal(e['counts'],torch.bincount(index,minlength=len(ids))) and e['L']==L
+        assert e['features'].shape==(len(ids),512) and torch.isfinite(e['features']).all()
+        entries[i]=e
+    cp=torch.load(identity['readout_weight'],map_location='cpu',weights_only=True)
+    assert (cp['condition'],cp['epoch'],cp['updates'])==('SLAB_GRID_CURRENT',12,576)
+    model=CurrentReadout().cuda().eval();model.load_state_dict(cp['state_dict'],strict=True);model.requires_grad_(False)
+    finish(entries,identity,model,start)
+
+
+
 if __name__=='__main__':
-    try:run()
+    parser=argparse.ArgumentParser();parser.add_argument("--cached-finalize",action="store_true");args=parser.parse_args()
+    try:
+        if args.cached_finalize:cached_finalize()
+        else:run()
     except Exception:
         if OUT.exists():
             (OUT/'error.log').write_text(traceback.format_exc());save(OUT/'status.json',{'status':'FAILED','exit_code':1})
