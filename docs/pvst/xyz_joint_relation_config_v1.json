@@ -1,0 +1,84 @@
+{
+  "seed": 20260909,
+  "updates": 14700,
+  "conditions": [
+    "XYZ_JOINT_CURRENT",
+    "XYZ_JOINT_TEMPORAL"
+  ],
+  "train": [
+    "an:40y1x9",
+    "an:95qvg9",
+    "an:9l8w54",
+    "an:4qwgw4",
+    "an:4ym5n4",
+    "an:76rjm7",
+    "an:9mygy9"
+  ],
+  "dev": [
+    "an:7e2e57",
+    "an:95q8g9",
+    "an:4xd3r9",
+    "an:7ogeg4"
+  ],
+  "work_long_edge": 384,
+  "pad_multiple": 32,
+  "D": 128,
+  "heads": 4,
+  "history_slots": 8,
+  "history_step_seconds": 0.1,
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "scale_rule": "median positive Z from deterministic <=256 evenly spaced valid points per train frame; one global scale",
+  "h_candidates": [
+    0.125,
+    0.25,
+    0.5,
+    1,
+    2,
+    4
+  ],
+  "train_max_blocks_budget": 1024,
+  "scale": 12.699031352996826,
+  "h": 0.5,
+  "optimizer": "AdamW",
+  "lr": 0.0001,
+  "weight_decay": 0.01,
+  "clip_grad": 1,
+  "loss_weights": {
+    "pixel_BCE": 1,
+    "soft_Dice": 1,
+    "frame_BCE": 1
+  },
+  "dice_epsilon": 1,
+  "working_GT_resize": "nearest; native GT retained for final evaluation",
+  "threshold_logit": 0,
+  "visual": "official original DFormer-S generic RGB-D pretraining; frozen eval, RGB ImageNet normalization and constant zero depth; all four RGB stages; no forensic initialization",
+  "target_sampling": "14-update cycles: shuffled seven sources; alternating real/fake; target uniform over valid native indices, fake40y1x9 6:10 excluded",
+  "evaluation": "all native dev frames exactly once; native all-pixel AP on positive GT frames -> video mean -> four fake macro; real FPR separate; frame labels mask-nonempty; video mean frame logit",
+  "excluded_supervision": {
+    "an:40y1x9/fake": [
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "joint_layers": 2,
+  "evaluation_updates": [
+    576,
+    4410,
+    14700
+  ],
+  "train_monitor_fractions": [
+    0.1,
+    0.35,
+    0.65,
+    0.9
+  ],
+  "frame_readout": "Linear128->1 per current block; logsumexp(e)-log(N); temperature=1",
+  "value": "LayerNorm(content); position only at Q/K",
+  "current_mask": "same actual observation frame ID; evaluated as exact separate attention groups"
+}

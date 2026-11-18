@@ -36,3 +36,5 @@
 - [ADR-0032：深度切片监督关系与小规模CPU审计](0032-depth-slice-supervised-relations-audit.md)
 
 - [ADR-0036：自适应集合对集合限定拟合](0036-adaptive-set-to-set-fit.md)
+
+- [ADR-0044：窗口联合XYZ块关系与局部证据读出](0044-xyz-joint-window-relations.md)

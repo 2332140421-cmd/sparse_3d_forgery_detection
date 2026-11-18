@@ -53,7 +53,7 @@ class XYZPilot(nn.Module):
         self.local_out=nn.Conv2d(d,32,1);self.detail=nn.Sequential(nn.Conv2d(3,16,3,padding=1),nn.GELU())
         self.pixel=nn.Sequential(nn.Conv2d(80,32,3,padding=1),nn.GroupNorm(4,32),nn.GELU(),nn.Conv2d(32,1,1))
         self.frame=nn.Sequential(nn.LayerNorm(d),nn.Linear(d,64),nn.GELU(),nn.Linear(64,1))
-    def encode(self,f):
+    def encode(self,f,spatial=True):
         maps=f['visual'];y=None
         for i in [3,2,1,0]:
             a=self.lateral[i](maps[i][None]);y=a if y is None else a+F.interpolate(y,size=a.shape[-2:],mode='bilinear',align_corners=False)
@@ -70,7 +70,7 @@ class XYZPilot(nn.Module):
             a=(z-mx[index]).exp();den=a.new_zeros(len(keys)).index_add(0,index,a)
             C=x.new_zeros((len(keys),self.d),dtype=torch.float32).index_add(0,index,self.value(x).float()*(a/den[index])[:,None])
             pos=self.position((keys.float()+.5)*self.h)
-            C=self.space(C+pos,C+pos,C)
+            if spatial:C=self.space(C+pos,C+pos,C)
         else:C=local.new_empty((0,self.d));pos=C
         return {'C':C,'position':pos,'keys':keys,'points':points,'index':index,'local':local}
     def read(self,current,contexts,relative_pts):

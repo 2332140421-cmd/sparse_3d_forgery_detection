@@ -216,3 +216,14 @@ results, or inconsistency between the paper and implementation.
   all-pixel final evaluation, same576 steps/seed/init; exclude fake40y1x9 frames6–9
   as supervised targets. One real resource gate, then A/B and one B history reversal.
   No shared-key requirement, test access or unapproved extra experiments.
+
+## Joint XYZ window pilot
+
+- ADR-0044/root17.1 authorize only XYZ_JOINT_CURRENT/XYZ_JOINT_TEMPORAL:
+  shared generic caches and train7/dev4; C0 before old space, two128/4head
+  window layers replace both old relations, same-frame mask versus all-window.
+  Keep every valid block, cutoff-t windows, per-block R/pixel bypass and shared
+  log-mean-exp evidence readout. New paired initialization and14700 updates;
+  train56 monitor and dev824 at prescribed steps. One real update gate then
+  train both; no new frontend, forensic initialization, extra seeds or search.
+  Prior defaults/results and user changes remain untouched.
