@@ -3,6 +3,7 @@
 CPU CLI only. Reuses existing media, mask, camera and HTML helpers; outputs a
 next-batch review and ten-frame boundary page. No model/frontend operations.
 """
+import argparse
 import csv
 from collections import defaultdict
 import json
@@ -119,8 +120,13 @@ def prepare(p,entries,revision):
     assert verify(A/'masks'/f'{id}.zip',entries[f'masks/{id}.zip'])['status']=='VERIFIED'
     a,b=media['real'],media['fake'];clock=a['frame_count']==b['frame_count'] and all(abs(x['seconds']-y['seconds'])<1e-8 for x,y in zip(a['pts'],b['pts']))
     result={'pair_id':'an:'+id,'split':p['role'],'source_id':p['source_id'],'source_url':row['url'],'official_revision':revision,'official_task':row['task'],'generator':row['manipulation-type'],'edit_object':'运动人物/动物/其他对象增删（按官方文字，画面待确认）','priority':'新增对象编辑主组候选，未人工批准','relation_note':'运动衔接、形态或遮挡是否值得比较，交人工确认；不要求先看到不协调','human':None,'camera_auto':p['camera_auto'],'camera':p['camera_auto']['state']+'（自动预筛；尚未人工确认）','role_provenance':p['role_provenance'],'media':media,'mask':prior.mask_audit(rr['fake'],media['fake']),'equal_frame_pts':clock,'sync_note':'同源帧数/PTS网格一致，不证明像素内容配准' if clock else '真伪时间网格或长度不同，只按片内相对时间联动，不作严格逐帧配准','human_semantic_alignment':'PENDING'}
-    result['mask']['path']=rr['fake']['mask_zip'];assert result['mask']['status']=='PASS'
+    result['mask']['path']=rr['fake']['mask_zip']
+    if result['mask']['status']!='PASS':
+        with zipfile.ZipFile(rr['fake']['mask_zip']) as z:result['mask']['published_mask_frames']=len(numeric_members(z.namelist()))
+        result['mask']['decoded_fake_frames']=media['fake']['frame_count']
+        result['mask']['note']='Published video/mask frame mismatch; no repair or overlay. Semantic qualification unknown.'
     prior.preview(result,rr)
+    save(OUT/result['pair_id'].replace(':','_')/'identity.json',result)
     return result
 
 
@@ -142,20 +148,29 @@ def boundary(old):
     h.append('<p>请确认：空mask时狗是否仍有编辑；6/10的切换是否与画面对应。独立确认前不得作为内容编辑起止真值。</p><a href="../index.html">返回新候选</a>');(folder/'index.html').write_text('\n'.join(h))
 
 
-def main():
+def main(continue_existing=False):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='';start=time.monotonic()
-    if OUT.exists():raise RuntimeError('Existing output preserved; inspect before rerun')
-    OUT.mkdir(parents=True);old=read(PREVIOUS/'inventory.json');register_human(old)
-    pool,entries,info=inventory(old);selected=prescreen(pool,entries)
-    prior.OUT=OUT;results=[]
+    if OUT.exists() and not continue_existing:raise RuntimeError('Existing output preserved; inspect before rerun')
+    if not OUT.exists():OUT.mkdir(parents=True)
+    old=read(PREVIOUS/'inventory.json')
+    if continue_existing:
+        assert not (OUT/'summary.json').exists()
+        selection=read(OUT/'selection.json');pool=selection['prescreen'];selected=[next(p for p in pool if p['metadata']['video-id']==id) for id in selection['selected']]
+        info=read(A/'references/dataset_info.json');entries={e['rfilename']:{'size':e['size'],'lfs':e.get('lfs'),'blob_id':e['blobId']} for e in info['siblings']}
+        results=read(OUT/'prepared_partial.json')
+    else:
+        register_human(old);pool,entries,info=inventory(old);selected=prescreen(pool,entries);results=[]
+    prior.OUT=OUT
     for p in selected:
+        if 'an:'+p['metadata']['video-id'] in {r['pair_id'] for r in results}:continue
         r=prepare(p,entries,info['sha']);results.append(r);save(OUT/'prepared_partial.json',results);print('preview',r['pair_id'],flush=True)
     save(OUT/'inventory.json',results)
     csvsave(OUT/'inventory.csv',[{'pair_id':r['pair_id'],'source_id':r['source_id'],'role':r['split'],'official_task':r['official_task'],'camera_auto':r['camera'],'mask_technical':r['mask']['status'],'mask_semantic':'PENDING_HUMAN','time_profile':r['mask']['profile']} for r in results])
     prior.render(results,results);boundary(old)
     page=OUT/'index.html';text=page.read_text().replace('首批最多12对','本轮新增最多12对').replace('<h1>ANAKIN候选：人工确认前，不冻结新训练划分</h1>','<h1>ANAKIN第二批新增候选：等待人工确认</h1><p><a href="human_review_registered.json">首批人工结论（无需重填）</a> / <a href="40y1x9_boundary/index.html">40y1x9帧3–12边界查看</a>。首批主组仅3训练来源＋2开发来源，规模尚不充分。</p>');page.write_text(text)
-    summary={'status':'COMPLETE','exit_code':0,'execution_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'human_registered':12,'main_sources':5,'main_train':3,'main_dev':2,'prescreen_sources':len(pool),'new_preview_pairs':len(results),'new_independent_sources':len({r['source_id'] for r in results}),'selected':[r['pair_id'] for r in results],'roles':{role:sum(r['split']==role for r in results) for role in ['train','dev','candidate_unassigned']},'download_bytes':0,'seconds':time.monotonic()-start,'models':0,'depth':0,'features':0,'boundary_state':'mask state change; content boundary pending'}
+    summary={'status':'COMPLETE','exit_code':0,'execution_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'human_registered':12,'main_sources':5,'main_train':3,'main_dev':2,'prescreen_sources':len(pool),'new_preview_pairs':len(results),'technical_pass_pairs':sum(r['mask']['status']=='PASS' for r in results),'technical_pending':[r['pair_id'] for r in results if r['mask']['status']!='PASS'],'new_independent_sources':len({r['source_id'] for r in results}),'selected':[r['pair_id'] for r in results],'roles':{role:sum(r['split']==role for r in results) for role in ['train','dev','candidate_unassigned']},'download_bytes':0,'seconds':time.monotonic()-start,'models':0,'depth':0,'features':0,'boundary_state':'mask state change; content boundary pending'}
     save(OUT/'summary.json',summary);print(summary,flush=True)
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--continue-existing',action='store_true');args=parser.parse_args();main(args.continue_existing)
