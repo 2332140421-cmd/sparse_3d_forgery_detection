@@ -77,10 +77,11 @@ class JointProtocolTests(unittest.TestCase):
         from research_tools.xyz_pilot.joint_experiment import observation_targets, coverage
         from research_tools.xyz_pilot.experiment import orders
         rows=[]
-        for pair in ['an:40y1x9','an:other']:
+        pairs=['an:40y1x9']+[f'an:other{i}' for i in range(6)]
+        for pair in pairs:
             for role in ['real','fake']:
                 rows.append(dict(pair_id=pair,video_id=pair[3:]+'_'+role,split='train',role=role,actual_frames=15,pts=[i*.1 for i in range(15)]))
-        config=dict(train=['an:40y1x9','an:other'],updates=20,seed=20260909,history_slots=8,history_step_seconds=.1)
+        config=dict(train=pairs,updates=20,seed=20260909,history_slots=8,history_step_seconds=.1)
         short=orders(rows,config)
         config['updates']=40
         long=orders(rows,config)
