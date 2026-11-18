@@ -10,3 +10,13 @@ class ReviewV2(unittest.TestCase):
         self.assertEqual(source_role(set()),'candidate_unassigned')
         self.assertTrue(object_candidate('remove people walking behind'))
         self.assertFalse(object_candidate('add tattoo on chest'))
+
+    def test_published_mask_count(self):
+        import tempfile,zipfile
+        from pathlib import Path
+        from scripts.anakin_candidate_review_v2 import published_mask_count
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/'m.zip'
+            with zipfile.ZipFile(p,'w') as z:
+                z.writestr('0000.png',b'');z.writestr('0001.png',b'')
+            self.assertEqual(published_mask_count(p),2)

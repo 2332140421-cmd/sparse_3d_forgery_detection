@@ -13,6 +13,7 @@ import random
 import shutil
 import subprocess
 import time
+import zipfile
 
 import av
 import numpy as np
@@ -107,6 +108,10 @@ def prescreen(pool,entries):
     return selected
 
 
+def published_mask_count(path):
+    with zipfile.ZipFile(path) as z:return len(numeric_members(z.namelist()))
+
+
 def prepare(p,entries,revision):
     row=p['metadata'];id=row['video-id'];media={};rr={}
     for role,folder in [('real','trimmed'),('fake','edited')]:
@@ -122,7 +127,7 @@ def prepare(p,entries,revision):
     result={'pair_id':'an:'+id,'split':p['role'],'source_id':p['source_id'],'source_url':row['url'],'official_revision':revision,'official_task':row['task'],'generator':row['manipulation-type'],'edit_object':'运动人物/动物/其他对象增删（按官方文字，画面待确认）','priority':'新增对象编辑主组候选，未人工批准','relation_note':'运动衔接、形态或遮挡是否值得比较，交人工确认；不要求先看到不协调','human':None,'camera_auto':p['camera_auto'],'camera':p['camera_auto']['state']+'（自动预筛；尚未人工确认）','role_provenance':p['role_provenance'],'media':media,'mask':prior.mask_audit(rr['fake'],media['fake']),'equal_frame_pts':clock,'sync_note':'同源帧数/PTS网格一致，不证明像素内容配准' if clock else '真伪时间网格或长度不同，只按片内相对时间联动，不作严格逐帧配准','human_semantic_alignment':'PENDING'}
     result['mask']['path']=rr['fake']['mask_zip']
     if result['mask']['status']!='PASS':
-        with zipfile.ZipFile(rr['fake']['mask_zip']) as z:result['mask']['published_mask_frames']=len(numeric_members(z.namelist()))
+        result['mask']['published_mask_frames']=published_mask_count(rr['fake']['mask_zip'])
         result['mask']['decoded_fake_frames']=media['fake']['frame_count']
         result['mask']['note']='Published video/mask frame mismatch; no repair or overlay. Semantic qualification unknown.'
     prior.preview(result,rr)
