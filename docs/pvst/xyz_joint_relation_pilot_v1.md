@@ -124,7 +124,7 @@ AP口径：原生全画面正GT帧pixel AP→fake视频均值→4来源宏平均
 
 主要文件：summary.json、final_integrity_checks.json、config.json、manifest.json、initialization.json/initial.pt、orders.json、coverage.json、train_monitor_targets.json、history.csv、curves.png、两组updates.jsonl与step*_train/dev.json/CSV、两组*_last.pt、order_check.json、run.log、exit_code.txt。原始自动报告另存runner_report.md；发布状态单列publication.json。
 
-预览绝对路径：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_xyz_joint_relation_pilot_v1/preview/index.html`。训练观察56目标、开发fake首/中/末固定时刻，均提供RGB/GT/A/B预测。所有概率图使用固定0–1色阶，仅展示缩放，未按效果选图。
+预览绝对路径：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_xyz_joint_relation_pilot_v1/preview/index.html`。训练观察56目标、开发8视频各首/中/末共24个固定目标（12 fake、12 real），共80目标/160张并排面板，均有帧号与PTS及RGB/GT/A/B预测；real显示已登记合法零标签。全部相对图片链接通过核对。所有概率图使用固定0–1色阶，仅展示缩放，未按效果选图。
 
 执行命令：`PYTHONPATH=. /media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/bin/python -u -m research_tools.xyz_pilot.joint_experiment`。正式脚本run.sh独立完成，不依赖持续轮询。入口检测已完成结果后不重复训练。
 
