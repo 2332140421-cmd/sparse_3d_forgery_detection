@@ -10,6 +10,8 @@ import json
 import os
 from pathlib import Path
 import random
+import re
+import html
 import shutil
 import subprocess
 import time
@@ -158,6 +160,27 @@ def boundary(old):
     h.append('<p>请确认：空mask时狗是否仍有编辑；6/10的切换是否与画面对应。独立确认前不得作为内容编辑起止真值。</p><a href="../index.html">返回新候选</a>');(folder/'index.html').write_text('\n'.join(h))
 
 
+def decorate_pending_page(page,results):
+    bypair={r['pair_id']:r for r in results}
+    def section(match):
+        pair,body=match.group(1),match.group(2);r=bypair[pair]
+        if r['mask']['status']=='PASS':return match.group(0)
+        folder=OUT/pair.replace(':','_');link=folder/'official_masks.zip'
+        if not link.exists():link.symlink_to(Path(r['mask']['path']))
+        views=[]
+        with zipfile.ZipFile(r['mask']['path']) as z:
+            members=numeric_members(z.namelist())
+            for pos in sorted(set([0,len(members)//2,len(members)-1])):
+                num,name=members[pos];a,_,_=mask_array(z.read(name));file=f'unpaired_source_mask_{num:05d}.png'
+                Image.fromarray(a).save(folder/file)
+                views.append(f'<div>官方mask成员 {html.escape(name)}，尺寸H×W={a.shape}，未对齐fake；<img style="max-width:300px" src="{folder.name}/{file}"></div>')
+        issue=html.escape(str({k:v for k,v in r['mask'].items() if k in ['technical_error','published_mask_frames','decoded_fake_frames','alignment']}))
+        body=re.sub(r'<option value="(?:overlay|mask).mp4">.*?</option>','',body)
+        body += '<h3>技术对应待核：不显示叠加，不作为已核验空间监督</h3><p>'+issue+'</p><p>fake原生H×W='+str(r['media']['fake']['sizes_hw'])+'</p><a href="'+folder.name+'/official_masks.zip">官方原始ZIP</a>'+''.join(views)
+        return '<section data-pair="'+pair+'">'+body+'</section>'
+    page.write_text(re.sub(r'<section data-pair="([^"]+)">(.*?)</section>',section,page.read_text(),flags=re.S))
+
+
 def main(continue_existing=False):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='';start=time.monotonic()
     if OUT.exists() and not continue_existing:raise RuntimeError('Existing output preserved; inspect before rerun')
@@ -177,7 +200,7 @@ def main(continue_existing=False):
     save(OUT/'inventory.json',results)
     csvsave(OUT/'inventory.csv',[{'pair_id':r['pair_id'],'source_id':r['source_id'],'role':r['split'],'official_task':r['official_task'],'camera_auto':r['camera'],'mask_technical':r['mask']['status'],'mask_semantic':'PENDING_HUMAN','time_profile':r['mask']['profile']} for r in results])
     prior.render(results,results);boundary(old)
-    page=OUT/'index.html';text=page.read_text().replace('首批最多12对','本轮新增最多12对').replace('<h1>ANAKIN候选：人工确认前，不冻结新训练划分</h1>','<h1>ANAKIN第二批新增候选：等待人工确认</h1><p><a href="human_review_registered.json">首批人工结论（无需重填）</a> / <a href="40y1x9_boundary/index.html">40y1x9帧3–12边界查看</a>。首批主组仅3训练来源＋2开发来源，规模尚不充分。</p>');page.write_text(text)
+    page=OUT/'index.html';text=page.read_text().replace('首批最多12对','本轮新增最多12对').replace('<h1>ANAKIN候选：人工确认前，不冻结新训练划分</h1>','<h1>ANAKIN第二批新增候选：等待人工确认</h1><p><a href="human_review_registered.json">首批人工结论（无需重填）</a> / <a href="40y1x9_boundary/index.html">40y1x9帧3–12边界查看</a>。首批主组仅3训练来源＋2开发来源，规模尚不充分。</p>');page.write_text(text);decorate_pending_page(page,results)
     summary={'status':'COMPLETE','exit_code':0,'execution_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'human_registered':12,'main_sources':5,'main_train':3,'main_dev':2,'prescreen_sources':len(pool),'new_preview_pairs':len(results),'technical_pass_pairs':sum(r['mask']['status']=='PASS' for r in results),'technical_pending':[r['pair_id'] for r in results if r['mask']['status']!='PASS'],'new_independent_sources':len({r['source_id'] for r in results}),'selected':[r['pair_id'] for r in results],'roles':{role:sum(r['split']==role for r in results) for role in ['train','dev','candidate_unassigned']},'download_bytes':0,'seconds':time.monotonic()-start,'models':0,'depth':0,'features':0,'boundary_state':'mask state change; content boundary pending'}
     save(OUT/'summary.json',summary);print(summary,flush=True)
 
