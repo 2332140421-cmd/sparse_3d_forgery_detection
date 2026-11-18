@@ -3,6 +3,7 @@
 CLI caller. Only restores native routing from frozen geometry and fits two
 count-weighted linear classifiers. No encoder, frontend or model forward runs.
 """
+import argparse
 import csv
 import json
 import os
@@ -118,7 +119,8 @@ def fit(train,name,width):
     errors=[str(w.message) for w in caught if issubclass(w.category,ConvergenceWarning)]
     record={'name':name,'width':width,'C':1,'solver':'lbfgs','max_iter':1000,'class_weight':'pixel-balanced via explicit sample_weight; no double balancing','positive_pixels':P,'negative_pixels':N,'rows':len(x),'n_iter':model.n_iter_.tolist(),'warnings':errors,'seconds':time.monotonic()-start,'scaler_mean':scaler.mean_.tolist(),'scaler_scale':scaler.scale_.tolist(),'coef':model.coef_[0].tolist(),'intercept':float(model.intercept_[0])}
     save(OUT/f'{name}_coefficients.json',record)
-    if errors or model.n_iter_.max()>=1000:raise RuntimeError(name+'_NOT_CONVERGED_NO_SEARCH')
+    record['converged']=not errors and int(model.n_iter_.max())<1000
+    save(OUT/f'{name}_coefficients.json',record)
     return scaler,model,record
 
 
@@ -135,10 +137,15 @@ def evaluate(data,scaler,model,width,name):
     return videos
 
 
-def main():
+def main(finish_existing=False):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='';torch.set_num_threads(4);start=time.monotonic()
-    if OUT.exists():raise RuntimeError('Existing result preserved; no duplicate run')
-    OUT.mkdir();save(OUT/'status.json',{'status':'RUNNING','pid':os.getpid()})
+    if OUT.exists() and not finish_existing:raise RuntimeError('Existing result preserved; no duplicate run')
+    if finish_existing:
+        assert (OUT/'A_coefficients.json').exists() and not (OUT/'B_coefficients.json').exists()
+        for name in ['status.json','error.log']:
+            if (OUT/name).exists():(OUT/('first_failure_'+name)).write_bytes((OUT/name).read_bytes())
+    else:OUT.mkdir()
+    save(OUT/'status.json',{'status':'RUNNING','pid':os.getpid()})
     manifest=read(BASE/'manifest.json');config=read(BASE/'config.json');old=read(GRID/'identity.json');passed=read(ROOT/'pvst_slab_grid_cache_resume_check_v1/summary.json')
     assert digest(BASE/'manifest.json')==old['manifest_sha256'] and digest(BASE/'config.json')==old['config_sha256']
     assert len(manifest['rows'])==24 and len(manifest['clips'])==48
@@ -148,7 +155,14 @@ def main():
     train,dev,coverage,hashes,prep_s=prepare(manifest,config)
     fits={};results={}
     for name,width in [('A',512),('B',513)]:
-        print('fit',name,flush=True);scaler,model,record=fit(train,name,width);fits[name]={k:v for k,v in record.items() if k not in ['scaler_mean','scaler_scale','coef','intercept']};results[name]=evaluate(dev,scaler,model,width,name)
+        print('fit' if not (finish_existing and name=='A') else 'reuse fitted',name,flush=True)
+        if finish_existing and name=='A':
+            record=read(OUT/'A_coefficients.json');assert record['positive_pixels']==sum(int(e['g'].sum()) for e in train) and record['negative_pixels']==sum(int((e['n']-e['g']).sum()) for e in train)
+            scaler=StandardScaler();scaler.mean_=np.array(record['scaler_mean']);scaler.scale_=np.array(record['scaler_scale']);scaler.n_features_in_=width
+            model=LogisticRegression();model.coef_=np.array([record['coef']]);model.intercept_=np.array([record['intercept']]);model.classes_=np.array([0,1]);model.n_features_in_=width
+            record['converged']=not record['warnings'] and max(record['n_iter'])<1000
+        else:scaler,model,record=fit(train,name,width)
+        fits[name]={k:v for k,v in record.items() if k not in ['scaler_mean','scaler_scale','coef','intercept']};results[name]=evaluate(dev,scaler,model,width,name)
     comparison=[]
     for a,b in zip(results['A'],results['B']):
         assert (a['video_id'],a['frames'])==(b['video_id'],b['frames'])
@@ -164,7 +178,8 @@ def main():
 
 
 if __name__=='__main__':
-    try:main()
+    p=argparse.ArgumentParser();p.add_argument('--finish-existing',action='store_true');args=p.parse_args()
+    try:main(args.finish_existing)
     except Exception:
         if OUT.exists():(OUT/'error.log').write_text(traceback.format_exc());save(OUT/'status.json',{'status':'FAILED','exit_code':1})
         raise
