@@ -20,3 +20,17 @@ class ReviewV2(unittest.TestCase):
             with zipfile.ZipFile(p,'w') as z:
                 z.writestr('0000.png',b'');z.writestr('0001.png',b'')
             self.assertEqual(published_mask_count(p),2)
+
+    def test_dimension_failure_stays_unknown(self):
+        import tempfile,zipfile,io
+        import numpy as np
+        from pathlib import Path
+        from PIL import Image
+        from scripts.anakin_candidate_review_v2 import checked_mask
+        from scripts.prepare_v8_assets import digest
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/'m.zip';b=io.BytesIO();Image.fromarray(np.zeros((2,2),np.uint8)).save(b,format='PNG')
+            with zipfile.ZipFile(p,'w') as z:z.writestr('0000.png',b.getvalue())
+            row={'pair_id':'an:x','mask_zip':str(p),'mask_sha256':digest(p),'source_hw':[3,3]}
+            r=checked_mask(row,{'frame_count':1})
+            self.assertEqual(r['status'],'UNRESOLVED');self.assertIn('MASK_SIZE',r['technical_error'])

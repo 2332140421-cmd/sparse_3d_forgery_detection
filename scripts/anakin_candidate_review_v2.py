@@ -112,6 +112,11 @@ def published_mask_count(path):
     with zipfile.ZipFile(path) as z:return len(numeric_members(z.namelist()))
 
 
+def checked_mask(row,meta):
+    try:return prior.mask_audit(row,meta)
+    except AssertionError as error:return {'status':'UNRESOLVED','profile':'unknown','technical_error':str(error),'note':'strict original mask checks failed; no repair or overlay'}
+
+
 def prepare(p,entries,revision):
     row=p['metadata'];id=row['video-id'];media={};rr={}
     for role,folder in [('real','trimmed'),('fake','edited')]:
@@ -121,10 +126,10 @@ def prepare(p,entries,revision):
         assert all(b['seconds']>a['seconds'] for a,b in zip(m['pts'],m['pts'][1:]))
         with av.open(str(path)) as c:codec=c.streams.video[0].codec_context.name
         media[role]={'path':str(path),'sha256':check['sha256'],'video_id':f'anakin:{id}:{role}','codec':codec,**m}
-        rr[role]={'video_path':str(path),'mask_zip':str(A/'masks'/f'{id}.zip'),'mask_sha256':verify(A/'masks'/f'{id}.zip',entries[f'masks/{id}.zip'])['sha256'],'source_hw':list(m['sizes_hw'][0])}
+        rr[role]={'pair_id':'an:'+id,'video_path':str(path),'mask_zip':str(A/'masks'/f'{id}.zip'),'mask_sha256':verify(A/'masks'/f'{id}.zip',entries[f'masks/{id}.zip'])['sha256'],'source_hw':list(m['sizes_hw'][0])}
     assert verify(A/'masks'/f'{id}.zip',entries[f'masks/{id}.zip'])['status']=='VERIFIED'
     a,b=media['real'],media['fake'];clock=a['frame_count']==b['frame_count'] and all(abs(x['seconds']-y['seconds'])<1e-8 for x,y in zip(a['pts'],b['pts']))
-    result={'pair_id':'an:'+id,'split':p['role'],'source_id':p['source_id'],'source_url':row['url'],'official_revision':revision,'official_task':row['task'],'generator':row['manipulation-type'],'edit_object':'运动人物/动物/其他对象增删（按官方文字，画面待确认）','priority':'新增对象编辑主组候选，未人工批准','relation_note':'运动衔接、形态或遮挡是否值得比较，交人工确认；不要求先看到不协调','human':None,'camera_auto':p['camera_auto'],'camera':p['camera_auto']['state']+'（自动预筛；尚未人工确认）','role_provenance':p['role_provenance'],'media':media,'mask':prior.mask_audit(rr['fake'],media['fake']),'equal_frame_pts':clock,'sync_note':'同源帧数/PTS网格一致，不证明像素内容配准' if clock else '真伪时间网格或长度不同，只按片内相对时间联动，不作严格逐帧配准','human_semantic_alignment':'PENDING'}
+    result={'pair_id':'an:'+id,'split':p['role'],'source_id':p['source_id'],'source_url':row['url'],'official_revision':revision,'official_task':row['task'],'generator':row['manipulation-type'],'edit_object':'运动人物/动物/其他对象增删（按官方文字，画面待确认）','priority':'新增对象编辑主组候选，未人工批准','relation_note':'运动衔接、形态或遮挡是否值得比较，交人工确认；不要求先看到不协调','human':None,'camera_auto':p['camera_auto'],'camera':p['camera_auto']['state']+'（自动预筛；尚未人工确认）','role_provenance':p['role_provenance'],'media':media,'mask':checked_mask(rr['fake'],media['fake']),'equal_frame_pts':clock,'sync_note':'同源帧数/PTS网格一致，不证明像素内容配准' if clock else '真伪时间网格或长度不同，只按片内相对时间联动，不作严格逐帧配准','human_semantic_alignment':'PENDING'}
     result['mask']['path']=rr['fake']['mask_zip']
     if result['mask']['status']!='PASS':
         result['mask']['published_mask_frames']=published_mask_count(rr['fake']['mask_zip'])
