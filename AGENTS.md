@@ -206,3 +206,13 @@ results, or inconsistency between the paper and implementation.
   Shared count-weighted pixel BCE, original orders, 576 updates per arm after
   real maximum-clip resource gate. No history, frontend or reserved test access.
   Keep older models, entry defaults and results untouched.
+
+## Compact XYZ temporal pilot
+
+- ADR-0043/root17 authorize research_tools/xyz_pilot on pvst-xyz-temporal-pilot-v1:
+  user-fixed train7/dev4, single-scale D128 XYZ cubes, train-only global scale/h,
+  frozen generic DFormer-S (never forensic last/common-C initialization), learned
+  geometry modulation/pooling and spatial/current-or-past interactions. Native
+  all-pixel final evaluation, same576 steps/seed/init; exclude fake40y1x9 frames6–9
+  as supervised targets. One real resource gate, then A/B and one B history reversal.
+  No shared-key requirement, test access or unapproved extra experiments.
