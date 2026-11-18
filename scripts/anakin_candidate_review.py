@@ -87,6 +87,9 @@ def audit_pair(pair,rr):
         result['media'][role]={'path':row['video_path'],'video_id':row['video_id'],'sha256':row['video_sha256'],'codec':codec,**m}
         sample[role]=ims
     result['mask']=mask_audit(rr['fake'],result['media']['fake'])
+    result['mask']['path']=rr['fake']['mask_zip']
+    result['official_revision']=rr['fake'].get('official_revision')
+    result['source_url']=rr['fake'].get('original_url')
     result['camera_auto']=camera_check(sorted(sample['real'].items()))
     result['camera']=HUMAN[pair]['camera']+'（明确人工记录）' if pair in HUMAN else result['camera_auto']['state']
     a,b=result['media']['real'],result['media']['fake']
@@ -140,7 +143,7 @@ s.querySelector('.toggle').onclick=()=>{if(r.paused){f.currentTime=Math.min(r.cu
 r.onseeking=()=>{if(!lock&&Math.abs(f.currentTime-r.currentTime)>.08)f.currentTime=Math.min(r.currentTime,f.duration||r.currentTime)};
 f.onseeking=()=>{if(!lock&&Math.abs(r.currentTime-f.currentTime)>.08)r.currentTime=Math.min(f.currentTime,r.duration||f.currentTime)};
 r.ontimeupdate=()=>{s.querySelector('.time').textContent=`real ${r.currentTime.toFixed(3)}s / fake ${f.currentTime.toFixed(3)}s`;if(!r.paused&&Math.abs(f.currentTime-r.currentTime)>.1)f.currentTime=Math.min(r.currentTime,f.duration||r.currentTime)};
-s.querySelector('.mode').onchange=e=>{let t=f.currentTime;f.pause();f.src=base+'/'+e.target.value;f.onloadedmetadata=()=>{f.currentTime=Math.min(t,f.duration)}};
+s.querySelector('.mode').onchange=e=>{let t=f.currentTime;r.pause();f.pause();f.src=base+'/'+e.target.value;f.onloadedmetadata=()=>{f.currentTime=Math.min(t,f.duration)}};
 const tl=s.querySelector('.timeline');if(tl)tl.onclick=e=>{r.pause();f.pause();let t=e.offsetX/tl.clientWidth*Number(tl.dataset.duration);r.currentTime=t;f.currentTime=t};
 for(const a of s.querySelectorAll('textarea')){let k='pvst-candidate-'+s.dataset.pair+'-'+a.dataset.field;try{a.value=localStorage.getItem(k)||'';a.oninput=()=>localStorage.setItem(k,a.value)}catch(e){}}}
 export.onclick=()=>{let data=Array.from(document.querySelectorAll('section')).map(s=>({pair:s.dataset.pair,...Object.fromEntries(Array.from(s.querySelectorAll('textarea')).map(a=>[a.dataset.field,a.value]))}));let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='human_review.json';a.click()};
