@@ -163,6 +163,8 @@ class Cache:
     def __init__(self,c):self.c=c;self.memory={}
     def get(self,row,i,device='cuda'):
         e=torch.load(OUT/'cache'/row['video_id']/f'{i:05d}.pt',weights_only=True,map_location='cpu')
+        assert e['frame_index']==i and e['pts']==row['pts'][i] and e['native_hw']==row['native_hw'] and e['padded_hw']==row['padded_hw']
+        assert tuple(e['rgb'].shape[:2])==tuple(row['work_hw'])
         e['xyz']=e.pop('xyz_provider')/self.c['scale']
         for k in ['xyz','rgb','valid','gt_work']:e[k]=e[k].to(device)
         e['visual']=[x.to(device=device,dtype=torch.float32) for x in e['visual']]

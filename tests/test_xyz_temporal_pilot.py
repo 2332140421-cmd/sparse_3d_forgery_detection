@@ -31,3 +31,8 @@ class XYZContracts(unittest.TestCase):
     def test_invalid_geometry_keeps_pixel_output(self):
         f=self.frame(0.);f['valid'].zero_();m=XYZPilot(1.)
         o=m([f],True);self.assertEqual(o['blocks'],0);self.assertEqual(o['pixel'].shape,(32,32));self.assertTrue(torch.isfinite(o['pixel']).all())
+    def test_frame_target_preserves_native_positive(self):
+        from research_tools.xyz_pilot.experiment import terms
+        pred={'pixel':torch.zeros(2,2),'frame':torch.tensor(1.)}
+        t=terms(pred,{'gt_work':torch.zeros(2,2,dtype=torch.bool),'frame_positive':True})
+        self.assertAlmostEqual(float(t[2]),float(torch.nn.functional.softplus(torch.tensor(-1.))),places=6)

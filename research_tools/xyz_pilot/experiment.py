@@ -192,9 +192,9 @@ def run():
         csvsave(OUT/f'{condition}_dev_videos.csv',evaluated['videos']);csvsave(OUT/f'{condition}_dev_frames.csv',evaluated['frames']);save(OUT/f'{condition}_evaluation.json',evaluated)
         results[condition]={'updates':576,'train_seconds':train_seconds,'evaluation':evaluated,'peak_allocated':torch.cuda.max_memory_allocated(),'peak_reserved':torch.cuda.max_memory_reserved()};all_predictions[condition]=pred
         if temporal:
-            reversed_eval,_=evaluate(model,cache,[r for r in rows if r['split']=='dev'],c,condition,True);save(OUT/'B_history_reversed.json',reversed_eval)
+            reversed_eval,reversed_predictions=evaluate(model,cache,[r for r in rows if r['split']=='dev'],c,condition,True);save(OUT/'B_history_reversed.json',reversed_eval)
             normal=np.array([f['frame_logit'] for f in evaluated['frames']]);rev=np.array([f['frame_logit'] for f in reversed_eval['frames']])
-            reverse_summary={'macro':reversed_eval['macro'],'macro_pixel_AP_delta':reversed_eval['macro']['pixel_AP']-evaluated['macro']['pixel_AP'],'max_abs_frame_logit_change':float(np.max(abs(rev-normal))),'mean_abs_frame_logit_change':float(np.mean(abs(rev-normal))),'frames':len(rev),'seconds':reversed_eval['seconds']}
+            reverse_summary={'macro':reversed_eval['macro'],'macro_pixel_AP_delta':reversed_eval['macro']['pixel_AP']-evaluated['macro']['pixel_AP'],'max_abs_frame_logit_change':float(np.max(abs(rev-normal))),'mean_abs_frame_logit_change':float(np.mean(abs(rev-normal))),'frames':len(rev),'seconds':reversed_eval['seconds'],'fixed_frame_max_abs_pixel_logit_change':max(float(np.max(abs(reversed_predictions[k].astype(np.float32)-pred[k].astype(np.float32)))) for k in pred)}
         del model,opt;torch.cuda.empty_cache()
     a=results['XYZ_CURRENT']['evaluation']['frames'];b=results['XYZ_TEMPORAL']['evaluation']['frames'];assert [(x['video_id'],x['frame_index'],x['pts'],x['native_pixels'],x['GT_pixels']) for x in a]==[(x['video_id'],x['frame_index'],x['pts'],x['native_pixels'],x['GT_pixels']) for x in b]
     previews([r for r in rows if r['split']=='dev'],all_predictions)
