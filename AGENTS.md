@@ -236,3 +236,12 @@ results, or inconsistency between the paper and implementation.
   Pixel BCE+Dice only, common initial weights, ten complete no-replacement epochs,
   checkpoints/evaluation at3/10, fixed train monitor28. No frame-head metrics,
   original dev4 or test access. Preserve all historical protocols/results.
+
+## Frozen temporal readout analysis
+
+- ADR-0046/root17.3 authorize only frozen A_CURRENT/B_FULL/B_CURRENT on original
+  insource444 targets, with H-strata, fixed99 probability thresholds and original42
+  previews. No training/model changes/frontend. Same B weights/C0 for its two
+  paths, no A/B encoding sharing. Preserve native AP, partition history and old
+  outputs; threshold bounds are evaluation-label diagnostics, never deployment
+  threshold selection or new main results.

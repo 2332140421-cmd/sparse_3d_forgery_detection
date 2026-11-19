@@ -40,3 +40,5 @@
 - [ADR-0044：窗口联合XYZ块关系与局部证据读出](0044-xyz-joint-window-relations.md)
 
 - [ADR-0045：同来源片段定位探针](0045-xyz-insource-localization.md)
+
+- [ADR-0046：固定权重时间读出分析](0046-frozen-temporal-readout-diagnosis.md)
