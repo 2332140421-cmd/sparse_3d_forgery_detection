@@ -163,7 +163,9 @@ def run():
         save(OUT/f'{name}_dev.json',e);csvsave(OUT/f'{name}_dev_frames.csv',e['frames']);csvsave(OUT/f'{name}_dev_videos.csv',e['videos']);csvsave(OUT/f'{name}_tiling.csv',tiling)
         cost=dict(training_seconds=training,BN_seconds=bnseconds,evaluation_seconds=e['seconds'],wall_seconds=time.monotonic()-begin,optimizer_updates=step,supervised_crops=step,BN_extra_forwards=bncalls,evaluation_tiles=expected,formal_DINO_patch_forwards=m.calls,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved(),frozen_DINO_unchanged=frozen_hash(m)==fixed_hash,initial_adaptation_sha256=initial_hash)
         assert m.calls==STEPS+500+expected
-        results[name]=dict(status='COMPLETE',exit_code=0,cost=cost,evaluation=e);predictions[name]=pred;save(OUT/f'{name}_result.json',results[name]);del m,opt,wrapper;torch.cuda.empty_cache()
+        results[name]=dict(status='COMPLETE',exit_code=0,cost=cost,evaluation=e);predictions[name]=pred;save(OUT/f'{name}_result.json',results[name])
+        # EvalData owns the wrapper/model; release it between conditions too.
+        del cache,wrapper,m,opt;torch.cuda.empty_cache()
     assert results[CONDITIONS[0]]['evaluation']['frame_identity_sha256']==results[CONDITIONS[1]]['evaluation']['frame_identity_sha256']
     previews(protocol,data,predictions)
     summary=dict(status='COMPLETE',exit_code=0,identity=identity,protocol=protocol,config=read(OUT/'config.json'),preparation=read(OUT/'native_manifest.json'),preflight=checks,results=results,history=history,wall_seconds=time.monotonic()-start)
