@@ -11,7 +11,7 @@ from .native_patch_data import SOURCE,OUT,SIZE,STRIDE,STEPS,CONDITIONS,NativeDat
 from .ainpaint_spatial import build,adaptation_state,load_adaptation,WEIGHT,DINO,AINPAINT
 from .ainpaint_spatial_experiment import frozen_hash,optimizer
 from .insource_probe import evaluate
-from .data import REPO,read
+from .data import ROOT,REPO,read
 from .experiment import seed,csvsave
 from .joint_experiment import save,digest
 from .readout_adaptation import add_area,METRICS
