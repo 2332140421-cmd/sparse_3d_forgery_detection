@@ -1,4 +1,5 @@
 """ADR-0050: one real DFormer stage4 fine-tune, 12845 frozen-order updates."""
+import argparse
 import copy
 import json
 from pathlib import Path
@@ -82,6 +83,36 @@ def prepare_prefix(c,provider,rows):
     save(OUT/'prefix_cost.json',cost);del stage,enc;torch.cuda.empty_cache();return cost
 
 
+@torch.no_grad()
+def paired_readout_check(model,plain,frames,original):
+    """Isolate common nondeterministic index_add, never alter training forward.
+
+    Compare actual feature/local/C0/routing first; share only this common
+    reduction's C0 in the downstream check. All declared tolerances unchanged.
+    """
+    new=[];old=[];times=[];ids=[];memo={};evidence=[]
+    for f,g in zip(frames,original):
+        assert (f is None)==(g is None)
+        if f is None:continue
+        i=f['frame_index'];assert i==g['frame_index'] and f['pts']==g['pts']
+        if i not in memo:
+            with torch.autocast('cuda',dtype=torch.bfloat16):
+                top=model.stage4(f['prefix_rgb'],f['prefix_depth'])[0].half().float()
+                adapted=dict(f,visual=[*f['visual'][:3],top])
+                a=model.pvst.encode(adapted);b=plain.encode(g)
+            checks=[diff(x,y,TOL['original_cache']) for x,y in zip(adapted['visual'],g['visual'])]
+            for key in ['keys','points','index']:assert torch.equal(a[key],b[key]),'Routing mismatch'
+            c0=diff(a['C'],b['C'],TOL['split_full']);local=diff(a['local'],b['local'],TOL['split_full'])
+            evidence.append(dict(frame_index=i,feature_checks=checks,features_bitwise_equal=all(torch.equal(x,y) for x,y in zip(adapted['visual'],g['visual'])),C0=c0,local=local))
+            # Only diagnostic pairing of common FP32 atomic reduction noise.
+            memo[i]=(dict(a,C=b['C']),b)
+        a,b=memo[i];new.append(a);old.append(b);times.append(f['pts']-frames[-1]['pts']);ids.append(i)
+    with torch.autocast('cuda',dtype=torch.bfloat16):
+        ra=model.pvst.relate_window(new,times,ids,True);rb=plain.relate_window(old,times,ids,True)
+        pa=model.pvst.decode(frames[-1],new[-1],ra);pb=plain.decode(original[-1],old[-1],rb)
+    return dict(frames=evidence,relation=diff(ra,rb,TOL['pixel']),pixel=diff(pa,pb,TOL['pixel']))
+
+
 def preflight(c,provider,initial,rows):
     torch.cuda.reset_peak_memory_stats();byid={r['video_id']:r for r in rows};cache=PrefixCache(c);oldcache=PartitionCache(c,cache_root=SOURCE/'cache')
     m,opt=build(c,provider,initial);m.eval();plain=XYZLocalization(c['h']).cuda().eval();plain.load_state_dict(initial,strict=True)
@@ -99,7 +130,11 @@ def preflight(c,provider,initial,rows):
             topcheck=diff(top,full[3],TOL['split_full'])
             fs=cache.window(row,i,part,MODE);original=oldcache.window(row,i,part,MODE)
             with torch.autocast('cuda',dtype=torch.bfloat16):a=m(fs,True)['pixel'];b=plain(original,True)['pixel']
-            records.append(dict(video_id=vid,target=i,pts=row['pts'][i],entry=entry,split_top=topcheck,features_vs_original=feature,pixel=diff(a,b,TOL['pixel']),depth_nonzero=int(f['prefix_depth'].count_nonzero()),depth_abs_mean=float(f['prefix_depth'].abs().mean())))
+            with torch.autocast('cuda',dtype=torch.bfloat16):repeat=plain(original,True)['pixel']
+            err=(a.float()-b.float()).abs();repeat_err=(repeat.float()-b.float()).abs()
+            ordinary=dict(max_abs=float(err.max()),mean_abs=float(err.mean()),outside=int((err>TOL['pixel']['atol']+TOL['pixel']['rtol']*b.float().abs()).sum()),self_repeat_max_abs=float(repeat_err.max()),self_repeat_mean_abs=float(repeat_err.mean()))
+            paired=paired_readout_check(m,plain,fs,original)
+            records.append(dict(video_id=vid,target=i,pts=row['pts'][i],entry=entry,split_top=topcheck,features_vs_original=feature,ordinary_pixel=ordinary,paired_readout=paired,depth_nonzero=int(f['prefix_depth'].count_nonzero()),depth_abs_mean=float(f['prefix_depth'].abs().mean())))
     del plain;torch.cuda.empty_cache()
     # Passive retention on real per-observation stage4 output, no changed attention path.
     row=byid['9mygy9_fake'];target=100;outputs=[]
@@ -114,7 +149,7 @@ def preflight(c,provider,initial,rows):
     assert original_frozen==frozen_hash(m.stage4) and not any(mod.training for mod in m.stage4.encoder.modules())
     boundary=dict(trainable_names=[n for n,p in m.stage4.encoder.named_parameters() if p.requires_grad],stage4_parameters=sum(p.numel() for p in m.stage4.parameters() if p.requires_grad),PVST_parameters=sum(p.numel() for p in m.pvst.parameters()),official_total_parameters=sum(p.numel() for p in m.stage4.parameters()),no_separate_output_norm=True,classification_head_absent=True)
     save(OUT/'boundary.json',boundary)
-    check=dict(status='PASS',fixed_parity=records,real_update=result,stage4_gradients=grads,changed_stage4_tensors=changed,history_output_gradients=history,frozen_parameters_buffers_unchanged=True,discarded=True,tolerances=TOL,validation_full_official_forwards=len(FIXED),validation_split_stage4_forwards=m.stage4.calls,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved())
+    check=dict(status='PASS_STAGEWISE',acceptance='Features/routing/local/C0 checked; paired pixel tolerance unchanged; unpaired pixel discrepancy is retained, not declared passed',fixed_parity=records,real_update=result,stage4_gradients=grads,changed_stage4_tensors=changed,history_output_gradients=history,frozen_parameters_buffers_unchanged=True,discarded=True,tolerances=TOL,validation_full_official_forwards=len(FIXED),validation_split_stage4_forwards=m.stage4.calls,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved())
     save(OUT/'preflight.json',check);del m,opt,outputs,before;torch.cuda.empty_cache();return check
 
 
@@ -152,13 +187,13 @@ def report(s):
         '实际参数边界：'+json.dumps(s['boundary'],ensure_ascii=False),
         '冻结参照12845步完整逐帧/视频结果只读引用；只补24固定预览前向，不重训、不以25690步作匹配主表。',
         '\n## 成本和核验',json.dumps(s['prefix_cost'],ensure_ascii=False),json.dumps(s['cost'],ensure_ascii=False),
-        '完整前后向检查更新丢弃，正式重置；split/full、缓存特征与同PVST像素一致性、历史输出梯度及冻结权重/buffer检验证据见preflight.json。',
+        '完整前后向检查更新丢弃，正式重置；split/full、特征/local/C0与共享C0下像素一致性、历史梯度及冻结权重/buffer检验证据（普通整链像素差和self-repeat噪声原样保留）见preflight.json。',
         f'执行HEAD {s["identity"]["execution_head"]}；总流程{s["wall_seconds"]:.2f}秒。完整产物 {OUT}；固定预览 {OUT}/preview/index.html。',
         '本轮是单seed开发筛选，不证明骨干错误、三维独立贡献或最终测试性能。计算与Git发布分开；不追加预算/seed/结构。']
     (OUT/'report.md').write_text('\n'.join(lines)+'\n')
 
 
-def run():
+def run(reuse_prefix=False):
     started=time.monotonic();torch.set_num_threads(4);OUT.mkdir(parents=True,exist_ok=True)
     protocol=read(SOURCE/'protocol.json');c=read(SOURCE/'config.json');provider=read(SOURCE/'provider_config.json');rows=protocol['expanded']+protocol['dev']
     orders=read(SOURCE/'TRAIN_EXPANDED_FULL_orders.json')[:STEPS];assert len(orders)==STEPS==5*protocol['Nexp']
@@ -166,9 +201,18 @@ def run():
     initial=torch.load(SOURCE/'initial.pt',weights_only=True,map_location='cpu')['XYZ']
     refcp=SOURCE/'TRAIN_EXPANDED_FULL_step012845.pt';reference=read(SOURCE/'TRAIN_EXPANDED_FULL_step12845_dev.json')
     c=copy.deepcopy(c);c.update(conditions=[NAME],epochs=5,updates_per_condition=STEPS,evaluation_steps=[STEPS],targets_per_epoch=2569,stage4_lr=1e-5)
+    previous_identity=read(OUT/'identity.json') if reuse_prefix else None
     identity=dict(execution_head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_protocol_sha256=digest(SOURCE/'protocol.json'),source_config_sha256=digest(SOURCE/'config.json'),source_orders_sha256=digest(SOURCE/'TRAIN_EXPANDED_FULL_orders.json'),initial_file_sha256=digest(SOURCE/'initial.pt'),initial_PVST_sha256=state_hash(initial),reference_checkpoint=str(refcp),reference_checkpoint_sha256=digest(refcp),reference_metrics_sha256=digest(SOURCE/'TRAIN_EXPANDED_FULL_step12845_dev.json'),provider=read(SOURCE/'identity.json')['provider'])
+    if reuse_prefix:
+        assert previous_identity['source_protocol_sha256']==identity['source_protocol_sha256'] and previous_identity['source_orders_sha256']==identity['source_orders_sha256']
+        identity['prefix_preparation_execution_head']=previous_identity['execution_head']
     save(OUT/'identity.json',identity);save(OUT/'config.json',c);save(OUT/'protocol.json',protocol);save(OUT/'orders.json',orders)
-    prefix_cost=prepare_prefix(c,provider,rows);check=preflight(c,provider,initial,rows);cache=PrefixCache(c)
+    if reuse_prefix:
+        prefix_cost=read(OUT/'prefix_cost.json')
+        assert prefix_cost['unique_prefix_frames']==sum(r['actual_frames'] for r in rows)
+        assert all((OUT/'prefix'/r['video_id']/f'{i:05d}.pt').is_file() for r in rows for i in range(r['actual_frames']))
+    else:prefix_cost=prepare_prefix(c,provider,rows)
+    check=preflight(c,provider,initial,rows);cache=PrefixCache(c)
     # Frozen reference is replayed only on the fixed 24 preview targets.
     cp=torch.load(refcp,map_location='cpu',weights_only=False);assert cp['updates']==STEPS and cp['condition']=='TRAIN_EXPANDED_FULL' and cp['initial_sha256']==state_hash(initial)
     plain=XYZLocalization(c['h']).cuda().eval();plain.load_state_dict(cp['state_dict'],strict=True)
@@ -206,10 +250,13 @@ def run():
 
 
 def main():
-    if (OUT/'identity.json').exists():
+    parser=argparse.ArgumentParser();parser.add_argument('--continue-after-parity-fix',action='store_true');args=parser.parse_args()
+    if args.continue_after_parity_fix:
+        assert (OUT/'prefix_cost.json').exists() and not (OUT/'updates.jsonl').exists() and not (OUT/'summary.json').exists(),'Only preparation-stage continuation is permitted'
+    if (OUT/'identity.json').exists() and not args.continue_after_parity_fix:
         if (OUT/'summary.json').exists() and read(OUT/'summary.json')['status']=='COMPLETE':print('EXISTING_COMPLETE_REUSED');return
         raise SystemExit('Existing incomplete run preserved, no automatic retry')
-    try:run()
+    try:run(reuse_prefix=args.continue_after_parity_fix)
     except Exception as error:
         OUT.mkdir(parents=True,exist_ok=True);(OUT/'error.log').write_text(traceback.format_exc());save(OUT/'status.json',dict(status='FAILED',exit_code=1,error=str(error)));raise
 

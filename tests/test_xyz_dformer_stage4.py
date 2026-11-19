@@ -59,3 +59,17 @@ class RealOfficialStageTests(unittest.TestCase):
         self.assertEqual(int(x[:,:,8:].count_nonzero()),0);self.assertEqual(int(x[:,:,:,10:].count_nonzero()),0)
         expected=(torch.tensor(128/255)-torch.tensor([.485,.456,.406]))/torch.tensor([.229,.224,.225])
         torch.testing.assert_close(x[0,:,0,0],expected)
+
+    def test_paired_readout_rejects_real_input_difference(self):
+        # CPU fake stage only tests the diagnostic gate; actual official split,
+        # autograd and module boundary are covered above and real GPU preflight.
+        from unittest.mock import patch
+        from research_tools.xyz_pilot.dformer_stage4_experiment import paired_readout_check
+        model=Stage4Localization(.5,copy.deepcopy(self.official));model.eval()
+        f=frame(1);f['visual']=[v.half().float() for v in f['visual']];f['prefix_rgb']=torch.zeros(1);f['prefix_depth']=torch.zeros(1)
+        model.stage4.forward=lambda x,e:f['visual'][3][None]
+        plain=copy.deepcopy(model.pvst).eval()
+        with patch('torch.autocast',lambda *a,**k:__import__('contextlib').nullcontext()):
+            check=paired_readout_check(model,plain,[f],[f]);self.assertEqual(check['pixel']['max_abs'],0)
+            changed=dict(f,visual=[*f['visual'][:3],f['visual'][3]+1])
+            with self.assertRaises(AssertionError):paired_readout_check(model,plain,[f],[changed])
