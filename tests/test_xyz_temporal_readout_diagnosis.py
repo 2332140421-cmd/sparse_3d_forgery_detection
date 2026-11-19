@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from research_tools.xyz_pilot.temporal_readout_diagnosis import (LOGIT_THRESHOLDS,counts_and_regions,region_statistics,curve_values,aggregate,history_info)
+from research_tools.xyz_pilot.temporal_readout_diagnosis import (LOGIT_THRESHOLDS,counts_and_regions,region_statistics,curve_values,aggregate,history_info,retention_cutoff)
 from research_tools.xyz_pilot.insource_model import XYZLocalization
 from test_xyz_joint_relation import frame
 
@@ -44,3 +44,15 @@ class TemporalReadoutTests(unittest.TestCase):
             e=model.encode(f)
             a=model.relate_window([e],[0],[0],True);b=model.relate_window([e],[0],[0],False)
             torch.testing.assert_close(model.decode(f,e,a),model.decode(f,e,b),atol=0,rtol=0)
+
+
+    def test_cold_start_retains_frame_for_later_populated_slot(self):
+        from research_tools.xyz_pilot.insource_probe import partition_history
+        row=dict(pts=[i/30 for i in range(60)],evaluation_range=[10,60])
+        ring={}
+        for i in range(10,60):
+            ring[i]=True
+            ids=[j for j in partition_history(row,i,'evaluation') if j is not None]
+            self.assertTrue(all(j in ring for j in ids))
+            cutoff=retention_cutoff(row,i)
+            ring={j:v for j,v in ring.items() if row['pts'][j]>=cutoff}

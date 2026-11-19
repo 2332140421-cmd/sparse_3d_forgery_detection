@@ -39,6 +39,13 @@ METRICS=['pixel_AP','Dice','IoU','GT_recall','real_FPR','fake_background_FPR','p
 GROUPS=['ALL','H0','H1_6','H7']
 
 
+def retention_cutoff(row,i):
+    # A new lag slot can first need an older frame after several H0 targets.
+    # Retain the whole requested span plus one observation gap, not merely the
+    # earliest currently populated slot. PTS metadata alone determines this.
+    return row['pts'][i]-.7-max(np.diff(row['pts']))-1e-9
+
+
 def history_info(row,i):
     slots=partition_history(row,i,'evaluation');past=[j for j in slots[:-1] if j is not None]
     h=len(past)
@@ -200,9 +207,9 @@ def infer(model,rows,cache,is_b):
                 native=F.interpolate(pixel.float()[None,None],size=row['native_hw'],mode='bilinear',align_corners=False)[0,0].cpu().numpy()
                 r,c,q=measure(name,row,i,native,gt);records[name].append(r);counts[name].append(c);regions.extend(q)
             # Enough old C0 for the exact earliest slot, without retaining maps.
-            earliest=[j for j in partition_history(row,i,'evaluation') if j is not None]
+            cutoff=retention_cutoff(row,i)
             for j in list(ring):
-                if j<min(earliest):del ring[j]
+                if row['pts'][j]<cutoff:del ring[j]
             del outputs,current,f,now
             if is_b:del full,contexts
         if z:z.close()
@@ -303,6 +310,11 @@ def run():
         records,counts,qs,empty=infer(model,rows,cache,is_b)
         assert state_hash(model.state_dict())==before;assert all(len(v)==444 for v in records.values())
         normal='B_FULL' if is_b else 'A_CURRENT';replay[normal]=replay_check(records[normal],old[normal]);save(OUT/'replay.json',replay)
+        # Persist each completed condition, so a later plotting/input failure
+        # does not discard its streamed counts or distributions.
+        for label in records:
+            np.savez_compressed(OUT/f'{label}_threshold_counts.npz',counts=counts[label],probabilities=PROBABILITIES)
+        csvsave(OUT/f'{normal}_regions_frames.csv',qs)
         all_records.update(records);all_counts.update(counts);regions+=qs;h0+=empty
         for condition,rs in records.items():csvsave(OUT/f'{condition}_frames.csv',rs)
         cost[name]=dict(seconds=time.monotonic()-begin,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved(),state_unchanged=True)
