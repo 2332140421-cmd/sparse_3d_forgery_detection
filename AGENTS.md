@@ -245,3 +245,12 @@ results, or inconsistency between the paper and implementation.
   paths, no A/B encoding sharing. Preserve native AP, partition history and old
   outputs; threshold bounds are evaluation-label diagnostics, never deployment
   threshold selection or new main results.
+
+## XYZ localization readout adaptation
+
+- ADR-0047/root17.4 authorize original B epoch10 independent full model/AdamW/RNG
+  restoration for READOUT_ONLY (four registered decoder modules) and FULL_CONTINUE.
+  Both explicitly use XYZ_TEMPORAL history; append original epochs11–13, 3078 updates
+  each, same orders/loss/data. Frozen parameters keep grad=None and optimizer state.
+  Baseline replay once, monitor28 per epoch, final444 and fixed42 previews. No new
+  frontend, threshold fitting, best selection or old-output writes.

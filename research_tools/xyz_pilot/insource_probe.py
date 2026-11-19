@@ -143,7 +143,7 @@ def update(model,opt,cache,row,target,condition,diagnose=False):
 
 
 @torch.no_grad()
-def evaluate(model,cache,rows,condition,monitor=False,capture=False):
+def evaluate(model,cache,rows,condition,monitor=False,capture=False,capture_dtype=np.float16):
     model.eval();started=time.monotonic();records=[];videos=[];pred={}
     partition='train' if monitor else 'evaluation'
     for row in rows:
@@ -166,7 +166,7 @@ def evaluate(model,cache,rows,condition,monitor=False,capture=False):
                 fake_background_FPR=fp/neg if row['role']=='fake' and gt.any() and neg else None,
                 fake_empty_FPR=overlap['empty_fpr'] if row['role']=='fake' and not gt.any() else None)
             per.append(item);records.append(item)
-            if capture and i in row['preview_targets']:pred[(row['video_id'],i)]=native.astype(np.float16)
+            if capture and i in row['preview_targets']:pred[(row['video_id'],i)]=native.astype(capture_dtype)
         if z:z.close()
         avg=lambda k:float(np.mean([x[k] for x in per if x[k] is not None])) if any(x[k] is not None for x in per) else None
         videos.append(dict(video_id=row['video_id'],pair_id=row['pair_id'],role=row['role'],frames=len(per),positive_GT_frames=sum(x['GT_pixels']>0 for x in per),empty_GT_frames=sum(x['GT_pixels']==0 for x in per),**{k:avg(k) for k in ['pixel_AP','constant_AP','Dice','IoU','GT_recall','real_FPR','fake_background_FPR','fake_empty_FPR']}))
