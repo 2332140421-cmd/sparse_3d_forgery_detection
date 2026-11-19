@@ -282,3 +282,12 @@ results, or inconsistency between the paper and implementation.
   update. Original expanded-order first12845, common random PVST initialization,
   official stage4 and fresh AdamW at1e-5/1e-4; final824 evaluation, fixed24 previews.
   No MoGe, reference retraining, extra dev budgets or changed data/relations/loss.
+
+## Generic-initialized AINPAINT spatial baseline
+
+- ADR-0051/root17.8 authorize one official DINOv2 ViT-L/14 registers + official
+  HighResContextHead baseline, only generic initialization, train LoRA4/8/.25
+  and head. Original expanded-order first12845, batch1/T1, full-work-frame pad14
+  then crop logits before native recovery. No XYZ/history/RAFT/forensic checkpoint.
+  Keep raw DINO frozen; train-only BN100 per epoch counted separately; final824
+  and fixed24 previews. No best, parameter search, extra conditions or old writes.
