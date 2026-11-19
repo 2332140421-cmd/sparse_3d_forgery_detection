@@ -234,6 +234,8 @@ def run():
     common_hash=state_hash(common(reference));assert state_hash(common(image))==common_hash
     initial_image={k:v.clone() for k,v in image.state_dict().items()};torch.save(dict(XYZ=initial,IMAGE_ONLY=initial_image),OUT/'initial.pt')
     initial_info=dict(common_sha256=common_hash,XYZ_sha256=state_hash(initial),IMAGE_ONLY_sha256=state_hash(initial_image),parameters=dict(IMAGE_ONLY=sum(p.numel() for p in image.parameters()),XYZ_CURRENT=sum(p.numel() for p in reference.parameters()),XYZ_TEMPORAL=sum(p.numel() for p in reference.parameters())),forensic_initialization=False)
+    initial_info['IMAGE_ONLY_zero_context_coefficients']=image.pixel[0].weight[:,48:].numel()
+    initial_info['IMAGE_ONLY_output_effective_parameters']=initial_info['parameters']['IMAGE_ONLY']-initial_info['IMAGE_ONLY_zero_context_coefficients']
     save(OUT/'initialization.json',initial_info);del reference,image
     cache=PartitionCache(c);byid={r['video_id']:r for r in rows};checks={};row=byid['9mygy9_fake'];target=row['train_targets'][-1]
     for name in CONDITIONS:

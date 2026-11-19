@@ -19,7 +19,7 @@
     "XYZ_CURRENT",
     "XYZ_TEMPORAL"
   ],
-  "scale": null,
+  "scale": 12.880994319915771,
   "h": 0.5,
   "history_slots": 8,
   "history_step_seconds": 0.1,
@@ -37,5 +37,9 @@
   },
   "threshold_logit": 0,
   "split_rule": "Shared pair observed PTS span 70/30; no history across boundary",
-  "scale_rule": "Train partition only; deterministic <=256 positive valid Z/frame global median"
+  "scale_rule": "Train partition only; deterministic <=256 positive valid Z/frame global median",
+  "targets_per_epoch": 1026,
+  "updates_per_condition": 10260,
+  "evaluation_targets": 444,
+  "monitor_targets": 28
 }
