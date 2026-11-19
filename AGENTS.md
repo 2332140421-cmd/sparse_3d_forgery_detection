@@ -254,3 +254,11 @@ results, or inconsistency between the paper and implementation.
   each, same orders/loss/data. Frozen parameters keep grad=None and optimizer state.
   Baseline replay once, monitor28 per epoch, final444 and fixed42 previews. No new
   frontend, threshold fitting, best selection or old-output writes.
+
+## Frozen independent-source localization evaluation
+
+- ADR-0048/root17.5 authorize strict I/A/B localization epoch10 evaluation on
+  original dev4 full824 frames, plus B full-continue13338 as a separate appendix.
+  Keep original train scale and history modes; no frontend/training/model changes.
+  Prepare bounded unreviewed local train/unassigned candidates, pending human
+  semantics; never move dev/test into train or use scores to select candidates.
