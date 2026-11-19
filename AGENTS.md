@@ -272,3 +272,13 @@ results, or inconsistency between the paper and implementation.
   scale/model/loss and fresh shared random initial.pt/XYZ; U=10*Nexp per arm.
   Same seed+cycle shuffle algorithm, distinct orders and exposure records. Check
   one maximum new window then reset; evaluate U/2 and U, no best or extra budget.
+
+## Real DFormer final-stage adaptation
+
+- ADR-0050/root17.7 authorize one DFORMER_STAGE4_TRAINABLE group: actual official
+  stage4 RGB/depth downsamplers and two blocks; prefix frozen, all backbone eval.
+  Cache raw RGB/depth stage3 state, reuse low3 features/geometry, no output adapter.
+  Recompute every current/history final-stage observation with gradients each
+  update. Original expanded-order first12845, common random PVST initialization,
+  official stage4 and fresh AdamW at1e-5/1e-4; final824 evaluation, fixed24 previews.
+  No MoGe, reference retraining, extra dev budgets or changed data/relations/loss.

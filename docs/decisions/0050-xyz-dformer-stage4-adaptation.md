@@ -1,0 +1,23 @@
+# ADR-0050：真实DFormer末级适配
+
+状态：用户授权，单组开发筛选。
+
+## Context
+
+同数据集不同原视频上定位较弱，来源扩充未带来收益，不能据此认定冻结视觉或关系模块错误。本轮只检验可训练真实末级，复用扩充组12845步冻结参照。
+
+## Decision
+
+仅新增DFORMER_STAGE4_TRAINABLE。直接调用固定官方DFormer-S的downsample_layers[3]、downsample_layers_e[3]及stages[3]两个block，共10670080参数；PVST原631170参数训练不变。官方forward无独立输出norm，内部norm包含在末级；最后block drop_depth=True，无分类尾部。
+前缀缓存来自官方前三阶段的真实RGB/depth状态FP32，公共低级RGB特征引用原缓存。外部depth恒零但内部depth状态不造零。模型eval维持BN/DropPath行为，末级梯度开启，冻结前缀与所有buffer不变。末级输出用原half→FP32数值路径的可微cast，非新增适配器；每次更新重算全部唯一历史/当前末级，禁止跨更新缓存可训练C/R。
+直接使用原protocol/config、原随机initial.pt/XYZ与原订单前12845项，5完整遍历；官方末级初值、全新AdamW lr1e-5/PVST1e-4、wd.01/clip1/BF16和两项空间loss均固定。MoGe新增0，新增前缀计算如实记录。
+预先固定校验目标为9mygy9_fake100、4xeqd7_fake182、7e2e57_fake60、95q8g9_fake36。split/full容差atol2e-5/rtol3e-5；旧缓存特征和像素BF16对照atol.002/rtol.002，实际误差完整报告，超界停止检查、不按结果放宽。真实更新检查保留历史梯度与冻结状态证据，丢弃后正式重置。
+每完整遍历可评价原共同28/新增16训练观察；仅12845末次完整824开发。参照主表读取原12845完整结果，只补24固定预览并核对原逐帧指标，不重训冻结组或以25690作匹配比较。
+
+## Consequences
+
+仅该末级适配策略的单seed开发证据，不证明骨干错误、XYZ独立贡献或最终测试性能。不得依成绩延长、调参或追加条件。
+
+## Supersedes
+
+仅本独立实验取代ADR-0049的全冻结视觉范围及训练预算；原协议、默认模型和旧产物保持不变。
