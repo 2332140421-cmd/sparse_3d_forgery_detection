@@ -84,6 +84,59 @@ def remap_geometry(q,v,hw):
 
 
 @torch.no_grad()
+def extract_video(row,provider,encoder,folder,moge=None,missing=None):
+    """Same generic observations for one registered video; only missing packets.
+
+    Called by original prepare and source-expansion preparation. No scale/C/R or
+    split selection occurs here. Local official weights only, no downloads.
+    """
+    start=time.monotonic();folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
+    wanted=set(range(row['actual_frames'])) if missing is None else set(missing)
+    assert wanted<=set(range(row['actual_frames']))
+    gp=compatible_geometry(row,provider);xyz=valid=None
+    if gp:
+        xyz=np.load(gp/'xyz.npy',mmap_mode='r');valid=np.load(gp/'valid.npy',mmap_mode='r')
+    elif wanted and moge is None:
+        sys.path[:0]=[provider['moge_code'],provider['utils3d_code']]
+        from moge.model.v2 import MoGeModel
+        moge=MoGeModel.from_pretrained(provider['moge_weights']).cuda().eval().requires_grad_(False)
+    device=next(encoder.parameters()).device
+    z=zipfile.ZipFile(row['mask_zip']) if row['role']=='fake' else None
+    members=numeric_members(z.namelist()) if z else None
+    if z:assert len(members)==row['actual_frames'] and [i for i,_ in members]==list(range(row['index_base'],row['index_base']+row['actual_frames']))
+    new_geo=reused_geo=visual_calls=count=0
+    with av.open(row['video_path']) as container:
+        for i,f in enumerate(container.decode(video=0)):
+            assert abs(float(f.pts*f.time_base)-row['pts'][i])<1e-8 and [f.height,f.width]==row['native_hw']
+            count+=1
+            if i not in wanted:continue
+            assert not (folder/f'{i:05d}.pt').exists(),'Never overwrite existing observations'
+            rgb=f.to_ndarray(format='rgb24');h,w=row['work_hw'];ph,pw=row['padded_hw']
+            if gp:q=np.array(xyz[i]);v=np.array(valid[i]);reused_geo+=1
+            else:
+                ghw,tokens,_=geometry_shape(row['native_hw']);im=cv2.resize(rgb,(ghw[1],ghw[0]),interpolation=cv2.INTER_AREA) if rgb.shape[:2]!=ghw else rgb
+                res=moge.infer(torch.from_numpy(im).permute(2,0,1).cuda().float()/255,num_tokens=tokens,force_projection=True,apply_mask=False,use_fp16=True)
+                q=res['points'].float().cpu().numpy();v=res['mask'].cpu().numpy().astype(bool)&np.isfinite(q).all(-1);new_geo+=1;del res
+            q,v=remap_geometry(q,v,(h,w));image=cv2.resize(rgb,(w,h),interpolation=cv2.INTER_AREA) if rgb.shape[:2]!=(h,w) else rgb
+            gt=mask_array(z.read(members[i][1]))[1] if z else np.zeros(row['native_hw'],bool)
+            assert list(gt.shape)==row['native_hw']
+            target=cv2.resize(gt.astype(np.uint8),(w,h),interpolation=cv2.INTER_NEAREST).astype(bool)
+            x=torch.from_numpy(image).permute(2,0,1)[None].to(device).float()/255
+            x=(x-x.new_tensor([.485,.456,.406])[None,:,None,None])/x.new_tensor([.229,.224,.225])[None,:,None,None]
+            x=F.pad(x,(0,pw-w,0,ph-h),value=0)
+            with torch.autocast('cuda',dtype=torch.bfloat16,enabled=device.type=='cuda'):features,_=encoder(x,x.new_zeros(1,1,ph,pw))
+            assert len(features)==4
+            packet={'visual':[a[0].half().cpu() for a in features],'rgb':torch.from_numpy(image.copy()),'xyz_provider':torch.from_numpy(q),'valid':torch.from_numpy(v.copy()),'gt_work':torch.from_numpy(target),'frame_positive':bool(gt.any()),'native_GT_pixels':int(gt.sum()),'pts':row['pts'][i],'frame_index':i,'padded_hw':row['padded_hw'],'native_hw':row['native_hw'],'supervised':not(row['pair_id']=='an:40y1x9' and row['role']=='fake' and 6<=i<10)}
+            assert all(torch.isfinite(a).all() for a in packet['visual'])
+            torch.save(packet,folder/f'{i:05d}.pt');visual_calls+=1
+    if z:z.close()
+    assert count==row['actual_frames'] and visual_calls==len(wanted)
+    record=dict(video=row['video_id'],frames=count,work_hw=row['work_hw'],geometry_reused_from=str(gp) if gp else None,new_geometry_calls=new_geo,reused_geometry_frames=reused_geo,new_visual_calls=visual_calls,seconds=time.monotonic()-start)
+    save(folder/'complete.json',record)
+    return record,moge
+
+
+@torch.no_grad()
 def prepare():
     start=time.monotonic();torch.set_num_threads(4);cv2.setNumThreads(2)
     if OUT.exists():raise RuntimeError('Existing output: preserve and inspect, no duplicate preparation')
@@ -96,38 +149,10 @@ def prepare():
     from moge.model.v2 import MoGeModel
     moge=None;new_geo=0;reused_geo=0;visual_calls=0;cost=[]
     for row in rows:
-        progress('prepare_video',video=row['video_id']);t0=time.monotonic();folder=OUT/'cache'/row['video_id'];folder.mkdir(parents=True)
-        gp=compatible_geometry(row,provider);xyz=valid=None
-        if gp:
-            xyz=np.load(gp/'xyz.npy',mmap_mode='r');valid=np.load(gp/'valid.npy',mmap_mode='r')
-        elif moge is None:moge=MoGeModel.from_pretrained(provider['moge_weights']).cuda().eval().requires_grad_(False)
-        z=zipfile.ZipFile(row['mask_zip']) if row['role']=='fake' else None;members=numeric_members(z.namelist()) if z else None
-        if z:assert len(members)==row['actual_frames'] and [i for i,_ in members]==list(range(row['index_base'],row['index_base']+row['actual_frames']))
-        with av.open(row['video_path']) as container:
-            count=0
-            for i,f in enumerate(container.decode(video=0)):
-                assert abs(float(f.pts*f.time_base)-row['pts'][i])<1e-8 and [f.height,f.width]==row['native_hw']
-                rgb=f.to_ndarray(format='rgb24');h,w=row['work_hw'];ph,pw=row['padded_hw']
-                if gp:q=np.array(xyz[i]);v=np.array(valid[i]);reused_geo+=1
-                else:
-                    ghw,tokens,_=geometry_shape(row['native_hw']);im=cv2.resize(rgb,(ghw[1],ghw[0]),interpolation=cv2.INTER_AREA) if rgb.shape[:2]!=ghw else rgb
-                    res=moge.infer(torch.from_numpy(im).permute(2,0,1).cuda().float()/255,num_tokens=tokens,force_projection=True,apply_mask=False,use_fp16=True)
-                    q=res['points'].float().cpu().numpy();v=res['mask'].cpu().numpy().astype(bool)&np.isfinite(q).all(-1);new_geo+=1;del res
-                q,v=remap_geometry(q,v,(h,w));image=cv2.resize(rgb,(w,h),interpolation=cv2.INTER_AREA) if rgb.shape[:2]!=(h,w) else rgb
-                gt=mask_array(z.read(members[i][1]))[1] if z else np.zeros(row['native_hw'],bool)
-                assert list(gt.shape)==row['native_hw']
-                target=cv2.resize(gt.astype(np.uint8),(w,h),interpolation=cv2.INTER_NEAREST).astype(bool)
-                x=torch.from_numpy(image).permute(2,0,1)[None].cuda().float()/255
-                x=(x-x.new_tensor([.485,.456,.406])[None,:,None,None])/x.new_tensor([.229,.224,.225])[None,:,None,None]
-                x=F.pad(x,(0,pw-w,0,ph-h),value=0)
-                with torch.autocast('cuda',dtype=torch.bfloat16):features,_=encoder(x,x.new_zeros(1,1,ph,pw))
-                assert len(features)==4
-                packet={'visual':[a[0].half().cpu() for a in features],'rgb':torch.from_numpy(image.copy()),'xyz_provider':torch.from_numpy(q),'valid':torch.from_numpy(v.copy()),'gt_work':torch.from_numpy(target),'frame_positive':bool(gt.any()),'native_GT_pixels':int(gt.sum()),'pts':row['pts'][i],'frame_index':i,'padded_hw':row['padded_hw'],'native_hw':row['native_hw'],'supervised':not(row['pair_id']=='an:40y1x9' and row['role']=='fake' and 6<=i<10)}
-                assert all(torch.isfinite(a).all() for a in packet['visual'])
-                torch.save(packet,folder/f'{i:05d}.pt');visual_calls+=1;count+=1
-            assert count==row['actual_frames']
-        if z:z.close()
-        record={'video':row['video_id'],'frames':count,'work_hw':row['work_hw'],'geometry_reused_from':str(gp) if gp else None,'new_geometry_calls':0 if gp else count,'new_visual_calls':count,'seconds':time.monotonic()-t0};cost.append(record);save(folder/'complete.json',record);save(OUT/'preparation_progress.json',cost)
+        progress('prepare_video',video=row['video_id'])
+        record,moge=extract_video(row,provider,encoder,OUT/'cache'/row['video_id'],moge)
+        new_geo+=record['new_geometry_calls'];reused_geo+=record['reused_geometry_frames'];visual_calls+=record['new_visual_calls']
+        cost.append(record);save(OUT/'preparation_progress.json',cost)
     assert state_hash(encoder.state_dict())==before
     del encoder,moge;torch.cuda.empty_cache()
     # One global train-only scale, sampled solely to estimate a median; no point
@@ -160,9 +185,9 @@ def prepare():
 
 
 class Cache:
-    def __init__(self,c):self.c=c;self.memory={}
+    def __init__(self,c,root=None):self.c=c;self.root=OUT/'cache' if root is None else Path(root);self.memory={}
     def get(self,row,i,device='cuda'):
-        e=torch.load(OUT/'cache'/row['video_id']/f'{i:05d}.pt',weights_only=True,map_location='cpu')
+        e=torch.load(self.root/row['video_id']/f'{i:05d}.pt',weights_only=True,map_location='cpu')
         assert e['frame_index']==i and e['pts']==row['pts'][i] and e['native_hw']==row['native_hw'] and e['padded_hw']==row['padded_hw']
         assert tuple(e['rgb'].shape[:2])==tuple(row['work_hw'])
         e['xyz']=e.pop('xyz_provider')/self.c['scale']

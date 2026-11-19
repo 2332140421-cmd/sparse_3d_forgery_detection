@@ -75,14 +75,14 @@ def epoch_orders(rows,epochs=10,seed_value=20260909):
 
 
 class PartitionCache:
-    def __init__(self,c):self.c=c;self.xyz=Cache(c)
+    def __init__(self,c,cache_root=None):self.c=c;self.xyz=Cache(c,cache_root)
     def get(self,row,i,partition,image_only=False,device='cuda'):
         lo,hi=row[partition+'_range'];assert lo<=i<hi,'WINDOW_CROSSES_PARTITION'
         if not image_only:return self.xyz.get(row,i,device=device)
         # Existing .pt bundles all observations; numeric model input deliberately
         # selects only visual/RGB and supervision. XYZ is not normalized or sent
         # to GPU, and valid is not given to IMAGE_ONLY.
-        e=torch.load(SOURCE/'cache'/row['video_id']/f'{i:05d}.pt',weights_only=True,map_location='cpu')
+        e=torch.load(self.xyz.root/row['video_id']/f'{i:05d}.pt',weights_only=True,map_location='cpu')
         assert e['frame_index']==i and e['pts']==row['pts'][i]
         assert e['native_hw']==row['native_hw'] and e['padded_hw']==row['padded_hw']
         f={k:e[k] for k in ['rgb','gt_work','pts','frame_index','padded_hw','native_hw','native_GT_pixels','supervised']}

@@ -262,3 +262,13 @@ results, or inconsistency between the paper and implementation.
   Keep original train scale and history modes; no frontend/training/model changes.
   Prepare bounded unreviewed local train/unassigned candidates, pending human
   semantics; never move dev/test into train or use scores to select candidates.
+
+## Full-source coverage comparison
+
+- ADR-0049/root17.6 authorize TRAIN7_FULL versus original7 plus the four specified
+  technically aligned sources under current batch permission. Explicit per-ID
+  negative mask reviews override it. Full-video train targets, original dev4;
+  only missing new-source generic observations may be extracted. Fixed original
+  scale/model/loss and fresh shared random initial.pt/XYZ; U=10*Nexp per arm.
+  Same seed+cycle shuffle algorithm, distinct orders and exposure records. Check
+  one maximum new window then reset; evaluate U/2 and U, no best or extra budget.
