@@ -299,3 +299,13 @@ results, or inconsistency between the paper and implementation.
   dropout off; preserve affine/eps and all parameters/buffers/counts. No optimizer,
   training/calibration, train GT, XYZ/history or normalization combination search.
   Reuse original metrics/24 previews, retain baseline and same-input replay evidence.
+
+## Native local-detail matched input probe
+
+- ADR-0053/root17.10 authorize only NATIVE_PATCH/LOWDETAIL_PATCH on original11/4,
+  original-order12845 updates each, shared native288 crop/GT plan and new generic
+  LoRA/head initialization. LOW degrades whole frame via old384 AREA then native
+  bilinear before same crop. Native padding masked from loss; model pad14 cropped.
+  Keep running-BN protocol500 extra forwards, no XYZ/history or new frontend.
+  Final824 blind288/144 tiles, tail aligned, uniform FP32-logit fusion, all pixels.
+  No third arm/search/best; old full-frame results remain historical references.

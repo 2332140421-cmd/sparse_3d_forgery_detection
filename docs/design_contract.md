@@ -782,3 +782,11 @@ ADR-0052授权原空间模型final12845、原dev824的RUNNING_BN/IMAGE_BN各一�
 整体eval/no_grad、dropout关闭；只临时替换head五BN为函数式当前单帧空间统计，
 保留affine/eps、不读写running统计或计数；结束恢复。无训练/优化器/新校准/阈值搜索。
 预定少量回放及重复，原生指标与24固定图/统一差分保持；不替换17.8原报告或推广正式目标。
+
+### 17.10 原生局部细节匹配输入探针
+
+ADR-0053授权NATIVE_PATCH/LOWDETAIL_PATCH、原11/4来源和订单，各12845单crop更新。
+共享288原生坐标GT采样计划；仅LOW整帧INTER_AREA至原work_hw再INTER_LINEAR恢复后裁同区域。
+原生GT/valid不退化，padding排除loss；相同新通用DINO+LoRA/head初值及原训练参数/500额外BN前向。
+原824帧tile288/stride144/贴边全覆盖，FP32 logit均匀融合，不依GT路由。只末次评价和固定24图。
+少量真实预检后训练两组；不改C/XYZ/关系、不提前端。旧全图384仅历史，不当本轮单因果对照。
