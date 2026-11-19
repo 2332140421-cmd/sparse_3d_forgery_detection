@@ -190,8 +190,8 @@ def evaluate(model,cache,rows,c,temporal,targets=None,capture=False):
                 scored_frames=len(records),frame_identity_sha256=hashlib.sha256(json.dumps(identity).encode()).hexdigest()),predictions
 
 
-def preview(rows,predictions,condition,group):
-    folder=OUT/'preview'/group;folder.mkdir(parents=True,exist_ok=True)
+def preview(rows,predictions,condition,group,output_root=None):
+    folder=(OUT if output_root is None else output_root)/'preview'/group;folder.mkdir(parents=True,exist_ok=True)
     for row in rows:
         ids=sorted(i for vid,i in predictions if vid==row['video_id'])
         if not ids:continue

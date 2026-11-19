@@ -46,7 +46,7 @@ class XYZJointPilot(XYZPilot):
     def encode(self, frame):
         return super().encode(frame, spatial=False)
 
-    def read_window(self, encoded, relative_pts, identities, temporal):
+    def relate_window(self, encoded, relative_pts, identities, temporal):
         assert len(encoded) == len(relative_pts) == len(identities)
         assert relative_pts[-1] == 0 and all(t <= 0 for t in relative_pts)
         current = encoded[-1]
@@ -54,7 +54,7 @@ class XYZJointPilot(XYZPilot):
         if not len(current['C']):
             # Explicit learned empty relation representation; visual path still
             # predicts all pixels, with no fabricated geometric membership.
-            return current['C'], self.evidence(self.empty[0]).squeeze()
+            return current['C']
         tokens = torch.cat([e['C'] for e, _, _ in nonempty])
         position = torch.cat([e['position'] + self.time(e['C'].new_full((len(e['C']), 1), dt))
                               for e, dt, _ in nonempty])
@@ -63,6 +63,12 @@ class XYZJointPilot(XYZPilot):
         for layer in self.layers:
             tokens = layer(tokens, position, frame_ids, temporal)
         current_r = tokens[-len(current['C']):]
+        return current_r
+
+    def read_window(self, encoded, relative_pts, identities, temporal):
+        current_r = self.relate_window(encoded, relative_pts, identities, temporal)
+        if not len(current_r):
+            return current_r, self.evidence(self.empty[0]).squeeze()
         evidence = self.evidence(current_r).float().squeeze(-1)
         frame = torch.logsumexp(evidence, dim=0) - math.log(len(evidence))
         return current_r, frame

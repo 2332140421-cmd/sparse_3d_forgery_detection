@@ -53,12 +53,15 @@ class XYZPilot(nn.Module):
         self.local_out=nn.Conv2d(d,32,1);self.detail=nn.Sequential(nn.Conv2d(3,16,3,padding=1),nn.GELU())
         self.pixel=nn.Sequential(nn.Conv2d(80,32,3,padding=1),nn.GroupNorm(4,32),nn.GELU(),nn.Conv2d(32,1,1))
         self.frame=nn.Sequential(nn.LayerNorm(d),nn.Linear(d,64),nn.GELU(),nn.Linear(64,1))
-    def encode(self,f,spatial=True):
+    def encode_visual(self,f):
         maps=f['visual'];y=None
         for i in [3,2,1,0]:
             a=self.lateral[i](maps[i][None]);y=a if y is None else a+F.interpolate(y,size=a.shape[-2:],mode='bilinear',align_corners=False)
         y=self.visual(y);H,W=f['rgb'].shape[:2];ph,pw=f['padded_hw']
         local=F.interpolate(y,size=(ph,pw),mode='bilinear',align_corners=False)[...,:H,:W]
+        return local
+    def encode(self,f,spatial=True):
+        local=self.encode_visual(f)
         xyz,valid=f['xyz'],f['valid'];points,keys,index=route(xyz,valid,self.h)
         if len(points):
             absolute=xyz.reshape(-1,3)[points];relative=absolute/self.h-torch.floor(absolute/self.h)-.5

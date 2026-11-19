@@ -38,3 +38,5 @@
 - [ADR-0036：自适应集合对集合限定拟合](0036-adaptive-set-to-set-fit.md)
 
 - [ADR-0044：窗口联合XYZ块关系与局部证据读出](0044-xyz-joint-window-relations.md)
+
+- [ADR-0045：同来源片段定位探针](0045-xyz-insource-localization.md)

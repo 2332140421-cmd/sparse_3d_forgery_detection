@@ -227,3 +227,12 @@ results, or inconsistency between the paper and implementation.
   train56 monitor and dev824 at prescribed steps. One real update gate then
   train both; no new frontend, forensic initialization, extra seeds or search.
   Prior defaults/results and user changes remain untouched.
+
+## Same-source localization probe
+
+- ADR-0045/root17.2 authorize IMAGE_ONLY/XYZ_CURRENT/XYZ_TEMPORAL on only the
+  original seven train sources, shared 70/30 PTS boundary and partition-contained
+  histories. Train-only scale, fixed h=.5, cached generic observations; no frontend.
+  Pixel BCE+Dice only, common initial weights, ten complete no-replacement epochs,
+  checkpoints/evaluation at3/10, fixed train monitor28. No frame-head metrics,
+  original dev4 or test access. Preserve all historical protocols/results.
