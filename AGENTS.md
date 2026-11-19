@@ -291,3 +291,11 @@ results, or inconsistency between the paper and implementation.
   then crop logits before native recovery. No XYZ/history/RAFT/forensic checkpoint.
   Keep raw DINO frozen; train-only BN100 per epoch counted separately; final824
   and fixed24 previews. No best, parameter search, extra conditions or old writes.
+
+## Fixed-weight spatial BN diagnosis
+
+- ADR-0052/root17.9 authorize only original spatial final12845, full dev824,
+  RUNNING_BN versus five-head-BN functional IMAGE_BN. Entire model eval/no_grad,
+  dropout off; preserve affine/eps and all parameters/buffers/counts. No optimizer,
+  training/calibration, train GT, XYZ/history or normalization combination search.
+  Reuse original metrics/24 previews, retain baseline and same-input replay evidence.

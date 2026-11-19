@@ -775,3 +775,10 @@ ADR-0051授权一个独立AINPAINT_SPATIAL：通用dinov2_vitl14_reg，LoRA4/8/.
 原BCE+Dice各1、AdamW1e-4/wd.01/clip1/BF16，五轮无放回曝光各5；每轮前100训练目标额外BN更新，
 训练观察28/16分列、末次824评价及固定24预览。无best/搜索/新增分支，不改旧结果。
 只在本独立参照扩展17.7的单DFormer范围，不宣称XYZ单变量消融或作者完整训练复现。
+
+### 17.9 AINPAINT固定权重BN统计诊断
+
+ADR-0052授权原空间模型final12845、原dev824的RUNNING_BN/IMAGE_BN各一次。
+整体eval/no_grad、dropout关闭；只临时替换head五BN为函数式当前单帧空间统计，
+保留affine/eps、不读写running统计或计数；结束恢复。无训练/优化器/新校准/阈值搜索。
+预定少量回放及重复，原生指标与24固定图/统一差分保持；不替换17.8原报告或推广正式目标。
