@@ -309,3 +309,13 @@ results, or inconsistency between the paper and implementation.
   Keep running-BN protocol500 extra forwards, no XYZ/history or new frontend.
   Final824 blind288/144 tiles, tail aligned, uniform FP32-logit fusion, all pixels.
   No third arm/search/best; old full-frame results remain historical references.
+
+## Expanded full-frame spatial training
+
+- ADR-0054/root17.11 authorize one expanded spatial condition, technical PASS
+  source-group train/dev draft plus original11/4; explicit human mask negatives
+  and all protected test identities remain excluded. Individual unknown human
+  semantics/camera do not block this user-authorized trial.
+- Reuse official generic DINO/LoRA/head and whole-frame384 path; ten complete
+  epochs, train-only BN100 each, dev/monitor at1/3/5/10, epoch10 primary and
+  additional-dev-only best supplement. No XYZ/history/frontends or new branch.
