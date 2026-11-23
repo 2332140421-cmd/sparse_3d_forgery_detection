@@ -328,3 +328,11 @@ results, or inconsistency between the paper and implementation.
   No relay, token pruning, causal cutoff or new MoGe. Codex runs only the complete
   low-token case, two discardable updates per mode; user launches medium/high
   terminal jobs. Preserve old entries/results; no formal training or polling.
+
+## Full-video matched localization handoff
+
+- ADR-0056/root17.13 authorize the frozen89/19 two-arm three-epoch terminal
+  pipeline, shared adapted-DINO/own-MoGe observations, all-frame supervision,
+  exact OOM-only Q1024 fallback, per-video atomic resume and original metrics.
+  Codex only runs metadata/CPU checks and one bounded cached-video interface
+  smoke. User launches full prepare, queue extremes and training; no polling.
