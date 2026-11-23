@@ -24,7 +24,7 @@ def read(path):return json.loads(Path(path).read_text())
 def write(path,value):path.write_text(json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
 def csvwrite(path,rows):
     with path.open('w',encoding='utf-8-sig',newline='') as f:
-        w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator='\n');w.writeheader();w.writerows(rows)
 def mean(values):
     values=[v for v in values if v is not None];return statistics.mean(values) if values else None
 
