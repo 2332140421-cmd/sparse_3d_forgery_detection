@@ -82,7 +82,7 @@ def identity(row, cp):
 
 
 def prepare(row, ident, root):
-    folder = root/'observations'/row['video_id']
+    folder = root/row['video_id']
     meta = folder/'identity.json'
     folder.mkdir(parents=True, exist_ok=True)
     if meta.exists():
@@ -192,6 +192,7 @@ def measure(frames, mode, initial, chunk, publish):
     publish(result)
     torch.cuda.reset_peak_memory_stats()
     for step in (1,2):
+        result.update(stage='forward',active_step=step);publish(result)
         progress('main_forward',mode=mode,step=step,T=len(frames),M=sum(counts))
         before={k:state_hash({n:p for n,p in model.named_parameters() if n.split('.')[0]==k}) for k in ['visual','geometry','point','score','value','layers','correction']}
         opt.zero_grad(set_to_none=True);sync();start=time.monotonic()
@@ -221,6 +222,7 @@ def measure(frames, mode, initial, chunk, publish):
                 result['first_frame_R_future_C_gradient_max_abs']=cross
                 assert cross>0 if mode=='FULL_VIDEO' else cross==0
                 del g
+            result['stage']='backward';publish(result)
             sync();b=time.monotonic();loss.backward();sync();backward_seconds=time.monotonic()-b
         grads=gradients(model)
         if step==2:
@@ -228,6 +230,7 @@ def measure(frames, mode, initial, chunk, publish):
                 assert grads.get(group,0)>0, ('second-step missing gradient',group)
         norm=torch.nn.utils.clip_grad_norm_(model.parameters(),1.)
         assert torch.isfinite(norm)
+        result['stage']='optimizer_update';publish(result)
         sync();u=time.monotonic();opt.step();sync();update_seconds=time.monotonic()-u
         changed={k:state_hash({n:p for n,p in model.named_parameters() if n.split('.')[0]==k})!=v for k,v in before.items()}
         if step==2:assert all(changed.values()), changed
@@ -237,7 +240,7 @@ def measure(frames, mode, initial, chunk, publish):
                  gradient_norm=float(norm),gradient_groups=grads,changed_groups=changed,actual_dispatch=backends,**memory())
         result['steps'].append(rec);publish(result);progress('step_complete',mode=mode,lr=1e-4,**rec)
         del outputs,info,loss,parts,prof
-    result.update(status='PASS',exit_code=0,optimizer_updates=2,main_forward_calls=2,
+    result.update(status='PASS',stage='complete',exit_code=0,optimizer_updates=2,main_forward_calls=2,
                   loss_backward_calls=2,relation_dependency_vjp_calls=1,**memory())
     del model,opt;gc.collect();torch.cuda.empty_cache()
     return result
@@ -249,6 +252,8 @@ def summarize(root):
         cases.append(json.loads(path.read_text()))
     summary=dict(cases=cases,scope='resource preflight only; no AP/dev evaluation or formal training',
                  pending_cases=[c for c in CASES if not any(x['case']==c and x['status']=='PASS' for x in cases)])
+    summary['status']='PARTIAL' if summary['pending_cases'] else 'COMPLETE'
+    if any(c['status']=='FAILED' for c in cases):summary['status']='HAS_FAILURE'
     save(root/'summary.json',summary)
     rows=[]
     for case in cases:
@@ -274,8 +279,16 @@ def main():
     p.add_argument('--cases',nargs='+',choices=CASES,default=[CASES[0]])
     p.add_argument('--query-chunk',type=int,choices=[0,1024],default=0)
     p.add_argument('--output',type=Path,default=OUT)
+    p.add_argument('--observations',type=Path,help='Existing identity-matched observation directory, for explicit separate measurement outputs')
     args=p.parse_args();root=args.output;root.mkdir(parents=True,exist_ok=True)
-    phase='environment';case=None;record={};exit_code=0
+    phase='environment';case=None;record={};exit_code=0;owned_case=False
+    started=time.monotonic()
+    config=dict(seed=20260909,modes=list(MODES),scale=SCALE,h=.5,origin=[0,0,0],
+                D=128,heads=4,layers=2,FFN=256,relation_dropout=0,query_chunk=args.query_chunk,
+                activation_checkpoint='non-reentrant',updates_per_mode=2,AdamW_lr=1e-4,
+                weight_decay=.01,clip_grad=1,loss='frame BCE + soft Dice eps1, average supervised frames',
+                formal_training=False,new_MoGe=0,selected_cases=args.cases)
+    save(root/'invocations'/('config_'+str(time.time_ns())+'.json'),config)
     try:
         assert torch.cuda.is_available(),'CUDA unavailable; no CPU downgrade of the real probe'
         torch.set_num_threads(4)
@@ -284,16 +297,19 @@ def main():
         assert cp['epoch']==1 and cp['updates']==22878 and cp['condition']=='EXPANDED_SPATIAL'
         head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
         for case in args.cases:
+            owned_case=False;record={};phase='case_identity'
             row=next(x for x in manifest['rows'] if x['video_id']==case)
             assert row['split']=='train' and row['role']=='fake'
             ident=identity(row,cp);path=root/'cases'/case/'result.json'
             if path.exists():
                 old=json.loads(path.read_text());assert old['identity']==ident
                 assert old['status']=='PASS','Failed run preserved; choose an explicit new --output for a new attempt'
+                assert all(m['query_chunk']==args.query_chunk for m in old['modes']), 'Different query configuration: use a new explicit output'
                 progress('reuse_PASS_case',case=case);continue
-            record=dict(case=case,status='RUNNING',identity=ident,execution_head=head,modes=[],new_MoGe=0)
-            save(path,record);phase='frozen_observation_preparation'
-            folder,cost=prepare(row,ident,root);record['preparation']=cost;save(path,record)
+            record=dict(case=case,status='RUNNING',identity=ident,execution_head=head,config=config,
+                        GPU=torch.cuda.get_device_name(),torch_version=torch.__version__,modes=[],new_MoGe=0)
+            save(path,record);owned_case=True;phase='frozen_observation_preparation'
+            folder,cost=prepare(row,ident,args.observations or root/'observations');record['preparation']=cost;save(path,record)
             phase='load_route';frames=load_frames(row,folder)
             record['frozen_cache_bytes']=sum((folder/f'{i:05d}.pt').stat().st_size for i in range(len(frames)))
             seed();initial=FullVideoDirect(args.query_chunk).state_dict()
@@ -313,11 +329,18 @@ def main():
         exit_code=1
         record.setdefault('case',case or 'environment')
         record.update(status='FAILED',stage=phase,error=repr(exc),traceback=traceback.format_exc(),exit_code=1)
+        if record.get('modes'):
+            record['modes'][-1].update(status='FAILED',exit_code=1)
         if torch.cuda.is_available():record.update(memory())
-        save(root/'cases'/(case or 'environment')/'result.json',record)
+        failure_path=root/'cases'/(case or 'environment')/'result.json'
+        if failure_path.exists() and not owned_case:
+            failure_path=root/'invocations'/('failure_'+str(time.time_ns())+'.json')
+        save(failure_path,record)
         progress('FAILED',case=case,failed_stage=phase,error=repr(exc));traceback.print_exc()
     finally:
         summarize(root)
+        save(root/'invocations'/('result_'+str(time.time_ns())+'.json'),
+             dict(cases=args.cases,seconds=time.monotonic()-started,exit_code=exit_code))
     raise SystemExit(exit_code)
 
 

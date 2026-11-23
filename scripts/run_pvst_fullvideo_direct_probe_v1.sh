@@ -20,4 +20,5 @@ statuses=("${PIPESTATUS[@]}")
 python_status="${statuses[0]}"
 printf '%s\n' "$python_status" > "$stem.exit_code"
 printf 'Python exit=%s; tee exit=%s. No formal training started.\n' "$python_status" "${statuses[1]}"
-exit "$python_status"
+if (( python_status != 0 )); then exit "$python_status"; fi
+exit "${statuses[1]}"

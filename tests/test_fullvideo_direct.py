@@ -91,6 +91,22 @@ class FullVideoTests(unittest.TestCase):
             self.assertEqual(value['exit_code'],1)
             self.assertTrue((Path(d)/'report.md').exists())
 
+    def test_existing_result_is_not_overwritten_by_new_failure(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from research_tools.xyz_pilot.fullvideo_direct_probe import main
+        with tempfile.TemporaryDirectory() as d:
+            target=Path(d)/'cases/environment/result.json'
+            target.parent.mkdir(parents=True)
+            original=dict(case='environment',status='FAILED',stage='original_failure')
+            target.write_text(json.dumps(original))
+            with patch('sys.argv',['probe','--output',d]), patch('torch.cuda.is_available',return_value=False):
+                with self.assertRaises(SystemExit):main()
+            self.assertEqual(json.loads(target.read_text()),original)
+            self.assertEqual(len(list((Path(d)/'invocations').glob('failure_*.json'))),1)
+
     def test_fp32_routing_single_scale_and_invalid_bypass(self):
         fs=frames();f=fs[0]
         self.assertEqual(len(f['points']),47)
