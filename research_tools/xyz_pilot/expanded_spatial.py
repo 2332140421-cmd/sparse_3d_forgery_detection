@@ -174,7 +174,79 @@ def preview(rows):
             text.append('</section>')
     text.append('<script>document.getElementById("filter").onchange=e=>{for(const s of document.querySelectorAll("section"))s.hidden=!!e.target.value&&s.dataset.type!==e.target.value}</script>');(OUT/'preview/index.html').write_text('\n'.join(text))
 
+
+
+def completed_checks(s):
+    expected={(r['video_id'],i) for r in s['protocol']['rows'] if r['split']=='train' for i in r['train_targets']};observed=collections.Counter()
+    with (OUT/'updates.jsonl').open() as handle:
+        for line in handle:
+            record=json.loads(line);observed[(record['video_id'],record['target'])]+=1
+    assert set(observed)==expected and set(observed.values())=={10} and sum(observed.values())==s['updates']
+    initial=torch.load(OUT/'initial_adaptation.pt',map_location='cpu',weights_only=True);checks={}
+    for epoch in EVAL_EPOCHS:
+        cp=torch.load(OUT/f'epoch{epoch:02d}.pt',map_location='cpu',weights_only=False);assert cp['condition']==NAME and cp['epoch']==epoch and cp['updates']==epoch*len(expected) and cp['identity']==s['identity']
+        assert set(cp['adaptation_state'])==set(initial) and all(v.shape==initial[k].shape and torch.isfinite(v).all() for k,v in cp['adaptation_state'].items())
+        steps={float(v['step']) for v in cp['optimizer']['state'].values()};assert steps=={cp['updates']}
+        counts={k:int(v) for k,v in cp['adaptation_state'].items() if k.endswith('num_batches_tracked')};assert len(counts)==5 and set(counts.values())=={cp['updates']+100*epoch}
+        assert set(cp['random_state'])=={'python','numpy','torch','cuda'}
+        checks[str(epoch)]=dict(updates=cp['updates'],optimizer_state_count=len(cp['optimizer']['state']),BN_counts=counts,changed_adaptation_tensors=sum(not torch.equal(initial[k],v) for k,v in cp['adaptation_state'].items()))
+    evaluations=read(OUT/'evaluations.json');identities={s['reference']['frame_identity_sha256']}|{v['evaluation']['frame_identity_sha256'] for v in evaluations.values()};assert len(identities)==1
+    expected_dev=s['protocol']['dev_frames'];assert all(v['evaluation']['scored_frames']==expected_dev for v in evaluations.values())
+    coverage=[]
+    for r in s['protocol']['rows']:
+        if r['split']=='train':coverage.append(dict(video_id=r['video_id'],pair_id=r['pair_id'],role=r['role'],unique_targets=len(r['train_targets']),presentations=sum(observed[(r['video_id'],i)] for i in r['train_targets']),per_target_presentations=10))
+    csvsave(OUT/'actual_exposure.csv',coverage)
+    save(OUT/'verification.json',dict(status='PASS',checkpoints=checks,actual_updates=sum(observed.values()),each_legal_training_target_exposure=10,unique_training_targets=len(observed),development_frame_identity_consistent=True,development_frames=expected_dev,frozen_DINO_unchanged='asserted at preflight and end of original runner',BN_statistics_forwards=1000,retained_test_media_access=False,new_MoGe=0,new_DFormer=0))
+
+def official_action(task):
+    """Action first: white shirt/hat describe the removed object, not edit type."""
+    words=task.lower().replace(':',' ').split()
+    if any(x in words for x in ['remove','delete','erase']):return 'removal'
+    if any(x in words for x in ['add','insert','copy','clone','duplicate']):return 'addition_copy'
+    return 'replacement_local'
+
+def reporting_tables(s):
+    # Derived editorial fields only. Frozen protocol/orders/GT remain unchanged.
+    rows=[dict(r,edit_tier=official_action(r['official_task'])) for r in s['protocol']['rows']]
+    dev=[r for r in rows if r['split']=='dev'];metadata=[dict(pair_id=r['pair_id'],role=r['role'],split=r['split'],inherited_keyword_tier=old['edit_tier'],official_action=r['edit_tier'],content_priority=r['content_priority'],camera_group=r['camera_group'],task=r['official_task']) for r,old in zip(rows,s['protocol']['rows'])]
+    csvsave(OUT/'reporting_categories.csv',metadata)
+    s['reference_groups']=grouped(s['reference'],dev);s['final_groups']=grouped(s['final'],dev)
+    evaluations=read(OUT/'evaluations.json')
+    for h in s['history']:
+        if str(h['epoch']) in evaluations:
+            h['groups']=grouped(evaluations[str(h['epoch'])]['evaluation'],dev)
+    s['best_groups']=grouped(evaluations[str(s['best_epoch'])]['evaluation'],dev)
+    groups=dict(reference=s['reference_groups'],**{k:grouped(v['evaluation'],dev) for k,v in evaluations.items()});save(OUT/'groups.json',groups)
+    comparison=[]
+    for name,evaluation in [('REFERENCE_11',s['reference']),('EPOCH10',s['final']),('SELECTED_ADDITIONAL_DEV',evaluations[str(s['best_epoch'])]['evaluation'])]:
+        for row in dev:
+            if row['role']!='fake':continue
+            fake=next(v for v in evaluation['videos'] if v['video_id']==row['video_id']);real=next(v for v in evaluation['videos'] if v['pair_id']==row['pair_id'] and v['role']=='real')
+            comparison.append(dict(condition=name,pair_id=row['pair_id'],historical=row['pair_id'][3:] in HIST,official_action=row['edit_tier'],content_priority=row['content_priority'],camera_group=row['camera_group'],positive_GT_frames=fake['positive_GT_frames'],empty_GT_frames=fake['empty_GT_frames'],**{k:real[k] if k=='real_FPR' else fake[k] for k in METRICS+['constant_AP']}))
+    csvsave(OUT/'source_comparison.csv',comparison)
+    flat=[]
+    for condition,gs in groups.items():
+        for group,values in gs.items():flat.append(dict(condition=condition,group=group,**values))
+    csvsave(OUT/'group_metrics.csv',flat)
+    coverage={split:dict(sources=len({r['source_group_id'] for r in rows if r['split']==split}),videos=sum(r['split']==split for r in rows),legal_frames=sum(len(r['train_targets'] if split=='train' else r['evaluation_targets']) for r in rows if r['split']==split),official_action=dict(collections.Counter(r['edit_tier'] for r in rows if r['split']==split and r['role']=='fake')),content_priority=dict(collections.Counter(r['content_priority'] for r in rows if r['split']==split and r['role']=='fake')),camera_group=dict(collections.Counter(r['camera_group'] for r in rows if r['split']==split and r['role']=='fake'))) for split in ['train','dev']}
+    save(OUT/'coverage.json',coverage);s['coverage']=coverage
+    s['cost']['expected_formal_new_model_DINO_forwards']=s['updates']+1000+4*(s['protocol']['dev_frames']+sum(len(r['monitor_targets']) for r in rows if r['split']=='train'))
+    save(OUT/'summary.json',s);preview(dev)
+    import matplotlib
+    matplotlib.use('Agg');import matplotlib.pyplot as plt
+    fig,axes=plt.subplots(1,2,figsize=(11,4))
+    measured=[h for h in s['history'] if 'groups' in h]
+    for group in ['HISTORICAL_DEV4','ADDITIONAL_DEV','EXPANDED_DEV']:axes[0].plot([h['epoch'] for h in measured],[h['groups'][group]['pixel_AP'] for h in measured],marker='o',label=group)
+    axes[0].plot([h['epoch'] for h in measured],[h['monitor_AP'] for h in measured],marker='x',label='fixed train monitor')
+    for key in ['pixel_BCE','soft_Dice']:axes[1].plot([h['epoch'] for h in s['history']],[h[key] for h in s['history']],label=key)
+    axes[0].set_ylabel('Pixel AP');axes[1].set_ylabel('Mean online loss component')
+    for ax in axes:ax.set_xlabel('Complete epoch');ax.legend(fontsize=7)
+    fig.tight_layout();fig.savefig(OUT/'curves.png',dpi=150);plt.close(fig)
+    return rows
+
 def report(s):
+    completed_checks(s)
+    reporting_tables(s)
     lines=['# ANAKIN扩充来源整帧空间训练','计算COMPLETE；单组10完整epoch。官方标签＋技术映射＋来源隔离使用，未逐条人工语义确认。旧人工原话保留，使用授权不改写为人工验收。',f"训练{s['protocol']['train_sources']}来源/{2*s['protocol']['train_sources']}视频、{s['protocol']['training_frames']}目标/轮；开发{s['protocol']['dev_sources']}来源、{s['protocol']['dev_frames']}目标。总{s['updates']}更新，额外BN前向{s['BN_forwards']}。",'|范围/模型|AP|Dice|IoU|召回|real FPR|fake背景FPR|面积|常数AP|','|---|---:|---:|---:|---:|---:|---:|---:|---:|']
     for group in ['HISTORICAL_DEV4','ADDITIONAL_DEV','EXPANDED_DEV']:
         for name,g in [('旧11来源',s['reference_groups']),('第10轮',s['final_groups']),('开发选择epoch'+str(s['best_epoch']),s['best_groups'])]:
@@ -183,11 +255,11 @@ def report(s):
     for r in s['protocol']['rows']:
         if r['split']!='dev' or r['role']!='fake':continue
         a=next(v for v in s['reference']['videos'] if v['video_id']==r['video_id']);b=next(v for v in s['final']['videos'] if v['video_id']==r['video_id']);real=next(v for v in s['final']['videos'] if v['pair_id']==r['pair_id'] and v['role']=='real')
-        vals=[a['pixel_AP'],b['pixel_AP'],b['pixel_AP']-a['pixel_AP'] if b['pixel_AP'] is not None and a['pixel_AP'] is not None else None,a['Dice'],b['Dice'],b['GT_recall'],real['real_FPR'],b['constant_AP']];lines.append('|'+r['pair_id']+'/'+r['edit_tier']+'|'+'|'.join(f'{v:.8f}' if v is not None else '未定义' for v in vals)+'|')
-    lines+=['\n## 分项与曲线','类别来自官方文字或传统背景匹配，并非人工确认；对象编辑和外观/背景参照分开，不把大面积高常数AP的编辑当作运动对象定位已解决。完整分组在groups.json。','|epoch|更新|在线BCE|在线Dice loss|观察AP|历史4 AP|新增开发AP|全部开发AP|','|---|---:|---:|---:|---:|---:|---:|---:|']
+        vals=[a['pixel_AP'],b['pixel_AP'],b['pixel_AP']-a['pixel_AP'] if b['pixel_AP'] is not None and a['pixel_AP'] is not None else None,a['Dice'],b['Dice'],b['GT_recall'],real['real_FPR'],b['constant_AP']];lines.append('|'+r['pair_id']+'/'+official_action(r['official_task'])+'|'+'|'.join(f'{v:.8f}' if v is not None else '未定义' for v in vals)+'|')
+    lines+=['\n## 分项与曲线','分项按官方描述的编辑动作优先整理；旧粗关键词把白衣/白帽当外观的3条元数据标签在报告中更正，不改变冻结清单、GT、训练或选择标准，见reporting_categories.csv。','类别来自官方文字或传统背景匹配，并非人工确认；对象编辑和外观/背景参照分开，不把大面积高常数AP的编辑当作运动对象定位已解决。完整分组在groups.json。','|epoch|更新|在线BCE|在线Dice loss|观察AP|历史4 AP|新增开发AP|全部开发AP|','|---|---:|---:|---:|---:|---:|---:|---:|']
     for h in s['history']:
         g=h.get('groups');lines.append(f"|{h['epoch']}|{h['updates']}|{h['pixel_BCE']:.6f}|{h['soft_Dice']:.6f}|"+('|'.join(f'{x:.6f}' for x in [h['monitor_AP'],g['HISTORICAL_DEV4']['pixel_AP'],g['ADDITIONAL_DEV']['pixel_AP'],g['EXPANDED_DEV']['pixel_AP']]) if g else '未评价|未评价|未评价|未评价')+'|')
-    lines+=['固定观察每训练视频1/3、2/3合法帧，仅用于观察，不等于完整训练集。AP仅fake非空GT帧连续FP32 logit排序→视频平均→来源等权；空GT AP不填0或1。操作点logit≥0，running BN且eval。','\n## 成本、冻结与边界',json.dumps(s['cost'],ensure_ascii=False),f"协议hash {s['identity']['protocol_sha256']}；执行HEAD {s['identity']['execution_head']}。",'旧模型和新模型训练规模/更新不同，只是扩充训练方案比较，非等预算纯样本量因果对照。旧11权重只推理，不改BN；新模型通用DINO和seed20260909的新LoRA/head初始化，不续训。全画面长边384、ImageNet/pad14/去pad/原生恢复，未变更结构、loss、BN或裁剪。','原40y1x9 fake[6,10)不监督不计分；技术待核27及明确反证、冲突/未知身份、94测试保护来源均排除。未扩入其余旧来源。新增MoGe、DFormer、神经特征预计算均0；只新增工作RGB/GT缓存。',f'产物 {OUT}；预览 {OUT}/preview/index.html。计算和Git发布状态分别记录，完成后不追加实验。']
+    lines+=['固定观察每训练视频1/3、2/3合法帧，仅用于观察，不等于完整训练集。AP仅fake非空GT帧连续FP32 logit排序→视频平均→来源等权；空GT AP不填0或1。操作点logit≥0，running BN且eval。','\n## 成本、冻结与边界',json.dumps(s['cost'],ensure_ascii=False),json.dumps(s['coverage'],ensure_ascii=False),f"协议hash {s['identity']['protocol_sha256']}；执行HEAD {s['identity']['execution_head']}。",'旧模型和新模型训练规模/更新不同，只是扩充训练方案比较，非等预算纯样本量因果对照。旧11权重只推理，不改BN；新模型通用DINO和seed20260909的新LoRA/head初始化，不续训。全画面长边384、ImageNet/pad14/去pad/原生恢复，未变更结构、loss、BN或裁剪。','原40y1x9 fake[6,10)不监督不计分；技术待核27及明确反证、冲突/未知身份、94测试保护来源均排除。未扩入其余旧来源。新增MoGe、DFormer、神经特征预计算均0；只新增工作RGB/GT缓存。',f'产物 {OUT}；预览 {OUT}/preview/index.html。计算和Git发布状态分别记录，完成后不追加实验。']
     text='\n'.join(lines)+'\n';(OUT/'report.md').write_text(text);(REPO/'docs/pvst/anakin_expanded_spatial_training_v1.md').write_text(text)
 
 def run():
@@ -212,7 +284,7 @@ def run():
             loss=[]
             for item in sequence:
                 rec=base.update(model,opt,cache,byid[item['video_id']],item['target']);step+=1;training_seconds+=rec['seconds'];loss.append([rec['pixel_BCE'],rec['soft_Dice']]);rec.update(updates=step,**item);log.write(json.dumps(rec)+'\n')
-                if step%500==0:log.flush();progress('train',epoch=epoch,updates=step,U=p['updates'],remaining_training_seconds=training_seconds/step*(p['updates']-step))
+                if step%500==0:log.flush();progress('train',epoch=epoch,epochs=len(orders),updates=step,U=p['updates'],loss=rec['loss'],lr=opt.param_groups[0]['lr'],elapsed_seconds=time.monotonic()-begin,remaining_training_seconds=training_seconds/step*(p['updates']-step))
             log.flush();t=time.monotonic();model.train()
             with torch.no_grad():
                 for item in sequence[:100]:
@@ -224,7 +296,7 @@ def run():
             if epoch in EVAL_EPOCHS:
                 progress('evaluate',epoch=epoch,updates=step);mon,_=evaluate(model,cache,train,NAME,monitor=True);persist(f'epoch{epoch:02d}_monitor',mon);h['monitor_AP']=mon['macro']['pixel_AP'];ev,pred=evaluate(model,cache,dev,NAME,capture=epoch==10,capture_dtype=np.float32);persist(f'epoch{epoch:02d}_dev',ev);g=grouped(ev,dev);evs[str(epoch)]=dict(evaluation=ev,groups=g);h['groups']=g;eval_seconds+=mon['seconds']+ev['seconds'];checkpoint(model,opt,epoch,step,identity,initial)
                 if epoch==10:fixed_images(dev,pred,'new')
-            history.append(h);save(OUT/'history.json',history);csvsave(OUT/'history.csv',[{k:v for k,v in x.items() if k!='groups'} for x in history]);save(OUT/'evaluations.json',evs);progress('epoch_complete',**h)
+            history.append(h);save(OUT/'history.json',history);csvsave(OUT/'history.csv',[{k:v for k,v in x.items() if k!='groups'} for x in history]);save(OUT/'evaluations.json',evs);progress('epoch_complete',epochs=len(orders),U=p['updates'],loss=h['pixel_BCE']+h['soft_Dice'],lr=opt.param_groups[0]['lr'],remaining_training_seconds=training_seconds/step*(p['updates']-step),**dict(h,elapsed_seconds=time.monotonic()-begin))
     assert step==p['updates'] and bn==1000 and base.frozen_hash(model)==frozen
     best=min(EVAL_EPOCHS,key=lambda e:(-evs[str(e)]['groups']['ADDITIONAL_DEV']['pixel_AP'],e))
     for name,epoch in [('final.pt',10),('best_additional_dev.pt',best)]: (OUT/name).symlink_to(OUT/f'epoch{epoch:02d}.pt')
