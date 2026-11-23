@@ -102,6 +102,14 @@ class MatchedTests(unittest.TestCase):
                 with self.assertRaises(ValueError):run.resource_gate(Path(tmp),{},dict(identity=1),lambda *a,**k:None)
                 self.assertEqual(call.call_count,1);parity.assert_not_called()
 
+    def test_same_output_refuses_concurrent_invocation_without_waiting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first=run.exclusive_lock(Path(tmp))
+            try:
+                with self.assertRaisesRegex(RuntimeError,'active invocation'):run.exclusive_lock(Path(tmp))
+            finally:first.close()
+            second=run.exclusive_lock(Path(tmp));second.close()
+
     def test_disk_guard_precedes_any_frontend_call(self):
         from types import SimpleNamespace
         with tempfile.TemporaryDirectory() as tmp:

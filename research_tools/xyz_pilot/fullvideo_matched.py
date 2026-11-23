@@ -9,6 +9,7 @@ import collections
 import copy
 import csv
 import gc
+import fcntl
 import json
 from pathlib import Path
 import random
@@ -93,7 +94,7 @@ def native_mask(z,members,row,i):
     return gt
 
 
-def score_video(row,frames,outputs,wanted=None,capture=None):
+def score_video(row,frames,outputs,wanted=None,capture=None,emit=None):
     wanted=set(i for i in range(row['actual_frames']) if data.supervised(row,i)) if wanted is None else set(wanted)
     assert all(0<=i<row['actual_frames'] and data.supervised(row,i) for i in wanted)
     z=zipfile.ZipFile(row['mask_zip']) if row['role']=='fake' else None
@@ -116,6 +117,8 @@ def score_video(row,frames,outputs,wanted=None,capture=None):
                      fake_empty_FPR=overlap['empty_fpr'] if row['role']=='fake' and not gt.any() else None,
                      prediction_area=float(pred.mean()) if row['role']=='fake' else None)
             result.append(rec)
+            if emit and (len(result)%20==0 or len(result)==len(wanted)):
+                emit('score_frame',video=row['video_id'],scored=len(result),total=len(wanted),frame=i)
             if capture and i in row['preview_targets']:capture(row,i,frames[i],gt,native)
     finally:
         if z:z.close()
@@ -157,18 +160,21 @@ def groups(ev,categories):
 
 
 def persist_eval(path,ev):
-    save(path,ev)
     for kind in ['frames','videos','sources']:csvsave(path.with_name(path.stem+'_'+kind+'.csv'),ev[kind])
+    save(path,ev)  # JSON completion marker follows the derived tables.
 
 
 @torch.no_grad()
 def evaluate(model,cache,rows,mode,emit,categories=None,capture=None):
     model.eval();records=[];start=time.monotonic()
     for vi,row in enumerate(rows):
+        emit('load_evaluation_video',mode=mode,video=row['video_id'],position=vi+1,total=len(rows),T=row['actual_frames'])
         frames=cache.load(row)
         emit('evaluate_video',mode=mode,video=row['video_id'],position=vi+1,total=len(rows),T=len(frames),M=sum(len(f['keys']) for f in frames))
         with torch.autocast('cuda',dtype=torch.bfloat16):outputs=model(frames,mode)
-        records.extend(score_video(row,frames,outputs,capture=capture))
+        context=dict(mode=mode,video=row['video_id'],position=vi+1,total_videos=len(rows),T=len(frames),M=sum(len(f['keys']) for f in frames))
+        def score_emit(stage,context=context,**kw):emit(stage,**(context|kw))
+        records.extend(score_video(row,frames,outputs,capture=capture,emit=score_emit))
         del frames,outputs
     assert len({(f['video_id'],f['frame_index']) for f in records})==len(records)
     ev=aggregate_records(records);ev['seconds']=time.monotonic()-start
@@ -231,6 +237,7 @@ def extreme_once(out,p,identity,chunk,emit):
             old=data.read(previous)
             if old['status']=='PASS' and old['identity']['adaptation_sha256']==identity['adaptation_sha256'] and old['identity']['provider_config_sha256']==identity['provider_sha256'] and all(m['initial_sha256']==data.read(out/'initialization.json')['state_sha256'] and m['M']==largest['M'] and m['T']==largest['T'] and m['query_chunk']==0 for m in old['modes']):
                 result.append(dict(split=split,video=row['video_id'],reused_probe=str(previous),M=largest['M'],T=largest['T']));continue
+        save(out/'resource_current.json',dict(split=split,video=row['video_id'],T=largest['T'],M=largest['M'],stage='load'))
         frames=cache.load(row)
         for mode in MODES:
             seed();model=FullVideoDirect(chunk).cuda();model.load_state_dict(torch.load(out/'initial.pt',weights_only=True,map_location='cpu'),strict=True)
@@ -308,9 +315,13 @@ def run_mode(out,p,identity,mode,chunk,resume,emit):
         expected=[v for seq in orders[:epoch-1] for v in seq]+sequence[:position]
         assert [r['video_id'] for r in records]==expected,'CHECKPOINT_EXPOSURE_ORDER'
         for i in range(position,len(sequence)):
-            row=rows[sequence[i]];frames=cache.load(row);torch.cuda.reset_peak_memory_stats()
+            row=rows[sequence[i]]
+            emit('load_training_video',mode=mode,epoch=epoch,video=i+1,videos=len(sequence),video_id=row['video_id'],T=row['actual_frames'])
+            frames=cache.load(row);torch.cuda.reset_peak_memory_stats()
             emit('train_video',mode=mode,epoch=epoch,epochs=3,video=i+1,videos=len(sequence),video_id=row['video_id'],T=len(frames),M=sum(len(f['keys']) for f in frames))
-            rec=train_video(model,opt,frames,mode,emit);del frames
+            context=dict(mode=mode,epoch=epoch,epochs=3,video=i+1,videos=len(sequence),video_id=row['video_id'],T=len(frames),M=sum(len(f['keys']) for f in frames))
+            def video_emit(stage,context=context,**kw):emit(stage,**(context|kw))
+            rec=train_video(model,opt,frames,mode,video_emit);del frames
             records.append(dict(rec,epoch=epoch,position=i+1,video_id=row['video_id'],source_group_id=row['source_group_id'],role=row['role']))
             cp=save_checkpoint(last,model,opt,runtime_identity,mode,epoch,i+1,records)
             csvsave(folder/'updates.csv',records)
@@ -329,7 +340,11 @@ def run_mode(out,p,identity,mode,chunk,resume,emit):
             emit('epoch_evaluation',mode=mode,epoch=epoch,label=label,metrics=ev['macro'])
         ep=folder/f'epoch{epoch:02d}.pt'
         if not ep.exists():data.atomic_torch(ep,cp)
-        save(folder/f'epoch{epoch:02d}_loss.json',{k:float(np.mean([x[k] for x in records if x['epoch']==epoch])) for k in ['loss','pixel_BCE','soft_Dice']})
+        epoch_loss={k:float(np.mean([x[k] for x in records if x['epoch']==epoch])) for k in ['loss','pixel_BCE','soft_Dice']}
+        save(folder/f'epoch{epoch:02d}_loss.json',epoch_loss)
+        emit('epoch_summary',mode=mode,epoch=epoch,epochs=3,updates=len(records),online_video_mean_loss=epoch_loss,
+             train_observation=data.read(folder/f'epoch{epoch:02d}_monitor.json')['macro'],
+             development_groups=data.read(folder/f'epoch{epoch:02d}_dev.json')['groups'])
         cp=save_checkpoint(last,model,opt,runtime_identity,mode,epoch+1,0,records)
         report(out)
     assert len(records)==534 and sum(r['supervised_frames'] for r in records)==68634
@@ -403,6 +418,16 @@ def report(out):
                 lines.append('|'+r['condition']+'|'+r['group']+'|'+'|'.join('未提供' if r.get(k) is None else f'{r[k]:.8f}' for k in ['pixel_AP','Dice','GT_recall','real_FPR','fake_background_FPR'])+'|')
         lines.append('\n## 各自开发选择附表')
         for r in best:lines.append(f"- {r['mode']}：新增15开发AP选择epoch{r['selected_epoch']}，全部19开发AP={r['pixel_AP']:.8f}，Dice={r['Dice']:.8f}。")
+        macro_delta={k:b['macro'][k]-a['macro'][k] for k in METRICS if a['macro'].get(k) is not None and b['macro'].get(k) is not None}
+        lines.append('\n末次宏平均FULL_VIDEO−FRAME_ONLY：'+str(macro_delta))
+        if macro_delta.get('pixel_AP',0)>0 and (macro_delta.get('Dice',0)<0 or macro_delta.get('GT_recall',0)<0):
+            lines.append('AP提高但Dice或召回下降：排序与固定阈值操作点存在取舍，不能写成全面改善。')
+        if macro_delta.get('real_FPR',0)>0 or macro_delta.get('fake_background_FPR',0)>0:
+            lines.append('至少一类误报率上升，定位收益须与误报代价并列解释。')
+        gains=[d for d in delta if d.get('pixel_AP') is not None and d['pixel_AP']>0]
+        if gains:
+            largest=max(gains,key=lambda d:d['pixel_AP'])
+            lines.append(f"最大正AP增量来自{largest['pair_id']}，占所有正增量的{largest['pixel_AP']/sum(d['pixel_AP'] for d in gains):.2%}；不能用它替代完整来源表。")
         better=sum(d['pixel_AP']>0 for d in delta if d['pixel_AP'] is not None)
         lines += [f'\n末次逐来源AP改善{better}/19；完整来源差值见FULL_VIDEO_minus_FRAME_ONLY_sources.csv。',
                   'AP/Dice/召回与两类误报并列解释；梯度、loss和通路不等于效果，开发选择非独立测试。不得自动追加结构、seed或预算。']
@@ -476,14 +501,23 @@ def smoke(out,p,identity,emit):
     gc.collect();torch.cuda.empty_cache()
 
 
+def exclusive_lock(out):
+    out.mkdir(parents=True,exist_ok=True)
+    handle=(out/'run.lock').open('a+')
+    try:fcntl.flock(handle.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close();raise RuntimeError('This output already has an active invocation; no waiting or duplicate run')
+    return handle
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,default=data.OUT)
     parser.add_argument('--plan-only',action='store_true');parser.add_argument('--prepare-only',action='store_true')
     parser.add_argument('--smoke',action='store_true');parser.add_argument('--resume',action='store_true')
-    args=parser.parse_args();out=args.output;phase='plan';start=time.monotonic()
+    args=parser.parse_args();out=args.output;lock=exclusive_lock(out);phase='plan';start=time.monotonic()
     def emit(stage,**kw):
-        value=dict(status='RUNNING',stage=stage,**kw);save(out/'status.json',value);print(json.dumps(value,ensure_ascii=False),flush=True)
+        value=dict(status='RUNNING',stage=stage,**kw);value['invocation_seconds']=time.monotonic()-start;save(out/'status.json',value);print(json.dumps(value,ensure_ascii=False),flush=True)
     try:
         torch.set_num_threads(4);p,identity=data.plan(out,emit)
         save(out/('invocation_'+str(time.time_ns())+'.json'),dict(
@@ -508,10 +542,12 @@ def main():
         for mode in MODES:
             phase=mode;run_mode(out,p,identity,mode,chunk,args.resume,emit)
         report(out);save(out/'status.json',dict(status='COMPLETE',exit_code=0,seconds=time.monotonic()-start))
-    except Exception:
-        failure=dict(status='FAILED',stage=phase,last_progress=data.read(out/'status.json') if (out/'status.json').exists() else None,traceback=traceback.format_exc(),seconds=time.monotonic()-start,exit_code=1)
+    except BaseException as exc:
+        failure=dict(status='FAILED',stage=phase,last_progress=data.read(out/'status.json') if (out/'status.json').exists() else None,traceback=traceback.format_exc(),seconds=time.monotonic()-start,exit_code=130 if isinstance(exc,KeyboardInterrupt) else 1)
         save(out/('failure_'+str(time.time_ns())+'.json'),failure);save(out/'status.json',failure)
         report(out);raise
+    finally:
+        lock.close()
 
 
 if __name__=='__main__':main()

@@ -11,6 +11,8 @@ for ((i=0;i<${#args[@]};i++)); do
 done
 mkdir -p "$OUT/invocations"
 stem="$OUT/invocations/$(date +%Y%m%dT%H%M%S)_$$"
+# Keep a distinct launcher status if a signal prevents PIPESTATUS collection.
+trap 'rc=$?; printf "%s\n" "$rc" > "$stem.launcher_exit_code"; if [[ ! -f "$stem.exit_code" ]]; then printf "%s\n" "UNKNOWN_INTERRUPTED" > "$stem.exit_code"; fi' EXIT
 cd "$REPO" || exit 2
 export PYTHONPATH="/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8-ainpaint-packages:/media/njupt/8FCD3869E2FAB06F/chenyh/envs/rgbd-packages:$REPO${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS=4 XFORMERS_DISABLED=1 MPLCONFIGDIR=/tmp/pvst_fullvideo_matched_mpl

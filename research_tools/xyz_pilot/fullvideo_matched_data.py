@@ -204,15 +204,17 @@ def prepare_geometry(out, rows, ident, emit):
     assert provider['geometry_long_edge']==768 and provider['geometry_num_tokens']=='round(input_h*input_w/14**2)'
     weight_sha=digest(Path(provider['moge_weights']))
     assert subprocess.check_output(['git','-C',provider['moge_code'],'rev-parse','HEAD'],text=True).strip()==provider['moge_revision']
-    index=cached_geometry_index(provider,weight_sha);moge=None;counts=dict(new_MoGe=0,reused_geometry=0,new_DFormer=0)
+    index=cached_geometry_index(provider,weight_sha);moge=None;counts=dict(new_MoGe=0,reused_geometry=0,cached_route_frames=0,new_DFormer=0)
     start=time.monotonic()
     for vi,r in enumerate(rows):
+        emit('prepare_geometry_video',video=r['video_id'],position=vi+1,total=len(rows),T=r['actual_frames'])
         folder=out/'geometry'/r['video_id'];folder.mkdir(parents=True,exist_ok=True)
         geo_id={k:r[k] for k in ['video_sha256','pts','native_hw','work_hw']}
         geo_id.update(provider_sha256=ident['provider_sha256'],moge_weights_sha256=weight_sha,scale=SCALE,h=.5)
         if (folder/'identity.json').exists():assert read(folder/'identity.json')==geo_id
         else:save(folder/'identity.json',geo_id)
         missing=[i for i in range(r['actual_frames']) if not (folder/f'{i:05d}.pt').exists()]
+        counts['cached_route_frames']+=r['actual_frames']-len(missing)
         if not missing:continue
         work=WorkVideo(r);gp=None
         for path,m in index.get(r['video_sha256'],[]):
@@ -267,6 +269,7 @@ def prepare_visual(out,rows,ident,emit):
     original=spatial.token_grid;captured={};handle=None;before=None
     try:
         for vi,r in enumerate(rows):
+            emit('prepare_visual_video',video=r['video_id'],position=vi+1,total=len(rows),T=r['actual_frames'])
             folder=out/'visual'/r['video_id'];folder.mkdir(parents=True,exist_ok=True)
             identity={k:r[k] for k in ['video_sha256','mask_sha256','pts','work_hw','native_hw']}
             identity.update(adaptation_sha256=ident['adaptation_sha256'],preprocessing='SpatialBaseline epoch01 / BF16 eval / pad14')
@@ -366,9 +369,17 @@ def prepare_all(out,p,ident,emit):
         stats.append(dict(video_id=r['video_id'],pair_id=r['pair_id'],split=r['split'],role=r['role'],
                           T=r['actual_frames'],supervised_frames=sum(supervised(r,i) for i in range(r['actual_frames'])),
                           N_min=min(counts),N_max=max(counts),M=sum(counts),geometry_route_bytes=size,
-                          visual_referenced_bytes=sum(Path(v).stat().st_size for v in vp)))
+                          visual_referenced_bytes=sum(Path(v).stat().st_size for v in vp),
+                          visual_owned_bytes=sum(Path(v).stat().st_size for v in vp if Path(v).is_relative_to(out))))
     save(out/'queue_stats.json',stats)
+    save(out/'queue_extrema.json',{split:{
+        'max_M':max((s for s in stats if s['split']==split),key=lambda s:s['M']),
+        'max_T':max((s for s in stats if s['split']==split),key=lambda s:s['T']),
+        'max_frame_N':max((s for s in stats if s['split']==split),key=lambda s:s['N_max'])}
+        for split in ['train','dev']})
     with (out/'queue_stats.csv').open('w') as f:
         w=csv.DictWriter(f,fieldnames=list(stats[0]));w.writeheader();w.writerows(stats)
     save(out/'prepared.json',dict(status='COMPLETE',identity=ident,seconds=time.monotonic()-start,
-                                  videos=len(stats),observations=sum(x['T'] for x in stats),new_DFormer=0))
+                                  videos=len(stats),observations=sum(x['T'] for x in stats),new_DFormer=0,
+                                  owned_cache_bytes=sum(x['geometry_route_bytes']+x['visual_owned_bytes'] for x in stats),
+                                  referenced_visual_bytes=sum(x['visual_referenced_bytes'] for x in stats)))
