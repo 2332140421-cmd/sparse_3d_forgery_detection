@@ -1,104 +1,101 @@
-# PVST完整视频原始块原型 v1
+# PVST完整视频原始块原型 v1：资源测量收尾
 
-## 完成范围与身份
+2026-11-24。本次仅CPU读取指定结果目录的summary.json、measurements.csv和三个病例result.json，核对记录并更新文档。新增模型前向、优化更新、冻结特征提取、MoGe、检查点加载均为0。没有启动监控或后续实验。
 
-本轮已实现独立模型、冻结观测准备及资源入口，实跑完整低token训练来源病例。中高病例未启动；没有正式训练、开发集效果比较或持续监控。
-实际发生4次可丢弃AdamW优化更新，不能称为“完全未训练”。没有保存预检权重。
+## 终态与来源
 
-实测执行提交：`4384cfddd3387b602bf91b275eaac7151924bfda`；最终发布提交见Git回执。实测后仅补充终端失败阶段/配置/墙钟记录、原结果防覆盖及显式观测路径参数，模型数学不变；这些记录逻辑经过CPU回归测试，没有因此重复GPU预检。
+本轮开始一次性确认：无资源测量进程在运行；三个病例结果均PASS，summary为COMPLETE、pending_cases为空；两次终端调用保存的Python退出码均为0。未继续轮询。
 
-仓库：`/media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen`；分支`pvst-fullvideo-direct-prototype-v1`。根契约§17.12、ADR-0055及AGENTS登记本轮独立授权。
+本报告唯一结果根：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run`。未读取或合并上级默认目录的首次环境失败记录。机器原始产物保持不变。
 
-## 实现与旧模型的区别
+- 小病例执行提交：`4384cfddd3387b602bf91b275eaac7151924bfda`。
+- 中、高病例执行提交：`4e997b4e19cd50527d835219d3117b3fc9fb8631`。
+- 两版本的`fullvideo_direct_model.py`相同，后续提交仅完善环境/记录/交接；三病例六模式初值hash相同：`0f6e601206cd848859d412e62e4ce73fb6f7ffb3d072bf9db487857e13b564e2`。
+- 本次文档收尾起点：`4e997b4e19cd50527d835219d3117b3fc9fb8631`；最终发布HEAD见Git回执。
+- `summary.json`各病例与各自result.json一致；measurements.csv全部12条step的loss、耗时及显存与JSON逐项一致；T、每帧计数总和与M一致。只核对小型记录，没有扫描观测缓存或加载权重。
 
-入口：`research_tools.xyz_pilot.fullvideo_direct_probe`；模型：`fullvideo_direct_model.FullVideoDirect`。旧入口和官方源码不改。
+## 已实现结构与测量边界
 
-1. 严格复用`ainpaint_spatial.build/load_adaptation`恢复扩充空间epoch01；官方通用DINO、LoRA和原head全部冻结、eval/no_grad。其通用权重SHA和外部两个仓库revision与检查点记录核对。
-2. 同一次原`SpatialBaseline.forward`通过局部`token_grid`包装捕获patch网格，predictor的pre-hook捕获其真实输入detail32，原前向返回工作z0。没有另写近似定位头或额外第二次视觉前向；作用域结束恢复包装并移除hook。
-3. DINO padding按实际RGB重新计算：工作216×384→224×392；没有误用DFormer的224×384。patch实际1024×16×28、FP32；detail实际32×128×224、BF16；z0为216×384、FP32。缓存按实际输出dtype保存。
-4. 原视频自身`xyz_provider`只除scale=12.880994319915771一次；FP32按h=.5、origin0三轴floor，保留全部有效点/非空块、keys/points/index及帧切片/真实PTS。单目相机坐标不是世界配准或米制体积。没有GT路由/共有键要求/新MoGe。
-5. 可训练patch 1024→128/GELU，插值至DINO pad后裁工作网格；沿旧公式用绝对XYZ和块内相对位置生成gamma/beta，逐点MLP、单头FP32 softmax池化得到C128。没有假四级金字塔、旧XYZ训练权重或成熟邻域3D编码。
-6. 拼接完整96帧原始块；两层D128/4头、FF256、dropout0。Q/K包含可学习块中心和距首帧的实际PTS编码，V为归一化内容。FULL_VIDEO原始块直接双向SDPA；FRAME_ONLY同一参数逐帧计算。没有中继、筛块、因果断言或只取末帧R。
-7. 各帧R→32回填；冻结detail32先插值至对应DINO pad再裁工作网格；concat64→Conv3×3(32)/GN4/GELU→Conv1×1(1)形成delta。末层weight/bias为0，z=z0+delta。冻结二维与logit修正是本次具体选择，不是用户思想必须如此。
-8. 所有帧输出；无效几何context零，视觉仍保留。没有帧分类、全块均值分类或mask门控。合法帧全画面BCE均值＋soft Dice(eps1)，再按合法帧平均，全片一次backward/step。40y1x9_fake[6,10)保留上下文/输出但不监督。
+入口`research_tools.xyz_pilot.fullvideo_direct_probe`调用独立`FullVideoDirect`；授权见ADR-0055/根契约17.12。旧8槽单目标模型及外部官方代码不改。
+冻结扩充空间epoch01的通用DINO、适配LoRA、官方HighResContextHead，始终eval/no_grad。同一次原空间前向捕获1024维patch、predictor真实输入detail32和工作logit z0。
+工作RGB长边384，ImageNet归一化，按14补齐；按实际RGB算DINO pad，不复用DFormer pad。例如216×384对应224×392，patch1024×16×28，detail32×128×224。
+新patch投影1024→128/GELU，双线性插值至DINO补齐尺寸后裁回工作网格；自身MoGe的xyz_provider在FP32只除scale=12.880994319915771一次，以h=.5/origin0三轴floor路由所有有效点与非空块。几何调制、逐点MLP及FP32学习池化生成C128。
+全片C拼接，XYZ块中心与距首帧实际PTS编码加入Q/K，V使用内容。两层D128/4头/FF256、dropout0。FRAME_ONLY逐帧原始块交互；FULL_VIDEO全部原始块直接双向交互，无中继、筛块、8槽截止或只返回末帧R。
+各帧R投影32、按points/index回填，与冻结detail32融合，64→32卷积/GN/GELU→1通道delta；末层weight/bias零初始化，z=z0+delta。全部帧定位，无效几何保留视觉路径；没有帧分类/全块均值分类门控。冻结二维与logit修正是本原型具体选择。
+各模式同一新初值、同一seed20260909，新AdamW(lr1e-4/wd.01/clip1)。每帧BCE均值＋soft Dice(eps1)，在合法监督帧上平均，整片一次backward/step；40y1x9_fake[6,10)保留上下文与输出，不监督。新模块481,954参数。
+按帧编码/解码及关系层使用非重入checkpoint，明确绑定逐帧输入，不detach。冻结观测在CPU，准备后释放DINO再测主网络；所有病例Query chunk=0，未启用备用1024。
 
-按帧非重入checkpoint编码/解码，循环帧输入用默认参数显式绑定；关系层checkpoint，不detach跨帧表示。冻结观测在CPU按需送GPU；完成准备后释放原DINO/head再测主网络。默认不分Query，本次chunk=0；可手动选择唯一备用1024，每个Q块仍读取全部K/V并完整归一化，不产生M×M bias/mask或返回注意力权重。
+## 六条件完整汇总
 
-新增可训练模型参数：481,954。两模式同一初值hash：`0f6e601206cd848859d412e62e4ce73fb6f7ffb3d072bf9db487857e13b564e2`；各自新AdamW(lr1e-4/wd.01/clip1)，seed20260909，BF16前向/FP32池化及loss；原二维optimizer不使用。
+F/B/U分别为前向/反向/optimizer时间，单位秒；显存A/R为峰值allocated/reserved，单位GiB。梯度列指第2步要求的全部模块组有限且非零，首步上游梯度为零符合delta末层零初始化。
 
-## 小病例实测
+|病例|模式|完整T|合法监督|M|步数|第1步 F/B/U(s)|第2步 F/B/U(s)|峰值A/R(GiB)|实际后端|Q分块|梯度|退出码|
+|---|---|---:|---:|---:|---:|---|---|---|---|---|---|---:|
+|4ym5n4_fake|FRAME_ONLY|96|96|735|2|0.577070/1.778262/0.018509|0.437332/1.622036/0.000545|0.379266/0.650391|SDPA Flash|0（不分块）|PASS|0|
+|4ym5n4_fake|FULL_VIDEO|96|96|735|2|0.341489/1.344860/0.001098|0.339413/1.346775/0.000538|0.379266/0.662109|SDPA Flash|0（不分块）|PASS|0|
+|40y1x9_fake|FRAME_ONLY|150|146|22924|2|0.793443/2.047413/0.017637|0.607654/1.977857/0.000563|0.389193/0.769531|SDPA Flash|0（不分块）|PASS|0|
+|40y1x9_fake|FULL_VIDEO|150|146|22924|2|0.469756/1.572075/0.001218|0.455784/1.577190/0.000544|0.389176/0.832031|SDPA Flash|0（不分块）|PASS|0|
+|9mygy9_fake|FRAME_ONLY|120|120|50921|2|0.579388/1.630255/0.001078|0.516406/1.661415/0.000529|0.461936/0.785156|SDPA Flash|0（不分块）|PASS|0|
+|9mygy9_fake|FULL_VIDEO|120|120|50921|2|0.415367/1.349893/0.001146|0.399333/1.350923/0.000554|0.505254/0.759766|SDPA Flash|0（不分块）|PASS|0|
 
-病例`4ym5n4_fake`，完整96帧、合法监督96帧；每帧7–8块，全片**735块**，有效点帧次合计7,962,624。旧747块来自另一尺度，仅用于选病例，未拿来充当本轮结果。
+后端由实际profiler记录`aten::_scaled_dot_product_flash_attention`和对应backward确认，不是根据启用开关推断。全部使用PyTorch内置实现，无独立FlashAttention安装。无失败模式、无未完成步；没有把缺测项填0。
+首步上游梯度为零，但AdamW weight decay仍可能改变参数，因此以第2步有限非零梯度及实际更新作为链路证据。全部六模式第二步visual、geometry、point、score、value、layers、pixel_context、correction满足检查；第一步初始z与缓存z0最大差全部为0。
 
-|模式|步|loss|前向秒|反向秒|AdamW秒|峰值allocated GiB|峰值reserved GiB|
-|---|---:|---:|---:|---:|---:|---:|---:|
-|FRAME_ONLY|1|0.410608709|0.5771|1.7783|0.0185|0.3757|0.6465|
-|FRAME_ONLY|2|0.410593212|0.4373|1.6220|0.0005|0.3793|0.6504|
-|FULL_VIDEO|1|0.410608709|0.3415|1.3449|0.0011|0.3757|0.6621|
-|FULL_VIDEO|2|0.410593301|0.3394|1.3468|0.0005|0.3793|0.6621|
+### 全片连接与范围证据
 
-计时含必要CUDA同步；前向含联合块编码、全片关系、全部帧定位与全片loss，反向含checkpoint重算，optimizer单列。CPU profiler收集实际算子派发，会产生额外开销。第1步包含冷启动，两步不是稳定吞吐；两模式不据此作速度优劣结论。
-主网络不包含在线DINO，不能把上述数值称为包含在线DINO的端到端成本。关系结构VJP额外单列，FRAME_ONLY约.2302秒、FULL_VIDEO约.00327秒，不混入loss反向时间。
+|病例|每帧非空块数范围|有效点帧次|FRAME_ONLY首帧R对后续C梯度最大值|FULL_VIDEO对应值|
+|---|---|---:|---:|---:|
+|4ym5n4_fake|7–8|7962624|0.000000000|0.513935983|
+|40y1x9_fake|45–323|8843496|0.000000000|0.682840645|
+|9mygy9_fake|414–439|8960037|0.000000000|0.652332842|
 
-冻结视觉准备：**96次真实原空间前向**，8.6016秒（含模型恢复/身份核对/冻结核验及保存），缓存495,868,800字节，约472.90MiB；新增MoGe=0。xyz_provider来自旧观测包，DFormer视觉输出不作为本原型输入。
-主网络完整前向4次、loss backward 4次、AdamW step 4次；另各模式一次关系依赖VJP。checkpoint导致内部编码/解码/关系重算，以上前向数指顶层模型调用，不把重算说成零计算。CPU单测的合成张量调用另计，不是实际视频推理。
-正确环境调用从日志命名04:20:46至退出文件时标04:21:48，墙钟约62秒（文件时标近似，含CPU路由、哈希、导入与记录）；不等于纯GPU累计。未来入口会直接记录monotonic总墙钟。
+这确认R层的跨未来帧依赖及同帧模式屏蔽，没有用初始化delta=0时的相同logit判断连接。它不是顺序理解或定位效果证据。全部帧工作输出尺寸已有检查；原生恢复为FP32 bilinear、align_corners=False。
 
-### 验收证据
+## FULL_VIDEO相对FRAME_ONLY的资源变化
 
-|检查|FRAME_ONLY|FULL_VIDEO|
+下表使用第2步F+B+U减少首步冷启动影响，但每条件只有2步，且FRAME_ONLY先跑、FULL_VIDEO后跑，不是稳定吞吐测量。
+
+|病例|第2步FRAME_ONLY秒|第2步FULL_VIDEO秒|时间差秒（相对变化）|峰值allocated差MiB|峰值reserved差MiB|
+|---|---:|---:|---|---:|---:|
+|4ym5n4_fake|2.059912|1.686726|-0.373187（-18.12%）|+0.000000|+12.000|
+|40y1x9_fake|2.586074|2.033517|-0.552556（-21.37%）|-0.016602|+64.000|
+|9mygy9_fake|2.178350|1.750810|-0.427539（-19.63%）|+44.357422|-26.000|
+
+高病例allocated由0.461936升至0.505254 GiB，增加44.36 MiB、约9.38%；中病例近似不变，小病例相同。reserved变化分别+12、+64、−26 MiB，受allocator缓存和执行顺序影响，不能把reserved下降解释为全片注意力内存复杂度更低。
+本次第2步FULL_VIDEO总时间反而少18.12%–21.37%。FRAME_ONLY有大量逐帧小算子/注意力调用，FULL_VIDEO合并为少量大调用，可能降低调度开销；这是合理解释而非已隔离验证的原因。时间还受冷启动、CPU profiler、checkpoint重算和并发状态影响，不能据此宣称FULL_VIDEO普遍更快或长期训练更便宜；全片两两交互的理论二次计算量没有消失。
+前向包括可训练块编码、关系、全部帧定位及loss；loss反向、更新分列。另各模式有一次结构依赖VJP，不包含在表中F/B/U：
+
+|病例|FRAME_ONLY额外VJP秒|FULL_VIDEO额外VJP秒|
 |---|---:|---:|
-|初始化全部帧z−缓存z0最大绝对差|0.0|0.0|
-|首帧R对后续块C的梯度最大绝对值|0.000000000|0.513935983|
-|完整帧/点/非空块、全部工作输出尺寸|PASS|PASS|
-|第2步visual/geometry/point/score/value/layers/pixel_context/correction有限非零梯度|PASS|PASS|
-|第2步块编码/关系/修正参数实际变化|PASS|PASS|
-|优化更新次数/退出码|2 / 0|2 / 0|
+|4ym5n4_fake|0.230205|0.003269|
+|40y1x9_fake|0.342425|0.018039|
+|9mygy9_fake|0.253578|0.070635|
 
-首步上游梯度确为0、末层有梯度，符合零初始化链路；AdamW对有零梯度张量仍可能weight decay，不能用首步参数变化冒充上游学习证据。第2步才确认全部有效路径。冻结DINO/LoRA/head含BN的state hash前后相同；主网络测量时原视觉模型已释放，冻结缓存只读。
-关系依赖检查直接作用在R和C上：FULL_VIDEO首帧可读取后续块，FRAME_ONLY跨帧依赖为0；不利用初始delta=0的logit来判断时间路径。这不是顺序理解、泛化或伪造判别能力证明。
-原生恢复约定为工作logit先FP32，再bilinear(align_corners=False)恢复各帧native_hw。本次检查全部工作输出尺寸及首帧恢复形状；没有开发集计分、AP或效果比较。
-实际profiler派发含`aten::_scaled_dot_product_flash_attention`及其backward（PyTorch2.5.1+cu124、RTX4090）；这是本病例实际派发证据，不是根据开关猜测。没有安装独立FlashAttention。中高病例后端以其日志实录为准。
+主网络显存/时间不含在线DINO；已使用非重入checkpoint和实际高效SDPA。不是未优化的朴素M×M权重矩阵成本，也不是包含视觉前向的端到端训练成本。
 
-## 失败记录与产物位置
+### 既有冻结观测准备（本轮没有新增）
 
-首次执行`ec9569a`未带原实验依赖overlay，构建前出现`ModuleNotFoundError: peft`，0次视觉提取、0次优化更新，退出1。其错误记录打印又暴露同名stage参数错误，已修复并加回归测试。
-原空间run.sh已使用`envs/v8-ainpaint-packages`及`envs/rgbd-packages`，新脚本现在原样加入这两个现有路径、XFORMERS_DISABLED=1等设置，没有安装新包。首次数据和日志不覆盖；正确环境结果另存：
+|病例|既有真实冻结前向数|准备秒|缓存字节|冻结权重/缓冲区|
+|---|---:|---:|---:|---|
+|4ym5n4_fake|96|8.601568|495868800|不变|
+|40y1x9_fake|150|9.686899|774795000|不变|
+|9mygy9_fake|120|7.827928|619836000|不变|
 
-- 首次失败：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/cases/4ym5n4_fake/result.json`
-- 首次日志：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/invocations/20261124T041920_999463.log`（Python退出1）
-- 成功程序报告：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/report.md`
-- 成功汇总：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/summary.json`
-- 成功逐病例：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/cases/4ym5n4_fake/result.json`
-- 成功逐步CSV：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/measurements.csv`
-- 成功日志：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/invocations/20261124T042046_1003636.log`（Python与tee均退出0）
-- 冻结缓存：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/observations/4ym5n4_fake`
+累计366次冻结前向、12次可丢弃预检更新发生在此前资源测量阶段；本轮均未重做，新增MoGe仍为0。中高两病例的既有终端调用总墙钟150.002929秒（invocations/result_1795468028347656690.json），包含准备、CPU路由/读取、记录等，不用F/B/U之和冒充整次墙钟。小病例原调用未保存monotonic总墙钟，本报告不补造精确值。
 
-适配检查点SHA256：`3987d1bfb4ac9f233a73e14223ec4e8a0913b2d203ca7312926de20d22380598`；源manifest/provider配置、视频/mask、官方权重/revision、完整PTS与尺寸写入缓存identity.json。
-根目录原report/summary保留首次失败，不误读为成功结果；本轮成功入口见上述original_environment_run及交付索引README。没有预检权重或全量预测提交Git。
+## 资源判断与唯一下一步
 
-## 中高病例：待用户终端启动
+1. **可运行：是，限这三个完整病例。** 最大实测50,921个原始块、120帧，全片双向模式完成2次有效更新，梯度及输出检查通过。三个病例没有OOM或失败阶段。不能从两步小幅loss变化推断效果或收敛。
+2. **全片成本：本次增量可控。** 以六条件实测为准，高病例allocated增加约44.36MiB；没有观察到持续时间增加，但不据此作普遍速度承诺。
+3. **无需为已测三例再新增精确显存优化。** 当前已用SDPA与非重入checkpoint，默认不分Query全部通过，峰值allocated最高约.505GiB、reserved最高约.832GiB。没有资源证据要求启动Q=1024备用路径，更不应改中继、删块或增h。其他更长/更多块的视频仍可能需要精确优化，当前未测。
+4. **适合进入完整数据定位对照的准备阶段，不等于已经具备全89来源运行保证。** 三条训练来源没有覆盖整个队列的长度/占据块极值、缓存范围或长期训练吞吐；仍未产生定位效果证据。
 
-未提取这两条的新DINO缓存、未测其真实块数与显存；不能宣称全片资源全面通过。脚本顺序处理，不等GPU、不自动重试。已有同身份PASS病例复用；已有失败/不同配置拒绝覆盖。
+**唯一下一步建议：准备同一冻结视觉底座下、完整来源隔离数据上的FRAME_ONLY vs FULL_VIDEO匹配定位对照协议与终端脚本。** 保持XYZ切块、联合编码、定位路径和监督范围一致，匹配有效监督帧呈现量，预先固定预算及末次评价；在准备中先依据已有清单/几何记录列明全队列T/M范围和观测缺口，未覆盖的资源极值再单独授权处理。不要因三例PASS直接开全量训练，也不新增第三个结构或改Query配置。本轮不执行这些准备/计算。
 
-```bash
-cd /media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen
-scripts/run_pvst_fullvideo_direct_probe_v1.sh \
-  --cases 40y1x9_fake 9mygy9_fake \
-  --output /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run
-```
+## 产物与文档检查
 
-可选tmux启动（不依赖Codex会话）：
-
-```bash
-tmux new-session -s pvst-fullvideo 'cd /media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen && bash scripts/run_pvst_fullvideo_direct_probe_v1.sh --cases 40y1x9_fake 9mygy9_fake --output /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run'
-```
-
-终端实时显示病例/阶段/帧/T/M/模式/step/loss/lr/耗时/显存，tee同步写invocations时间戳日志，保存Python实际退出码。每病例JSON、逐步CSV和程序报告自动导出，无需Codex盯进程。
-若默认精确SDPA发生资源失败，先保留失败证据；用户决定是否另开显式输出目录用固定`--query-chunk 1024`，可用`--observations /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/observations`复用身份一致冻结观测。本轮没有自动执行该备用路径，也没有截视频、增大h或删块。
-
-## 检查与结论边界
-
-8项CPU契约测试：旧MHA/SDPA输出和输入/参数梯度；精确Query分块；未来依赖；初始化与排除监督；checkpoint逐帧绑定与梯度；单尺度路由/无效视觉旁路；失败报告；旧结果不被新失败覆盖。另做bash -n、Python编译和git diff --check。
-小病例证明该具体结构在完整96帧上可运行、连通且能更新；没有证明学习充分或任何定位收益。735块不能代表约2万/5万块病例，更不能代表全89来源。二维冻结、logit修正、单尺度与简洁逐点池化都是本次实现选择。
-计算终态：小病例PASS、4次预检更新已丢弃、退出0、短任务已结束；中高待用户启动。Git发布与计算状态分开，发布HEAD及远端核对见最终回执。到此停止，不启动正式训练或持续监控。
+- 原始程序报告：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_direct_prototype_v1/original_environment_run/report.md`。该报告由原脚本生成，不覆盖。
+- 本轮汇总CSV：`docs/pvst/pvst_fullvideo_direct_resource_summary_v1.csv`（6行，含完整精度逐步时间/显存及检查结果）。
+- 实际读取：`summary.json`、`measurements.csv`、`cases/{4ym5n4_fake,40y1x9_fake,9mygy9_fake}/result.json`和指定目录内小型调用退出记录。
+- 仅CPU做跨表一致性、有限数、T/M/步数检查与git diff --check；没有模型测试、权重恢复或新推理。仅提交本报告及轻量CSV。
+- 本轮计算读取已结束；Git发布状态由最终回执独立报告。后续长训练仍由用户终端/tmux启动，Codex不持续轮询。
