@@ -311,10 +311,11 @@ def main():
             del frames,initial
     except Exception as exc:
         exit_code=1
+        record.setdefault('case',case or 'environment')
         record.update(status='FAILED',stage=phase,error=repr(exc),traceback=traceback.format_exc(),exit_code=1)
         if torch.cuda.is_available():record.update(memory())
         save(root/'cases'/(case or 'environment')/'result.json',record)
-        progress('FAILED',case=case,stage=phase,error=repr(exc));traceback.print_exc()
+        progress('FAILED',case=case,failed_stage=phase,error=repr(exc));traceback.print_exc()
     finally:
         summarize(root)
     raise SystemExit(exit_code)

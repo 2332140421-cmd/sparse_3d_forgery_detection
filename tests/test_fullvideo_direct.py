@@ -76,6 +76,21 @@ class FullVideoTests(unittest.TestCase):
                 self.assertIsNotNone(u.grad,n);self.assertIsNotNone(v.grad,n)
                 torch.testing.assert_close(u.grad,v.grad,rtol=1e-4,atol=1e-6)
 
+    def test_environment_failure_retains_report_and_python_exit(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from research_tools.xyz_pilot.fullvideo_direct_probe import main
+        with tempfile.TemporaryDirectory() as d:
+            with patch('sys.argv',['probe','--output',d]), patch('torch.cuda.is_available',return_value=False):
+                with self.assertRaises(SystemExit) as result:main()
+            self.assertEqual(result.exception.code,1)
+            value=json.loads((Path(d)/'cases/environment/result.json').read_text())
+            self.assertEqual(value['stage'],'environment')
+            self.assertEqual(value['exit_code'],1)
+            self.assertTrue((Path(d)/'report.md').exists())
+
     def test_fp32_routing_single_scale_and_invalid_bypass(self):
         fs=frames();f=fs[0]
         self.assertEqual(len(f['points']),47)

@@ -12,7 +12,8 @@ done
 mkdir -p "$OUT/invocations"
 stem="$OUT/invocations/$(date +%Y%m%dT%H%M%S)_$$"
 cd "$REPO"
-export PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8-ainpaint-packages:/media/njupt/8FCD3869E2FAB06F/chenyh/envs/rgbd-packages:$REPO${PYTHONPATH:+:$PYTHONPATH}"
+export OMP_NUM_THREADS=4 XFORMERS_DISABLED=1 MPLCONFIGDIR=/tmp/pvst_fullvideo_direct_mpl
 printf 'Starting bounded resource preflight. Log: %s.log\n' "$stem"
 "$PY" -u -m research_tools.xyz_pilot.fullvideo_direct_probe "${args[@]}" 2>&1 | tee "$stem.log"
 statuses=("${PIPESTATUS[@]}")
