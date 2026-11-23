@@ -319,3 +319,12 @@ results, or inconsistency between the paper and implementation.
 - Reuse official generic DINO/LoRA/head and whole-frame384 path; ten complete
   epochs, train-only BN100 each, dev/monitor at1/3/5/10, epoch10 primary and
   additional-dev-only best supplement. No XYZ/history/frontends or new branch.
+
+## Full-video direct prototype
+
+- ADR-0055/root17.12 authorize the independent fullvideo_direct_model/probe only:
+  frozen adapted epoch01 DINO/LoRA/head observations, all XYZ blocks, two direct
+  bidirectional SDPA layers, all-frame zero-initialized localization correction.
+  No relay, token pruning, causal cutoff or new MoGe. Codex runs only the complete
+  low-token case, two discardable updates per mode; user launches medium/high
+  terminal jobs. Preserve old entries/results; no formal training or polling.
