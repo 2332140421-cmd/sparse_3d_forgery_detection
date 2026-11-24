@@ -102,6 +102,43 @@ class MatchedTests(unittest.TestCase):
                 with self.assertRaises(ValueError):run.resource_gate(Path(tmp),{},dict(identity=1),lambda *a,**k:None)
                 self.assertEqual(call.call_count,1);parity.assert_not_called()
 
+    def test_cached_geometry_stage_writes_cost_without_inference(self):
+        import types
+        from unittest.mock import Mock
+        provider=dict(geometry_long_edge=768,geometry_num_tokens='round(input_h*input_w/14**2)',
+                      moge_weights='/unused/local.pt',moge_code='/unused/code',moge_revision='revision',
+                      utils3d_code='/unused/utils')
+        with tempfile.TemporaryDirectory() as tmp:
+            out=Path(tmp);provider_path=out/'provider.json';data.save(provider_path,provider)
+            rows=[]
+            for name,n in [('first_real',2),('second_fake',3)]:
+                row=dict(video_id=name,actual_frames=n,video_sha256=name,pts=[i*.1 for i in range(n)],
+                         native_hw=[4,6],work_hw=[2,3])
+                rows.append(row);folder=out/'geometry'/name;folder.mkdir(parents=True)
+                ident={k:row[k] for k in ['video_sha256','pts','native_hw','work_hw']}
+                ident.update(provider_sha256='provider',moge_weights_sha256='weights',scale=SCALE,h=.5)
+                data.save(folder/'identity.json',ident)
+                for i in range(n):(folder/f'{i:05d}.pt').write_bytes(b'existing-cache-not-loaded')
+            fake_moge=types.ModuleType('moge.model.v2');fake_moge.MoGeModel=Mock()
+            fake_moge.MoGeModel.from_pretrained.side_effect=AssertionError('Must not instantiate MoGe')
+            with patch.object(data,'PROVIDER',provider_path),patch.object(data,'digest',return_value='weights'), \
+                 patch.object(data.subprocess,'check_output',return_value='revision\n'), \
+                 patch.object(data,'cached_geometry_index',return_value={}), \
+                 patch.object(data,'WorkVideo',side_effect=AssertionError('Must not read media')) as work, \
+                 patch.object(data.av,'open',side_effect=AssertionError('Must not decode')) as decode, \
+                 patch.object(data,'prepare_frame',side_effect=AssertionError('Must not route')) as routing, \
+                 patch.object(data.torch,'load',side_effect=AssertionError('Must not load tensors')) as tensors, \
+                 patch.object(data.torch.cuda,'empty_cache') as gpu_cleanup, \
+                 patch.dict('sys.modules',{'moge.model.v2':fake_moge}):
+                data.prepare_geometry(out,rows,dict(provider_sha256='provider'),lambda *a,**k:None)
+            files=list(out.glob('geometry_cost_*.json'));self.assertEqual(len(files),1)
+            self.assertRegex(files[0].name,r'^geometry_cost_[0-9]+\.json$')
+            cost=data.read(files[0]);self.assertEqual(cost['cached_route_frames'],5)
+            self.assertEqual(cost['new_MoGe'],0);self.assertEqual(cost['reused_geometry'],0)
+            self.assertEqual(cost['new_DFormer'],0);self.assertGreaterEqual(cost['seconds'],0)
+            work.assert_not_called();decode.assert_not_called();routing.assert_not_called();tensors.assert_not_called()
+            fake_moge.MoGeModel.from_pretrained.assert_not_called();gpu_cleanup.assert_called_once()
+
     def test_same_output_refuses_concurrent_invocation_without_waiting(self):
         with tempfile.TemporaryDirectory() as tmp:
             first=run.exclusive_lock(Path(tmp))

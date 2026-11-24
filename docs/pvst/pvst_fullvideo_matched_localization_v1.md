@@ -146,3 +146,35 @@ tmux new-session -s pvst-fullvideo-resume 'bash /media/njupt/8FCD3869E2FAB06F/ch
 
 CPU检查20项（原型8项＋本轮12项）：数据来源隔离/数量、相同无放回顺序与观察、缓存身份和两种格式、精确Q1024等价、宏平均、优化器/RNG下一步一致、完整视频边界曝光、磁盘先行保护、仅OOM备用、并发拒绝、自动末次/开发选择表与54固定预览身份。另bash -n、Python编译、git diff --check。
 本轮无正式结果、无全量耗时承诺。发布代码/配置/说明，权重/缓存/预测不入Git；计算准备状态与Git状态分开。**脚本已交付，全量任务尚未启动。** 用户启动后自行运行到既定结束，之后再主动接续结果分析。
+
+## 几何准备收尾恢复修复（2026-11-24）
+
+本次只将`fullvideo_matched_data.py`的统计路径改成`out / f'geometry_cost_{time.time_ns()}.json'`。
+原错误是Path与字符串相加，不涉及MoGe推断、FP32路由、模型、loss、顺序、预算或精度。检查本实验两个入口的同类构造，未发现其他同类错误；visual_cost原括号构造保持不变。
+
+新增CPU回归直接调用prepare_geometry：临时目录中两个视频的全部5帧缓存已存在，mock权重/版本/旧索引、MoGe构建、媒体读取、torch.load、路由及CUDA清理；确认0推断、cached_route_frames=5、生成可解析geometry_cost_<时间戳>.json。不是只测试f-string。共21项CPU检查通过（明确屏蔽CUDA可用性/种子入口）。
+
+原进程已结束，退出1；在prepare阶段完成216/216视频后保存统计时报错，尚无两模式正式检查点，也无prepared/compute完成标记。文件/元数据检查为216视频、28,034/28,034个预期PT文件存在且非空，缺项0、空文件0、临时文件0、异常索引0，全部视频/PTS/尺寸/provider权重/scale/h身份一致。本轮没有读取这些张量、重新路由或验收数值。
+
+恢复证据目录：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_matched_localization_v1/recovery/geometry_finalize_20261124T162105_1795508465655269352`。
+
+- 旧identity、原FAILED状态、failure JSON、geometry_progress和失败调用记录已先备份；coverage_audit.json与coverage_by_video.csv保存一次文件覆盖核对。
+- 仅在准备阶段、无正式状态且protocol/config/orders/monitor/categories/provider/冻结权重以及其他计算源码不变的前提下，active identity只更新fullvideo_matched_data.py这一个摘要。精确旧/新SHA、实际修复提交和前提证据见identity_update.json；原校验保持严格，没有忽略变化选项或重建identity。
+- 几何缓存和各自identity不改，生成来源仍为原失败提交d9998c3777b429d141031489a444b7fe0c6edee7，不能回填为修复提交。
+- 原调用新增MoGe24,637、复用3,397、总耗时3,093.170476秒；原journal仍含24,637个唯一MoGe调用。原geometry_progress阶段耗时3,092.746621秒。cost_baseline.json保存此真实成本；未来恢复调用的new_MoGe=0只代表该次跳过推断，不是累计成本归零。
+- 完整缓存情况下，恢复预期new_MoGe=0、cached_route_frames=28,034，补写几何收尾统计后进入冻结视觉准备；恢复实际耗时/调用数尚未测量。全实验实际调用继续以保留的frontend_calls.jsonl累计，各次失败/状态与geometry_cost/visual_cost日志分别保存耗时。
+- 本轮只执行一次`--plan-only`确认身份/配置可通过，退出0；不执行prepare、--resume、视觉、资源门或训练。计划里的旧混合包缺口字段不代表本次几何缓存仍缺失，恢复采用实际文件缺项逻辑。没有手写prepared/COMPLETE标记。
+
+用户从任意目录续跑（**本轮未执行**）：
+
+```bash
+/media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen/scripts/run_pvst_fullvideo_matched_localization_v1.sh --resume --output /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_matched_localization_v1
+```
+
+如需tmux：
+
+```bash
+tmux new-session -s pvst-fullvideo-match-resume 'bash /media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen/scripts/run_pvst_fullvideo_matched_localization_v1.sh --resume --output /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_fullvideo_matched_localization_v1'
+```
+
+**修复已交付，恢复任务尚未启动。** 原失败与缓存保留，用户自行启动，Codex不轮询。

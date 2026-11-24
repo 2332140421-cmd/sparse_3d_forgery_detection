@@ -260,7 +260,7 @@ def prepare_geometry(out, rows, ident, emit):
         save(out/'geometry_progress.json',dict(**counts,seconds=time.monotonic()-start))
         del work,xyz,valid
     del moge;gc.collect();torch.cuda.empty_cache()
-    save(out/'geometry_cost_'+str(time.time_ns())+'.json',dict(**counts,seconds=time.monotonic()-start))
+    save(out / f'geometry_cost_{time.time_ns()}.json',dict(**counts,seconds=time.monotonic()-start))
 
 
 def prepare_visual(out,rows,ident,emit):
