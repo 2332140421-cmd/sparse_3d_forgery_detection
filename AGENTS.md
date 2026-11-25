@@ -336,3 +336,15 @@ results, or inconsistency between the paper and implementation.
   exact OOM-only Q1024 fallback, per-video atomic resume and original metrics.
   Codex only runs metadata/CPU checks and one bounded cached-video interface
   smoke. User launches full prepare, queue extremes and training; no polling.
+
+
+## Official MumPy ANAKIN transfer
+
+- ADR-0057/root17.14 authorize one official full MumPy RGB baseline, frozen89/19
+  source split and official generic initializer. Keep all three views/DWTI/DCT/
+  multi-pyramid decoder; never substitute the spatial baseline or PVST relations.
+- Three centered RGB frames with explicit boundary clamping; exclude40y1x9 fake6–9
+  only as targets. Ten full target epochs, official SGD/polynomial/focal+IoU,
+  effective batch12 (Davis collate actual clips) and native source-macro metrics; best additional-dev and last.
+- Codex runs bounded discardable smoke only. User starts full terminal/tmux job;
+  no long-task monitoring, new data/frontends, test access or old-result writes.

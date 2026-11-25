@@ -1,0 +1,180 @@
+# 官方MumPy的ANAKIN适配与训练脚本交付
+
+状态：**实现、CPU检查和真实短预检通过；正式训练尚未启动，等待用户在终端启动**。2026-11-26。
+
+本轮只建立一个公开视频时空定位基线，不修改旧PVST/AINPAINT，不实现XYZ C、DETAIL_ONLY或额外分类头。它是ANAKIN迁移，不能称作者原数据/原预算完整复现，也不能据其结果单独证明三维或时间贡献。
+
+## 官方版本与实际调用路径
+
+- 论文：[BMVC2024 MumPy](https://arxiv.org/html/2404.11054v3)。
+- 官方源码：[OUC-VAS/Mumpy](https://github.com/OUC-VAS/Mumpy/tree/bc9280a0839f97375b8dda2dcd6d5b5052083f13)，固定完整commit `bc9280a0839f97375b8dda2dcd6d5b5052083f13`。
+- 本机源码：`/media/njupt/8FCD3869E2FAB06F/chenyh/third_party/Mumpy`；外部源码无修改。
+- 适配模块：`research_tools/mumpy_anakin/model.py`、`data.py`、`experiment.py`；直接caller是本轮shell脚本。输出单中帧连续logit、训练/评价/恢复状态与固定预览。旧入口没有MumPy三视图和中帧数据接口，所以需要这三个薄模块，没有新增通用平台。
+
+实际实例为`MumPy(encoder=官方Encoder(base=ThreeViewSwinTransformer), decoder=官方Decoder)`，不是BaselineEncoder、BaselineDecoder或我们自建的两层注意力。factory直接沿官方`create_multiswin`，仅在构造作用域内将相对初始化路径换为已核验的绝对文件、记录键覆盖；旧工具的导入不意味着实例化或调用旧PVST网络。
+
+|执行部分|官方位置|事实|
+|---|---|---|
+|入口/损失/优化|train.py、scripts/train_davis.sh|三组SGD，focal+IoU，多项式调度|
+|构建|models/factory/modelFactory.py:create_multiswin|三分支配置和官方预训练入口|
+|编码|models/encoder/encoder.py:Encoder|完整base输出高层、各stage/view、DCT|
+|交互|models/encoder/multiTemporalViewEncoder.py|四stage、可变形跨view与globalblocks|
+|Q/K/V|models/modules/swinTransformer.py、deformableAttention.py、blocks.py|同view self、相邻view cross、对齐时间槽self|
+|定位|models/decoder/decoder.py:Decoder|时间视图/频率/多源金字塔，输出224全画面|
+|原采样/增广|dataloaders/universaldataloader.py、universaldataset.py；utils/randaugment.py|3帧中帧监督、边界夹取、共享变换|
+
+### 完整张量流（实测micro-batch B=2）
+
+```text
+同一被检测视频 RGB [B,3,3,224,224]，不读配对干净real
+ ├─ FAF/DCT/三频段IDCT：只用中帧 → [B,9,224,224]
+ └─ 三个Conv3d tokenizer，tubelet时间长度3/2/1、空间4×4
+      [B,1,3136,96] / [B,1,3136,96] / [B,3,3136,128]
+      → 按官方align时间维；四stage窗口/移位窗口Swin与跨view交互
+      → stage空间56/28/14/7，view通道
+          (96,96,128) → (192,192,256) → (384,384,512) → (768,768,1024)
+      → 高层按3个时间槽对齐/拼通道 [B,3,49,2560]
+      → globalembedding 2560→768
+      → 官方12层/12头globalblocks
+      → 三时间槽拼通道，Encoder高层 [B,2304,7,7]
+各stage三view + 中帧DCT + 高层 → 官方Decoder
+      → 连续logit [B,1,224,224]，只对应输入slot1
+      → FP32原生尺寸双线性恢复 → 定位计分
+```
+
+实测各stage的第三view序列长度分别为9408/2352/588/147，是其3个时间槽的折叠表示；其余两view为3136/784/196/49。最终decoder特征为`[B,32,224,224]`。
+
+Swin self-attention的Q/K/V来自同view内容，使用官方相对位置。DWTI的Q来自较大tubelet的view，K/V来自相邻较小tubelet view经offset/grid_sample和通道投影的内容；不是GT区域查询。每stage首块交互，其余按官方深度执行，Tiny对应较浅分支。globalblocks沿官方`vmap(..., in_dims=2)`对每个空间token的3个对齐时间槽做self-attention；不是整段视频全部空间块的联合attention。
+
+Decoder将各stage/view对齐到3时间槽，经Conv3d/GroupNorm融合；频率辅助保留作者FAF的实际三滤波区间和IDCT，逐层池化/卷积；SEB、GlobalConv、乘法融合、PixelShuffle/DAP和final_out均沿原实现。没有新增DCT算法、光流、XYZ、帧分类或真假门控。
+
+## 初始化与环境：不静默漏载
+
+作者README将`weights`描述为ImageNet初始化目录。只下载其明确链接的[weight.pth](https://drive.google.com/file/d/1gpxMheyI8KfeSgMwye_J8TONuk8A-AIe/view)，**994,132,507字节**，SHA256：
+`057a5f796dc2f38fa708a804e8800ae516cc831e5430bd88cda2cfc444d4f41a`。
+
+本机路径：`/media/njupt/8FCD3869E2FAB06F/chenyh/weights/mumpy/weight.pth`。下载流式记录约994.36秒（16分34秒），没有下载数据集。作者没有在本仓库提供逐层上游转换脚本，所以“通用初始化”依据作者声明和实际结构覆盖，不能把文件中每个张量都独立宣称为经过取证训练或经我们核实的某个ImageNet训练阶段。
+
+实际flat dict1023键：载入**248,163,004个参数**，包括三视图tokenizer/Swin和globalblocks。新初始化：encoder内pre/CVA与globalembedding **10,104,768**参数，Decoder **14,414,721**参数，共新参数24,519,489；总计**272,682,493**可训练参数。149个missing state键含这些新增模块及构造时可重建的shifted-window attn_mask；unexpected为0。所有同名shape必须吻合；tokenizer、Swin主干或globalblocks关键参数缺失直接拒绝。不能把官方原来的strict=False当作无条件成功。
+
+没有加载旧PVST、DFormer、AINPAINT定位权重或MumPy取证终点。静态DCT/滤波张量按官方定义生成，不作训练参数。新模块严格遵循官方初始化，CVA proj_out初始为0，不能据首步内部梯度0判断断路。
+
+Python仍是`/media/njupt/8FCD3869E2FAB06F/chenyh/envs/v8/bin/python`，Torch2.5.1+cu124、torchvision0.20.1+cu124未改。独立overlay：`/media/njupt/8FCD3869E2FAB06F/chenyh/envs/mumpy-packages`，安装timm0.6.13、ml_collections1.1.0、easydict1.14、absl_py2.5.1，复用原rgbd overlay；未安装另一个Torch/CUDA、未固定过时Pillow4。脚本设置独立PYTHONPYCACHEPREFIX，不在官方checkout产生pycache改动。
+
+### 必要迁移/兼容修正清单
+
+1. 官方factory相对权重路径改为局部加载适配，不改外部文件；显式区分已载入主干、新初始化融合/CVA/decoder与确定性mask。
+2. 数据入口改为已有ANAKIN来源清单，同一被检测video的3帧，中帧GT。与官方多修复版本collate不同，不使用配对real作fake参考。
+3. 官方可选`SingleAugment`策略，保留Identity/HFlip/VFlip/PsccAug操作和共享片段变换；不使用默认DoubleAugment中的GT引导裁剪。RGB bicubic，类别mask nearest，评价完整画面不裁ROI。该选择在开发评价前固定，非搜索结果。
+4. 作者`softIoULoss`把recall=False作为第三位置参数传给helper，实际变成epsilon=0。为ANAKIN合法空mask及饱和负logit稳定，直接调用原`softIoU` helper并显式`e=1e-6,recall=False`。WeightedFocal沿发布代码**alpha=[1,1]、gamma2**，不静默换成论文文字中的类别权重，也不写成BCE/Dice。
+5. 本环境Torch2.5/vmap的BF16深度卷积出现input/bias dtype不一致，最终使用发布代码原式**FP32前向/损失/原生输出**。没有删分支或替换attention。原BF16失败记录保留。
+6. 恢复补全三个优化器（包括CVA）、三个scheduler、epoch/呈现数、Python/NumPy/Torch/CUDA RNG；FP32无GradScaler，mixed_precision_state明确为null。原训练代码恢复项不足以直接满足此要求。
+
+## 冻结ANAKIN协议与默认预算
+
+来源清单直接复用`pvst_fullvideo_matched_localization_v1/protocol.json`及其既有类别：89训练来源/178视频，每轮22878合法目标（real11451、fake11427）；开发19来源/38视频/5152唯一目标，原4为824、新增15为4328。94保护测试来源不参与。没有重划分、人工审阅前置或按效果剔除。
+
+40y1x9_fake帧6–9不参与目标loss/计分；RGB可作同视频上下文，例如目标10读取[9,10,11]，不将9作为正常监督。缓存保留原始标注状态及明确排除索引，不造全零mask充当未知标签。真实空GT仍合法，单列误报。
+
+每目标取`[clamp(t-1),t,clamp(t+1)]`，首帧[0,0,1]、末帧[n-2,n-1,n-1]；不跨视频/版本，输出slot1唯一计分。逐帧CSV/JSON保存输入索引、实际PTS与target_slot。时间跨度随视频帧率，不强行套用旧8槽/.1秒历史。
+
+输入为已有解码工作RGB（旧长边384全内容）再次整帧bicubic至224×224，复用原片段/帧身份，不重新解码视频。归一化保持作者mean [.4776,.479,.4465]、std [.230,.2085,.2324]。这是复用缓存的两次缩放，不等同于从原生RGB直接224；与旧AINPAINT长边384/pad14/ImageNet归一化不同，不能把成绩差当纯时序增量。
+
+只为这次MumPy建立RGB224/官方native→nearest224的GT缓存，不复制旧几何/冻结特征整库。短预检已准备3视频396帧，2.510278秒，其余27638帧由用户启动时补齐；新增RGB视频解码、MoGe、DINO、DFormer均0。
+
+### 实际batch与轮数
+
+论文写batch12；官方Davis启动参数写batch_size6，但`UniversalDataset.collate_fn`把两种修复版本拼接，**实际模型batch12**。因此最终采用有效batch12、micro2、累积6个micro；尾批6目标累积3个micro，按实际目标数归一化，不drop_last。
+
+- seed20260909；10完整无放回epoch，同清单每目标每轮呈现一次。
+- 每轮11439个micro-batch，1907次有效联合更新；总114390个micro、**19070次联合更新**。三个SGD分别各19070次step；不是沿用旧534或228780更新。
+- 总目标呈现228780次。每轮最后6个目标全部保留。保存10轮实际orders和按来源/视频/role的train_exposure.csv。
+- 沿Davis脚本三组SGD：encoder非CVA lr1e-3、decoder lr1e-2、CVA lr1e-2；momentum .9、wd1e-4，无额外clip/scheduler搜索。
+- 原PolynomialLR，power .9、min_lr1e-5、无warmup，总进度19070；不照搬作者50epoch或YTVI脚本另一配置。
+- 主干和全部定位相关模块可训练，无冻结取证底座。帧/视频分类不增加。
+- 每轮训练观察固定32目标、8个训练来源；每轮完整开发5152帧。训练观察不是完整训练集。
+- AP：原生FP32连续logit、仅正GT fake帧→视频→来源等权；Dice/IoU/召回/两类FPR阈值概率.5。空GT不补AP，fake空mask FPR另存。
+- 全19为主表；历史4、新增15、对象16、外观背景3及逐19来源同时保留。新增15宏AP选择检查点、同分早轮；第10轮末次单列，不称独立测试。
+
+## 短预检真实结果与限制
+
+已在RTX4090完成2个来源的3个固定合法目标：4ym5n4_fake/0（边界）、40y1x9_fake/10（含无标签历史9）、40y1x9_real/0（空mask）。完整原型所有主要分支参与前向/反向。
+
+|丢弃更新|目标呈现|WeightedFocal|soft-IoU loss|总loss|含CPU组batch/前反向/更新秒|峰值allocated/reserved GiB|
+|---|---:|---:|---:|---:|---:|---|
+|1|6|.13738378|.98205805|1.11944183|.901564|4.63161/4.83008|
+|2|6|.08080391|.98342437|1.06422830|.452040|5.65301/5.87891|
+
+预检当时尚按脚本表面batch6进行，2次联合更新共12目标呈现、6次训练micro-forward/backward；随后核对collate后，将正式计划固定为有效12/19070更新。**没有把这两步冒充最终正式batch12的训练成绩或稳定吞吐**。最终12及尾批6的目标归一化另经CPU梯度等价测试，micro2实际显存已测；无需重跑GPU小探针。预检权重`discarded.pt`不进入formal路径，正式从同seed通用初始化＋新优化器开始。
+
+第2步梯度L2：三view投影约.11518/.07766/.08158、Swin .05534、CVA .14687、CVA内部2.3764e-5、global .10130、频率decoder .04993、定位decoder1.41095，均有限非零。第1步CVA内部为0，符合零初始化proj_out的链式梯度，不判为断路。
+
+实际走通完整模型/全部optimizer/scheduler/RNG的checkpoint保存恢复、3个目标原生评价、JSON/CSV/report与3目标RGB/GT/预测预览。短评价仅接口验证，不是正式开发成绩。
+
+保留两次失败：首次初始化检查尚未把明确新模块和attn_mask列入白名单，未完成前向/更新；第二次BF16/vmap dtype不兼容，未完成更新；FP32成功调用才完成2次丢弃更新。没有OOM、截短模型或改变三视图结构。失败文件与日志保留，不无限自动重试。
+
+成功证据目录：
+`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_anakin_mumpy_baseline_v1/smoke/1795625471983931675/`
+
+成功日志：
+`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_anakin_mumpy_baseline_v1/invocations/20261126T005109_3808640.log`
+
+正式训练粗估：按两步目标吞吐，单训练计算约4.8–7.2小时；加10轮原生开发AP/观察、数据I/O与检查点，建议预留**约6–12小时**。只有冷/暖两步和3个小目标，不是稳定吞吐，完整开发高分辨率原生AP可能使耗时更高。首轮日志会按实际近期吞吐更新剩余训练时间，Codex不监控等待。
+
+## 终端启动、tmux、恢复与仅评价
+
+启动脚本绝对路径：
+`/media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen/scripts/run_pvst_anakin_mumpy_baseline_v1.sh`
+
+直接启动：
+
+```bash
+cd /media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen
+bash scripts/run_pvst_anakin_mumpy_baseline_v1.sh
+```
+
+推荐tmux：
+
+```bash
+tmux new-session -s anakin-mumpy 'cd /media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen && bash scripts/run_pvst_anakin_mumpy_baseline_v1.sh'
+```
+
+恢复：
+
+```bash
+cd /media/njupt/8FCD3869E2FAB06F/chenyh/projects/pvst-geometry-dataset-screen
+bash scripts/run_pvst_anakin_mumpy_baseline_v1.sh --resume
+```
+
+恢复粒度是已完成epoch：最后一个未保存完整epoch的部分更新会重做，明确不算已提交预算；不会从discarded.pt或旧取证检查点续训。checkpoint已经保存而评价未完成时先补该轮评价，再继续下一轮；完成的开发不重训。三个优化器/调度器、进度与RNG独立恢复。工作/权重/配置/代码身份不同会拒绝混用，不能用忽略身份开关绕过。
+
+仅评价明确的正式权重（不训练，拒绝epoch0预检）：
+
+```bash
+bash scripts/run_pvst_anakin_mumpy_baseline_v1.sh --evaluate-only --checkpoint /media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_anakin_mumpy_baseline_v1/formal/epoch10.pt
+```
+
+已保存评价后的纯CPU报告整理：
+
+```bash
+bash scripts/run_pvst_anakin_mumpy_baseline_v1.sh --report-only
+```
+
+可选先仅准备RGB224缓存：同脚本`--prepare-only`。Codex没有执行完整队列准备或训练。`--output`改变独立根目录；已有完成正式结果时不应无意重启，用`--resume`或`--report-only`。
+
+## 自动产物、检查与Git交付
+
+结果根：`/media/njupt/8FCD3869E2FAB06F/chenyh/data/sparse_3d_forgery_detection/derived/pvst_anakin_mumpy_baseline_v1/`。
+
+- `rgb224/<video>/`：共享小型RGB/GT数组及完成身份；按缺项续备，不覆盖旧实验缓存。
+- `formal/protocol.json`、config/identity/orders/monitor、train_exposure.csv：正式冻结身份与曝光计划。
+- `formal/epochXX.pt`：每轮完整可恢复状态；epochXX_loss、monitor/dev JSON/CSV保存全部指标与loss分项。
+- `formal/selection.json`、summary.json、group_metrics.csv、report.md：开发选择与末次结果、范围/来源明细，不提前将未完成预览标为COMPLETE。
+- `formal/preview/index.html`：原54固定目标，末次与开发选择的概率图/0.5二值mask；概率统一0–1，不按效果挑图，不用8bit图重算AP。
+- `invocations/<时间_PID>.log`、exit_code/launcher_exit_code：python -u＋tee，保留Python实际退出码，不只保存tee返回值。异常另写failure JSON，完整计算与Git发布状态分开。
+
+CPU回归9项：数据身份/来源隔离/全目标顺序、必要初始化白名单、边界/中帧/无标签上下文、共享官方增广与类别mask、官方focal+IoU/极端空mask稳定、三个optimizer/scheduler/RNG恢复、有效12/尾6梯度累积等价、真实预览/JSON/CSV/report完整收尾与禁止提前COMPLETE、report-only入口不初始化/加载模型。shell语法和diff检查通过。
+
+正式预算修订及最后日志/恢复保护只改组织层，不再触发GPU预检。成功smoke的配置与源码摘要保留当次事实，不回填成最终源码版本；交付版本经过最终CPU回归。所有预检权重、大资产、媒体与缓存留服务器，不提交Git。普通push，最终HEAD和远端核对见交付回执。
+
+**正式训练尚未启动，等待用户在终端启动。** 本轮到此停止，不启动tmux/nohup、不持续轮询GPU，也不追加架构、seed或损失搜索。
