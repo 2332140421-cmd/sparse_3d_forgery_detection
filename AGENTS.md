@@ -348,3 +348,11 @@ results, or inconsistency between the paper and implementation.
   effective batch12 (Davis collate actual clips) and native source-macro metrics; best additional-dev and last.
 - Codex runs bounded discardable smoke only. User starts full terminal/tmux job;
   no long-task monitoring, new data/frontends, test access or old-result writes.
+
+## Official MumPy augmentation comparison
+
+- ADR-0058/root17.15 authorize only independent DoubleAugment with official
+  sampling and categorical mask interpolation fixes, old Single default intact.
+  Shared read-only RGB224, same89/19/init/orders/budget/loss/SGD/FP32; no new data,
+  features, architecture or thresholds. Codex only two discard updates; user
+  starts full terminal run. Preserve old artifacts and keep labels out of input.

@@ -99,7 +99,16 @@ def optimizers(model,total_updates):
     return opts,scheds
 
 
-def augmentation():
+def augmentation(policy="single"):
+    if policy == "double":
+        from .double_augment import DoubleAugment
+        return DoubleAugment()
+    assert policy == "single"
+    mod=official_augmentation_module()
+    return mod.RandAugment(1,7,mod.OneAugmentStrategy())
+
+
+def official_augmentation_module():
     """Released optional SingleAugment policy: shared Identity/H/V/dihedral.
 
     Importing author config would open DAVIS paths at module import. Supply only
@@ -110,4 +119,4 @@ def augmentation():
     spec=importlib.util.spec_from_file_location('mumpy_augmentation',OFFICIAL/'utils/randaugment.py')
     mod=importlib.util.module_from_spec(spec)
     with patch.dict(sys.modules,{'configs.davis.config':cfgmodule}):spec.loader.exec_module(mod)
-    return mod.RandAugment(1,7,mod.OneAugmentStrategy())
+    return mod

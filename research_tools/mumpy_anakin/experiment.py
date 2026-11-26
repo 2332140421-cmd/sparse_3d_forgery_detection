@@ -38,7 +38,22 @@ def identity(config):
     assert WEIGHT.is_file(),'Required author-linked initialization is missing; no random fallback'
     return dict(official_revision=revision,weight_sha256=digest(WEIGHT),weight_bytes=WEIGHT.stat().st_size,
         source_protocol_sha256=digest(data.SOURCE/'protocol.json'),source_categories_sha256=digest(data.SOURCE/'categories.json'),
-        config=config,torch_version=str(torch.__version__),shared_helpers_sha256={name:digest(REPO/name) for name in ['research_tools/xyz_pilot/fullvideo_context_diagnosis.py','research_tools/xyz_pilot/fullvideo_matched.py','research_tools/xyz_pilot/fullvideo_matched_data.py','scripts/review_anakin.py']},code_sha256={p.name:digest(p) for p in [Path(__file__),Path(__file__).with_name('model.py'),Path(__file__).with_name('data.py')]})
+        config=config,torch_version=str(torch.__version__),shared_helpers_sha256={name:digest(REPO/name) for name in ['research_tools/xyz_pilot/fullvideo_context_diagnosis.py','research_tools/xyz_pilot/fullvideo_matched.py','research_tools/xyz_pilot/fullvideo_matched_data.py','scripts/review_anakin.py']},code_sha256={p.name:digest(p) for p in [Path(__file__),Path(__file__).with_name('model.py'),Path(__file__).with_name('data.py')]+([Path(__file__).with_name('double_augment.py'),Path(__file__).with_name('double_comparison.py')] if config.get('augmentation_policy')=='double' else [])})
+
+
+def check_initialization(model_sha,config):
+    if config.get('augmentation_policy')=='double':
+        old=data.read(Path(config['single_reference_root'])/'formal/initialization.json')
+        assert model_sha==old['model_sha256'],'COMMON_INITIALIZATION_MISMATCH'
+
+
+def verify_reference(out,config):
+    old=Path(config['single_reference_root'])/'formal'
+    for name in ['protocol.json','orders.json','monitor.json']:
+        assert data.read(out/name)==data.read(old/name),('REFERENCE_LIST_CHANGED',name)
+    before=data.read(old/'config.json')
+    excluded={'augmentation','augmentation_policy','condition','read_only_cache','single_reference_root'}
+    assert {k:v for k,v in config.items() if k not in excluded}=={k:v for k,v in before.items() if k not in excluded},'NON_AUGMENTATION_CONFIG_CHANGED'
 
 
 def freeze(out,config,ident):
@@ -62,22 +77,28 @@ def freeze(out,config,ident):
     return protocol,orders,monitor
 
 
-def prepare(root,rows):
-    start=time.monotonic();cost=[data.prepare_video(root,r,emit) for r in rows]
+def prepare(root,rows,read_only=False,record_root=None):
+    start=time.monotonic()
+    if read_only:
+        assert all((root/'rgb224'/r['video_id']/'complete.json').is_file() for r in rows),'READ_ONLY_CACHE_MISSING'
+    cost=[data.prepare_video(root,r,emit) for r in rows]
     value=dict(new_RGB224_GT_frames=sum(c['new_frames'] for c in cost),reused_RGB224_GT_frames=sum(c['reused_frames'] for c in cost),
         new_decode_frames=0,new_MoGe=0,new_DINO=0,new_DFormer=0,seconds=time.monotonic()-start)
-    save(root/f'preparation_{time.time_ns()}.json',value);return value
+    save((record_root or root)/f'preparation_{time.time_ns()}.json',value);return value
 
 
 def batch_update(model,opts,scheds,dataset,ts,config,diagnostics=False):
     assert len(ts)<=config['effective_batch'];model.train();start=time.monotonic()
     for o in opts:o.zero_grad(set_to_none=True)
-    sums=collections.Counter()
+    sums=collections.Counter();forward_seconds=backward_seconds=prepare_seconds=0.
     for start_index in range(0,len(ts),config['micro_batch']):
-        chosen=ts[start_index:start_index+config['micro_batch']];x,y=dataset.batch(chosen);x=x.cuda();y=y.cuda()
+        chosen=ts[start_index:start_index+config['micro_batch']];tick=time.monotonic();x,y=dataset.batch(chosen);prepare_seconds+=time.monotonic()-tick;x=x.cuda();y=y.cuda()
+        if diagnostics:sync();tick=time.monotonic()
         z=model(x)
         loss,parts=losses(z,y)
+        if diagnostics:sync();forward_seconds+=time.monotonic()-tick;tick=time.monotonic()
         (loss*len(chosen)/len(ts)).backward()
+        if diagnostics:sync();backward_seconds+=time.monotonic()-tick
         sums['loss']+=float(loss.detach())*len(chosen)/len(ts)
         for k,v in parts.items():sums[k]+=v*len(chosen)/len(ts)
     gradients={};families={
@@ -98,14 +119,15 @@ def batch_update(model,opts,scheds,dataset,ts,config,diagnostics=False):
             assert torch.isfinite(p.grad).all(),('NONFINITE_GRADIENT',name)
             for family,belongs in families.items():
                 if belongs(name):gradients[family]=gradients.get(family,0)+float(p.grad.float().square().sum())
+    if diagnostics:sync();tick=time.monotonic()
     for o in opts:o.step()
     for s in scheds:s.step()
     sync()
-    return dict(**sums,batch_targets=len(ts),gradient_norm=float(norm),gradient_L2={k:math.sqrt(v) for k,v in gradients.items()},seconds=time.monotonic()-start,**memory())
+    return dict(**sums,preparation_seconds=prepare_seconds,forward_seconds=forward_seconds if diagnostics else None,backward_seconds=backward_seconds if diagnostics else None,update_seconds=time.monotonic()-tick if diagnostics else None,batch_targets=len(ts),gradient_norm=float(norm),gradient_L2={k:math.sqrt(v) for k,v in gradients.items()},seconds=time.monotonic()-start,**memory())
 
 
 def checkpoint(path,model,opts,scheds,ident,epoch,updates,observations):
-    value=dict(condition='MUMPY_ANAKIN',state_dict={k:v.detach().cpu() for k,v in model.state_dict().items()},
+    value=dict(condition=ident.get('config',{}).get('condition','MUMPY_ANAKIN'),state_dict={k:v.detach().cpu() for k,v in model.state_dict().items()},
         optimizer=[o.state_dict() for o in opts],scheduler=[s.state_dict() for s in scheds],mixed_precision_state=None,
         precision='official-style FP32; no scaler',identity=ident,epoch=epoch,next_epoch=epoch+1,updates=updates,
         target_presentations=observations,random_state=rng_state())
@@ -116,7 +138,7 @@ def checkpoint(path,model,opts,scheds,ident,epoch,updates,observations):
 
 def restore(path,model,opts,scheds,ident,training=True):
     cp=torch.load(path,map_location='cpu',weights_only=False)
-    assert cp['identity']==ident and cp['condition']=='MUMPY_ANAKIN'
+    assert cp['identity']==ident and cp['condition']==ident.get('config',{}).get('condition','MUMPY_ANAKIN')
     model.load_state_dict(cp['state_dict'],strict=True)
     assert state_hash(model.state_dict())==cp['model_sha256']
     if training:
@@ -181,7 +203,7 @@ def report(out,rows):
     lines=['# MumPy官方结构的ANAKIN迁移（程序报告）','',
         '本模型不是XYZ C。通用作者提供初始化，完整三视图Swin/可变形交互/全局时间Transformer/DCT/多金字塔Decoder；同源视频片段只输出中帧。',
         '训练89/178视频，开发19/38视频；每轮22878合法目标、5152开发帧。10完整轮，共228780目标呈现；正式有效batch12、micro2，每轮1907有效更新（末批6目标）、总19070。',
-        'loss为官方WeightedFocal(alpha=[1,1],gamma2)+softIoU，非BCE/Dice。官方三组SGD/多项式调度；迁移采用官方可选SingleAugment和FP32，不是作者原数据/完整预算复现。',
+        'loss为官方WeightedFocal(alpha=[1,1],gamma2)+softIoU，非BCE/Dice。官方三组SGD/多项式调度；迁移采用配置中显式登记的增广策略和FP32，不是作者原数据/完整预算复现。',
         '', '|轮|全部19 AP|Dice|召回|real FPR|新增15 AP|','|---|---:|---:|---:|---:|---:|']
     for e,ev in evs:
         a=ev['macro'];lines.append(f"|{e}|{a['pixel_AP']:.8f}|{a['Dice']:.8f}|{a['GT_recall']:.8f}|{a['real_FPR']:.8f}|{ev['groups']['新增15开发来源']['pixel_AP']:.8f}|")
@@ -220,15 +242,18 @@ def report(out,rows):
                 path=folder/(stem+'_'+suffix+'.png')
                 if path.exists():page.append(f'<label>{suffix}<img width="16%" src="{path.name}"></label>')
     (folder/'index.html').write_text('\n'.join(page))
+    if (out/'config.json').exists() and data.read(out/'config.json').get('augmentation_policy')=='double':
+        from .double_comparison import compare
+        compare(out)
 
 
 def smoke(root,out,protocol,config,ident):
     """Two discard updates over true targets, real boundary/empty-mask cases."""
     out.mkdir(parents=True,exist_ok=True);rows=protocol['rows'];byid={r['video_id']:r for r in rows}
     chosen=[('4ym5n4_fake',0),('40y1x9_fake',10),('40y1x9_real',0)]
-    selected=[byid[v] for v in dict(chosen)];cost=prepare(root,selected)
-    seed();model=MumPy().cuda();opts,scheds=optimizers(model,config['total_updates']);cache=data.Clips(root,selected,training=True)
-    initial=state_hash(model.state_dict());save(out/'initialization.json',dict(loading=model.loading,model_sha256=initial,parameters=sum(p.numel() for p in model.parameters())))
+    selected=[byid[v] for v in dict(chosen)];cost=prepare(root,selected,read_only=config.get('read_only_cache',False),record_root=out)
+    seed();model=MumPy().cuda();opts,scheds=optimizers(model,config['total_updates']);cache=data.Clips(root,selected,training=True,augmentation_policy=config.get('augmentation_policy','single'))
+    initial=state_hash(model.state_dict());check_initialization(initial,config);save(out/'initialization.json',dict(loading=model.loading,model_sha256=initial,parameters=sum(p.numel() for p in model.parameters())))
     # Passive stage-shape hooks, no capture mode or architecture change.
     shapes={};hooks=[]
     def capture(name):
@@ -271,10 +296,10 @@ def smoke(root,out,protocol,config,ident):
     report(out,[dict(byid[v],split='dev',preview_targets=[i]) for v,i in chosen])
     result=dict(status='SMOKE_PASS_FORMAL_NOT_STARTED',exit_code=0,updates=2,target_presentations=2*config['effective_batch'],steps=records,
         checkpoint_restore='PASS',initialization=model.loading,shapes=shapes,parameters=sum(p.numel() for p in model.parameters()),
-        preparation=cost,metrics_for_interface_only=ev['macro'],new_MoGe=0,new_DINO=0,new_DFormer=0,
+        augmentation_statistics=cache.augmentation_stats,initial_model_sha256=initial,preparation=cost,metrics_for_interface_only=ev['macro'],new_MoGe=0,new_DINO=0,new_DFormer=0,
         coarse_training_seconds=10*22878/12*np.mean([r['seconds'] for r in records]),
         estimate_note='two cold updates only, excludes full dev/observation/native AP/checkpoints and sustained throughput',**memory())
-    save(out/'result.json',result);save(root/'smoke_latest.json',dict(path=str(out),status=result['status']))
+    save(out/'result.json',result);save(out.parent.parent/'smoke_latest.json',dict(path=str(out),status=result['status']))
     emit('SMOKE_COMPLETE',status=result['status'],output=str(out),steps=2,**memory())
     del model,opts,scheds;gc.collect();torch.cuda.empty_cache()
 
@@ -284,9 +309,11 @@ def run(root,out,p,orders,monitor,config,ident,resume):
     if (out/'initialization.json').exists() or (out/'epoch01.pt').exists():assert resume,'Use --resume, never silently restart'
     if (out/'status.json').exists() and data.read(out/'status.json')['status']=='COMPLETE':
         report(out,rows);emit('already_complete',output=str(out));return
-    prepare(root,rows);dataset=data.Clips(root,rows,training=True);evalset=data.Clips(root,rows)
+    prepare(root,rows,read_only=config.get('read_only_cache',False),record_root=out);dataset=data.Clips(root,rows,training=True,augmentation_policy=config.get('augmentation_policy','single'));evalset=data.Clips(root,rows)
     seed();model=MumPy(initialize=not (out/'epoch01.pt').exists()).cuda();opts,scheds=optimizers(model,config['total_updates'])
-    if not (out/'initialization.json').exists():save(out/'initialization.json',dict(model_sha256=state_hash(model.state_dict()),loading=model.loading,parameters=sum(p.numel() for p in model.parameters())))
+    if not (out/'initialization.json').exists():
+        initial=state_hash(model.state_dict());check_initialization(initial,config)
+        save(out/'initialization.json',dict(model_sha256=initial,loading=model.loading,parameters=sum(p.numel() for p in model.parameters())))
     updates=0;presentations=0;begin=time.monotonic();timings=[]
     for epoch,order in enumerate(orders,1):
         save(out/'status.json',dict(status='RUNNING',stage='epoch',epoch=epoch,updates=updates,target_presentations=presentations))
@@ -301,12 +328,13 @@ def run(root,out,p,orders,monitor,config,ident,resume):
             if epoch>1:
                 previous=out/f'epoch{epoch-1:02d}.pt';cp=restore(previous,model,opts,scheds,ident)
                 assert cp['epoch']==epoch-1 and cp['updates']==updates and cp['target_presentations']==presentations
-            losses_epoch=[];torch.cuda.reset_peak_memory_stats();start=time.monotonic()
+            losses_epoch=[];dataset.augmentation_stats={};torch.cuda.reset_peak_memory_stats();start=time.monotonic()
             for j in range(0,len(order),config['effective_batch']):
                 rec=batch_update(model,opts,scheds,dataset,order[j:j+config['effective_batch']],config);updates+=1;presentations+=len(order[j:j+config['effective_batch']]);timings.append(rec['seconds']);losses_epoch.append(rec)
                 if updates%10==0 or j+config['effective_batch']>=len(order):emit('train',epoch=epoch,epochs=10,batch=j//config['effective_batch']+1,batches=config['updates_per_epoch'],update=updates,total_updates=config['total_updates'],
                     target_presentations=presentations,lr=[o.param_groups[0]['lr'] for o in opts],elapsed_seconds=time.monotonic()-begin,
                     estimated_remaining_train_seconds=np.mean(timings[-100:])*(config['total_updates']-updates),**rec)
+            if config.get('augmentation_policy')=='double':save(out/f'epoch{epoch:02d}_augmentation.json',dataset.augmentation_stats)
             checkpoint(ep,model,opts,scheds,ident,epoch,updates,presentations)
             save(out/f'epoch{epoch:02d}_loss.json',dict(epoch=epoch,updates=updates,target_presentations=presentations,
                 **{k:float(sum(r[k]*r['batch_targets'] for r in losses_epoch)/sum(r['batch_targets'] for r in losses_epoch)) for k in ['loss','weighted_focal','soft_IoU']},seconds=time.monotonic()-start,**memory()))
@@ -333,6 +361,7 @@ def run(root,out,p,orders,monitor,config,ident,resume):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,default=OUT)
+    parser.add_argument('--config',type=Path,default=CONFIG);parser.add_argument('--cache-root',type=Path)
     parser.add_argument('--smoke',action='store_true');parser.add_argument('--resume',action='store_true');parser.add_argument('--prepare-only',action='store_true')
     parser.add_argument('--evaluate-only',action='store_true');parser.add_argument('--checkpoint',type=Path);parser.add_argument('--report-only',action='store_true')
     args=parser.parse_args();root=args.output;root.mkdir(parents=True,exist_ok=True);out=(root/'smoke'/str(time.time_ns())) if args.smoke else root/'formal';out.mkdir(parents=True,exist_ok=True)
@@ -340,18 +369,22 @@ def main():
     try:
         lock=(out/'invocation.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         if args.report_only:report(out,data.read(out/'protocol.json')['rows']);return
-        config=data.read(CONFIG);ident=identity(config);p,orders,monitor=freeze(out,config,ident)
-        if args.prepare_only:prepare(root,p['rows']);return
+        config=data.read(args.config);ident=identity(config);p,orders,monitor=freeze(out,config,ident)
+        cache_root=args.cache_root or root
+        if config.get('read_only_cache'):
+            expected=Path(config['single_reference_root']);assert cache_root.resolve()==expected.resolve(),'EXPECTED_ORIGINAL_CACHE'
+            verify_reference(out,config)
+        if args.prepare_only:prepare(cache_root,p['rows'],read_only=config.get('read_only_cache',False),record_root=out);return
         assert torch.cuda.is_available(),'CUDA_UNAVAILABLE'
         torch.set_num_threads(4);stage='smoke' if args.smoke else 'formal'
-        if args.smoke:smoke(root,out,p,config,ident)
+        if args.smoke:smoke(cache_root,out,p,config,ident)
         elif args.evaluate_only:
             assert args.checkpoint and args.checkpoint.is_file(),'Supply --checkpoint for evaluation-only'
             model=MumPy(initialize=False).cuda();opts,scheds=optimizers(model,config['total_updates'])
             meta=restore(args.checkpoint,model,opts,scheds,ident,training=False)
             assert 1<=meta['epoch']<=10 and meta['updates']==meta['epoch']*config['updates_per_epoch'],'FORMAL_CHECKPOINT_REQUIRED'
-            evaluate(model,data.Clips(root,p['rows']),p['rows'],data.targets(p['rows'],'dev'),out,'independent_'+args.checkpoint.stem,data.read(data.SOURCE/'categories.json'))
-        else:run(root,out,p,orders,monitor,config,ident,args.resume)
+            evaluate(model,data.Clips(cache_root,p['rows']),p['rows'],data.targets(p['rows'],'dev'),out,'independent_'+args.checkpoint.stem,data.read(data.SOURCE/'categories.json'))
+        else:run(cache_root,out,p,orders,monitor,config,ident,args.resume)
     except Exception as exc:
         value=dict(status='FAILED',stage=stage,error=str(exc),traceback=traceback.format_exc(),exit_code=1,seconds=time.monotonic()-started)
         save(out/f'failure_{time.time_ns()}.json',value)

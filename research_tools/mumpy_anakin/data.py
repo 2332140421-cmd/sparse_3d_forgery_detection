@@ -77,9 +77,10 @@ def prepare_video(root,row,emit):
 
 
 class Clips:
-    def __init__(self,root,rows,training=False):
+    def __init__(self,root,rows,training=False,augmentation_policy="single"):
         self.root=root;self.rows={r['video_id']:r for r in rows};self.arrays={};self.training=training
-        self.augment=augmentation() if training else None
+        self.augment=augmentation(augmentation_policy) if training else None
+        self.augmentation_policy=augmentation_policy;self.augmentation_stats={}
     def arrays_for(self,vid):
         if vid not in self.arrays:
             path=self.root/'rgb224'/vid
@@ -93,7 +94,13 @@ class Clips:
         assert indices[1]==i
         images=[Image.fromarray(np.asarray(rgb[j]).copy()) for j in indices]
         gt=Image.fromarray((np.asarray(mask[i])*255).astype(np.uint8))
-        if (self.training if augment is None else augment):images,gt=self.augment(images,gt)
+        if (self.training if augment is None else augment):
+            assert self.augment is not None,'Evaluation clips never enable training augmentation'
+            before=float((np.asarray(gt)>0).mean());started=time.monotonic()
+            images,gt=self.augment(images,gt)
+            if self.augmentation_policy=='double':
+                from .double_augment import observe
+                observe(self.augmentation_stats,self.augment.ops,row['role'],before,float((np.asarray(gt.resize((224,224),Image.Resampling.NEAREST))>0).mean()),time.monotonic()-started)
         assert len(images)==3
         x=torch.stack([(torch.from_numpy(np.asarray(im.resize((224,224),Image.Resampling.BICUBIC)).copy()).permute(2,0,1).float()/255-MEAN)/STD for im in images])
         y=torch.from_numpy((np.asarray(gt.resize((224,224),Image.Resampling.NEAREST))>=128).copy()).float()[None]
