@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="620" viewBox="0 0 1080 620"><rect width="1080" height="620" fill="white"/><style>text{font:12px sans-serif}</style><text x="20" y="22">MumPy ANAKIN: saved metrics only; probability threshold 0.5</text>
+<text x="50" y="47">Unaugmented monitor AP (32 targets)</text>
+<path d="M50,250.0 h285" stroke="#ddd"/><text x="10" y="254.0">0</text>
+<path d="M50,202.5 h285" stroke="#ddd"/><text x="10" y="206.5">0.25</text>
+<path d="M50,155.0 h285" stroke="#ddd"/><text x="10" y="159.0">0.5</text>
+<path d="M50,107.5 h285" stroke="#ddd"/><text x="10" y="111.5">0.75</text>
+<path d="M50,60.0 h285" stroke="#ddd"/><text x="10" y="64.0">1</text>
+<path d="M50,60 v190 h285" stroke="black" fill="none"/>
+<text x="47.0" y="268">1</text>
+<text x="78.66666666666667" y="268">2</text>
+<text x="110.33333333333334" y="268">3</text>
+<text x="142.0" y="268">4</text>
+<text x="173.66666666666669" y="268">5</text>
+<text x="205.33333333333334" y="268">6</text>
+<text x="237.0" y="268">7</text>
+<text x="268.66666666666663" y="268">8</text>
+<text x="300.33333333333337" y="268">9</text>
+<text x="332.0" y="268">10</text>
+<polyline points="50.00,116.25 81.67,91.72 113.33,84.78 145.00,81.66 176.67,74.69 208.33,81.35 240.00,80.46 271.67,71.63 303.33,73.98 335.00,72.65" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="50.00,203.46 81.67,139.00 113.33,127.91 145.00,116.29 176.67,118.35 208.33,112.72 240.00,113.30 271.67,111.75 303.33,104.20 335.00,99.54" fill="none" stroke="#dc2626" stroke-width="2"/>
+<text x="50" y="290" fill="#2563eb">Single</text><text x="125" y="290" fill="#dc2626">Double</text><text x="290" y="290">epoch</text>
+<text x="405" y="47">All 19 development AP</text>
+<path d="M405,250.0 h285" stroke="#ddd"/><text x="365" y="254.0">0</text>
+<path d="M405,202.5 h285" stroke="#ddd"/><text x="365" y="206.5">0.1</text>
+<path d="M405,155.0 h285" stroke="#ddd"/><text x="365" y="159.0">0.2</text>
+<path d="M405,107.5 h285" stroke="#ddd"/><text x="365" y="111.5">0.3</text>
+<path d="M405,60.0 h285" stroke="#ddd"/><text x="365" y="64.0">0.4</text>
+<path d="M405,60 v190 h285" stroke="black" fill="none"/>
+<text x="402.0" y="268">1</text>
+<text x="433.6666666666667" y="268">2</text>
+<text x="465.3333333333333" y="268">3</text>
+<text x="497.0" y="268">4</text>
+<text x="528.6666666666666" y="268">5</text>
+<text x="560.3333333333334" y="268">6</text>
+<text x="592.0" y="268">7</text>
+<text x="623.6666666666666" y="268">8</text>
+<text x="655.3333333333334" y="268">9</text>
+<text x="687.0" y="268">10</text>
+<polyline points="405.00,115.56 436.67,125.30 468.33,149.18 500.00,143.09 531.67,158.34 563.33,148.19 595.00,154.65 626.67,166.27 658.33,158.37 690.00,151.23" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="405.00,147.09 436.67,143.46 468.33,124.21 500.00,144.90 531.67,150.72 563.33,144.61 595.00,160.03 626.67,164.18 658.33,164.00 690.00,166.49" fill="none" stroke="#dc2626" stroke-width="2"/>
+<text x="405" y="290" fill="#2563eb">Single</text><text x="480" y="290" fill="#dc2626">Double</text><text x="645" y="290">epoch</text>
+<text x="760" y="47">All 19 development Dice</text>
+<path d="M760,250.0 h285" stroke="#ddd"/><text x="720" y="254.0">0</text>
+<path d="M760,202.5 h285" stroke="#ddd"/><text x="720" y="206.5">0.05</text>
+<path d="M760,155.0 h285" stroke="#ddd"/><text x="720" y="159.0">0.1</text>
+<path d="M760,107.5 h285" stroke="#ddd"/><text x="720" y="111.5">0.15</text>
+<path d="M760,60.0 h285" stroke="#ddd"/><text x="720" y="64.0">0.2</text>
+<path d="M760,60 v190 h285" stroke="black" fill="none"/>
+<text x="757.0" y="268">1</text>
+<text x="788.6666666666666" y="268">2</text>
+<text x="820.3333333333334" y="268">3</text>
+<text x="852.0" y="268">4</text>
+<text x="883.6666666666666" y="268">5</text>
+<text x="915.3333333333334" y="268">6</text>
+<text x="947.0" y="268">7</text>
+<text x="978.6666666666666" y="268">8</text>
+<text x="1010.3333333333334" y="268">9</text>
+<text x="1042.0" y="268">10</text>
+<polyline points="760.00,147.43 791.67,157.78 823.33,212.37 855.00,198.31 886.67,204.28 918.33,181.90 950.00,202.80 981.67,227.85 1013.33,216.89 1045.00,206.45" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="760.00,159.01 791.67,197.35 823.33,181.26 855.00,192.53 886.67,183.03 918.33,171.76 950.00,212.07 981.67,216.82 1013.33,217.58 1045.00,217.67" fill="none" stroke="#dc2626" stroke-width="2"/>
+<text x="760" y="290" fill="#2563eb">Single</text><text x="835" y="290" fill="#dc2626">Double</text><text x="1000" y="290">epoch</text>
+<text x="50" y="327">Fake GT recall</text>
+<path d="M50,530.0 h285" stroke="#ddd"/><text x="10" y="534.0">0</text>
+<path d="M50,482.5 h285" stroke="#ddd"/><text x="10" y="486.5">0.05</text>
+<path d="M50,435.0 h285" stroke="#ddd"/><text x="10" y="439.0">0.1</text>
+<path d="M50,387.5 h285" stroke="#ddd"/><text x="10" y="391.5">0.15</text>
+<path d="M50,340.0 h285" stroke="#ddd"/><text x="10" y="344.0">0.2</text>
+<path d="M50,340 v190 h285" stroke="black" fill="none"/>
+<text x="47.0" y="548">1</text>
+<text x="78.66666666666667" y="548">2</text>
+<text x="110.33333333333334" y="548">3</text>
+<text x="142.0" y="548">4</text>
+<text x="173.66666666666669" y="548">5</text>
+<text x="205.33333333333334" y="548">6</text>
+<text x="237.0" y="548">7</text>
+<text x="268.66666666666663" y="548">8</text>
+<text x="300.33333333333337" y="548">9</text>
+<text x="332.0" y="548">10</text>
+<polyline points="50.00,426.41 81.67,416.56 113.33,495.75 145.00,486.61 176.67,493.99 208.33,460.02 240.00,489.06 271.67,513.93 303.33,503.39 335.00,496.60" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="50.00,366.78 81.67,385.13 113.33,401.04 145.00,415.97 176.67,466.16 208.33,412.52 240.00,486.24 271.67,475.90 303.33,487.35 335.00,491.73" fill="none" stroke="#dc2626" stroke-width="2"/>
+<text x="50" y="570" fill="#2563eb">Single</text><text x="125" y="570" fill="#dc2626">Double</text><text x="290" y="570">epoch</text>
+<text x="405" y="327">Real FPR (ratio)</text>
+<path d="M405,530.0 h285" stroke="#ddd"/><text x="365" y="534.0">0</text>
+<path d="M405,482.5 h285" stroke="#ddd"/><text x="365" y="486.5">0.01</text>
+<path d="M405,435.0 h285" stroke="#ddd"/><text x="365" y="439.0">0.02</text>
+<path d="M405,387.5 h285" stroke="#ddd"/><text x="365" y="391.5">0.03</text>
+<path d="M405,340.0 h285" stroke="#ddd"/><text x="365" y="344.0">0.04</text>
+<path d="M405,340 v190 h285" stroke="black" fill="none"/>
+<text x="402.0" y="548">1</text>
+<text x="433.6666666666667" y="548">2</text>
+<text x="465.3333333333333" y="548">3</text>
+<text x="497.0" y="548">4</text>
+<text x="528.6666666666666" y="548">5</text>
+<text x="560.3333333333334" y="548">6</text>
+<text x="592.0" y="548">7</text>
+<text x="623.6666666666666" y="548">8</text>
+<text x="655.3333333333334" y="548">9</text>
+<text x="687.0" y="548">10</text>
+<polyline points="405.00,524.80 436.67,506.93 468.33,527.02 500.00,521.93 531.67,524.08 563.33,518.89 595.00,524.83 626.67,526.51 658.33,525.66 690.00,525.26" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="405.00,460.71 436.67,356.75 468.33,472.51 500.00,464.71 531.67,521.32 563.33,496.68 595.00,495.60 626.67,481.67 658.33,487.30 690.00,491.58" fill="none" stroke="#dc2626" stroke-width="2"/>
+<text x="405" y="570" fill="#2563eb">Single</text><text x="480" y="570" fill="#dc2626">Double</text><text x="645" y="570">epoch</text>
+<text x="760" y="327">Fake background FPR (ratio)</text>
+<path d="M760,530.0 h285" stroke="#ddd"/><text x="720" y="534.0">0</text>
+<path d="M760,482.5 h285" stroke="#ddd"/><text x="720" y="486.5">0.01</text>
+<path d="M760,435.0 h285" stroke="#ddd"/><text x="720" y="439.0">0.02</text>
+<path d="M760,387.5 h285" stroke="#ddd"/><text x="720" y="391.5">0.03</text>
+<path d="M760,340.0 h285" stroke="#ddd"/><text x="720" y="344.0">0.04</text>
+<path d="M760,340 v190 h285" stroke="black" fill="none"/>
+<text x="757.0" y="548">1</text>
+<text x="788.6666666666666" y="548">2</text>
+<text x="820.3333333333334" y="548">3</text>
+<text x="852.0" y="548">4</text>
+<text x="883.6666666666666" y="548">5</text>
+<text x="915.3333333333334" y="548">6</text>
+<text x="947.0" y="548">7</text>
+<text x="978.6666666666666" y="548">8</text>
+<text x="1010.3333333333334" y="548">9</text>
+<text x="1042.0" y="548">10</text>
+<polyline points="760.00,523.55 791.67,499.22 823.33,527.73 855.00,520.92 886.67,525.58 918.33,521.75 950.00,526.64 981.67,527.52 1013.33,527.08 1045.00,526.35" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="760.00,459.08 791.67,371.40 823.33,452.16 855.00,463.77 886.67,509.71 918.33,486.15 950.00,492.92 981.67,488.06 1013.33,490.12 1045.00,492.10" fill="none" stroke="#dc2626" stroke-width="2"/>
+<text x="760" y="570" fill="#2563eb">Single</text><text x="835" y="570" fill="#dc2626">Double</text><text x="1000" y="570">epoch</text>
+</svg>
