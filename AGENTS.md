@@ -356,3 +356,12 @@ results, or inconsistency between the paper and implementation.
   Shared read-only RGB224, same89/19/init/orders/budget/loss/SGD/FP32; no new data,
   features, architecture or thresholds. Codex only two discard updates; user
   starts full terminal run. Preserve old artifacts and keep labels out of input.
+
+## Full-video change-relation localization
+
+- ADR-0059/root17.16 authorize only the independent three-arm change_relation
+  model/entry. Reuse frozen epoch01 DINO/LoRA patches and geometry; train official
+  head with fixed BN buffers, two feature fusions, joint block encoder and two
+  change/global rounds plus soft auxiliary block supervision. Preserve all frames
+  and blocks. Codex runs bounded small/true-extreme smoke; user starts ten epochs.
+  Keep old methods/results read-only; no new frontends, MumPy tuning or test access.
